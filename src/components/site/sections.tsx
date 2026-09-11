@@ -3415,21 +3415,6 @@ export function Footer() {
               </h3>
               <div className="mt-2.5 flex flex-col gap-2 text-xs sm:text-sm">
                 <a
-                  href={footerIndiaMapUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-start gap-2 text-slate-400 hover:text-neon transition-colors"
-                >
-                  <MapPin className="h-4 w-4 text-neon shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-semibold text-white group-hover:text-neon">
-                      India Office:{" "}
-                    </span>
-                    <span>{footerIndiaAddress}</span>
-                  </div>
-                </a>
-
-                <a
                   href={footerUsaMapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -3441,6 +3426,21 @@ export function Footer() {
                       USA Office:{" "}
                     </span>
                     <span>{footerUsaAddress}</span>
+                  </div>
+                </a>
+
+                <a
+                  href={footerIndiaMapUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-start gap-2 text-slate-400 hover:text-neon transition-colors"
+                >
+                  <MapPin className="h-4 w-4 text-neon shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-white group-hover:text-neon">
+                      India Office:{" "}
+                    </span>
+                    <span>{footerIndiaAddress}</span>
                   </div>
                 </a>
               </div>
