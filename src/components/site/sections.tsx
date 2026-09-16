@@ -839,7 +839,7 @@ export function HeroOverview() {
     <section
       id="overview"
       ref={sectionRef}
-      className="relative overflow-hidden px-5 sm:px-8 lg:px-12 py-10 sm:py-14 md:py-16 border-b border-slate-200/80 bg-gradient-to-b from-slate-100/90 via-purple-50/25 to-slate-50/90"
+      className="relative overflow-hidden px-5 sm:px-8 lg:px-12 py-10 sm:py-14 md:py-16 border-b border-purple-100/80 bg-aura-diagonal"
     >
       {/* Ambient background brand glow */}
       <div
@@ -1647,7 +1647,7 @@ export function Services() {
   }, []);
 
   return (
-    <Section id="services" className="relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-y border-slate-200/80 shadow-inner">
+    <Section id="services" className="relative overflow-hidden bg-aura-diagonal border-y border-purple-100/80 shadow-inner">
       {/* Left Half-Cut Geometric Orbital Watermark */}
       <div className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-[520px] sm:w-[650px] lg:w-[780px] h-[520px] sm:h-[650px] lg:h-[780px] select-none z-0">
         <svg
@@ -1872,7 +1872,7 @@ export function WhyAiVideo() {
   }, []);
 
   return (
-    <Section id="why-ai" className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/50 to-white">
+    <Section id="why-ai" className="relative overflow-hidden bg-aura-diagonal-soft border-y border-purple-100/60">
       {/* Dynamic Fluid Gradient Ribbon Waves Background */}
       <div className="pointer-events-none absolute inset-0 select-none overflow-hidden z-0">
         <svg
@@ -2018,7 +2018,7 @@ export function Pricing() {
   }, []);
 
   return (
-    <Section id="pricing" className="relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-indigo-50/25 to-slate-100/95 border-y border-slate-200/80">
+    <Section id="pricing" className="relative overflow-hidden bg-aura-diagonal border-y border-purple-100/80">
       <SectionHeading
         eyebrow="AI Video Production Services"
         title="AI Video Production Packages &"
@@ -2386,7 +2386,7 @@ export function DigitalTwin() {
   }, [isInView, twinSample?.videoUrl]);
 
   return (
-    <Section id="digital-twin" className="relative overflow-hidden bg-gradient-to-b from-purple-50/40 via-slate-100/80 to-slate-50 border-y border-slate-200/80">
+    <Section id="digital-twin" className="relative overflow-hidden bg-aura-diagonal-soft border-y border-purple-100/70">
       {/* Giant left-scrolling 'AI VIDEO' watermark */}
       <div
         aria-hidden="true"
@@ -2733,7 +2733,7 @@ export function Process() {
   }, []);
 
   return (
-    <Section id="process" className="overflow-hidden">
+    <Section id="process" className="overflow-hidden bg-aura-diagonal border-y border-purple-100/70">
       <SectionHeading
         eyebrow="How It Works"
         title="How Our AI Video Production"
@@ -3288,7 +3288,7 @@ export function Faq() {
   const [open, setOpen] = useState<number | null>(null);
 
   return (
-    <Section id="faq" className="relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/25 to-slate-100/90 border-y border-slate-200/80">
+    <Section id="faq" className="relative overflow-hidden bg-aura-diagonal-soft border-y border-purple-100/70">
       {/* Giant left-scrolling 'FAQ' watermark */}
       <div
         aria-hidden="true"
@@ -3373,7 +3373,7 @@ export function Contact() {
   }, []);
 
   return (
-    <section id="final-cta" className="scroll-mt-[72px] px-5 py-8 md:py-12 overflow-hidden relative bg-gradient-to-b from-slate-100/90 via-purple-50/25 to-slate-100/95 border-t border-slate-200/80">
+    <section id="final-cta" className="scroll-mt-[72px] px-5 py-8 md:py-12 overflow-hidden relative bg-aura-diagonal border-t border-purple-100/80">
       <div ref={containerRef} className="mx-auto w-full max-w-5xl relative z-10">
         <div
           className={`panel relative mx-auto overflow-hidden p-6 text-center sm:p-8 md:p-12 transition-all duration-700 hover:border-purple-300 hover:shadow-xl ${
