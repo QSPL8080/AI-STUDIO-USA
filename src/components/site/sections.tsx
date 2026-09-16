@@ -2626,7 +2626,7 @@ export function StrategyCall() {
             parentElement: calendlyContainerRef.current,
           });
         } catch {
-          // Keep fallback iframe intact on any error
+          // Keep fallback iframe intact
         }
       }
     };
@@ -2644,24 +2644,20 @@ export function StrategyCall() {
   }, []);
 
   return (
-    <Section id="book-call" className="relative overflow-hidden py-12 md:py-20">
-      {/* Background ambient glow */}
-      <div className="pointer-events-none absolute -left-32 top-1/4 h-96 w-96 rounded-full bg-purple-200/30 blur-3xl" />
-      <div className="pointer-events-none absolute -right-32 bottom-1/4 h-96 w-96 rounded-full bg-indigo-200/30 blur-3xl" />
-
+    <Section id="book-call" className="py-10 md:py-16">
       <SectionHeading
         eyebrow="Get In Touch"
-        title="Book a Free"
-        highlight="Strategy Call."
+        title="Book a free"
+        highlight="strategy call."
         description="No commitment. No sales pitch. A real 30-minute conversation about your brand, your goals, and how we'd help you scale."
       />
 
-      <div className="mx-auto max-w-5xl">
-        {/* Quick Contact Action Pills */}
-        <div className="mb-8 flex flex-wrap items-center justify-center gap-3">
+      <div className="mx-auto max-w-4xl">
+        {/* Contact Action Pills */}
+        <div className="mb-6 flex flex-col sm:flex-row items-center justify-center gap-3">
           <a
             href={`mailto:${strategyCallEmail}`}
-            className="group inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700 hover:shadow md:text-sm"
+            className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 shadow-xs transition-all duration-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
           >
             <Mail className="h-4 w-4 text-purple-600 transition-transform group-hover:scale-110" />
             <span>{strategyCallEmail}</span>
@@ -2671,44 +2667,38 @@ export function StrategyCall() {
             href={calendlyUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50/80 px-4 py-2 text-xs font-semibold text-purple-700 shadow-sm transition-all duration-200 hover:border-purple-400 hover:bg-purple-100 hover:shadow md:text-sm"
+            className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 shadow-xs transition-all duration-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
           >
             <Calendar className="h-4 w-4 text-purple-600 transition-transform group-hover:scale-110" />
             <span>Book a slot via Calendly</span>
-            <ExternalLink className="h-3 w-3 opacity-60 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            <ExternalLink className="h-3.5 w-3.5 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </a>
         </div>
 
-        {/* Embedded Calendly Scheduling Card */}
-        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-3 shadow-xl md:p-6">
-          {/* Card Header Tag */}
-          <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3 px-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-purple-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-purple-800">
-              <span className="h-2 w-2 rounded-full bg-purple-600 animate-pulse" />
-              Schedule a Strategy Call
-            </div>
-            <span className="text-xs font-medium text-slate-500 hidden sm:inline">
-              Instant Confirmation • Free 30-min
-            </span>
-          </div>
+        {/* Schedule Subtitle */}
+        <div className="mb-3 flex items-center gap-2 px-1">
+          <MessageSquare className="h-3.5 w-3.5 text-slate-500" />
+          <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+            Schedule a Strategy Call
+          </span>
+        </div>
 
-          {/* Calendly Inline Widget Container */}
-          <div className="relative w-full min-h-[700px] overflow-hidden rounded-2xl bg-slate-50/50">
-            <div
-              ref={calendlyContainerRef}
-              className="calendly-inline-widget min-w-[320px] w-full"
-              data-url={`${calendlyUrl}?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
-              style={{ minWidth: "320px", height: "700px" }}
-            >
-              <iframe
-                src={`${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
-                width="100%"
-                height="700"
-                frameBorder="0"
-                title="Select a Date & Time - Strategy Call"
-                className="h-[700px] w-full rounded-2xl border-0"
-              />
-            </div>
+        {/* Clean Direct Calendly Container */}
+        <div className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div
+            ref={calendlyContainerRef}
+            className="calendly-inline-widget min-w-[320px] w-full"
+            data-url={`${calendlyUrl}?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
+            style={{ minWidth: "320px", height: "680px" }}
+          >
+            <iframe
+              src={`${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
+              width="100%"
+              height="680"
+              frameBorder="0"
+              title="Select a Date & Time - Strategy Call"
+              className="h-[680px] w-full border-0"
+            />
           </div>
         </div>
       </div>
