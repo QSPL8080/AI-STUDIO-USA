@@ -1873,6 +1873,82 @@ export function WhyAiVideo() {
 
   return (
     <Section id="why-ai" className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/50 to-white">
+      {/* Dynamic Fluid Gradient Ribbon Waves Background */}
+      <div className="pointer-events-none absolute inset-0 select-none overflow-hidden z-0">
+        <svg
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] min-w-[1200px] h-[130%] object-cover opacity-90"
+          viewBox="0 0 1440 800"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <linearGradient id="whyAiRibbon1" x1="0%" y1="0%" x2="100%" y2="80%">
+              <stop offset="0%" stopColor="#9333ea" stopOpacity="0.28" />
+              <stop offset="40%" stopColor="#ec4899" stopOpacity="0.22" />
+              <stop offset="75%" stopColor="#3b82f6" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#a855f7" stopOpacity="0.10" />
+            </linearGradient>
+
+            <linearGradient id="whyAiRibbon2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.25" />
+              <stop offset="50%" stopColor="#8b5cf6" stopOpacity="0.26" />
+              <stop offset="100%" stopColor="#d946ef" stopOpacity="0.14" />
+            </linearGradient>
+
+            <radialGradient id="whyAiGlowLeft" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#9333ea" stopOpacity="0.20" />
+              <stop offset="60%" stopColor="#ec4899" stopOpacity="0.08" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            </radialGradient>
+
+            <radialGradient id="whyAiGlowRight" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.20" />
+              <stop offset="65%" stopColor="#a855f7" stopOpacity="0.08" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+
+          {/* Ambient luminous glow discs */}
+          <circle cx="220" cy="300" r="320" fill="url(#whyAiGlowLeft)" className="animate-aura-pulse" />
+          <circle cx="1220" cy="500" r="340" fill="url(#whyAiGlowRight)" className="animate-aura-pulse" />
+
+          {/* Flowing Ribbon 1 - Upper Harmonic Arc */}
+          <path
+            d="M -60 140 C 260 20, 540 380, 900 220 C 1160 110, 1360 300, 1500 200 L 1500 330 C 1340 430, 1120 250, 880 350 C 520 490, 240 150, -60 260 Z"
+            fill="url(#whyAiRibbon1)"
+            className="animate-wave-float-1"
+          />
+
+          {/* Flowing Ribbon 2 - Lower Harmonic Arc */}
+          <path
+            d="M -60 580 C 300 740, 600 420, 940 600 C 1200 720, 1400 490, 1500 620 L 1500 490 C 1380 370, 1180 600, 920 470 C 580 310, 280 620, -60 450 Z"
+            fill="url(#whyAiRibbon2)"
+            className="animate-wave-float-2"
+          />
+
+          {/* Dynamic Dotted / Dashed Accent Contour Line 1 */}
+          <path
+            d="M -60 140 C 260 20, 540 380, 900 220 C 1160 110, 1360 300, 1500 200"
+            stroke="rgba(219, 39, 119, 0.40)"
+            strokeWidth="2"
+            strokeDasharray="6 8"
+            fill="none"
+            className="animate-wave-float-1"
+          />
+
+          {/* Dynamic Cyan Accent Contour Line 2 */}
+          <path
+            d="M -60 580 C 300 740, 600 420, 940 600 C 1200 720, 1400 490, 1500 620"
+            stroke="rgba(56, 189, 248, 0.40)"
+            strokeWidth="2"
+            strokeDasharray="8 10"
+            fill="none"
+            className="animate-wave-float-2"
+          />
+        </svg>
+      </div>
+
       <div className="relative z-10">
         <SectionHeading
           eyebrow="Why AI Video"
@@ -2792,6 +2868,80 @@ export function LeadFormSection() {
 
   return (
     <Section id="contact" className="relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-t border-slate-200/80">
+      {/* Light Shade Dynamic Fluid Ribbon Wave Background */}
+      <div className="pointer-events-none absolute inset-0 select-none overflow-hidden z-0">
+        <svg
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] min-w-[1200px] h-[130%] object-cover opacity-100"
+          viewBox="0 0 1440 800"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <linearGradient id="leadRibbonLight1" x1="0%" y1="0%" x2="100%" y2="80%">
+              <stop offset="0%" stopColor="#9333ea" stopOpacity="0.32" />
+              <stop offset="40%" stopColor="#ec4899" stopOpacity="0.25" />
+              <stop offset="75%" stopColor="#38bdf8" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#a855f7" stopOpacity="0.12" />
+            </linearGradient>
+
+            <linearGradient id="leadRibbonLight2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.28" />
+              <stop offset="50%" stopColor="#8b5cf6" stopOpacity="0.30" />
+              <stop offset="100%" stopColor="#d946ef" stopOpacity="0.18" />
+            </linearGradient>
+
+            <radialGradient id="leadGlowLightLeft" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#9333ea" stopOpacity="0.22" />
+              <stop offset="50%" stopColor="#ec4899" stopOpacity="0.10" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            </radialGradient>
+
+            <radialGradient id="leadGlowLightRight" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.20" />
+              <stop offset="60%" stopColor="#8b5cf6" stopOpacity="0.08" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+
+          {/* Ambient soft glow discs */}
+          <circle cx="200" cy="260" r="340" fill="url(#leadGlowLightLeft)" className="animate-aura-pulse" />
+          <circle cx="1240" cy="540" r="360" fill="url(#leadGlowLightRight)" className="animate-aura-pulse" />
+
+          {/* Flowing Ribbon 1 */}
+          <path
+            d="M -60 180 C 280 40, 560 390, 920 240 C 1180 130, 1370 310, 1500 220 L 1500 340 C 1350 430, 1130 260, 890 360 C 530 500, 250 170, -60 290 Z"
+            fill="url(#leadRibbonLight1)"
+            className="animate-wave-float-1"
+          />
+
+          {/* Flowing Ribbon 2 */}
+          <path
+            d="M -60 560 C 310 710, 620 410, 950 580 C 1210 690, 1390 480, 1500 590 L 1500 480 C 1370 370, 1170 580, 910 460 C 570 310, 270 600, -60 440 Z"
+            fill="url(#leadRibbonLight2)"
+            className="animate-wave-float-2"
+          />
+
+          {/* Subtle delicate accent contour strokes */}
+          <path
+            d="M -60 180 C 280 40, 560 390, 920 240 C 1180 130, 1370 310, 1500 220"
+            stroke="rgba(219, 39, 119, 0.45)"
+            strokeWidth="2.2"
+            strokeDasharray="6 8"
+            fill="none"
+            className="animate-wave-float-1"
+          />
+          <path
+            d="M -60 560 C 310 710, 620 410, 950 580 C 1210 690, 1390 480, 1500 590"
+            stroke="rgba(56, 189, 248, 0.45)"
+            strokeWidth="2.2"
+            strokeDasharray="8 10"
+            fill="none"
+            className="animate-wave-float-2"
+          />
+        </svg>
+      </div>
+
       <div className="relative z-10">
         <SectionHeading
           eyebrow="Get a Quote"
