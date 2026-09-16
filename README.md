@@ -159,6 +159,9 @@ AI STUDIO/
 │   │   ├── UGC Porfolio.mp4        # UGC video showcase reel
 │   │   └── Avtar Portfolio.mp4     # Avatar video showcase reel
 │   ├── images/                     # Hero banners and brand graphics
+│   │   ├── LOGO 1.png              # Header brand logo (optimized for light header background)
+│   │   ├── logo.png                # Footer brand logo (vibrant gradient + crisp white typography)
+│   │   ├── footer logo.png         # Large footer brand showcase emblem
 │   │   └── ai studio logo hero.png # High-resolution hero title logo
 │   ├── favicon.png                 # Browser favicon
 │   └── robots.txt                  # Search engine crawl rules

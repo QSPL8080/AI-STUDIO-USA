@@ -106,7 +106,7 @@ export function Header() {
             aria-label="Quickupp AI Studio Home"
           >
             <img
-              src="/images/logo.png"
+              src="/images/LOGO 1.png"
               alt="Quickupp AI Studio logo"
               className="h-8 sm:h-9 md:h-10 w-auto object-contain"
               width={125}
@@ -3469,7 +3469,7 @@ export function Footer() {
               <img
                 src="/images/logo.png"
                 alt="Quickupp AI Studio logo"
-                className="h-9 md:h-10 w-auto object-contain brightness-0 invert"
+                className="h-9 md:h-10 w-auto object-contain"
                 loading="lazy"
                 width={125}
                 height={40}
