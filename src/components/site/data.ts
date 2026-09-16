@@ -96,7 +96,7 @@ export const services = [
       "Problem → Solution Videos",
       "Social Media Advertisements",
     ],
-    price: "$49 / Reel",
+    price: "$79 / Reel",
     cta: "Create AI UGC Video",
   },
   {
@@ -112,7 +112,7 @@ export const services = [
       "Character-Based Videos",
       "Product Explainers",
     ],
-    price: "$49 / Reel",
+    price: "$79 / Reel",
     cta: "Create Cartoon Video",
   },
   {
@@ -129,7 +129,7 @@ export const services = [
       "Corporate Videos",
       "Social Media Reels",
     ],
-    price: "$79 / Reel",
+    price: "$99 / Reel",
     cta: "Create AI Avatar Video",
   },
   {
@@ -145,7 +145,7 @@ export const services = [
       "Premium Social Media Content",
       "Advertising Campaigns",
     ],
-    price: "$99 / Reel",
+    price: "$149 / Reel",
     cta: "Create Hyper-Realistic Video",
   },
   {
@@ -162,7 +162,7 @@ export const services = [
       "Promotional Videos",
       "Social Media Content",
     ],
-    price: "$149 / Reel",
+    price: "$179 / Reel",
     cta: "Create My Digital Twin",
   },
 ];
@@ -197,6 +197,110 @@ export const whyAiVideo = [
       "Receive videos in vertical 9:16 format suitable for Instagram Reels, Facebook and YouTube Shorts.",
   },
 ];
+
+export interface IndividualPricing {
+  service: string;
+  price: string;
+  badge?: string;
+  description?: string;
+}
+
+export const individualPricingList: IndividualPricing[] = [
+  { service: "AI UGC", price: "$79", description: "Authentic creator-style product review & demo reels" },
+  { service: "AI Cartoon", price: "$79", description: "Engaging 3D & 2D character animation storytelling" },
+  { service: "AI Avatar", price: "$99", description: "Professional presenter-style spokesperson reels" },
+  { service: "Hyper-Realistic", price: "$149", description: "Cinematic commercial-grade visual storytelling" },
+  { service: "Digital Twin Video", price: "$179", description: "Recurring content with your custom AI twin & voice" },
+  { service: "Digital Twin Setup", price: "$499", badge: "One-Time", description: "Full avatar model training, voice clone & speaking setup" },
+];
+
+export interface PackagePricingTier {
+  package: string;
+  delivery: string;
+  videos: number | string;
+  badge?: string;
+  popular?: boolean;
+  aiUgc: string;
+  aiAvatar: string;
+  aiCartoon: string;
+  hyperRealistic: string;
+  digitalTwin: string;
+}
+
+export const packagePricingTiers: PackagePricingTier[] = [
+  {
+    package: "Single Video",
+    delivery: "24 Hrs",
+    videos: 1,
+    aiUgc: "$79",
+    aiAvatar: "$99",
+    aiCartoon: "$79",
+    hyperRealistic: "$149",
+    digitalTwin: "$179",
+  },
+  {
+    package: "Starter",
+    delivery: "72 Hrs",
+    videos: 5,
+    aiUgc: "$349",
+    aiAvatar: "$449",
+    aiCartoon: "$349",
+    hyperRealistic: "$649",
+    digitalTwin: "$799",
+  },
+  {
+    package: "Growth",
+    delivery: "Within 7 Days",
+    videos: 10,
+    popular: true,
+    badge: "Most Popular",
+    aiUgc: "$649",
+    aiAvatar: "$799",
+    aiCartoon: "$649",
+    hyperRealistic: "$1,199",
+    digitalTwin: "$1,499",
+  },
+  {
+    package: "Scale",
+    delivery: "Within 14 Days",
+    videos: 15,
+    badge: "High Growth",
+    aiUgc: "$899",
+    aiAvatar: "$1,099",
+    aiCartoon: "$899",
+    hyperRealistic: "$1,699",
+    digitalTwin: "$2,099",
+  },
+  {
+    package: "Pro",
+    delivery: "Within 16 Days",
+    videos: 20,
+    badge: "Best Value",
+    aiUgc: "$1,099",
+    aiAvatar: "$1,399",
+    aiCartoon: "$1,099",
+    hyperRealistic: "$2,199",
+    digitalTwin: "$2,599",
+  },
+  {
+    package: "Enterprise",
+    delivery: "Within 20 Days",
+    videos: 30,
+    badge: "Maximum Scale",
+    aiUgc: "$1,499",
+    aiAvatar: "$1,999",
+    aiCartoon: "$1,499",
+    hyperRealistic: "$3,299",
+    digitalTwin: "$3,799",
+  },
+];
+
+export const digitalTwinSetupItem = {
+  service: "Digital Twin Setup (One-time)",
+  delivery: "Within 72 Hrs",
+  price: "$499",
+  description: "One-time fee to build your Digital Twin before ordering Digital Twin videos.",
+};
 
 export interface PricingItem {
   discounted: string;
@@ -549,7 +653,7 @@ export const faqs = [
   {
     question: "How much does AI video production cost?",
     answer:
-      "Our AI video production services start from $49 per reel. Pricing depends on the selected video format, production requirements and package size.",
+      "Our AI video production services start from $79 per reel. Pricing depends on the selected video format, production requirements and package size.",
   },
   {
     question: "What is included in an AI video?",

@@ -43,11 +43,13 @@ import {
   footerTagline,
   footerUsaAddress,
   footerUsaMapUrl,
-  heroBadges,
   industries,
+  individualPricingList,
   nav,
+  packagePricingTiers,
   pricingRows,
   pricingColumns,
+  digitalTwinSetupItem,
   processSteps,
   portfolioItems,
   samples,
@@ -2012,102 +2014,235 @@ export function Pricing() {
   }, []);
 
   return (
-    <Section id="pricing">
+    <Section id="pricing" className="relative overflow-hidden">
       <SectionHeading
-        eyebrow="AI Video Production Packages"
+        eyebrow="AI Video Production Services"
         title="AI Video Production Packages &"
         highlight="Pricing"
-        description="Choose a single reel or save with our multi-video packages."
+        description="Transparent rates for individual reels and high-volume monthly content bundles."
       />
-      <div
-        ref={tableRef}
-        className="relative rounded-2xl border border-slate-200 bg-white p-1 shadow-xl backdrop-blur-xl transition-all duration-300 hover:border-purple-300"
-      >
-        <div className="overflow-x-auto md:overflow-x-visible">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-600">
-                <th className="px-5 py-4 sm:px-6">Service</th>
-                {pricingColumns.map((col) => (
-                  <th key={col.label} className={`px-5 py-4 sm:px-6 ${col.label === "Single Video" ? "text-purple-700" : ""}`}>
-                    <div className="flex flex-col gap-1">
-                      <span>{col.label}</span>
-                      <span className="font-normal text-slate-500 text-[11px]">{col.videos} Video{col.videos === "1" ? "" : "s"}</span>
-                      <span className="font-normal text-slate-400 text-[10px]">{col.details}</span>
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {pricingRows.map((row, idx) => {
-                const animationClass = isInView ? "animate-pricing-row" : "opacity-0 translate-y-3";
 
-                return (
+      <div ref={tableRef} className="mx-auto max-w-6xl space-y-12">
+        {/* 1. Individual Service Pricing */}
+        <div className="space-y-3.5">
+          <div className="border-b border-slate-200 pb-2.5">
+            <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              Individual Service Pricing
+            </h3>
+            <p className="mt-1 text-xs italic text-slate-500 sm:text-sm">
+              Per-video rate for each service, billed individually.
+            </p>
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg backdrop-blur-xl">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-xs font-bold uppercase tracking-wider text-white">
+                  <th className="px-5 py-3.5 sm:px-6">Service</th>
+                  <th className="px-5 py-3.5 text-right sm:px-6 sm:text-left">Price</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {individualPricingList.map((item, idx) => (
                   <tr
-                    key={row.service}
-                    style={{ animationDelay: `${idx * 0.1}s` }}
-                    className={`transition-all duration-300 hover:bg-slate-50/80 ${animationClass}`}
+                    key={item.service}
+                    className={`transition-colors hover:bg-purple-50/50 ${
+                      idx % 2 === 1 ? "bg-slate-50/60" : "bg-white"
+                    }`}
                   >
-                    <td className="px-5 py-4 font-bold text-slate-900 sm:px-6">
-                      <div className="flex items-center gap-2">
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-purple-600" />
-                        <span className="whitespace-nowrap">{row.service}</span>
+                    <td className="px-5 py-3.5 sm:px-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                        <span className="font-bold text-slate-900">{item.service}</span>
+                        {item.description ? (
+                          <span className="text-xs text-slate-500 font-normal hidden md:inline">
+                            — {item.description}
+                          </span>
+                        ) : null}
+                        {item.badge ? (
+                          <span className="w-fit rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700">
+                            {item.badge}
+                          </span>
+                        ) : null}
                       </div>
                     </td>
-                    {row.prices.map((item, i) => (
-                      <td
-                        key={item.discounted + i}
-                        className={
-                          i === 0
-                            ? "px-5 py-3.5 font-extrabold text-purple-700 tracking-wide whitespace-nowrap sm:px-6"
-                            : "px-5 py-3.5 whitespace-nowrap sm:px-6"
-                        }
-                      >
-                        <div className="flex flex-col items-start gap-1">
-                          {/* Discounted Price (On Top) */}
-                          <span
-                            className={
-                              i === 0
-                                ? "text-base font-black text-purple-700"
-                                : "text-sm font-bold text-slate-900 tracking-wide"
-                            }
-                          >
-                            {item.discounted}
-                          </span>
-
-                          {/* Cut Price (Below) with clean normal strikethrough and badge */}
-                          {item.original ? (
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-normal text-slate-400 line-through decoration-rose-500/70">
-                                {item.original}
-                              </span>
-                              {item.badge ? (
-                                <span className="rounded-full bg-rose-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-rose-600 border border-rose-200">
-                                  {item.badge}
-                                </span>
-                              ) : null}
-                            </div>
-                          ) : null}
-                        </div>
-                      </td>
-                    ))}
+                    <td className="px-5 py-3.5 text-right font-extrabold text-purple-700 sm:px-6 sm:text-left text-base">
+                      {item.price}
+                    </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
-      <div className="mx-auto mt-10 max-w-3xl text-center">
-        <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
-          Our AI video production packages are designed for businesses looking for individual
-          promotional videos or scalable monthly content. Need a customized content plan? We can
-          create custom AI video packages based on your industry, content volume, video style and
-          marketing requirements.
-        </p>
-        <div className="mt-6">
-          <NeonButton href="#contact">Get Custom Pricing</NeonButton>
+
+        {/* 2. Package Pricing */}
+        <div className="space-y-3.5">
+          <div className="border-b border-slate-200 pb-2.5">
+            <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              Package Pricing
+            </h3>
+            <p className="mt-1 text-xs italic text-slate-500 sm:text-sm">
+              Bundle pricing by video volume and turnaround time. Prices shown are for the full package.
+            </p>
+          </div>
+
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl backdrop-blur-xl">
+            {/* Horizontal Scroll Hint for Mobile */}
+            <div className="flex items-center justify-between bg-slate-50 px-4 py-2 text-[11px] font-medium text-slate-500 md:hidden border-b border-slate-200">
+              <span>← Swipe horizontally to view all services →</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <thead>
+                  <tr className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-[11px] font-bold uppercase tracking-wider text-white sm:text-xs">
+                    <th className="px-4 py-3.5 sm:px-5">Package</th>
+                    <th className="px-4 py-3.5 sm:px-5">Delivery</th>
+                    <th className="px-3 py-3.5 text-center sm:px-4">Videos</th>
+                    <th className="px-4 py-3.5 text-center sm:px-5">AI UGC</th>
+                    <th className="px-4 py-3.5 text-center sm:px-5">AI Avatar</th>
+                    <th className="px-4 py-3.5 text-center sm:px-5">AI Cartoon</th>
+                    <th className="px-4 py-3.5 text-center sm:px-5">Hyper-Realistic</th>
+                    <th className="px-4 py-3.5 text-center sm:px-5">Digital Twin</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {packagePricingTiers.map((tier, idx) => {
+                    const isEven = idx % 2 === 1;
+                    const rowBg = tier.popular
+                      ? "bg-purple-50/40 hover:bg-purple-100/50"
+                      : isEven
+                      ? "bg-slate-50/60 hover:bg-purple-50/40"
+                      : "bg-white hover:bg-purple-50/40";
+
+                    return (
+                      <tr key={tier.package} className={`transition-colors ${rowBg}`}>
+                        {/* Package Name & Badge */}
+                        <td className="px-4 py-3.5 font-bold text-slate-900 sm:px-5 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <span>{tier.package}</span>
+                            {tier.badge ? (
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                                  tier.popular
+                                    ? "bg-purple-600 text-white shadow-xs"
+                                    : "bg-slate-200 text-slate-700"
+                                }`}
+                              >
+                                {tier.badge}
+                              </span>
+                            ) : null}
+                          </div>
+                        </td>
+
+                        {/* Delivery */}
+                        <td className="px-4 py-3.5 text-slate-600 sm:px-5 whitespace-nowrap font-medium text-xs sm:text-sm">
+                          {tier.delivery}
+                        </td>
+
+                        {/* Videos Count */}
+                        <td className="px-3 py-3.5 text-center font-bold text-slate-900 sm:px-4 whitespace-nowrap">
+                          <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-slate-100 px-1.5 text-xs">
+                            {tier.videos}
+                          </span>
+                        </td>
+
+                        {/* AI UGC */}
+                        <td className="px-4 py-3.5 text-center font-extrabold text-slate-900 sm:px-5 whitespace-nowrap">
+                          {tier.aiUgc}
+                        </td>
+
+                        {/* AI Avatar */}
+                        <td className="px-4 py-3.5 text-center font-extrabold text-slate-900 sm:px-5 whitespace-nowrap">
+                          {tier.aiAvatar}
+                        </td>
+
+                        {/* AI Cartoon */}
+                        <td className="px-4 py-3.5 text-center font-extrabold text-slate-900 sm:px-5 whitespace-nowrap">
+                          {tier.aiCartoon}
+                        </td>
+
+                        {/* Hyper-Realistic */}
+                        <td className="px-4 py-3.5 text-center font-extrabold text-purple-700 sm:px-5 whitespace-nowrap">
+                          {tier.hyperRealistic}
+                        </td>
+
+                        {/* Digital Twin */}
+                        <td className="px-4 py-3.5 text-center font-extrabold text-purple-700 sm:px-5 whitespace-nowrap">
+                          {tier.digitalTwin}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Digital Twin Setup */}
+        <div className="space-y-3.5">
+          <div className="border-b border-slate-200 pb-2.5">
+            <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              Digital Twin Setup
+            </h3>
+            <p className="mt-1 text-xs italic text-slate-500 sm:text-sm">
+              One-time fee to build your Digital Twin before ordering Digital Twin videos.
+            </p>
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg backdrop-blur-xl">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-xs font-bold uppercase tracking-wider text-white">
+                  <th className="px-5 py-3.5 sm:px-6">Service</th>
+                  <th className="px-5 py-3.5 text-center sm:px-6">Delivery</th>
+                  <th className="px-5 py-3.5 text-right sm:px-6 text-white">Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="bg-white transition-colors hover:bg-purple-50/50">
+                  <td className="px-5 py-4 sm:px-6 font-bold text-slate-900">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-purple-600" />
+                      <span>{digitalTwinSetupItem.service}</span>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-center text-slate-600 sm:px-6 font-medium">
+                    {digitalTwinSetupItem.delivery}
+                  </td>
+                  <td className="px-5 py-4 text-right font-extrabold text-purple-700 sm:px-6 text-base sm:text-lg">
+                    {digitalTwinSetupItem.price}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Custom Plan Callout Box */}
+        <div className="rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-50 via-white to-pink-50 p-6 sm:p-8 text-center shadow-md">
+          <h4 className="text-lg font-bold text-slate-900 sm:text-xl">
+            Need a Custom Volume or Monthly Content Retainer?
+          </h4>
+          <p className="mx-auto mt-2 max-w-2xl text-xs sm:text-sm leading-relaxed text-slate-600">
+            We offer tailored enterprise production schedules, dedicated creative directors, and custom
+            AI pipelines for brands needing 30+ reels per month.
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <NeonButton href="#contact" variant="primary" size="sm">
+              Get Custom Quote
+            </NeonButton>
+            <a
+              href="https://wa.me/918177828748"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 shadow-sm transition-all hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700"
+            >
+              <MessageCircle className="h-4 w-4 text-[#25D366]" />
+              Chat with Production Team
+            </a>
+          </div>
         </div>
       </div>
     </Section>
@@ -2292,7 +2427,7 @@ export function DigitalTwin() {
             individual video.
           </p>
           <p className="mt-6 text-2xl font-bold text-gradient-brand md:text-3xl">
-            $299 One-Time Setup
+            $499 One-Time Setup
           </p>
           <div className="mt-6">
             <NeonButton href="#contact">Create My Digital Twin</NeonButton>
