@@ -2607,18 +2607,39 @@ export function UseCases() {
 }
 
 export function StrategyCall() {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const calendlyContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Inject Calendly embed script if not already present
-    const existingScript = document.querySelector(
-      'script[src="https://assets.calendly.com/assets/external/widget.js"]',
-    );
-    if (!existingScript) {
-      const script = document.createElement("script");
+    const scriptId = "calendly-widget-script";
+    let script = document.getElementById(scriptId) as HTMLScriptElement | null;
+
+    const initWidget = () => {
+      if (
+        typeof window !== "undefined" &&
+        (window as unknown as { Calendly?: { initInlineWidget: (opts: unknown) => void } }).Calendly &&
+        calendlyContainerRef.current
+      ) {
+        try {
+          calendlyContainerRef.current.innerHTML = "";
+          (window as unknown as { Calendly: { initInlineWidget: (opts: unknown) => void } }).Calendly.initInlineWidget({
+            url: `${calendlyUrl}?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`,
+            parentElement: calendlyContainerRef.current,
+          });
+        } catch {
+          // Keep fallback iframe intact on any error
+        }
+      }
+    };
+
+    if (!script) {
+      script = document.createElement("script");
+      script.id = scriptId;
       script.src = "https://assets.calendly.com/assets/external/widget.js";
       script.async = true;
+      script.onload = initWidget;
       document.head.appendChild(script);
+    } else {
+      initWidget();
     }
   }, []);
 
@@ -2635,7 +2656,7 @@ export function StrategyCall() {
         description="No commitment. No sales pitch. A real 30-minute conversation about your brand, your goals, and how we'd help you scale."
       />
 
-      <div ref={containerRef} className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-5xl">
         {/* Quick Contact Action Pills */}
         <div className="mb-8 flex flex-wrap items-center justify-center gap-3">
           <a
@@ -2673,14 +2694,21 @@ export function StrategyCall() {
 
           {/* Calendly Inline Widget Container */}
           <div className="relative w-full min-h-[700px] overflow-hidden rounded-2xl bg-slate-50/50">
-            <iframe
-              src={`${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
-              width="100%"
-              height="700"
-              frameBorder="0"
-              title="Select a Date & Time - Quickupp AI Studio"
-              className="h-[700px] w-full rounded-2xl border-0"
-            />
+            <div
+              ref={calendlyContainerRef}
+              className="calendly-inline-widget min-w-[320px] w-full"
+              data-url={`${calendlyUrl}?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
+              style={{ minWidth: "320px", height: "700px" }}
+            >
+              <iframe
+                src={`${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
+                width="100%"
+                height="700"
+                frameBorder="0"
+                title="Select a Date & Time - Strategy Call"
+                className="h-[700px] w-full rounded-2xl border-0"
+              />
+            </div>
           </div>
         </div>
       </div>
