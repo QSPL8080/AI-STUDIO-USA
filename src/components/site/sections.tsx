@@ -2311,7 +2311,10 @@ export function Deliverables() {
                 </span>
               </button>
               {open === i ? (
-                <div className="border-t border-slate-200 bg-slate-50/80 px-6 py-5">
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="border-t border-slate-200 bg-slate-50/80 px-6 py-5 select-text"
+                >
                   <ul className="grid gap-3 sm:grid-cols-2">
                     {item.items.map((line) => (
                       <li
@@ -3314,13 +3317,12 @@ export function Faq() {
           {faqs.map((faq, i) => (
             <div
               key={faq.question}
-              onMouseEnter={() => setOpen(i)}
-              onMouseLeave={() => setOpen(null)}
               className={`transition-colors duration-200 ${
                 open === i ? "bg-purple-50/40" : "hover:bg-slate-50/60"
               }`}
             >
               <button
+                type="button"
                 onClick={() => setOpen(open === i ? null : i)}
                 className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left text-sm font-semibold text-slate-900 transition-colors hover:text-purple-700 md:text-base cursor-pointer"
                 aria-expanded={open === i}
@@ -3333,7 +3335,10 @@ export function Faq() {
                 />
               </button>
               {open === i ? (
-                <div className="animate-in fade-in slide-in-from-top-1 duration-200 px-6 pb-5 pt-1 text-sm leading-relaxed text-slate-600">
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="animate-in fade-in slide-in-from-top-1 duration-200 px-6 pb-5 pt-1 text-sm leading-relaxed text-slate-600 select-text"
+                >
                   {faq.answer}
                 </div>
               ) : null}
