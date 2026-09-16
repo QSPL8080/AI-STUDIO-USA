@@ -1872,7 +1872,7 @@ export function WhyAiVideo() {
   }, []);
 
   return (
-    <Section id="why-ai" className="relative overflow-hidden bg-aura-diagonal-soft border-y border-purple-100/60">
+    <Section id="why-ai" className="relative overflow-hidden bg-background">
       {/* Dynamic Fluid Gradient Ribbon Waves Background */}
       <div className="pointer-events-none absolute inset-0 select-none overflow-hidden z-0">
         <svg
