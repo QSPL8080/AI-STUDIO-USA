@@ -2029,15 +2029,15 @@ export function Pricing() {
             <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
               Individual Service Pricing
             </h3>
-            <p className="mt-1 text-xs italic text-slate-500 sm:text-sm">
+            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
               Per-video rate for each service, billed individually.
             </p>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg backdrop-blur-xl">
+          <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm backdrop-blur-xl">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-xs font-bold uppercase tracking-wider text-white">
+                <tr className="border-b border-slate-200 bg-slate-50/90 text-xs font-bold uppercase tracking-wider text-slate-700">
                   <th className="px-5 py-3.5 sm:px-6">Service</th>
                   <th className="px-5 py-3.5 text-right sm:px-6 sm:text-left">Price</th>
                 </tr>
@@ -2046,8 +2046,8 @@ export function Pricing() {
                 {individualPricingList.map((item, idx) => (
                   <tr
                     key={item.service}
-                    className={`transition-colors hover:bg-purple-50/50 ${
-                      idx % 2 === 1 ? "bg-slate-50/60" : "bg-white"
+                    className={`transition-colors hover:bg-purple-50/40 ${
+                      idx % 2 === 1 ? "bg-slate-50/40" : "bg-white"
                     }`}
                   >
                     <td className="px-5 py-3.5 sm:px-6">
@@ -2059,13 +2059,13 @@ export function Pricing() {
                           </span>
                         ) : null}
                         {item.badge ? (
-                          <span className="w-fit rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700">
+                          <span className="w-fit rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700">
                             {item.badge}
                           </span>
                         ) : null}
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-right font-extrabold text-purple-700 sm:px-6 sm:text-left text-base">
+                    <td className="px-5 py-3.5 text-right font-bold text-purple-700 sm:px-6 sm:text-left text-base">
                       {item.price}
                     </td>
                   </tr>
@@ -2081,21 +2081,21 @@ export function Pricing() {
             <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
               Package Pricing
             </h3>
-            <p className="mt-1 text-xs italic text-slate-500 sm:text-sm">
+            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
               Bundle pricing by video volume and turnaround time. Prices shown are for the full package.
             </p>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl backdrop-blur-xl">
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm backdrop-blur-xl">
             {/* Horizontal Scroll Hint for Mobile */}
-            <div className="flex items-center justify-between bg-slate-50 px-4 py-2 text-[11px] font-medium text-slate-500 md:hidden border-b border-slate-200">
+            <div className="flex items-center justify-between bg-slate-50/90 px-4 py-2 text-[11px] font-medium text-slate-500 md:hidden border-b border-slate-200">
               <span>← Swipe horizontally to view all services →</span>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm">
                 <thead>
-                  <tr className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-[11px] font-bold uppercase tracking-wider text-white sm:text-xs">
+                  <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold uppercase tracking-wider text-slate-700 sm:text-xs">
                     <th className="px-4 py-3.5 sm:px-5">Package</th>
                     <th className="px-4 py-3.5 sm:px-5">Delivery</th>
                     <th className="px-3 py-3.5 text-center sm:px-4">Videos</th>
@@ -2110,10 +2110,10 @@ export function Pricing() {
                   {packagePricingTiers.map((tier, idx) => {
                     const isEven = idx % 2 === 1;
                     const rowBg = tier.popular
-                      ? "bg-purple-50/40 hover:bg-purple-100/50"
+                      ? "bg-purple-50/30 hover:bg-purple-50/60"
                       : isEven
-                      ? "bg-slate-50/60 hover:bg-purple-50/40"
-                      : "bg-white hover:bg-purple-50/40";
+                      ? "bg-slate-50/40 hover:bg-purple-50/30"
+                      : "bg-white hover:bg-purple-50/30";
 
                     return (
                       <tr key={tier.package} className={`transition-colors ${rowBg}`}>
@@ -2126,7 +2126,7 @@ export function Pricing() {
                                 className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
                                   tier.popular
                                     ? "bg-purple-600 text-white shadow-xs"
-                                    : "bg-slate-200 text-slate-700"
+                                    : "border border-purple-200 bg-purple-50 text-purple-700"
                                 }`}
                               >
                                 {tier.badge}
@@ -2142,33 +2142,33 @@ export function Pricing() {
 
                         {/* Videos Count */}
                         <td className="px-3 py-3.5 text-center font-bold text-slate-900 sm:px-4 whitespace-nowrap">
-                          <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-slate-100 px-1.5 text-xs">
+                          <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full border border-purple-100 bg-purple-50/80 px-2 text-xs font-bold text-purple-700">
                             {tier.videos}
                           </span>
                         </td>
 
                         {/* AI UGC */}
-                        <td className="px-4 py-3.5 text-center font-extrabold text-slate-900 sm:px-5 whitespace-nowrap">
+                        <td className="px-4 py-3.5 text-center font-bold text-slate-800 sm:px-5 whitespace-nowrap">
                           {tier.aiUgc}
                         </td>
 
                         {/* AI Avatar */}
-                        <td className="px-4 py-3.5 text-center font-extrabold text-slate-900 sm:px-5 whitespace-nowrap">
+                        <td className="px-4 py-3.5 text-center font-bold text-slate-800 sm:px-5 whitespace-nowrap">
                           {tier.aiAvatar}
                         </td>
 
                         {/* AI Cartoon */}
-                        <td className="px-4 py-3.5 text-center font-extrabold text-slate-900 sm:px-5 whitespace-nowrap">
+                        <td className="px-4 py-3.5 text-center font-bold text-slate-800 sm:px-5 whitespace-nowrap">
                           {tier.aiCartoon}
                         </td>
 
                         {/* Hyper-Realistic */}
-                        <td className="px-4 py-3.5 text-center font-extrabold text-purple-700 sm:px-5 whitespace-nowrap">
+                        <td className="px-4 py-3.5 text-center font-bold text-purple-700 sm:px-5 whitespace-nowrap">
                           {tier.hyperRealistic}
                         </td>
 
                         {/* Digital Twin */}
-                        <td className="px-4 py-3.5 text-center font-extrabold text-purple-700 sm:px-5 whitespace-nowrap">
+                        <td className="px-4 py-3.5 text-center font-bold text-purple-700 sm:px-5 whitespace-nowrap">
                           {tier.digitalTwin}
                         </td>
                       </tr>
@@ -2186,22 +2186,22 @@ export function Pricing() {
             <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
               Digital Twin Setup
             </h3>
-            <p className="mt-1 text-xs italic text-slate-500 sm:text-sm">
+            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
               One-time fee to build your Digital Twin before ordering Digital Twin videos.
             </p>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg backdrop-blur-xl">
+          <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm backdrop-blur-xl">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-xs font-bold uppercase tracking-wider text-white">
+                <tr className="border-b border-slate-200 bg-slate-50/90 text-xs font-bold uppercase tracking-wider text-slate-700">
                   <th className="px-5 py-3.5 sm:px-6">Service</th>
                   <th className="px-5 py-3.5 text-center sm:px-6">Delivery</th>
-                  <th className="px-5 py-3.5 text-right sm:px-6 text-white">Price</th>
+                  <th className="px-5 py-3.5 text-right sm:px-6 text-purple-700">Price</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="bg-white transition-colors hover:bg-purple-50/50">
+                <tr className="bg-white transition-colors hover:bg-purple-50/40">
                   <td className="px-5 py-4 sm:px-6 font-bold text-slate-900">
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-purple-600" />
@@ -2211,7 +2211,7 @@ export function Pricing() {
                   <td className="px-5 py-4 text-center text-slate-600 sm:px-6 font-medium">
                     {digitalTwinSetupItem.delivery}
                   </td>
-                  <td className="px-5 py-4 text-right font-extrabold text-purple-700 sm:px-6 text-base sm:text-lg">
+                  <td className="px-5 py-4 text-right font-bold text-purple-700 sm:px-6 text-base sm:text-lg">
                     {digitalTwinSetupItem.price}
                   </td>
                 </tr>
@@ -2221,7 +2221,7 @@ export function Pricing() {
         </div>
 
         {/* Custom Plan Callout Box */}
-        <div className="rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-50 via-white to-pink-50 p-6 sm:p-8 text-center shadow-md">
+        <div className="rounded-2xl border border-purple-200/80 bg-gradient-to-r from-purple-50/60 via-white to-pink-50/40 p-6 sm:p-8 text-center shadow-sm">
           <h4 className="text-lg font-bold text-slate-900 sm:text-xl">
             Need a Custom Volume or Monthly Content Retainer?
           </h4>
