@@ -2652,7 +2652,7 @@ export function StrategyCall() {
         description="No commitment. No sales pitch. A real 30-minute conversation about your brand, your goals, and how we'd help you scale."
       />
 
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-3xl">
         {/* Contact Action Pills */}
         <div className="mb-6 flex flex-col sm:flex-row items-center justify-center gap-3">
           <a
@@ -2676,30 +2676,28 @@ export function StrategyCall() {
         </div>
 
         {/* Schedule Subtitle */}
-        <div className="mb-3 flex items-center gap-2 px-1">
+        <div className="mb-3 flex items-center justify-center sm:justify-start gap-2 px-1">
           <MessageSquare className="h-3.5 w-3.5 text-slate-500" />
           <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
             Schedule a Strategy Call
           </span>
         </div>
 
-        {/* Clean Direct Calendly Container */}
-        <div className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div
-            ref={calendlyContainerRef}
-            className="calendly-inline-widget min-w-[320px] w-full"
-            data-url={`${calendlyUrl}?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
-            style={{ minWidth: "320px", height: "680px" }}
-          >
-            <iframe
-              src={`${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
-              width="100%"
-              height="680"
-              frameBorder="0"
-              title="Select a Date & Time - Strategy Call"
-              className="h-[680px] w-full border-0"
-            />
-          </div>
+        {/* Direct Calendly Container (No outer card background, slightly smaller compact size) */}
+        <div
+          ref={calendlyContainerRef}
+          className="calendly-inline-widget mx-auto w-full min-w-[320px] max-w-[700px]"
+          data-url={`${calendlyUrl}?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
+          style={{ minWidth: "320px", height: "640px" }}
+        >
+          <iframe
+            src={`${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
+            width="100%"
+            height="640"
+            frameBorder="0"
+            title="Select a Date & Time - Strategy Call"
+            className="h-[640px] w-full border-0"
+          />
         </div>
       </div>
     </Section>
