@@ -550,7 +550,7 @@ export function Hero() {
         id="hero-mobile-section"
         ref={mobileHeroRef}
         aria-hidden={isDesktop}
-        className="block lg:hidden relative overflow-hidden bg-background w-full min-h-[calc(100vh-60px)] px-4 sm:px-6 pb-12 flex flex-col items-center justify-center text-center"
+        className="block lg:hidden relative overflow-hidden bg-aura-diagonal-soft w-full min-h-[calc(100vh-60px)] px-4 sm:px-6 pb-12 flex flex-col items-center justify-center text-center"
         style={{ paddingTop: `${headerHeight + 20}px` }}
       >
         {/* Animated podcast-style geometric orbital watermarks & contour waves */}
@@ -653,11 +653,11 @@ export function Hero() {
         id="hero-scroll-track"
         ref={trackRef}
         aria-hidden={!isDesktop}
-        className="hidden lg:block relative w-full h-[280vh] bg-background"
+        className="hidden lg:block relative w-full h-[280vh] bg-aura-diagonal-soft"
       >
         <div
           ref={containerRef}
-          className="absolute top-0 left-0 w-full h-screen overflow-hidden bg-background pointer-events-none"
+          className="absolute top-0 left-0 w-full h-screen overflow-hidden bg-aura-diagonal-soft pointer-events-none"
         >
           {/* Animated podcast-style geometric orbital watermarks & contour waves */}
           <HeroOrbitalAtmosphere />
