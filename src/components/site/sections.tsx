@@ -47,6 +47,7 @@ import {
   industries,
   nav,
   pricingRows,
+  pricingColumns,
   processSteps,
   portfolioItems,
   samples,
@@ -2027,10 +2028,15 @@ export function Pricing() {
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-600">
                 <th className="px-5 py-4 sm:px-6">Service</th>
-                <th className="px-5 py-4 text-purple-700 sm:px-6">Single Reel</th>
-                <th className="px-5 py-4 sm:px-6">5 Reels</th>
-                <th className="px-5 py-4 sm:px-6">10 Reels</th>
-                <th className="px-5 py-4 sm:px-6">15 Reels</th>
+                {pricingColumns.map((col) => (
+                  <th key={col.label} className={`px-5 py-4 sm:px-6 ${col.label === "Single Video" ? "text-purple-700" : ""}`}>
+                    <div className="flex flex-col gap-1">
+                      <span>{col.label}</span>
+                      <span className="font-normal text-slate-500 text-[11px]">{col.videos} Video{col.videos === "1" ? "" : "s"}</span>
+                      <span className="font-normal text-slate-400 text-[10px]">{col.details}</span>
+                    </div>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
