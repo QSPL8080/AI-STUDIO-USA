@@ -1,14 +1,14 @@
-# Quickupp AI Studio — AI Video Production & Lead Generation Platform
+# Quickupp AI Studio USA — AI Video Production & Lead Generation Platform
 
-[![Live Website](https://img.shields.io/badge/Website-quickuppaistudio.com-blue?style=for-the-badge&logo=google-chrome)](https://quickuppaistudio.com)
-[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/QSPL8080/AI-STUDIO.git)
+[![Live Website](https://img.shields.io/badge/Website-quickuppaistudio.us-blue?style=for-the-badge&logo=google-chrome)](https://quickuppaistudio.us)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/QSPL8080/AI-STUDIO-USA.git)
 [![React 19](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
 [![TanStack Start](https://img.shields.io/badge/TanStack-Start-FF4154?style=for-the-badge&logo=tanstack)](https://tanstack.com/start)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind-CSS%20v4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com)
 [![Supabase](https://img.shields.io/badge/Database-Supabase%20%2F%20Postgres-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com)
-[![Hostinger](https://img.shields.io/badge/Host-Hostinger%20Cloud-673DE6?style=for-the-badge&logo=hostinger)](https://hostinger.com)
+[![Calendly](https://img.shields.io/badge/Scheduler-Calendly-006BFF?style=for-the-badge&logo=calendly)](https://calendly.com/qsaistudio/strategy-call)
 
-A premier, high-conversion marketing platform and built-in CRM Admin Lead Management Portal for **Quickupp AI Studio** — an agency producing AI UGC videos, AI avatars, cartoon animations, hyper-realistic cinematic reels, and digital twin clones for high-growth businesses, brands, and creators.
+A premier, high-conversion marketing platform and built-in CRM Admin Lead Management Portal for **Quickupp AI Studio (USA & Global)** — an agency producing AI UGC videos, AI avatars, cartoon animations, hyper-realistic cinematic reels, and digital twin clones for high-growth businesses, brands, and creators.
 
 ---
 
@@ -17,9 +17,10 @@ A premier, high-conversion marketing platform and built-in CRM Admin Lead Manage
 1. [Architecture & Tech Stack](#-architecture--tech-stack)
 2. [Advanced Hero Cinema Scroll Engine](#-advanced-hero-cinema-scroll-engine)
 3. [Key Website Features & Conversion Funnel](#-key-website-features--conversion-funnel)
-4. [Lead Capture & Instant Email Notification Engine](#-lead-capture--instant-email-notification-engine)
-5. [Dual Database Architecture (Supabase & PostgreSQL)](#-dual-database-architecture-supabase--postgresql)
-6. [Admin CRM Portal (`/admin`)](#-admin-crm-portal-admin)
+4. [Calendly Integration & Strategy Call Booking](#-calendly-integration--strategy-call-booking)
+5. [Lead Capture & Instant Email Notification Engine](#-lead-capture--instant-email-notification-engine)
+6. [Dual Database Architecture (Supabase & PostgreSQL)](#-dual-database-architecture-supabase--postgresql)
+7. [Admin CRM Portal (`/admin`)](#-admin-crm-portal-admin)
 7. [Project Directory Tree](#-project-directory-tree)
 8. [Environment Variables Setup](#-environment-variables-setup)
 9. [Database Schema](#-database-schema)
@@ -85,6 +86,17 @@ The landing page features a custom-engineered, GPU-accelerated **Cinema Scroll S
 
 ---
 
+## 📅 Calendly Integration & Strategy Call Booking
+
+The landing page features a direct Calendly scheduling integration (`src/components/site/sections.tsx` & `src/components/site/data.ts`):
+
+- **Calendly Endpoint:** [`https://calendly.com/qsaistudio/strategy-call`](https://calendly.com/qsaistudio/strategy-call)
+- **Inline Embedded Scheduling Widget:** Clients can browse available dates, select time slots, and schedule 30-minute discovery calls directly inside the website without leaving the page.
+- **Group / Multi-Invitee Support:** Configured for multi-attendee and group scheduling so multiple team members or clients can participate in the strategy meeting.
+- **Automated Host Notification & Calendar Sync:** Automatically notifies `qsaistudio@gmail.com`, creates Google Meet / Zoom links, and syncs directly with Google Calendar.
+
+---
+
 ## 📬 Lead Capture & Instant Email Notification Engine
 
 The application captures inquiries from two primary sources and syncs them automatically:
@@ -95,13 +107,13 @@ The application captures inquiries from two primary sources and syncs them autom
    - Recurs automatically every **5 minutes (300,000 ms)** for active sessions.
    - Form validation with instant lead capture and notification trigger.
 
-### Clean White Email Notification Template (`src/lib/email.ts`)
+### Branded Email Notification Template (`src/lib/email.ts`)
 Whenever a lead is submitted:
-- A clean, modern **pure white email notification** is instantly sent to `quickuppaistudio1@gmail.com`.
+- A clean, modern **pure white email notification with official Quickupp AI Studio branding and logo** is instantly dispatched to **`qsaistudio@gmail.com`** (with backup delivery to `quickuppaistudio1@gmail.com`).
 - **Instant Response Buttons Included:**
   - 🟢 **💬 WhatsApp Chat:** Opens WhatsApp chat directly with the client's phone number.
   - 🔵 **📞 Call Client:** Dials the client's phone number directly with 1 tap.
-- **Zero Spam Risk:** Sent securely via Gmail SMTP SSL port 465 using Google App Passwords.
+- **Zero Spam Risk:** Sent securely via Gmail SMTP SSL port 465 using Google App Passwords with multi-tier fallback delivery.
 
 ---
 
@@ -109,7 +121,7 @@ Whenever a lead is submitted:
 
 The database engine (`src/lib/db.ts`) provides full fault-tolerance:
 
-- **In Production (Hostinger Cloud):** Communicates with Supabase via HTTPS REST API (`SUPABASE_URL` + `SUPABASE_API_KEY`). This completely circumvents cloud firewall TCP port 5432 / 6543 blocking.
+- **In Production (Hostinger Cloud / Web Host):** Communicates with Supabase via HTTPS REST API (`SUPABASE_URL` + `SUPABASE_API_KEY`). This completely circumvents cloud firewall TCP port 5432 / 6543 blocking.
 - **In Local Development:** Direct connection pool to local PostgreSQL (`DATABASE_URL=postgres://postgres:8080@localhost:5432/ai_studio`).
 
 ---
@@ -118,12 +130,14 @@ The database engine (`src/lib/db.ts`) provides full fault-tolerance:
 
 An authenticated, mobile-responsive dashboard designed for real-time lead tracking and client management:
 
-- **Portal URL:** `https://quickuppaistudio.com/admin` (or `http://localhost:3000/admin`)
-- **Default Admin Email:** `admin@aistudio.com`
-- **Default Password:** `Admin@123`
+- **Portal URL:** `https://quickuppaistudio.us/admin` (or `http://localhost:3000/admin`)
+- **Authorized Admin Logins:**
+  - `qsaistudio@gmail.com` (Password: `Anay@0079`)
+  - `admin@aistudio.com` (Password: `Admin@123`)
 
 ### Features:
 - 📈 **Real-Time KPI Counters:** Total Leads, Contact Form count, Popup Modal count, and New Leads Today.
+- 🔔 **Audio Alerts & Live 10s Sync:** Instant audio chime and visual highlight when a new lead is received in real-time.
 - 🔍 **Instant Search & Multi-Filters:** Search by client name, business, phone, or email; filter by source category or lead status.
 - 🔄 **Lead Status Toggling:** Update leads to `New`, `Contacted`, `In Progress`, or `Closed` with real-time database sync.
 - 💬 **1-Click WhatsApp Client Reply:** Pre-fills client name and opens WhatsApp Web/App ready to send.
