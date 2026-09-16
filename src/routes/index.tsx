@@ -17,6 +17,7 @@ import {
   QuotePopupModal,
   Samples,
   Services,
+  StrategyCall,
   TrustStrip,
   UseCases,
   WhatsAppCtaSection,
@@ -86,6 +87,7 @@ function Index() {
         <DigitalTwin />
         <Industries />
         <UseCases />
+        <StrategyCall />
         <Process />
         <WhyUs />
         <Portfolio />

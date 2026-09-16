@@ -702,10 +702,14 @@ export const nav = [
   { label: "Services", href: "#services" },
   { label: "Pricing", href: "#pricing" },
   { label: "Portfolio", href: "#portfolio" },
+  { label: "Book Call", href: "#book-call" },
   { label: "How It Works", href: "#process" },
   { label: "FAQ", href: "#faq" },
   { label: "Contact", href: "#contact" },
 ];
+
+export const calendlyUrl = "https://calendly.com/quickuppaistudio/strategy-call";
+export const strategyCallEmail = "info@quickuppaistudio.us";
 
 export const footerTagline = "AI-Powered Videos. Built for Your Business.";
 export const footerDescription =
