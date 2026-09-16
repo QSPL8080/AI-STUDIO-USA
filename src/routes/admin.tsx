@@ -266,7 +266,13 @@ function AdminPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (emailInput === "admin@aistudio.com" && passwordInput === "Admin@123") {
+    const cleanEmail = emailInput.trim().toLowerCase();
+    const isValid =
+      (cleanEmail === "qsaistudio@gmail.com" && passwordInput === "Anay@0079") ||
+      (cleanEmail === "admin@aistudio.com" && passwordInput === "Admin@123") ||
+      (cleanEmail === "info@quickuppaistudio.us" && passwordInput === "Admin@123");
+
+    if (isValid) {
       setIsAuthenticated(true);
       localStorage.setItem("ai_studio_admin_auth", "true");
 

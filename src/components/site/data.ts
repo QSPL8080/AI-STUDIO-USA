@@ -708,7 +708,7 @@ export const nav = [
   { label: "Contact", href: "#contact" },
 ];
 
-export const calendlyUrl = "https://calendly.com/vexxorastudio/strategy-call";
+export const calendlyUrl = "https://calendly.com/qsaistudio/strategy-call";
 export const strategyCallEmail = "info@quickuppaistudio.us";
 
 export const footerTagline = "AI-Powered Videos. Built for Your Business.";

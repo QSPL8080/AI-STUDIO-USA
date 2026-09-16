@@ -14,7 +14,8 @@ export interface LeadEmailPayload {
   leadId?: string;
 }
 
-const NOTIFICATION_EMAIL = process.env.LEAD_NOTIFICATION_EMAIL || "quickuppaistudio1@gmail.com";
+const NOTIFICATION_EMAIL = process.env.LEAD_NOTIFICATION_EMAIL || "qsaistudio@gmail.com";
+const BACKUP_NOTIFICATION_EMAIL = "quickuppaistudio1@gmail.com";
 
 export async function sendLeadNotificationEmail(lead: LeadEmailPayload): Promise<{ success: boolean; error?: string }> {
   const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
@@ -189,6 +190,9 @@ export async function sendLeadNotificationEmail(lead: LeadEmailPayload): Promise
   <div class="wrapper">
     <div class="top-bar"></div>
     <div class="header">
+      <div style="margin-bottom: 12px;">
+        <img src="https://quickuppaistudio.us/images/logo.png" alt="Quickupp AI Studio" style="height: 38px; width: auto; display: block; border: 0;" />
+      </div>
       <div class="brand-pill">Quickupp AI Studio</div>
       <h1 class="title">🎯 New Lead Received</h1>
       <p class="subtitle">Source: <strong>${lead.source}</strong> &bull; Received: ${timestamp}</p>
