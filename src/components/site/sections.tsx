@@ -2683,23 +2683,21 @@ export function StrategyCall() {
           </span>
         </div>
 
-        {/* Compact Calendly Container with Zero Scrollbars */}
-        <div className="relative mx-auto w-full overflow-hidden">
+        {/* Compact Calendly Container with Hidden Scrollbar UI */}
+        <div className="relative mx-auto w-full">
           <div
             ref={calendlyContainerRef}
-            className="calendly-inline-widget mx-auto w-full min-w-[320px] max-w-[620px] overflow-hidden"
+            className="calendly-inline-widget mx-auto w-full min-w-[320px] max-w-[620px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             data-url={`${calendlyUrl}?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
-            style={{ minWidth: "320px", height: "620px", overflow: "hidden" }}
+            style={{ minWidth: "320px", height: "660px" }}
           >
             <iframe
               src={`${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
               width="100%"
-              height="620"
+              height="660"
               frameBorder="0"
-              scrolling="no"
               title="Select a Date & Time - Strategy Call"
-              className="h-[620px] w-full border-0 overflow-hidden"
-              style={{ overflow: "hidden" }}
+              className="h-[660px] w-full border-0 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             />
           </div>
         </div>
