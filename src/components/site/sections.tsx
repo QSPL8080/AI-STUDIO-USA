@@ -2652,7 +2652,7 @@ export function StrategyCall() {
         description="No commitment. No sales pitch. A real 30-minute conversation about your brand, your goals, and how we'd help you scale."
       />
 
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-[620px]">
         {/* Contact Action Pills */}
         <div className="mb-6 flex flex-col sm:flex-row items-center justify-center gap-3">
           <a
@@ -2683,21 +2683,25 @@ export function StrategyCall() {
           </span>
         </div>
 
-        {/* Direct Calendly Container (No outer card background, slightly smaller compact size) */}
-        <div
-          ref={calendlyContainerRef}
-          className="calendly-inline-widget mx-auto w-full min-w-[320px] max-w-[700px]"
-          data-url={`${calendlyUrl}?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
-          style={{ minWidth: "320px", height: "640px" }}
-        >
-          <iframe
-            src={`${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
-            width="100%"
-            height="640"
-            frameBorder="0"
-            title="Select a Date & Time - Strategy Call"
-            className="h-[640px] w-full border-0"
-          />
+        {/* Compact Calendly Container with Zero Scrollbars */}
+        <div className="relative mx-auto w-full overflow-hidden">
+          <div
+            ref={calendlyContainerRef}
+            className="calendly-inline-widget mx-auto w-full min-w-[320px] max-w-[620px] overflow-hidden"
+            data-url={`${calendlyUrl}?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
+            style={{ minWidth: "320px", height: "620px", overflow: "hidden" }}
+          >
+            <iframe
+              src={`${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
+              width="100%"
+              height="620"
+              frameBorder="0"
+              scrolling="no"
+              title="Select a Date & Time - Strategy Call"
+              className="h-[620px] w-full border-0 overflow-hidden"
+              style={{ overflow: "hidden" }}
+            />
+          </div>
         </div>
       </div>
     </Section>
