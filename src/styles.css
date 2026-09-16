@@ -139,9 +139,9 @@
 
 :root {
   --radius: 1rem;
-  --background: oklch(98.8% 0.003 260);
+  --background: oklch(97.8% 0.006 260);
   --foreground: oklch(18% 0.02 260);
-  --surface: oklch(96.5% 0.008 260);
+  --surface: oklch(94.8% 0.012 260);
   --card: oklch(100% 0 0);
   --card-foreground: oklch(18% 0.02 260);
   --popover: oklch(100% 0 0);
@@ -155,16 +155,16 @@
 
   --primary: var(--neon);
   --primary-foreground: var(--neon-foreground);
-  --secondary: oklch(96% 0.008 260);
+  --secondary: oklch(95% 0.01 260);
   --secondary-foreground: oklch(18% 0.02 260);
-  --muted: oklch(96% 0.008 260);
-  --muted-foreground: oklch(46% 0.02 260);
-  --accent: oklch(94% 0.025 310);
+  --muted: oklch(95% 0.01 260);
+  --muted-foreground: oklch(44% 0.02 260);
+  --accent: oklch(93% 0.03 310);
   --accent-foreground: oklch(25% 0.06 310);
   --destructive: oklch(58% 0.22 25);
   --destructive-foreground: oklch(99% 0 0);
-  --border: oklch(15% 0.02 260 / 0.1);
-  --input: oklch(15% 0.02 260 / 0.14);
+  --border: oklch(15% 0.02 260 / 0.12);
+  --input: oklch(15% 0.02 260 / 0.16);
   --ring: var(--neon);
   --chart-1: var(--neon-blue);
   --chart-2: oklch(58% 0.24 300);
