@@ -81,7 +81,7 @@ export function NeonButton({
     `inline-flex items-center justify-center rounded-lg font-semibold transition-all duration-200 cursor-pointer ${sizeClasses}`;
   const styles =
     variant === "call" || variant === "secondary"
-      ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/35 hover:brightness-110 active:scale-95"
+      ? "border border-purple-200/90 bg-gradient-to-r from-violet-100 via-purple-100 to-pink-100 text-purple-900 font-bold shadow-xs hover:from-violet-200 hover:via-purple-200 hover:to-pink-200 hover:border-purple-400 hover:text-purple-950 hover:shadow-md hover:shadow-purple-500/15 active:scale-95"
       : variant === "ghost"
       ? "border border-slate-300 bg-white text-slate-800 hover:border-purple-400 hover:text-purple-700 hover:bg-purple-50/60 shadow-xs active:scale-95"
       : "bg-gradient-brand text-white shadow-md glow-neon hover:brightness-110 active:scale-95";
