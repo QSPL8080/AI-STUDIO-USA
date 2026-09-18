@@ -157,7 +157,8 @@ AI STUDIO/
 │   ├── videos/                     # Faststart-optimized showcase videos
 │   │   ├── Hero-Showcase.mp4       # Hero showcase video with AAC audio
 │   │   ├── UGC Porfolio.mp4        # UGC video showcase reel
-│   │   └── Avtar Portfolio.mp4     # Avatar video showcase reel
+│   │   ├── Avtar Portfolio.mp4     # Avatar video showcase reel
+│   │   └── Jwellery Portfolio.mp4  # Jewellery & luxury cinematic showcase reel
 │   ├── images/                     # Hero banners and brand graphics
 │   │   ├── LOGO 1.png              # Header brand logo (optimized for light header background)
 │   │   ├── logo.png                # Footer brand logo (vibrant gradient + crisp white typography)
