@@ -3771,7 +3771,7 @@ export function QuotePopupModal() {
         </button>
 
         {submitted ? (
-          <div className="py-8 text-center space-y-3.5 animate-in fade-in zoom-in-95 duration-300">
+          <div className="py-6 text-center space-y-3.5 animate-in fade-in zoom-in-95 duration-300">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 border border-emerald-500/40 shadow-sm">
               <BadgeCheck className="h-7 w-7" />
             </div>
@@ -3780,11 +3780,19 @@ export function QuotePopupModal() {
               Your video inquiry has been received. Our team will review your requirements and reach
               out to you directly with a proposal.
             </p>
-            <div className="pt-2">
+            <div className="pt-2 flex flex-col gap-2">
+              <a
+                href="#book-call"
+                onClick={handleClose}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-purple-200/90 bg-gradient-to-r from-violet-100 via-purple-100 to-pink-100 py-2.5 text-xs sm:text-sm font-bold text-purple-900 shadow-xs transition-all hover:from-violet-200 hover:via-purple-200 hover:to-pink-200 hover:border-purple-400"
+              >
+                <Calendar className="h-4 w-4 text-purple-700" />
+                <span>Book a 15 Min Strategy Call Now</span>
+              </a>
               <button
                 type="button"
                 onClick={handleClose}
-                className="w-full rounded-full bg-gradient-brand py-2.5 text-sm font-semibold text-neon-foreground shadow-md hover:brightness-110 transition-all"
+                className="w-full rounded-lg bg-slate-100 border border-slate-200 py-2 text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-200 transition-colors"
               >
                 Done
               </button>
@@ -3807,6 +3815,28 @@ export function QuotePopupModal() {
               <p className="mt-1 text-xs text-slate-600 sm:text-sm">
                 Fill in your details below and our team will get in touch with a customized quote.
               </p>
+
+              {/* Attractive Call Highlight Banner */}
+              <div className="mt-3 flex items-center justify-between gap-2.5 rounded-lg border border-purple-200/90 bg-gradient-to-r from-violet-100 via-purple-50 to-pink-100 p-2.5 text-left shadow-xs">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                  </span>
+                  <div>
+                    <p className="text-[11px] font-bold text-purple-950 sm:text-xs">Prefer a live strategy call?</p>
+                    <p className="text-[10px] text-purple-700">Skip the wait & book a 1-on-1 call directly.</p>
+                  </div>
+                </div>
+                <a
+                  href="#book-call"
+                  onClick={handleClose}
+                  className="shrink-0 inline-flex items-center gap-1 rounded-md bg-gradient-brand px-2.5 py-1 text-[11px] font-bold text-white shadow-xs transition-all hover:brightness-110 active:scale-95"
+                >
+                  <Calendar className="h-3 w-3 text-white" />
+                  <span>Book Call</span>
+                </a>
+              </div>
             </div>
 
             {/* Form */}
@@ -4041,10 +4071,30 @@ export function QuotePopupModal() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-full bg-gradient-brand py-2.5 text-xs font-bold uppercase tracking-wider text-neon-foreground shadow-lg glow-neon transition-all hover:brightness-110 disabled:opacity-50 sm:py-3 sm:text-sm"
+                className="w-full rounded-lg bg-gradient-brand py-2.5 text-xs font-bold uppercase tracking-wider text-neon-foreground shadow-lg glow-neon transition-all hover:brightness-110 disabled:opacity-50 sm:py-3 sm:text-sm active:scale-95 cursor-pointer"
               >
                 {loading ? "Submitting..." : "Submit & Request Quote"}
               </button>
+
+              {/* Alternative Quick Booking Option */}
+              <div className="pt-0.5">
+                <div className="relative my-2 flex items-center justify-center">
+                  <div className="w-full border-t border-slate-200"></div>
+                  <span className="absolute bg-white px-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                    or
+                  </span>
+                </div>
+
+                <a
+                  href="#book-call"
+                  onClick={handleClose}
+                  className="group flex w-full items-center justify-center gap-2 rounded-lg border border-purple-200/90 bg-gradient-to-r from-violet-100 via-purple-100 to-pink-100 py-2 text-xs font-bold text-purple-900 shadow-xs transition-all hover:from-violet-200 hover:via-purple-200 hover:to-pink-200 hover:border-purple-400 active:scale-95 sm:text-sm"
+                >
+                  <Calendar className="h-3.5 w-3.5 text-purple-700 transition-transform duration-200 group-hover:scale-110" />
+                  <span>Book a 15 Min Strategy Call Directly</span>
+                  <span className="text-xs text-purple-600 font-bold transition-transform duration-200 group-hover:translate-x-0.5">→</span>
+                </a>
+              </div>
             </form>
           </>
         )}
