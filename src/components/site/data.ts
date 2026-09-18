@@ -702,7 +702,6 @@ export const nav = [
   { label: "Services", href: "#services" },
   { label: "Pricing", href: "#pricing" },
   { label: "Portfolio", href: "#portfolio" },
-  { label: "Book Call", href: "#book-call" },
   { label: "How It Works", href: "#process" },
   { label: "FAQ", href: "#faq" },
   { label: "Contact", href: "#contact" },
