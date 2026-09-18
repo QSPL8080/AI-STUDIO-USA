@@ -950,6 +950,14 @@ export function HeroOverview() {
                   : "opacity-0 translate-y-4 scale-95"
               }`}
             >
+              <NeonButton
+                href="#book-call"
+                variant="ghost"
+                className="text-xs sm:text-sm inline-flex items-center gap-1.5 group"
+              >
+                <Calendar className="h-3.5 w-3.5 text-purple-600 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                <span>Book a 15 min call</span>
+              </NeonButton>
               <NeonButton href="#contact" className="text-xs sm:text-sm">
                 Get Your AI Video Quote
               </NeonButton>
@@ -2008,6 +2016,22 @@ export function WhyAiVideo() {
             );
           })}
         </div>
+
+        {/* Action Buttons */}
+        <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-3">
+          <NeonButton
+            href="#book-call"
+            variant="ghost"
+            size="sm"
+            className="inline-flex items-center gap-1.5 whitespace-nowrap group"
+          >
+            <Calendar className="h-3.5 w-3.5 text-purple-600 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+            <span>Book a 15 min call</span>
+          </NeonButton>
+          <NeonButton href="#contact" variant="primary" size="sm">
+            Get AI Video Quote
+          </NeonButton>
+        </div>
       </div>
     </Section>
   );
@@ -2251,7 +2275,16 @@ export function Pricing() {
             We offer tailored enterprise production schedules, dedicated creative directors, and custom
             AI pipelines for brands needing 30+ reels per month.
           </p>
-          <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <div className="mt-5 flex flex-wrap justify-center items-center gap-3">
+            <NeonButton
+              href="#book-call"
+              variant="ghost"
+              size="sm"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap group"
+            >
+              <Calendar className="h-3.5 w-3.5 text-purple-600 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+              <span>Book a 15 min call</span>
+            </NeonButton>
             <NeonButton href="#contact" variant="primary" size="sm">
               Get Custom Quote
             </NeonButton>
@@ -2259,10 +2292,10 @@ export function Pricing() {
               href="https://wa.me/918177828748"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 shadow-sm transition-all hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs sm:text-sm font-semibold text-slate-800 shadow-xs transition-all hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 active:scale-95"
             >
               <MessageCircle className="h-4 w-4 text-[#25D366]" />
-              Chat with Production Team
+              <span>Chat with Production Team</span>
             </a>
           </div>
         </div>
@@ -3428,7 +3461,15 @@ export function Contact() {
             Studio can help you create professional video content for social media, advertising and
             brand communication.
           </p>
-          <div className="mt-7 flex flex-wrap justify-center gap-3">
+          <div className="mt-7 flex flex-wrap justify-center items-center gap-3">
+            <NeonButton
+              href="#book-call"
+              variant="ghost"
+              className="inline-flex items-center gap-1.5 group"
+            >
+              <Calendar className="h-3.5 w-3.5 text-purple-600 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+              <span>Book a 15 min call</span>
+            </NeonButton>
             <NeonButton href="#contact">Get Your AI Video Quote</NeonButton>
             <NeonButton href="#samples" variant="ghost">
               View Video Samples
