@@ -99,7 +99,7 @@ export function TermsPage() {
           </Link>
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-secondary/50 px-4 py-1.5 text-xs font-semibold text-foreground transition-all hover:border-neon hover:text-neon sm:text-sm"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border/80 bg-secondary/50 px-4 py-1.5 text-xs font-semibold text-foreground transition-all hover:border-neon hover:text-neon sm:text-sm"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Back to Home</span>

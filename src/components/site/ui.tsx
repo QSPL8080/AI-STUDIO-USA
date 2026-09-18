@@ -78,10 +78,10 @@ export function NeonButton({
       ? "px-8 py-3.5 text-base"
       : "px-6 py-3 text-sm";
   const base =
-    `inline-flex items-center justify-center rounded-xl font-semibold transition-all duration-200 cursor-pointer ${sizeClasses}`;
+    `inline-flex items-center justify-center rounded-lg font-semibold transition-all duration-200 cursor-pointer ${sizeClasses}`;
   const styles =
     variant === "ghost"
-      ? "border border-slate-300 bg-white text-slate-800 hover:border-purple-600 hover:text-purple-600 hover:bg-purple-50/40 shadow-xs active:scale-95"
+      ? "border border-purple-200/90 bg-gradient-to-b from-white to-purple-50/50 text-slate-800 shadow-xs hover:border-purple-400 hover:text-purple-700 hover:bg-purple-100/60 hover:shadow-sm active:scale-95"
       : "bg-gradient-brand text-white shadow-md glow-neon hover:brightness-110 active:scale-95";
   return (
     <a href={href} className={`${base} ${styles} ${className}`}>

@@ -131,14 +131,15 @@ export function Header() {
           </nav>
 
           {/* Right CTA */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <NeonButton
               href="#book-call"
               variant="ghost"
               size="sm"
-              className="hidden md:inline-flex whitespace-nowrap"
+              className="hidden md:inline-flex items-center gap-1.5 whitespace-nowrap group"
             >
-              Book a 15 min call
+              <Calendar className="h-3.5 w-3.5 text-purple-600 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+              <span>Book a 15 min call</span>
             </NeonButton>
 
             <NeonButton
@@ -154,7 +155,7 @@ export function Header() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-800 transition-colors hover:border-purple-400 hover:text-purple-600 lg:hidden"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-800 transition-colors hover:border-purple-400 hover:text-purple-600 lg:hidden"
               aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
               aria-expanded={mobileMenuOpen}
             >
@@ -175,7 +176,7 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700"
+                  className="flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700"
                 >
                   <span>{item.label}</span>
                   <span className="text-xs text-purple-600">→</span>
@@ -186,14 +187,15 @@ export function Header() {
                 <a
                   href="#book-call"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-800 shadow-xs transition-colors hover:border-purple-500 hover:text-purple-700 hover:bg-purple-50/40"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-purple-200/90 bg-gradient-to-b from-white to-purple-50/50 py-2.5 text-sm font-semibold text-slate-800 shadow-xs transition-colors hover:border-purple-400 hover:text-purple-700 hover:bg-purple-100/60"
                 >
-                  Book a 15 min call
+                  <Calendar className="h-4 w-4 text-purple-600 shrink-0" />
+                  <span>Book a 15 min call</span>
                 </a>
                 <a
                   href="#contact"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex w-full items-center justify-center rounded-xl bg-gradient-brand py-2.5 text-sm font-bold text-white shadow-md hover:brightness-110"
+                  className="flex w-full items-center justify-center rounded-lg bg-gradient-brand py-2.5 text-sm font-bold text-white shadow-md hover:brightness-110"
                 >
                   Get AI Video Quote
                 </a>
@@ -202,7 +204,7 @@ export function Header() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-sm font-semibold text-slate-800 transition-colors hover:border-purple-400 hover:text-purple-700"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 py-2.5 text-sm font-semibold text-slate-800 transition-colors hover:border-purple-400 hover:text-purple-700"
                 >
                   <MessageCircle className="h-4 w-4 text-[#25D366]" />
                   Chat on WhatsApp
