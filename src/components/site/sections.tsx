@@ -134,11 +134,11 @@ export function Header() {
           <div className="flex items-center gap-2 sm:gap-2.5">
             <NeonButton
               href="#book-call"
-              variant="ghost"
+              variant="call"
               size="sm"
               className="hidden md:inline-flex items-center gap-1.5 whitespace-nowrap group"
             >
-              <Calendar className="h-3.5 w-3.5 text-purple-600 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+              <Calendar className="h-3.5 w-3.5 text-white/95 shrink-0 transition-transform duration-200 group-hover:scale-110" />
               <span>Book a 15 min call</span>
             </NeonButton>
 
@@ -187,9 +187,9 @@ export function Header() {
                 <a
                   href="#book-call"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-purple-200/90 bg-gradient-to-b from-white to-purple-50/50 py-2.5 text-sm font-semibold text-slate-800 shadow-xs transition-colors hover:border-purple-400 hover:text-purple-700 hover:bg-purple-100/60"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-500/25 transition-all hover:brightness-110 active:scale-95"
                 >
-                  <Calendar className="h-4 w-4 text-purple-600 shrink-0" />
+                  <Calendar className="h-4 w-4 text-white/95 shrink-0" />
                   <span>Book a 15 min call</span>
                 </a>
                 <a
@@ -952,10 +952,10 @@ export function HeroOverview() {
             >
               <NeonButton
                 href="#book-call"
-                variant="ghost"
+                variant="call"
                 className="text-xs sm:text-sm inline-flex items-center gap-1.5 group"
               >
-                <Calendar className="h-3.5 w-3.5 text-purple-600 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                <Calendar className="h-3.5 w-3.5 text-white/95 shrink-0 transition-transform duration-200 group-hover:scale-110" />
                 <span>Book a 15 min call</span>
               </NeonButton>
               <NeonButton href="#contact" className="text-xs sm:text-sm">
@@ -2021,11 +2021,11 @@ export function WhyAiVideo() {
         <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-3">
           <NeonButton
             href="#book-call"
-            variant="ghost"
+            variant="call"
             size="sm"
             className="inline-flex items-center gap-1.5 whitespace-nowrap group"
           >
-            <Calendar className="h-3.5 w-3.5 text-purple-600 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+            <Calendar className="h-3.5 w-3.5 text-white/95 shrink-0 transition-transform duration-200 group-hover:scale-110" />
             <span>Book a 15 min call</span>
           </NeonButton>
           <NeonButton href="#contact" variant="primary" size="sm">
@@ -2278,11 +2278,11 @@ export function Pricing() {
           <div className="mt-5 flex flex-wrap justify-center items-center gap-3">
             <NeonButton
               href="#book-call"
-              variant="ghost"
+              variant="call"
               size="sm"
               className="inline-flex items-center gap-1.5 whitespace-nowrap group"
             >
-              <Calendar className="h-3.5 w-3.5 text-purple-600 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+              <Calendar className="h-3.5 w-3.5 text-white/95 shrink-0 transition-transform duration-200 group-hover:scale-110" />
               <span>Book a 15 min call</span>
             </NeonButton>
             <NeonButton href="#contact" variant="primary" size="sm">
@@ -3464,10 +3464,10 @@ export function Contact() {
           <div className="mt-7 flex flex-wrap justify-center items-center gap-3">
             <NeonButton
               href="#book-call"
-              variant="ghost"
+              variant="call"
               className="inline-flex items-center gap-1.5 group"
             >
-              <Calendar className="h-3.5 w-3.5 text-purple-600 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+              <Calendar className="h-3.5 w-3.5 text-white/95 shrink-0 transition-transform duration-200 group-hover:scale-110" />
               <span>Book a 15 min call</span>
             </NeonButton>
             <NeonButton href="#contact">Get Your AI Video Quote</NeonButton>
