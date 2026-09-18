@@ -139,7 +139,7 @@ export function Header() {
               className="hidden md:inline-flex items-center gap-1.5 whitespace-nowrap group"
             >
               <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-              <span>Book a 15 min call</span>
+              <span>Book a 30 min call</span>
             </NeonButton>
 
             <NeonButton
@@ -190,7 +190,7 @@ export function Header() {
                   className="flex w-full items-center justify-center gap-2 rounded-lg border border-purple-200/90 bg-gradient-to-r from-violet-100 via-purple-100 to-pink-100 py-2.5 text-sm font-bold text-purple-900 shadow-xs transition-all hover:from-violet-200 hover:via-purple-200 hover:to-pink-200 hover:border-purple-400 active:scale-95"
                 >
                   <Calendar className="h-4 w-4 text-purple-700 shrink-0" />
-                  <span>Book a 15 min call</span>
+                  <span>Book a 30 min call</span>
                 </a>
                 <a
                   href="#contact"
@@ -956,7 +956,7 @@ export function HeroOverview() {
                 className="text-xs sm:text-sm inline-flex items-center gap-1.5 group"
               >
                 <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-                <span>Book a 15 min call</span>
+                <span>Book a 30 min call</span>
               </NeonButton>
               <NeonButton href="#contact" className="text-xs sm:text-sm">
                 Get Your AI Video Quote
@@ -2026,7 +2026,7 @@ export function WhyAiVideo() {
             className="inline-flex items-center gap-1.5 whitespace-nowrap group"
           >
             <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-            <span>Book a 15 min call</span>
+            <span>Book a 30 min call</span>
           </NeonButton>
           <NeonButton href="#contact" variant="primary" size="sm">
             Get AI Video Quote
@@ -2283,7 +2283,7 @@ export function Pricing() {
               className="inline-flex items-center gap-1.5 whitespace-nowrap group"
             >
               <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-              <span>Book a 15 min call</span>
+              <span>Book a 30 min call</span>
             </NeonButton>
             <NeonButton href="#contact" variant="primary" size="sm">
               Get Custom Quote
@@ -3468,7 +3468,7 @@ export function Contact() {
               className="inline-flex items-center gap-1.5 group"
             >
               <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-              <span>Book a 15 min call</span>
+              <span>Book a 30 min call</span>
             </NeonButton>
             <NeonButton href="#contact">Get Your AI Video Quote</NeonButton>
             <NeonButton href="#samples" variant="ghost">
@@ -3787,7 +3787,7 @@ export function QuotePopupModal() {
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-purple-200/90 bg-gradient-to-r from-violet-100 via-purple-100 to-pink-100 py-2.5 text-xs sm:text-sm font-bold text-purple-900 shadow-xs transition-all hover:from-violet-200 hover:via-purple-200 hover:to-pink-200 hover:border-purple-400"
               >
                 <Calendar className="h-4 w-4 text-purple-700" />
-                <span>Book a 15 Min Strategy Call Now</span>
+                <span>Book a 30 Min Strategy Call Now</span>
               </a>
               <button
                 type="button"
@@ -4091,7 +4091,7 @@ export function QuotePopupModal() {
                   className="group flex w-full items-center justify-center gap-2 rounded-lg border border-purple-200/90 bg-gradient-to-r from-violet-100 via-purple-100 to-pink-100 py-2 text-xs font-bold text-purple-900 shadow-xs transition-all hover:from-violet-200 hover:via-purple-200 hover:to-pink-200 hover:border-purple-400 active:scale-95 sm:text-sm"
                 >
                   <Calendar className="h-3.5 w-3.5 text-purple-700 transition-transform duration-200 group-hover:scale-110" />
-                  <span>Book a 15 Min Strategy Call Directly</span>
+                  <span>Book a 30 Min Strategy Call Directly</span>
                   <span className="text-xs text-purple-600 font-bold transition-transform duration-200 group-hover:translate-x-0.5">→</span>
                 </a>
               </div>
