@@ -707,8 +707,8 @@ export const nav = [
   { label: "Contact", href: "#contact" },
 ];
 
-export const calendlyUrl = "https://calendly.com/qsaistudio/strategy-call";
-export const strategyCallEmail = "info@quickuppaistudio.us";
+export const calendlyUrl = "https://calendly.com/qsaistudio/30min";
+export const strategyCallEmail = "qsaistudio@gmail.com";
 
 export const footerTagline = "AI-Powered Videos. Built for Your Business.";
 export const footerDescription =
