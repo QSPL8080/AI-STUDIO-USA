@@ -67,7 +67,7 @@ The landing page features a custom-engineered, GPU-accelerated **Cinema Scroll S
 - **Locked Cinema Hold (`65% -> 100% scroll`):** The video remains **100% locked at full screen** while the user continues scrolling, preventing the next section from cutting the viewing experience short prematurely.
 
 ### 4. Interactive Audio & Voice Controls
-- Features `/videos/Hero-Showcase.mp4?v=1` with full-fidelity AAC audio and faststart metadata.
+- Features `/videos/Hero Video.mp4` with full-fidelity AAC audio and faststart metadata.
 - **Audio Enabled by Default:** Configured with audio enabled (`muted={false}`) by default.
 - **Intelligent Autoplay Fallback:** If browser security blocks unmuted autoplay before user engagement, it seamlessly unmutes audio upon first user interaction (touch, click, or scroll).
 - **Interactive Audio Controls:** Includes a floating glassmorphic **"Voice Active" / "Unmute Voice"** button (`Volume2` / `VolumeX`) and click-to-toggle interaction directly on the video card.
@@ -155,7 +155,7 @@ AI STUDIO/
 │       └── deploy.yml              # CI/CD deployment workflow
 ├── public/
 │   ├── videos/                     # Faststart-optimized showcase videos
-│   │   ├── Hero-Showcase.mp4       # Hero showcase video with AAC audio
+│   │   ├── Hero Video.mp4          # Hero showcase video with AAC audio
 │   │   ├── UGC Porfolio.mp4        # UGC video showcase reel
 │   │   ├── Avtar Portfolio.mp4     # Avatar video showcase reel
 │   │   └── Jwellery Portfolio.mp4  # Jewellery & luxury cinematic showcase reel
