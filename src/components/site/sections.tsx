@@ -3655,13 +3655,17 @@ export function Footer() {
         {/* Bottom Legal & Copyright Bar */}
         <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-800 pt-4 pb-2 text-center text-xs text-slate-500 sm:flex-row">
           <p>{footerCopyright}</p>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-center">
             <a href="/privacy-policy" className="hover:text-neon transition-colors">
               Privacy Policy
             </a>
             <span>•</span>
             <a href="/terms" className="hover:text-neon transition-colors">
               Terms & Conditions
+            </a>
+            <span>•</span>
+            <a href="/cookie-policy" className="hover:text-neon transition-colors">
+              Cookie Policy
             </a>
           </div>
         </div>
@@ -4066,6 +4070,50 @@ export function QuotePopupModal() {
                   placeholder="Any specific duration, language, script ideas..."
                   className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none sm:text-sm"
                 />
+              </div>
+
+              {/* Legal Terms & Consent Checkbox */}
+              <div className="flex items-start gap-2 pt-0.5 pb-0.5">
+                <input
+                  type="checkbox"
+                  id="modalConsent"
+                  name="consent"
+                  required
+                  className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer accent-purple-600 shrink-0"
+                />
+                <label
+                  htmlFor="modalConsent"
+                  className="text-[11px] text-slate-600 leading-snug cursor-pointer select-none"
+                >
+                  I agree to the{" "}
+                  <a
+                    href="/privacy-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-600 font-medium underline hover:text-purple-800"
+                  >
+                    Privacy Policy
+                  </a>
+                  ,{" "}
+                  <a
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-600 font-medium underline hover:text-purple-800"
+                  >
+                    Terms &amp; Conditions
+                  </a>
+                  , and{" "}
+                  <a
+                    href="/cookie-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-600 font-medium underline hover:text-purple-800"
+                  >
+                    Cookie Policy
+                  </a>
+                  .
+                </label>
               </div>
 
               <button
