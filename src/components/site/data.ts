@@ -45,10 +45,10 @@ export const samples = [
 
 export const portfolioItems = [
   {
-    industry: "3D Character Animation",
+    industry: "AI Creative Showcase",
     description:
-      "Expressive 3D character animation and storytelling reel for creative brands and entertainment.",
-    videoUrl: "/videos/Cartoon%20Portfolio.mp4?v=3",
+      "High-impact AI video production and brand storytelling reel crafted for viral engagement and conversions.",
+    videoUrl: "/videos/Portfolio 1.mp4",
   },
   {
     industry: "D2C & Consumer Brands",
@@ -74,10 +74,10 @@ export const portfolioItems = [
     videoUrl: "/videos/Digital%20Twin%20Sample.mp4?v=3",
   },
   {
-    industry: "AI Video Production",
+    industry: "Cinematic AI Production",
     description:
-      "Professional AI-powered video production reel showcasing cinematic quality and brand storytelling.",
-    videoUrl: "/videos/Portflio%206.mp4?v=3",
+      "Professional AI-powered video production reel showcasing premium cinematic quality and visual excellence.",
+    videoUrl: "/videos/Portfolio 2.mp4",
   },
 ];
 
