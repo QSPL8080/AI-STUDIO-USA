@@ -849,14 +849,14 @@
 }
 
 .assurix-btn-green {
-  background-color: #3b742a;
+  background-color: #001d28;
   color: #ffffff;
   transition: all 0.25s ease;
 }
 
 .assurix-btn-green:hover {
-  background-color: #316223;
-  box-shadow: 0 10px 25px -5px rgba(59, 116, 42, 0.4);
+  background-color: #0f172a;
+  box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.4);
 }
 
 @keyframes assurixNumberTrain {
