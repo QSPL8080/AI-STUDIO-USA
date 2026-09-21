@@ -24,9 +24,9 @@ export const samples = [
   },
   {
     format: "Hyper-Realistic",
-    industry: "Jewellery & Luxury",
-    description: "Cinematic product advertisement for a luxury jewellery collection.",
-    videoUrl: "/videos/Hyper%20Realistic%20Sample.mp4?v=2",
+    industry: "Luxury Cosmetics & Beauty",
+    description: "Cinematic 3D hyper-realistic product commercial showcasing DIOR Addict Lip Maximizer with studio lighting and macro details.",
+    videoUrl: "/videos/Hyper%20Realistic%20Sample.mp4",
   },
   {
     format: "AI Cartoon",
@@ -45,39 +45,40 @@ export const samples = [
 
 export const portfolioItems = [
   {
-    industry: "AI Creative Showcase",
+    industry: "Skincare & Beauty",
     description:
-      "High-impact AI video production and brand storytelling reel crafted for viral engagement and conversions.",
+      "Authentic creator-style morning routine and product review for Rhode Peptide Glazing Fluid.",
     videoUrl: "/videos/Portfolio 1.mp4",
   },
   {
-    industry: "D2C & Consumer Brands",
+    industry: "Dermatological Skincare",
     description:
-      "Authentic creator-led AI UGC product review and demonstration reel designed for high conversions.",
-    videoUrl: "/videos/UGC%20Porfolio.mp4?v=3",
+      "Engaging creator-led daily skincare hydration routine featuring CeraVe Moisturizing Cream.",
+    videoUrl: "/videos/Portfolio 2.mp4",
   },
   {
-    industry: "Interior Design & Architecture",
+    industry: "Luxury Cosmetics",
     description:
-      "High-impact AI avatar presenter reel showcasing 360° growth solutions and premium client acquisition for interior designers.",
-    videoUrl: "/videos/Avtar%20Portfolio.mp4?v=3",
+      "Hyper-realistic cinematic product showcase and close-up lip glow commercial for Dior.",
+    videoUrl: "/videos/Portfolio 3.mp4",
   },
   {
-    industry: "Jewellery & Luxury",
-    description: "Cinematic product advertisement for a luxury jewellery collection.",
-    videoUrl: "/videos/Jwellery%20Portfolio.mp4?v=1",
+    industry: "Fine Jewellery & Luxury",
+    description:
+      "Cinematic lifestyle and transition product commercial for Mejuri Fine Gold Jewellery.",
+    videoUrl: "/videos/Portfolio 4.mp4",
   },
   {
-    industry: "Digital Twin",
+    industry: "Fashion & Apparel",
+    description:
+      "Dynamic fashion lookbook showcasing 3 distinct day-to-night styles with SKIMS Cami Bodysuit.",
+    videoUrl: "/videos/Portfolio 5.mp4",
+  },
+  {
+    industry: "Digital Twin & Executive",
     description:
       "Founder-led brand update reel powered by a hyper-realistic digital twin — no camera, no studio needed.",
-    videoUrl: "/videos/Digital%20Twin%20Sample.mp4?v=3",
-  },
-  {
-    industry: "Cinematic AI Production",
-    description:
-      "Professional AI-powered video production reel showcasing premium cinematic quality and visual excellence.",
-    videoUrl: "/videos/Portfolio 2.mp4",
+    videoUrl: "/videos/Digital%20Twin%20Sample.mp4",
   },
 ];
 
