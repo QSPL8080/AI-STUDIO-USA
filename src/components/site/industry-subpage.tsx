@@ -44,39 +44,39 @@ import {
   QuotePopupModal,
 } from "./sections";
 
-// Assurix SVG line icon renderer
-function renderAssurixIcon(iconName: string, className = "h-7 w-7") {
+// Assurix line icons
+function renderAssurixIcon(iconName: string, className = "h-8 w-8") {
   switch (iconName) {
     case "Stethoscope":
-      return <Stethoscope className={className} strokeWidth={1.75} />;
+      return <Stethoscope className={className} strokeWidth={1.5} />;
     case "Briefcase":
-      return <Briefcase className={className} strokeWidth={1.75} />;
+      return <Briefcase className={className} strokeWidth={1.5} />;
     case "Cpu":
-      return <Cpu className={className} strokeWidth={1.75} />;
+      return <Cpu className={className} strokeWidth={1.5} />;
     case "Building2":
-      return <Building2 className={className} strokeWidth={1.75} />;
+      return <Building2 className={className} strokeWidth={1.5} />;
     case "Compass":
-      return <Compass className={className} strokeWidth={1.75} />;
+      return <Compass className={className} strokeWidth={1.5} />;
     case "Wrench":
-      return <Wrench className={className} strokeWidth={1.75} />;
+      return <Wrench className={className} strokeWidth={1.5} />;
     case "GraduationCap":
-      return <GraduationCap className={className} strokeWidth={1.75} />;
+      return <GraduationCap className={className} strokeWidth={1.5} />;
     case "ShoppingBag":
-      return <ShoppingBag className={className} strokeWidth={1.75} />;
+      return <ShoppingBag className={className} strokeWidth={1.5} />;
     case "Home":
-      return <Home className={className} strokeWidth={1.75} />;
+      return <Home className={className} strokeWidth={1.5} />;
     case "UserCheck":
-      return <UserCheck className={className} strokeWidth={1.75} />;
+      return <UserCheck className={className} strokeWidth={1.5} />;
     case "ShieldCheck":
-      return <ShieldCheck className={className} strokeWidth={1.75} />;
+      return <ShieldCheck className={className} strokeWidth={1.5} />;
     case "Sparkles":
-      return <Sparkles className={className} strokeWidth={1.75} />;
+      return <Sparkles className={className} strokeWidth={1.5} />;
     case "Zap":
-      return <Zap className={className} strokeWidth={1.75} />;
+      return <Zap className={className} strokeWidth={1.5} />;
     case "Scale":
-      return <Scale className={className} strokeWidth={1.75} />;
+      return <Scale className={className} strokeWidth={1.5} />;
     default:
-      return <Sparkles className={className} strokeWidth={1.75} />;
+      return <Sparkles className={className} strokeWidth={1.5} />;
   }
 }
 
@@ -86,7 +86,6 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
   const [isMuted, setIsMuted] = useState(true);
   const [showReplay, setShowReplay] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
-  const [useVideo, setUseVideo] = useState(Boolean(data.mediaVideoUrl));
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -129,66 +128,59 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
   };
 
   return (
-    <div id="top" className="min-h-screen w-full overflow-x-clip bg-[#f4f7f9] text-[#0f172a] selection:bg-purple-600 selection:text-white font-sans antialiased">
-      {/* Universal Navigation Header */}
+    <div id="top" className="min-h-screen w-full overflow-x-clip bg-[#f4f5f5] text-[#001d28] selection:bg-[#0b7b8b] selection:text-white font-lexend antialiased">
+      {/* Universal Header with Assurix Dropdown */}
       <Header />
 
       <main id="main-content" className="pt-20 lg:pt-24">
         {/* ========================================================================= */}
         {/* ASSURIX SECTION 1: HERO V7 (Screenshot 2 exact replica) */}
         {/* ========================================================================= */}
-        <section className="relative bg-[#f4f7f9] pt-12 pb-20 md:pt-16 md:pb-24 border-b border-slate-200/60">
+        <section className="relative bg-[#f4f5f5] pt-14 pb-20 md:pt-18 md:pb-28">
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
             {/* Breadcrumb Navigation */}
-            <div className="mb-6 flex items-center gap-2 text-xs font-semibold text-slate-500">
-              <Link to="/" className="hover:text-purple-600 transition-colors">
+            <div className="mb-6 flex items-center gap-2 text-xs font-semibold text-[#6c6c6c]">
+              <Link to="/" className="hover:text-[#0b7b8b] transition-colors">
                 Home
               </Link>
               <span>/</span>
-              <Link to="/industries" className="hover:text-purple-600 transition-colors">
+              <Link to="/industries" className="hover:text-[#0b7b8b] transition-colors">
                 Industries
               </Link>
               <span>/</span>
-              <span className="text-purple-700 font-bold">{data.name}</span>
+              <span className="text-[#0b7b8b] font-bold">{data.name}</span>
             </div>
 
             {/* Split Hero Layout */}
             <div className="grid items-center gap-10 lg:grid-cols-12 lg:gap-14">
               {/* Left Column: Heading + Subtitle + Action buttons */}
               <div className="lg:col-span-7">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1 text-xs font-bold text-purple-700 shadow-xs border border-purple-100 mb-4">
-                  <span className="h-2 w-2 rounded-full bg-purple-600 animate-pulse" />
-                  <span>AI Video Studio • {data.shortName}</span>
-                </div>
-
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.2rem] font-extrabold tracking-tight text-[#0f172a] leading-[1.12]">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-bold tracking-tight text-[#001d28] leading-[1.14]">
                   {data.heroHeading}{" "}
-                  <span className="bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 bg-clip-text text-transparent">
+                  <span className="text-[#0b7b8b]">
                     {data.heroHighlight}
                   </span>
                 </h1>
 
-                <p className="mt-5 text-base sm:text-lg leading-relaxed text-slate-600 max-w-xl">
+                <p className="mt-5 text-base sm:text-lg leading-relaxed text-[#2c436b] max-w-xl">
                   {data.heroSubheading}
                 </p>
 
                 <div className="mt-8 flex flex-wrap items-center gap-3.5">
-                  <NeonButton
+                  <a
                     href="#contact"
-                    variant="primary"
-                    size="md"
-                    className="shadow-md"
+                    className="assurix-btn-green inline-flex items-center justify-center rounded-xl px-7 py-3.5 text-sm font-semibold shadow-md active:scale-95"
                   >
                     Get {data.shortName} Video Quote
-                  </NeonButton>
+                  </a>
 
                   <NeonButton
                     href={calendlyUrl}
                     variant="call"
                     size="md"
-                    className="group"
+                    className="group rounded-xl border border-[#bfc8cc] bg-white text-[#001d28] hover:border-[#0b7b8b]"
                   >
-                    <Calendar className="h-4 w-4 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                    <Calendar className="h-4 w-4 text-[#0b7b8b] shrink-0 transition-transform duration-200 group-hover:scale-110" />
                     <span>Book 30 min call</span>
                   </NeonButton>
 
@@ -196,7 +188,7 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
                     href="https://wa.me/918177828748"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:border-[#25D366] hover:text-[#25D366]"
+                    className="inline-flex items-center gap-2 rounded-xl border border-[#bfc8cc] bg-white px-4 py-3 text-xs font-semibold text-[#001d28] shadow-xs transition-all hover:border-[#25D366] hover:text-[#25D366]"
                   >
                     <MessageCircle className="h-4 w-4 text-[#25D366]" />
                     <span>WhatsApp</span>
@@ -206,16 +198,14 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
 
               {/* Right Column: Assurix Screenshot 2 Deep Accent Stat Card */}
               <div className="lg:col-span-5">
-                <div className="rounded-[2.2rem] bg-gradient-to-b from-[#130f2c] via-[#1a143b] to-[#0c081c] p-8 md:p-10 text-white shadow-2xl border border-purple-900/40 relative overflow-hidden">
-                  <div className="pointer-events-none absolute -top-16 -right-16 h-36 w-36 rounded-full bg-purple-500/20 blur-2xl" />
-
-                  <div className="space-y-6 divide-y divide-white/10">
+                <div className="rounded-[2.5rem] bg-[#0b596b] p-8 md:p-11 text-white shadow-2xl relative overflow-hidden">
+                  <div className="space-y-7 divide-y divide-white/15">
                     {data.heroMetrics.map((metric, idx) => (
-                      <div key={idx} className={idx === 0 ? "pt-0" : "pt-6"}>
-                        <div className="text-4xl sm:text-5xl font-black tracking-tight text-white flex items-baseline gap-1">
-                          <span>{metric.value}</span>
+                      <div key={idx} className={`animate-number-train ${idx === 0 ? "pt-0" : "pt-6"}`}>
+                        <div className="text-4xl sm:text-5xl font-bold tracking-tight text-white">
+                          {metric.value}
                         </div>
-                        <div className="mt-1.5 text-xs sm:text-sm font-medium text-purple-200/90 tracking-wide">
+                        <div className="mt-1.5 text-sm font-medium text-[#d3dde8] tracking-wide">
                           {metric.label}
                         </div>
                       </div>
@@ -230,9 +220,9 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
         {/* ========================================================================= */}
         {/* ASSURIX SECTION 2: CURVED MEDIA SHOWCASE BANNER (Screenshot 2 & 3) */}
         {/* ========================================================================= */}
-        <section className="relative -mt-10 sm:-mt-14 max-w-6xl mx-auto px-5 sm:px-6 z-20">
+        <section className="relative -mt-8 sm:-mt-12 max-w-6xl mx-auto px-5 sm:px-6 z-20">
           <div className="relative overflow-hidden rounded-[2.5rem] md:rounded-[3.5rem] border-4 border-white bg-slate-950 shadow-2xl">
-            {useVideo && data.mediaVideoUrl ? (
+            {data.mediaVideoUrl ? (
               <div className="relative aspect-video w-full max-h-[540px] bg-slate-900 flex items-center justify-center overflow-hidden">
                 <video
                   ref={videoRef}
@@ -249,7 +239,7 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
 
                 {/* Floating Top Badge */}
                 <div className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 rounded-full bg-black/60 px-3.5 py-1.5 text-xs font-bold text-white backdrop-blur-md border border-white/15">
-                  <span className="flex h-2 w-2 rounded-full bg-purple-400 animate-ping" />
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
                   <span>{data.mediaBadge}</span>
                 </div>
 
@@ -259,7 +249,7 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
                     {showReplay ? (
                       <button
                         onClick={handleReplay}
-                        className="flex items-center gap-2 rounded-full bg-purple-600 px-4 py-2 text-xs font-bold text-white shadow-lg transition-transform hover:scale-105"
+                        className="flex items-center gap-2 rounded-full bg-[#3b742a] px-4 py-2 text-xs font-bold text-white shadow-lg transition-transform hover:scale-105"
                       >
                         <RotateCcw className="h-4 w-4" />
                         <span>Watch Again</span>
@@ -267,9 +257,9 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
                     ) : (
                       <button
                         onClick={togglePlay}
-                        className="flex items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-xs font-bold text-slate-900 shadow-lg backdrop-blur-md transition-transform hover:scale-105"
+                        className="flex items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-xs font-bold text-[#001d28] shadow-lg backdrop-blur-md transition-transform hover:scale-105"
                       >
-                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-slate-900" />}
+                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-[#001d28]" />}
                         <span>{isPlaying ? "Pause" : "Play Sample"}</span>
                       </button>
                     )}
@@ -279,12 +269,12 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
                       className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md border border-white/20 transition-colors hover:bg-black/80"
                       aria-label={isMuted ? "Unmute audio" : "Mute audio"}
                     >
-                      {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-purple-300" />}
+                      {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-emerald-300" />}
                     </button>
                   </div>
 
                   <div className="hidden sm:flex items-center gap-2 rounded-full bg-black/50 px-3.5 py-1 text-[11px] font-medium text-slate-200 backdrop-blur-md">
-                    <Clock className="h-3.5 w-3.5 text-purple-400" />
+                    <Clock className="h-3.5 w-3.5 text-emerald-400" />
                     <span>9:16 Vertical Reel Format</span>
                   </div>
                 </div>
@@ -305,43 +295,44 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
         {/* ========================================================================= */}
         {/* ASSURIX SECTION 3: 3 KEY BENEFIT CARDS (Screenshot 3 exact replica) */}
         {/* ========================================================================= */}
-        <section className="relative bg-[#f4f7f9] pt-20 pb-24 md:pt-28 md:pb-32 border-b border-slate-200/60">
+        <section className="relative bg-[#f4f5f5] pt-24 pb-28 md:pt-32 md:pb-36">
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
             {/* Centered Intro Tagline */}
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-base sm:text-lg font-medium text-slate-700">
+              <p className="text-base sm:text-lg font-medium text-[#001d28]">
                 {data.introSubhead}
               </p>
             </div>
 
             {/* 3 Elevated Rounded Cards with Top Floating Icon Badges */}
-            <div className="mt-16 grid gap-8 md:grid-cols-3">
+            <div className="mt-18 grid gap-8 md:grid-cols-3">
               {data.benefitCards.map((card, idx) => (
                 <div
                   key={idx}
-                  className="group relative rounded-[2rem] bg-white p-8 pt-14 border border-slate-200/80 shadow-[0_10px_30px_rgba(0,0,0,0.03)] hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between text-center"
+                  className="assurix-card-hover group relative rounded-[2rem] bg-white p-8 pt-16 border border-[#e5eaee] shadow-[0_10px_30px_rgba(0,0,0,0.02)] flex flex-col justify-between text-center"
                 >
                   {/* Floating Circular / Rounded Badge overlapping top center border */}
-                  <div className="absolute -top-7 left-1/2 -translate-x-1/2 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eef4f8] text-purple-700 border border-purple-100 shadow-sm transition-all duration-300 group-hover:bg-purple-600 group-hover:text-white group-hover:scale-110">
-                    {renderAssurixIcon(card.iconName, "h-6 w-6")}
+                  <div className="absolute -top-9 left-1/2 -translate-x-1/2 flex h-18 w-18 items-center justify-center rounded-2xl bg-[#eaf4e5] text-[#3b742a] border border-[#d3dde8]/50 shadow-sm transition-all duration-300 group-hover:scale-110">
+                    {renderAssurixIcon(card.iconName, "h-8 w-8")}
                   </div>
 
                   <div>
-                    <h3 className="text-xl font-bold text-[#0f172a] group-hover:text-purple-700 transition-colors">
+                    <h3 className="text-xl font-bold text-[#001d28]">
                       {card.title}
                     </h3>
 
-                    <p className="mt-3.5 text-sm text-slate-600 leading-relaxed">
+                    <p className="mt-4 text-sm text-[#2c436b] leading-relaxed">
                       {card.description}
                     </p>
                   </div>
 
-                  <div className="mt-8 pt-4 border-t border-slate-100">
+                  <div className="mt-8 pt-4 border-t border-[#f4f5f5]">
                     <a
                       href="#contact"
-                      className="inline-flex items-center gap-1 text-xs font-bold text-purple-600 group-hover:text-purple-800 transition-all group-hover:gap-2"
+                      className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-[#001d28] hover:text-[#0b7b8b] transition-all group-hover:gap-2.5"
                     >
-                      <span>{card.ctaText}</span>
+                      <span>Read more</span>
+                      <span className="text-[#3b742a] font-black text-sm">↘</span>
                     </a>
                   </div>
                 </div>
@@ -353,12 +344,12 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
         {/* ========================================================================= */}
         {/* ASSURIX SECTION 4: STORY / TRANSFORMATION SPLIT (Screenshot 4 exact replica) */}
         {/* ========================================================================= */}
-        <section className="relative bg-white py-20 md:py-28 border-b border-slate-200/60">
+        <section className="relative bg-white py-24 md:py-32 border-y border-[#e5eaee]">
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
             <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-16">
               {/* Left Column: Rounded Image + Assurix Floating Social Proof Box */}
               <div className="relative lg:col-span-6">
-                <div className="relative overflow-hidden rounded-[2.5rem] border border-slate-200 shadow-xl bg-slate-950 aspect-[4/3] sm:aspect-[16/11]">
+                <div className="relative overflow-hidden rounded-[2.5rem] border border-[#d3dde8] shadow-xl bg-slate-950 aspect-[4/3] sm:aspect-[16/11]">
                   <img
                     src={data.story.image}
                     alt={data.name}
@@ -368,61 +359,61 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
                 </div>
 
                 {/* Floating Social Proof Box (Screenshot 4 exact replica) */}
-                <div className="absolute -bottom-6 -right-2 sm:-bottom-8 sm:right-6 bg-white rounded-2xl p-4 shadow-xl border border-slate-100 max-w-[230px] animate-in fade-in duration-300">
-                  <div className="text-xs font-extrabold text-slate-900">
+                <div className="absolute -bottom-6 -right-2 sm:-bottom-8 sm:right-6 bg-white rounded-2xl p-4 shadow-xl border border-[#e5eaee] max-w-[230px] animate-in fade-in duration-300">
+                  <div className="text-xs font-bold text-[#001d28]">
                     {data.story.socialProofBadge}
                   </div>
                   {/* Avatar Stack */}
                   <div className="mt-2 flex -space-x-1.5 overflow-hidden">
-                    <div className="h-7 w-7 rounded-full ring-2 ring-white bg-purple-200 text-purple-900 font-bold text-[9px] flex items-center justify-center">
+                    <div className="h-7 w-7 rounded-full ring-2 ring-white bg-[#eaf4e5] text-[#3b742a] font-bold text-[9px] flex items-center justify-center">
                       AI
                     </div>
-                    <div className="h-7 w-7 rounded-full ring-2 ring-white bg-indigo-200 text-indigo-900 font-bold text-[9px] flex items-center justify-center">
+                    <div className="h-7 w-7 rounded-full ring-2 ring-white bg-[#e5f2f6] text-[#0b7b8b] font-bold text-[9px] flex items-center justify-center">
                       QC
                     </div>
-                    <div className="h-7 w-7 rounded-full ring-2 ring-white bg-pink-200 text-pink-900 font-bold text-[9px] flex items-center justify-center">
+                    <div className="h-7 w-7 rounded-full ring-2 ring-white bg-[#f1f9ee] text-[#438047] font-bold text-[9px] flex items-center justify-center">
                       HD
                     </div>
-                    <div className="h-7 w-7 rounded-full ring-2 ring-white bg-slate-800 text-white font-bold text-[9px] flex items-center justify-center">
+                    <div className="h-7 w-7 rounded-full ring-2 ring-white bg-[#001d28] text-white font-bold text-[9px] flex items-center justify-center">
                       +
                     </div>
                   </div>
                   {/* Rating skeleton indicator bars */}
                   <div className="mt-2.5 space-y-1">
-                    <div className="h-1.5 w-full rounded-full bg-slate-100" />
-                    <div className="h-1.5 w-3/4 rounded-full bg-emerald-500" />
+                    <div className="h-1.5 w-full rounded-full bg-[#f4f5f5]" />
+                    <div className="h-1.5 w-3/4 rounded-full bg-[#3b742a]" />
                   </div>
                 </div>
               </div>
 
               {/* Right Column: Eyebrow, Heading, Description, Stat Row + Button */}
               <div className="lg:col-span-6">
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-purple-700 border border-purple-200 mb-3">
-                  <span>✦ {data.story.eyebrow}</span>
+                <div className="inline-flex items-center gap-1.5 rounded-lg border border-[#bfc8cc] bg-white px-3.5 py-1 text-xs font-semibold text-[#001d28] mb-3">
+                  <span>Our story</span>
                 </div>
 
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#0f172a] leading-tight">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#001d28] leading-tight">
                   {data.story.heading}
                 </h2>
 
-                <p className="mt-4 text-base sm:text-lg leading-relaxed text-slate-600">
+                <p className="mt-5 text-base sm:text-lg leading-relaxed text-[#2c436b]">
                   {data.story.description}
                 </p>
 
                 {/* Stat Number & Free Quote CTA Button Row */}
-                <div className="mt-8 flex flex-wrap items-center gap-8 pt-6 border-t border-slate-200">
+                <div className="mt-8 flex flex-wrap items-center gap-8 pt-6 border-t border-[#e5eaee]">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl sm:text-5xl font-extrabold text-slate-900">
+                    <span className="text-4xl sm:text-5xl font-bold text-[#001d28]">
                       {data.story.statValue}
                     </span>
-                    <span className="text-xs font-medium uppercase tracking-wider text-slate-500 max-w-[140px] leading-tight">
+                    <span className="text-xs font-medium uppercase tracking-wider text-[#6c6c6c] max-w-[140px] leading-tight">
                       {data.story.statLabel}
                     </span>
                   </div>
 
                   <a
                     href="#contact"
-                    className="inline-flex items-center justify-center rounded-xl bg-[#2d6a4f] hover:bg-[#23533e] text-white font-bold px-7 py-3.5 text-sm shadow-md transition-all hover:shadow-lg active:scale-95"
+                    className="assurix-btn-green inline-flex items-center justify-center rounded-xl px-7 py-3.5 text-sm font-semibold shadow-md active:scale-95"
                   >
                     Get a free quote
                   </a>
@@ -435,15 +426,15 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
         {/* ========================================================================= */}
         {/* ASSURIX SECTION 5: ALL SERVICES / INDUSTRY OUTLINE GRID (Screenshot 4 bottom) */}
         {/* ========================================================================= */}
-        <section className="relative bg-[#f4f7f9] py-20 md:py-28 border-b border-slate-200/60">
+        <section className="relative bg-[#f4f5f5] py-24 md:py-32 border-b border-[#e5eaee]">
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
-            <div className="text-center max-w-2xl mx-auto mb-12">
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
-                Comprehensive video production plans tailored for you
+            <div className="text-center max-w-2xl mx-auto mb-14">
+              <h2 className="text-xl sm:text-2xl font-bold text-[#001d28]">
+                Comprehensive insurance plans tailored for you
               </h2>
             </div>
 
-            {/* 4-Column Outline Cards Grid */}
+            {/* 4-Column Outline Cards Grid matching Assurix Service v4 */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {allIndustriesList.map((item) => {
                 const isCurrent = item.slug === data.slug;
@@ -452,16 +443,16 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
                     key={item.slug}
                     to={`/industries/$slug`}
                     params={{ slug: item.slug }}
-                    className={`rounded-2xl p-6 border transition-all duration-200 flex flex-col items-center justify-center text-center gap-3 ${
+                    className={`assurix-card-hover rounded-2xl p-7 border transition-all duration-200 flex flex-col items-center justify-center text-center gap-3.5 ${
                       isCurrent
-                        ? "bg-purple-50 border-purple-400 shadow-md ring-1 ring-purple-300"
-                        : "bg-white border-slate-200 hover:border-purple-400 hover:shadow-md hover:-translate-y-1"
+                        ? "bg-[#eaf4e5] border-[#3b742a] shadow-md ring-1 ring-[#3b742a]"
+                        : "bg-white border-[#dce3e4] hover:border-[#0b7b8b] hover:shadow-md"
                     }`}
                   >
-                    <div className="text-slate-700">
-                      {renderAssurixIcon(item.icon, "h-8 w-8")}
+                    <div className="text-[#001d28]">
+                      {renderAssurixIcon(item.icon, "h-9 w-9")}
                     </div>
-                    <div className="text-sm font-bold text-slate-900">
+                    <div className="text-sm font-bold text-[#001d28]">
                       {item.name}
                     </div>
                   </Link>
@@ -474,14 +465,14 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
         {/* ========================================================================= */}
         {/* SECTION 6: PACKAGES & FORMATS WITH PRICING */}
         {/* ========================================================================= */}
-        <section className="relative bg-white py-20 md:py-28 border-b border-slate-200/60">
+        <section className="relative bg-white py-20 md:py-28 border-b border-[#e5eaee]">
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
             <div className="text-center max-w-2xl mx-auto mb-14">
-              <span className="text-xs font-bold uppercase tracking-wider text-purple-600">
-                Transparent Pricing
+              <span className="text-xs font-bold uppercase tracking-wider text-[#0b7b8b]">
+                Transparent Packages
               </span>
-              <h2 className="mt-2 text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900">
-                AI Video Packages for {data.shortName}
+              <h2 className="mt-2 text-2xl sm:text-3xl md:text-4xl font-bold text-[#001d28]">
+                AI Video Production Plans for {data.shortName}
               </h2>
             </div>
 
@@ -491,40 +482,40 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
                   key={idx}
                   className={`rounded-3xl bg-white p-8 border flex flex-col justify-between transition-all duration-300 ${
                     format.popular
-                      ? "border-purple-500 shadow-xl shadow-purple-500/10 ring-2 ring-purple-500/20"
-                      : "border-slate-200 shadow-sm hover:shadow-lg"
+                      ? "border-[#0b7b8b] shadow-xl shadow-[#0b7b8b]/10 ring-2 ring-[#0b7b8b]/20"
+                      : "border-[#dce3e4] shadow-sm hover:shadow-lg"
                   }`}
                 >
                   <div>
                     <div className="flex items-baseline justify-between">
-                      <h3 className="text-lg font-bold text-slate-900">
+                      <h3 className="text-lg font-bold text-[#001d28]">
                         {format.name}
                       </h3>
-                      <div className="text-2xl font-black text-purple-700">
+                      <div className="text-2xl font-bold text-[#0b7b8b]">
                         {format.price}
                       </div>
                     </div>
 
-                    <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-                      <Clock className="h-3.5 w-3.5 text-purple-500" />
+                    <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-[#6c6c6c]">
+                      <Clock className="h-3.5 w-3.5 text-[#0b7b8b]" />
                       <span>Delivery: {format.turnaround}</span>
                     </div>
 
-                    <p className="mt-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    <p className="mt-4 text-xs sm:text-sm text-[#2c436b] leading-relaxed">
                       {format.description}
                     </p>
 
-                    <ul className="mt-5 space-y-2.5 border-t border-slate-100 pt-5">
+                    <ul className="mt-5 space-y-2.5 border-t border-[#f4f5f5] pt-5">
                       {format.benefits.map((benefit, bIdx) => (
-                        <li key={bIdx} className="flex items-center gap-2 text-xs font-medium text-slate-700">
-                          <Check className="h-4 w-4 text-purple-600 shrink-0" />
+                        <li key={bIdx} className="flex items-center gap-2 text-xs font-medium text-[#001d28]">
+                          <Check className="h-4 w-4 text-[#3b742a] shrink-0" />
                           <span>{benefit}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
 
-                  <div className="mt-8 pt-4 border-t border-slate-100">
+                  <div className="mt-8 pt-4 border-t border-[#f4f5f5]">
                     <NeonButton
                       href="#contact"
                       variant={format.popular ? "primary" : "secondary"}
@@ -543,10 +534,10 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
         {/* ========================================================================= */}
         {/* SECTION 7: FAQS ACCORDION */}
         {/* ========================================================================= */}
-        <section className="relative bg-[#f4f7f9] py-16 md:py-24 border-b border-slate-200/60">
+        <section className="relative bg-[#f4f5f5] py-20 md:py-28 border-b border-[#e5eaee]">
           <div className="mx-auto max-w-4xl px-5 sm:px-6">
-            <div className="text-center mb-10">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#001d28]">
                 Frequently Asked Questions
               </h2>
             </div>
@@ -557,22 +548,22 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
                 return (
                   <div
                     key={idx}
-                    className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs"
+                    className="rounded-2xl border border-[#dce3e4] bg-white overflow-hidden shadow-xs"
                   >
                     <button
                       type="button"
                       onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                      className="flex w-full items-center justify-between p-5 text-left text-sm sm:text-base font-bold text-slate-900 hover:text-purple-700 transition-colors"
+                      className="flex w-full items-center justify-between p-5 text-left text-sm sm:text-base font-bold text-[#001d28] hover:text-[#0b7b8b] transition-colors"
                     >
                       <span>{faq.question}</span>
                       <ChevronDown
-                        className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${
-                          isOpen ? "rotate-180 text-purple-600" : ""
+                        className={`h-4 w-4 shrink-0 text-[#6c6c6c] transition-transform ${
+                          isOpen ? "rotate-180 text-[#0b7b8b]" : ""
                         }`}
                       />
                     </button>
                     {isOpen && (
-                      <div className="px-5 pb-5 text-xs sm:text-sm leading-relaxed text-slate-600 border-t border-slate-100 pt-3">
+                      <div className="px-5 pb-5 text-xs sm:text-sm leading-relaxed text-[#2c436b] border-t border-[#f4f5f5] pt-3">
                         {faq.answer}
                       </div>
                     )}
@@ -586,35 +577,35 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
         {/* ========================================================================= */}
         {/* SECTION 8: BOTTOM CTA BANNER */}
         {/* ========================================================================= */}
-        <section className="relative bg-gradient-to-br from-[#120d26] via-[#1d143c] to-[#0c0819] py-20 text-white">
+        <section className="relative bg-[#022633] py-20 text-white">
           <div className="relative mx-auto max-w-5xl px-5 text-center">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight leading-tight text-white">
               Ready to Scale Your Video Content for{" "}
-              <span className="bg-gradient-to-r from-purple-400 via-pink-300 to-indigo-300 bg-clip-text text-transparent">
+              <span className="text-[#34d399]">
                 {data.name}
               </span>
               ?
             </h2>
 
-            <p className="mt-4 text-sm sm:text-base text-slate-300 max-w-2xl mx-auto">
+            <p className="mt-4 text-sm sm:text-base text-[#bfc8cc] max-w-2xl mx-auto">
               Get standard 48–72h turnaround, full commercial rights, script writing, and revisions included.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <NeonButton
+              <a
                 href="#contact"
-                variant="primary"
-                size="lg"
+                className="assurix-btn-green inline-flex items-center justify-center rounded-xl px-8 py-3.5 text-sm font-semibold shadow-lg active:scale-95"
               >
                 Get {data.shortName} Video Quote
-              </NeonButton>
+              </a>
 
               <NeonButton
                 href={calendlyUrl}
                 variant="call"
                 size="lg"
+                className="bg-white text-[#001d28] hover:bg-slate-100"
               >
-                <Calendar className="h-4 w-4 text-purple-700 shrink-0" />
+                <Calendar className="h-4 w-4 text-[#0b7b8b] shrink-0" />
                 <span>Book 30 min call</span>
               </NeonButton>
             </div>
@@ -633,19 +624,19 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
 // Directory Hub component
 export function IndustriesDirectoryHub() {
   return (
-    <div id="top" className="min-h-screen w-full overflow-x-clip bg-[#f4f7f9] text-[#0f172a] selection:bg-purple-600 selection:text-white font-sans antialiased">
+    <div id="top" className="min-h-screen w-full overflow-x-clip bg-[#f4f5f5] text-[#001d28] selection:bg-[#0b7b8b] selection:text-white font-lexend antialiased">
       <Header />
 
       <main id="main-content" className="pt-24 pb-20">
-        <section className="bg-[#f4f7f9] py-16 border-b border-slate-200/60">
+        <section className="bg-[#f4f5f5] py-16 border-b border-[#e5eaee]">
           <div className="mx-auto max-w-6xl px-5 sm:px-6 text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#001d28]">
               Industries We Scale with{" "}
-              <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="text-[#0b7b8b]">
                 AI Video Production
               </span>
             </h1>
-            <p className="mt-4 text-base text-slate-600 max-w-2xl mx-auto">
+            <p className="mt-4 text-base text-[#2c436b] max-w-2xl mx-auto">
               Select your industry below to explore tailored video formats, proven hooks, sample reels, and pricing.
             </p>
           </div>
@@ -659,20 +650,20 @@ export function IndustriesDirectoryHub() {
                   key={item.slug}
                   to={`/industries/$slug`}
                   params={{ slug: item.slug }}
-                  className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition-all hover:-translate-y-1.5 hover:border-purple-400 hover:shadow-xl flex flex-col justify-between"
+                  className="assurix-card-hover rounded-3xl border border-[#dce3e4] bg-white p-7 shadow-sm transition-all hover:-translate-y-1.5 hover:border-[#0b7b8b] hover:shadow-xl flex flex-col justify-between"
                 >
                   <div>
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef4f8] text-purple-700">
-                      {renderAssurixIcon(item.icon, "h-6 w-6")}
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eaf4e5] text-[#3b742a]">
+                      {renderAssurixIcon(item.icon, "h-8 w-8")}
                     </div>
-                    <h2 className="mt-5 text-xl font-bold text-slate-900">
+                    <h2 className="mt-5 text-xl font-bold text-[#001d28]">
                       {item.name}
                     </h2>
-                    <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                    <p className="mt-2 text-sm text-[#2c436b] leading-relaxed">
                       {item.tagline}
                     </p>
                   </div>
-                  <div className="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-purple-600">
+                  <div className="mt-8 pt-4 border-t border-[#f4f5f5] flex items-center justify-between text-xs font-bold text-[#001d28] hover:text-[#0b7b8b]">
                     <span>Explore Subpage</span>
                     <ArrowRight className="h-4 w-4" />
                   </div>
