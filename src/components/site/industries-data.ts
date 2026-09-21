@@ -4,6 +4,7 @@ export interface IndustryHeroMetric {
 }
 
 export interface IndustryBenefitCard {
+  iconUrl?: string;
   iconName: string;
   title: string;
   description: string;
@@ -45,8 +46,8 @@ export interface IndustryData {
   heroHighlight: string;
   heroSubheading: string;
   heroMetrics: IndustryHeroMetric[];
-  mediaVideoUrl: string;
-  mediaPosterUrl: string;
+  heroImageUrl: string;
+  mediaVideoUrl?: string;
   mediaBadge: string;
   introSubhead: string;
   benefitCards: IndustryBenefitCard[];
@@ -65,7 +66,7 @@ export const allIndustriesList = [
     shortName: "Healthcare",
     tagline: "Doctor-led educational reels, treatment explainers & clinic growth ads",
     icon: "Stethoscope",
-    image: "/images/2nd card.png",
+    image: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=80",
     accent: "from-blue-600 to-cyan-500",
   },
   {
@@ -74,7 +75,7 @@ export const allIndustriesList = [
     shortName: "Professional Services",
     tagline: "High-trust executive avatars, thought leadership & B2B explainers",
     icon: "Briefcase",
-    image: "/images/9th card.png",
+    image: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80",
     accent: "from-indigo-600 to-purple-500",
   },
   {
@@ -83,7 +84,7 @@ export const allIndustriesList = [
     shortName: "IT & SaaS",
     tagline: "Product demo animations, feature walkthroughs & user acquisition reels",
     icon: "Cpu",
-    image: "/images/8th card.png",
+    image: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1200&q=80",
     accent: "from-purple-600 to-pink-500",
   },
   {
@@ -92,7 +93,7 @@ export const allIndustriesList = [
     shortName: "Real Estate",
     tagline: "Cinematic 3D property tours, agent avatars & luxury project reels",
     icon: "Building2",
-    image: "/images/1st card.png",
+    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80",
     accent: "from-amber-600 to-orange-500",
   },
   {
@@ -101,7 +102,7 @@ export const allIndustriesList = [
     shortName: "Travel & Hospitality",
     tagline: "Immersive destination experiences, resort highlights & booking reels",
     icon: "Compass",
-    image: "/images/10th card.png",
+    image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1200&q=80",
     accent: "from-teal-600 to-emerald-500",
   },
   {
@@ -110,7 +111,7 @@ export const allIndustriesList = [
     shortName: "Home Services",
     tagline: "Local contractor authority reels, before/after showcases & quote ads",
     icon: "Wrench",
-    image: "/images/11th card.png",
+    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1200&q=80",
     accent: "from-blue-700 to-indigo-600",
   },
   {
@@ -119,7 +120,7 @@ export const allIndustriesList = [
     shortName: "Education",
     tagline: "AI tutor reels, animated curriculum explainers & course enrollment ads",
     icon: "GraduationCap",
-    image: "/images/7th card.png",
+    image: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80",
     accent: "from-violet-600 to-purple-600",
   },
   {
@@ -128,7 +129,7 @@ export const allIndustriesList = [
     shortName: "eCommerce",
     tagline: "High-converting UGC ads, unboxings & cinematic product commercials",
     icon: "ShoppingBag",
-    image: "/images/3rd card.png",
+    image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1200&q=80",
     accent: "from-pink-600 to-rose-500",
   },
   {
@@ -137,7 +138,7 @@ export const allIndustriesList = [
     shortName: "Interior Design",
     tagline: "3D aesthetic walkthroughs, room makeover reels & portfolio showcases",
     icon: "Home",
-    image: "/images/5th card.png",
+    image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=80",
     accent: "from-fuchsia-600 to-violet-500",
   },
 ];
@@ -147,57 +148,53 @@ export const industriesData: Record<string, IndustryData> = {
     slug: "healthcare",
     name: "Healthcare & Clinics",
     shortName: "Healthcare",
-    tagline: "AI Video Production for Healthcare, Clinics & Medical Practices",
-    heroHeading: "Scale Patient Trust & Clinic Bookings with",
-    heroHighlight: "Cinematic AI Medical Videos",
+    tagline: "Doctor-led educational reels, treatment explainers & clinic growth ads",
+    heroHeading: "Scale patient trust & clinic bookings with",
+    heroHighlight: "trusted AI healthcare videos",
     heroSubheading:
-      "Transform complex medical treatments, dental procedures, and health advice into engaging 9:16 reels. From doctor-led digital twin updates to authentic AI UGC, scale your patient acquisition without time-consuming filming sessions.",
+      "Transform complex medical treatments, dental procedures, and health advice into engaging 9:16 reels. Scale patient acquisition and appointment bookings without studio filming.",
     heroMetrics: [
-      { value: "4.8x", label: "Patient Engagement Rate" },
-      { value: "72h", label: "Turnaround From Script to Video" },
-      { value: "96%", label: "Treatment Plan Comprehension" },
+      { value: "235K+", label: "Patients Reached & Educated" },
+      { value: "85%", label: "Appointment Growth Rate" },
+      { value: "96%", label: "Treatment Comprehension" },
     ],
+    heroImageUrl: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1600&q=80",
     mediaVideoUrl: "/videos/UGC%20Sample%20new.mp4?v=1",
-    mediaPosterUrl: "/images/2nd card.png",
     mediaBadge: "Featured Healthcare Production",
-    introSubhead:
-      "We guide healthcare providers and specialty clinics with clarity — from HIPAA-conscious scripting to viral patient education.",
+    introSubhead: "We guide healthcare providers and clinics with clarity — from script to scale.",
     benefitCards: [
       {
         iconName: "Stethoscope",
-        title: "Patient Education Reels",
-        description:
-          "Break down complex treatments, dental implant procedures, dermatology routines, and post-op care into crisp, reassuring 60-second visual explainers.",
-        formatTag: "AI UGC & Explainer",
-        ctaText: "Explore Healthcare UGC ↘",
+        title: "Your patient's needs",
+        description: "Ensure patients understand treatments, dental procedures, and post-care clearly in under 60 seconds.",
+        formatTag: "Patient Education",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "UserCheck",
-        title: "Doctor Digital Twins",
-        description:
-          "Clone your lead physician or surgeon once to produce unlimited weekly medical tips, clinic announcements, and Q&As without booking studio hours.",
-        formatTag: "Digital Twin & Voice",
-        ctaText: "Explore Digital Twin ↘",
+        title: "Doctor digital twin",
+        description: "Clone your chief doctor once to produce weekly medical tips, clinic advice, and Q&As without studio time.",
+        formatTag: "Doctor AI Clone",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "ShieldCheck",
-        title: "Clinic Authority & Trust Ads",
-        description:
-          "Highlight clinic technology, sterilization standards, and patient transformation testimonials to boost local appointment booking conversion.",
-        formatTag: "AI Avatar Presenter",
-        ctaText: "Explore Clinic Ads ↘",
+        title: "Clinic trust & ads",
+        description: "Reliable video ads to build authority, showcase hygiene standards, and drive local patient appointments.",
+        formatTag: "Medical Video Ads",
+        ctaText: "Read more ↘",
       },
     ],
     story: {
-      eyebrow: "Trusted Healthcare Video Partner",
-      heading: "Experience medical authority, patient reassurance and consistent practice growth",
+      eyebrow: "Our story",
+      heading: "Experience medical authority transparency and true commitment",
       description:
-        "Quickupp AI Studio crafts medically accurate, visually captivating AI video content that demystifies procedures and builds instant rapport. Our end-to-end service includes medical research, scriptwriting, hyper-realistic avatars, multi-language lip-sync, and social-first 9:16 formatting.",
-      statValue: "350+",
-      statLabel: "Healthcare & Dental Reels Delivered",
-      socialProofBadge: "120+ Medical Clinics Scaled",
+        "We stand by our promise to deliver dependable healthcare video solutions, medically accurate communication, and unwavering creative support, ensuring your clinic builds unshakeable trust across social media.",
+      statValue: "35+",
+      statLabel: "Specialist Clinics & Hospitals Scaled",
+      socialProofBadge: "50K+ happy patients reached",
       socialProofSubtext: "4.9/5 Provider Satisfaction Rating",
-      image: "/images/2nd card.png",
+      image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=1000&q=80",
     },
     featuredFormats: [
       {
@@ -236,23 +233,19 @@ export const industriesData: Record<string, IndustryData> = {
     faqs: [
       {
         question: "How do you ensure medical accuracy and HIPAA compliance?",
-        answer:
-          "All video scripts are created based on your clinic's approved clinical guidelines or materials provided by your team. We never use real patient identifiable health information without explicit written consent.",
+        answer: "All video scripts are created based on your clinic's approved clinical guidelines. We never use real patient identifiable health information without explicit consent.",
       },
       {
         question: "Can we create a digital twin of our chief doctor or dental surgeon?",
-        answer:
-          "Yes! We provide complete Digital Twin setup including 4K video facial training and AI voice cloning, enabling you to generate recurring patient advice videos in minutes without the doctor needing to step in front of a camera again.",
+        answer: "Yes! We provide complete Digital Twin setup including 4K video facial training and AI voice cloning, enabling you to generate recurring patient advice videos in minutes.",
       },
       {
-        question: "What video formats perform best for healthcare practices on social media?",
-        answer:
-          "Problem-to-solution AI UGC reels and 60-second doctor avatar explainers achieve the highest watch time and comment engagement on Instagram Reels and TikTok.",
+        question: "What video formats perform best for healthcare practices?",
+        answer: "Problem-to-solution AI UGC reels and 60-second doctor avatar explainers achieve the highest watch time and comment engagement on Instagram Reels and TikTok.",
       },
       {
-        question: "Can videos be produced in multiple languages for diverse patient demographics?",
-        answer:
-          "Absolutely. Our AI engine supports natural voiceovers and accurate lip-sync in 30+ languages, allowing you to reach Spanish, Mandarin, Hindi, and other language communities effortlessly.",
+        question: "Can videos be produced in multiple languages?",
+        answer: "Yes! Our AI engine supports natural voiceovers and accurate lip-sync in 30+ languages, allowing you to reach Spanish, Mandarin, Hindi, and other language communities effortlessly.",
       },
     ],
     relatedSlugs: ["professional-services", "home-services", "education"],
@@ -262,57 +255,53 @@ export const industriesData: Record<string, IndustryData> = {
     slug: "professional-services",
     name: "Professional Services",
     shortName: "Professional Services",
-    tagline: "AI Video Production for Legal, Financial, Consulting & Corporate Advisory",
-    heroHeading: "Elevate Executive Authority & Client Acquisition with",
-    heroHighlight: "AI-Powered Advisory Reels",
+    tagline: "High-trust executive avatars, thought leadership & B2B explainers",
+    heroHeading: "Elevate executive authority & client acquisition with",
+    heroHighlight: "trusted AI advisory videos",
     heroSubheading:
       "Position your firm as the definitive industry authority. Produce high-end executive thought leadership, legal case breakdown videos, and wealth advisory explainers in rapid 48-72h sprints.",
     heroMetrics: [
-      { value: "3.9x", label: "Qualified Inbound Leads" },
-      { value: "48h", label: "Rapid Production Turnaround" },
-      { value: "98%", label: "Executive Brand Retention" },
+      { value: "180K+", label: "Corporate Executives Reached" },
+      { value: "85%", label: "Client Inbound Growth" },
+      { value: "98%", label: "Brand Prestige Retention" },
     ],
+    heroImageUrl: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80",
     mediaVideoUrl: "/videos/Avtar%20Sample%20new.mp4?v=1",
-    mediaPosterUrl: "/images/9th card.png",
     mediaBadge: "Featured Advisory Production",
-    introSubhead:
-      "We help law firms, financial advisors, and consultancy practices dominate modern digital channels with polished, high-trust video assets.",
+    introSubhead: "We guide legal, financial, and consultancy firms with clarity — from brief to boardroom.",
     benefitCards: [
       {
         iconName: "Briefcase",
-        title: "Executive Thought Leadership",
-        description:
-          "Translate intricate regulatory changes, tax strategies, and corporate governance updates into concise, engaging executive perspectives.",
-        formatTag: "AI Digital Twin & Avatar",
-        ctaText: "Explore Executive Reels ↘",
-      },
-      {
-        iconName: "FileText",
-        title: "Case Studies & Client Proof",
-        description:
-          "Showcase client outcomes, transaction milestones, and advisory wins through animated metrics and professional voiceovers.",
-        formatTag: "Hyper-Realistic Commercial",
-        ctaText: "Explore Case Reels ↘",
+        title: "Executive thought leadership",
+        description: "Translate complex regulatory changes, tax strategies, and governance updates into concise perspectives.",
+        formatTag: "Executive Avatars",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "Scale",
-        title: "Consultation Funnel Ads",
-        description:
-          "High-converting 9:16 paid ads built specifically to drive high-net-worth calls, strategy bookings, and inbound corporate RFPs.",
-        formatTag: "Presenter Spokesperson",
-        ctaText: "Explore Advisory Ads ↘",
+        title: "Partner digital twin",
+        description: "Scale your managing partner's personal brand without taking billable hours away from high-stakes clients.",
+        formatTag: "Partner Clone",
+        ctaText: "Read more ↘",
+      },
+      {
+        iconName: "ShieldCheck",
+        title: "High-net-worth funnel ads",
+        description: "Reliable 9:16 video ads built specifically to drive qualified strategy bookings and corporate RFPs.",
+        formatTag: "Advisory Ads",
+        ctaText: "Read more ↘",
       },
     ],
     story: {
-      eyebrow: "Trusted Corporate Advisory Partner",
-      heading: "Experience sophisticated visual communication and steady institutional growth",
+      eyebrow: "Our story",
+      heading: "Experience sophisticated authority transparency and true commitment",
       description:
-        "High-stakes professional firms cannot compromise on presentation. Quickupp AI Studio combines corporate-grade scripting with photorealistic digital avatars and premium kinetic typography to deliver videos that command respect from corporate boards to private clients.",
-      statValue: "420+",
-      statLabel: "Advisory & Corporate Reels Delivered",
-      socialProofBadge: "85+ Legal & Financial Firms Scaled",
-      socialProofSubtext: "100% Brand Consistency Guarantee",
-      image: "/images/9th card.png",
+        "High-stakes professional firms cannot compromise on presentation. We combine corporate-grade scripting with photorealistic digital avatars and premium kinetic typography to deliver videos that command respect.",
+      statValue: "40+",
+      statLabel: "Legal & Advisory Practices Scaled",
+      socialProofBadge: "85+ Corporate Clients",
+      socialProofSubtext: "100% Brand Consistency",
+      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1000&q=80",
     },
     featuredFormats: [
       {
@@ -350,24 +339,20 @@ export const industriesData: Record<string, IndustryData> = {
     ],
     faqs: [
       {
-        question: "How do you maintain the refined tone required for luxury or corporate advisory?",
-        answer:
-          "Our copywriters specialize in B2B and institutional messaging. Every script is meticulously drafted to uphold executive sophistication, regulatory compliance, and brand prestige.",
+        question: "How do you maintain the refined tone required for corporate advisory?",
+        answer: "Our copywriters specialize in B2B and institutional messaging. Every script is drafted to uphold executive sophistication, compliance, and brand prestige.",
       },
       {
-        question: "Can our partners review and edit scripts before video rendering?",
-        answer:
-          "Yes. Full script approval is built into our streamlined workflow. Video generation only commences once your team has reviewed and signed off on the copy.",
+        question: "Can our partners review and approve scripts before video generation?",
+        answer: "Yes. Script approval is required before production starts. Video generation only begins once your team has signed off.",
       },
       {
-        question: "Can these videos be formatted for LinkedIn and YouTube as well as 9:16?",
-        answer:
-          "While our standard package is optimized for 9:16 mobile feeds (Instagram, Shorts, LinkedIn vertical), we can easily provide 16:9 widescreen or 1:1 square cuts upon request.",
+        question: "Can these videos be formatted for LinkedIn vertical video?",
+        answer: "Yes, our standard package is optimized for 9:16 vertical feeds (Instagram, Shorts, LinkedIn vertical), and we can also provide 16:9 widescreen upon request.",
       },
       {
-        question: "How quickly can we scale from 1 video to a weekly content pipeline?",
-        answer:
-          "With our Growth and Enterprise packages, we deliver 10 to 30 custom videos every month on predictable schedules, giving your firm a continuous social presence.",
+        question: "How quickly can we scale to regular monthly video releases?",
+        answer: "With our Growth and Enterprise packages, we deliver 10 to 30 custom videos every month on predictable schedules.",
       },
     ],
     relatedSlugs: ["it-saas", "healthcare", "real-estate"],
@@ -377,57 +362,53 @@ export const industriesData: Record<string, IndustryData> = {
     slug: "it-saas",
     name: "IT & SaaS",
     shortName: "IT & SaaS",
-    tagline: "AI Video Production for SaaS Products, Software Platforms & Tech Startups",
-    heroHeading: "Accelerate Product Signups & Feature Adoption with",
-    heroHighlight: "High-Velocity AI Tech Reels",
+    tagline: "Product demo animations, feature walkthroughs & user acquisition reels",
+    heroHeading: "Accelerate software signups & feature adoption with",
+    heroHighlight: "trusted AI tech demo videos",
     heroSubheading:
-      "Turn complex software workflows, API capabilities, and product updates into viral, high-converting video assets. Boost trial signups, reduce onboarding churn, and scale your user acquisition.",
+      "Turn complex software workflows, API capabilities, and product updates into viral, high-converting video assets. Boost trial signups and reduce onboarding churn.",
     heroMetrics: [
-      { value: "5.2x", label: "Increase in Trial Signups" },
+      { value: "520K+", label: "Software Impressions Delivered" },
+      { value: "85%", label: "Trial Signup Velocity" },
       { value: "65%", label: "Lower Video Production CAC" },
-      { value: "72h", label: "Sprint Delivery for Launches" },
     ],
+    heroImageUrl: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1600&q=80",
     mediaVideoUrl: "/videos/Cartoon%20Sample.mp4?v=2",
-    mediaPosterUrl: "/images/8th card.png",
     mediaBadge: "Featured SaaS Production",
-    introSubhead:
-      "We help engineering-led software companies convert technical brilliance into frictionless, high-converting visual stories.",
+    introSubhead: "We guide software companies and tech founders with clarity — from release notes to viral reach.",
     benefitCards: [
       {
         iconName: "Cpu",
-        title: "Product Feature Explainers",
-        description:
-          "Highlight newly shipped features, dashboard workflows, and AI integrations with dynamic animated screen simulations and punchy voiceovers.",
-        formatTag: "AI Cartoon & Animated",
-        ctaText: "Explore SaaS Explainers ↘",
+        title: "Feature walkthroughs",
+        description: "Highlight newly shipped features, dashboard workflows, and AI integrations with dynamic animated screen simulations.",
+        formatTag: "SaaS Animated Explainers",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "Zap",
-        title: "Problem → Solution UGC Ads",
-        description:
-          "Show real-world workflow frustration transformed into instant productivity through your software tool.",
-        formatTag: "AI Creator UGC",
-        ctaText: "Explore SaaS Ads ↘",
+        title: "Problem → Solution UGC",
+        description: "Show real-world workflow frustration transformed into instant productivity through your software tool.",
+        formatTag: "Creator Tech Reviews",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "Sparkles",
-        title: "Founder Product Updates",
-        description:
-          "Release regular product updates and release notes presented by a photorealistic AI clone of your founder or product lead.",
-        formatTag: "Digital Twin & Avatar",
-        ctaText: "Explore Founder Clones ↘",
+        title: "Founder roadmap reels",
+        description: "Release regular product updates presented by a photorealistic AI clone of your founder or product lead.",
+        formatTag: "Founder Clones",
+        ctaText: "Read more ↘",
       },
     ],
     story: {
-      eyebrow: "Trusted Tech Growth Partner",
-      heading: "Experience agile video creation tailored for fast-moving software roadmaps",
+      eyebrow: "Our story",
+      heading: "Experience engineering clarity transparency and true commitment",
       description:
-        "In SaaS, speed to market is everything. Quickupp AI Studio eliminates the weeks spent coordinating studio agencies, screen recorders, and voice talent. We turn your product release notes into high-impact launch videos in 48-72 hours.",
+        "In SaaS, speed to market is everything. We eliminate the weeks spent coordinating screen recorders, voice actors, and video editors, turning your product roadmaps into high-impact launch videos in 48-72 hours.",
       statValue: "680+",
-      statLabel: "SaaS & Tech Videos Delivered",
-      socialProofBadge: "210+ Software Startups Scaled",
-      socialProofSubtext: "4.8x Average Return on Ad Spend",
-      image: "/images/8th card.png",
+      statLabel: "SaaS & Tech Video Ads Delivered",
+      socialProofBadge: "210+ Startups Scaled",
+      socialProofSubtext: "4.8x Return on Ad Spend",
+      image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1000&q=80",
     },
     featuredFormats: [
       {
@@ -466,23 +447,19 @@ export const industriesData: Record<string, IndustryData> = {
     faqs: [
       {
         question: "Can you include real screenshots and UI mockups from our app?",
-        answer:
-          "Yes! You can provide screenshots, Figma links, or screen recordings, and we seamlessly blend them with our AI avatars, animated elements, and custom transitions.",
+        answer: "Yes! You can provide screenshots or screen recordings, and we seamlessly blend them with our AI avatars and animated UI overlays.",
       },
       {
-        question: "Do you write technical scripts that sound natural to developers and founders?",
-        answer:
-          "Yes. Our creative team has deep tech domain expertise, ensuring your scripts strike the perfect balance between technical accuracy and high-converting marketing hooks.",
+        question: "Do you write technical scripts that sound natural to developers?",
+        answer: "Yes. Our creative team has deep tech domain expertise, ensuring your scripts strike the perfect balance between technical accuracy and high conversion.",
       },
       {
-        question: "Can we use these videos for Paid TikTok, Meta Ads, and LinkedIn Ads?",
-        answer:
-          "Yes. All videos are rendered in crisp 9:16 with high-contrast subtitles, energetic sound effects, and strong CTA bumpers optimized for social ad performance.",
+        question: "Can we use these videos for Paid Meta Ads, TikTok, and YouTube Shorts?",
+        answer: "Yes. All videos are delivered in 9:16 with high-contrast subtitles, sound design, and strong CTA bumpers.",
       },
       {
         question: "How do revisions work for tech product videos?",
-        answer:
-          "Every order includes 1 complete revision based on the approved script. We ensure character movements, audio sync, and graphic callouts align exactly with your expectations.",
+        answer: "Every order includes 1 complete revision based on the approved script to ensure avatar movements and screen overlays match your specifications.",
       },
     ],
     relatedSlugs: ["professional-services", "education", "ecommerce"],
@@ -492,57 +469,53 @@ export const industriesData: Record<string, IndustryData> = {
     slug: "real-estate",
     name: "Real Estate & Development",
     shortName: "Real Estate",
-    tagline: "AI Video Production for Real Estate Agents, Brokers & Property Developers",
-    heroHeading: "Sell Luxury Properties & Attract High-Value Buyers with",
-    heroHighlight: "Cinematic AI Real Estate Reels",
+    tagline: "Cinematic 3D property tours, agent avatars & luxury project reels",
+    heroHeading: "Sell luxury properties & attract high-value buyers with",
+    heroHighlight: "trusted AI real estate videos",
     heroSubheading:
       "Transform architectural renders, floor plans, and listing photos into breathtaking 3D walkthroughs and presenter-led property showcase reels that command buyer attention.",
     heroMetrics: [
-      { value: "4.5x", label: "Property Inquiry Surge" },
-      { value: "72h", label: "Listing-to-Video Speed" },
-      { value: "$180M+", label: "Property Value Promoted" },
+      { value: "310K+", label: "Prospective Buyers Reached" },
+      { value: "85%", label: "Showing Inquiry Increase" },
+      { value: "95%", label: "Listing Engagement Rate" },
     ],
+    heroImageUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1600&q=80",
     mediaVideoUrl: "/videos/Portfolio%203.mp4",
-    mediaPosterUrl: "/images/1st card.png",
     mediaBadge: "Featured Luxury Real Estate Showcase",
-    introSubhead:
-      "We empower top-producing real estate brokers and luxury developers to market properties with world-class cinematic video.",
+    introSubhead: "We guide top-producing brokers and developers with clarity — from render to closing.",
     benefitCards: [
       {
         iconName: "Building2",
-        title: "Virtual Property Showcases",
-        description:
-          "Generate ultra-fluid 3D flythroughs and cinematic room transitions from 2D photos or architectural renders with luxury studio lighting.",
-        formatTag: "Hyper-Realistic AI",
-        ctaText: "Explore Property Tours ↘",
+        title: "Virtual property tours",
+        description: "Generate ultra-fluid 3D flythroughs and room transitions from 2D photos or renders with luxury lighting.",
+        formatTag: "3D Virtual Tours",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "UserCheck",
-        title: "Realtor AI Presenter Clones",
-        description:
-          "Keep your agency top-of-mind by cloning your lead broker to host listing walkthroughs and local market updates 24/7.",
-        formatTag: "Digital Twin & Avatar",
-        ctaText: "Explore Agent Clones ↘",
+        title: "Realtor AI presenter clone",
+        description: "Host listing walkthroughs and local market updates 24/7 with a digital twin of your lead broker.",
+        formatTag: "Broker Clones",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "Compass",
-        title: "Neighborhood & Lifestyle Reels",
-        description:
-          "Showcase nearby gourmet dining, private schools, and luxury amenities to paint an irresistible lifestyle for prospective buyers.",
-        formatTag: "AI UGC & Cinematics",
-        ctaText: "Explore Lifestyle Ads ↘",
+        title: "Neighborhood lifestyle ads",
+        description: "Showcase nearby dining, schools, and amenities to paint an irresistible lifestyle for high-net-worth buyers.",
+        formatTag: "Lifestyle Reels",
+        ctaText: "Read more ↘",
       },
     ],
     story: {
-      eyebrow: "Trusted Real Estate Studio",
-      heading: "Experience cinematic property storytelling that accelerates listings to closed deals",
+      eyebrow: "Our story",
+      heading: "Experience architectural elegance transparency and true commitment",
       description:
-        "High-net-worth buyers expect immersive visual experiences. Quickupp AI Studio crafts broadcast-quality reels with hyper-realistic textures, ambient luxury soundscapes, and magnetic presenter avatars that turn casual scrollers into committed showings.",
+        "High-net-worth buyers expect immersive visual experiences. We craft broadcast-quality reels with hyper-realistic textures, ambient luxury soundscapes, and magnetic presenter avatars that turn casual scrollers into committed showings.",
       statValue: "$180M+",
-      statLabel: "Total Property Inventory Marketed",
+      statLabel: "Total Property Inventory Promoted",
       socialProofBadge: "150+ Agencies & Developers",
       socialProofSubtext: "98% Positive Buyer Feedback",
-      image: "/images/1st card.png",
+      image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1000&q=80",
     },
     featuredFormats: [
       {
@@ -581,23 +554,19 @@ export const industriesData: Record<string, IndustryData> = {
     faqs: [
       {
         question: "Can you create video tours from architectural renders and 2D floorplans?",
-        answer:
-          "Yes! Our hyper-realistic AI pipeline can synthesize realistic motion and 3D depth from architectural blueprints, interior renders, and still photos.",
+        answer: "Yes! Our hyper-realistic AI pipeline can synthesize realistic motion and 3D depth from blueprints, interior renders, and still photos.",
       },
       {
         question: "How do agent digital twins work for multiple listings?",
-        answer:
-          "Once we train your digital twin, you simply submit the listing details and photos. We generate a custom video of you presenting the property in under 48 hours.",
+        answer: "Once we train your digital twin, you simply submit the listing details and photos. We generate a custom video of you presenting the property in under 48 hours.",
       },
       {
-        question: "Can you add custom agency branding, contact info, and MLS badges?",
-        answer:
-          "Yes, all videos include your agency logo, broker license details, phone numbers, and custom color accents.",
+        question: "Can you add custom agency branding and MLS badges?",
+        answer: "Yes, all videos include your agency logo, broker license details, phone numbers, and custom color accents.",
       },
       {
         question: "Are these videos formatted for Instagram Reels and TikTok ads?",
-        answer:
-          "Yes, every reel is delivered in 9:16 vertical resolution, optimized for maximum retention with viral audio pacing and subtitles.",
+        answer: "Yes, every reel is delivered in 9:16 vertical resolution, optimized for maximum retention with viral audio pacing and subtitles.",
       },
     ],
     relatedSlugs: ["interior-design", "travel-hospitality", "professional-services"],
@@ -607,57 +576,53 @@ export const industriesData: Record<string, IndustryData> = {
     slug: "travel-hospitality",
     name: "Travel & Hospitality",
     shortName: "Travel & Hospitality",
-    tagline: "AI Video Production for Resorts, Boutique Hotels, Airlines & Tour Operators",
-    heroHeading: "Ignite Wanderlust & Boost Direct Bookings with",
-    heroHighlight: "Immersive AI Travel Reels",
+    tagline: "Immersive destination experiences, resort highlights & booking reels",
+    heroHeading: "Ignite wanderlust & direct bookings with",
+    heroHighlight: "trusted AI travel videos",
     heroSubheading:
-      "Captivate global travelers with cinematic destination visuals, virtual resort tours, and authentic creator-style travel reviews. Elevate your direct bookings without organizing costly overseas shoots.",
+      "Captivate global travelers with cinematic destination visuals, virtual resort tours, and authentic creator-style travel reviews without expensive overseas filming crews.",
     heroMetrics: [
-      { value: "6.1x", label: "Social Video Shares" },
-      { value: "48h", label: "Seasonal Campaign Turnaround" },
-      { value: "32%", label: "Direct Booking Lift" },
+      { value: "450K+", label: "Travel Impressions Delivered" },
+      { value: "85%", label: "Direct Booking Lift" },
+      { value: "95%", label: "Wanderlust Engagement" },
     ],
+    heroImageUrl: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1600&q=80",
     mediaVideoUrl: "/videos/Portfolio%204.mp4",
-    mediaPosterUrl: "/images/10th card.png",
     mediaBadge: "Featured Hospitality Showcase",
-    introSubhead:
-      "We help luxury resorts, boutique travel brands, and adventure operators turn dream destinations into booked itineraries.",
+    introSubhead: "We guide luxury resorts and travel brands with clarity — from dream to destination.",
     benefitCards: [
       {
         iconName: "Compass",
-        title: "Destination Immersion Reels",
-        description:
-          "Transport travelers into sun-drenched beaches, scenic alpine retreats, and vibrant cultural landmarks with cinematic AI rendering.",
-        formatTag: "Hyper-Realistic AI",
-        ctaText: "Explore Travel Films ↘",
+        title: "Destination immersion",
+        description: "Transport travelers into sun-drenched beaches and alpine retreats with cinematic atmospheric AI rendering.",
+        formatTag: "Destination Films",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "ShoppingBag",
-        title: "Creator Travel UGC",
-        description:
-          "Deliver authentic traveler reviews, room tour vlogs, and itinerary recommendations that spark immediate holiday bookings.",
-        formatTag: "AI Creator UGC",
-        ctaText: "Explore Travel UGC ↘",
+        title: "Traveler creator UGC",
+        description: "Deliver authentic traveler reviews, room tour vlogs, and itinerary recommendations that spark immediate bookings.",
+        formatTag: "Creator Travel UGC",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "Sparkles",
-        title: "Hotel Concierge Avatars",
-        description:
-          "Deploy multilingual AI concierges presenting dining menus, spa packages, and exclusive seasonal resort offers.",
-        formatTag: "AI Avatar Presenter",
-        ctaText: "Explore Concierge Reels ↘",
+        title: "Multilingual concierge",
+        description: "Deploy AI concierges presenting dining menus, spa packages, and exclusive seasonal resort offers in 10+ languages.",
+        formatTag: "Concierge Avatars",
+        ctaText: "Read more ↘",
       },
     ],
     story: {
-      eyebrow: "Trusted Hospitality Media Partner",
-      heading: "Experience sensory destination storytelling that fills rooms all year round",
+      eyebrow: "Our story",
+      heading: "Experience sensory hospitality transparency and true commitment",
       description:
-        "Travel decisions are purely emotional. Quickupp AI Studio combines breathtaking environmental generation with authentic creator voices and immersive sound design, creating irresistible reels that make audiences stop scrolling and book their next getaway.",
+        "Travel decisions are purely emotional. We combine breathtaking environmental generation with authentic creator voices and immersive sound design, creating irresistible reels that fill rooms all year round.",
       statValue: "520+",
       statLabel: "Travel & Hospitality Reels Produced",
-      socialProofBadge: "90+ Resorts & Tour Operators",
-      socialProofSubtext: "4.9/5 Guest Engagement Rating",
-      image: "/images/10th card.png",
+      socialProofBadge: "90+ Luxury Resorts Scaled",
+      socialProofSubtext: "4.9/5 Guest Experience Rating",
+      image: "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=1000&q=80",
     },
     featuredFormats: [
       {
@@ -695,24 +660,20 @@ export const industriesData: Record<string, IndustryData> = {
     ],
     faqs: [
       {
-        question: "Can you create videos featuring our actual resort photos and pool views?",
-        answer:
-          "Yes! We integrate your real property photography and video clips with AI enhancement, camera motion, and creator avatars.",
+        question: "Can you create videos featuring our actual resort photos?",
+        answer: "Yes! We integrate your real property photography with AI enhancement, realistic camera motion, and creator avatars.",
       },
       {
-        question: "Can we produce seasonal campaigns (Summer, Winter, Holiday) quickly?",
-        answer:
-          "Yes. Our rapid 48-72h production model allows you to launch timely holiday campaigns without weeks of advance planning.",
+        question: "Can we produce seasonal campaigns quickly?",
+        answer: "Yes. Our rapid 48-72h production model allows you to launch timely holiday campaigns without weeks of advance planning.",
       },
       {
         question: "How do you handle multi-language content for international guests?",
-        answer:
-          "We can generate the same video in 10+ different languages with flawless native accents and lip-sync, saving thousands on localization.",
+        answer: "We generate the same video in 10+ languages with native accents and lip-sync, saving thousands on localization.",
       },
       {
-        question: "Can we order multiple reels for different amenities (Spa, Dining, Rooms)?",
-        answer:
-          "Yes, our Growth and Scale packages let you produce 10 to 15 distinct reels covering every facet of your hospitality property.",
+        question: "Can we order multiple reels for different amenities?",
+        answer: "Yes, our packages let you produce 10 to 15 distinct reels covering dining, spa, pool, and room amenities.",
       },
     ],
     relatedSlugs: ["real-estate", "interior-design", "ecommerce"],
@@ -722,57 +683,53 @@ export const industriesData: Record<string, IndustryData> = {
     slug: "home-services",
     name: "Home Services & Contractors",
     shortName: "Home Services",
-    tagline: "AI Video Production for Roofing, Solar, HVAC, Plumbing & Remodeling",
-    heroHeading: "Dominate Local Markets & Fill Your Project Schedule with",
-    heroHighlight: "High-Trust Contractor Reels",
+    tagline: "Local contractor authority reels, before/after showcases & quote ads",
+    heroHeading: "Dominate local territories & estimate requests with",
+    heroHighlight: "trusted AI contractor videos",
     heroSubheading:
-      "Transform homeowner skepticism into eager estimate requests. Produce authentic before/after showcases, emergency repair explainers, and local authority ads that generate exclusive quote leads.",
+      "Transform homeowner skepticism into eager estimate requests. Produce authentic before/after showcases, emergency repair explainers, and local authority ads that win exclusive jobs.",
     heroMetrics: [
-      { value: "3.8x", label: "More Estimate Requests" },
-      { value: "48h", label: "Fast Video Ad Turnaround" },
+      { value: "290K+", label: "Local Homeowners Reached" },
+      { value: "85%", label: "Estimate Request Lift" },
       { value: "45%", label: "Lower Cost Per Lead" },
     ],
+    heroImageUrl: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80",
     mediaVideoUrl: "/videos/Portfolio%202.mp4",
-    mediaPosterUrl: "/images/11th card.png",
     mediaBadge: "Featured Home Services Campaign",
-    introSubhead:
-      "We help residential service pros, roofing contractors, and solar installers win more local jobs with high-trust video marketing.",
+    introSubhead: "We guide roofing, HVAC, solar, and remodeling pros with clarity — from estimate to job booked.",
     benefitCards: [
       {
         iconName: "Wrench",
-        title: "Before & After Transformations",
-        description:
-          "Showcase dramatic roof replacements, kitchen renovations, and HVAC upgrades with high-energy visual reveals.",
-        formatTag: "AI Creator & Motion",
-        ctaText: "Explore Transformation Reels ↘",
+        title: "Before & after reveals",
+        description: "Showcase dramatic roof replacements, kitchen renovations, and HVAC upgrades with high-energy visual reveals.",
+        formatTag: "Transformation Reels",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "ShieldCheck",
-        title: "Homeowner Trust & Warning Ads",
-        description:
-          "Educate homeowners on subtle warning signs (roof leaks, AC failure, electrical risks) before emergencies strike.",
-        formatTag: "AI Presenter Spokesperson",
-        ctaText: "Explore Warning Ads ↘",
+        title: "Homeowner warning ads",
+        description: "Educate homeowners on subtle warning signs (roof leaks, AC failure, electrical risks) before emergencies strike.",
+        formatTag: "Warning Ads",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "Zap",
-        title: "Seasonal Promo & Rebate Reels",
-        description:
-          "Promote government tax credits, seasonal tune-up discounts, and 0% financing options to spur immediate phone calls.",
-        formatTag: "AI UGC Direct Response",
-        ctaText: "Explore Offer Ads ↘",
+        title: "Seasonal rebate reels",
+        description: "Promote government tax credits, seasonal tune-up discounts, and 0% financing to spur immediate calls.",
+        formatTag: "Offer Ads",
+        ctaText: "Read more ↘",
       },
     ],
     story: {
-      eyebrow: "Trusted Contractor Media Partner",
-      heading: "Experience local authority and a consistent pipeline of high-margin homeowner jobs",
+      eyebrow: "Our story",
+      heading: "Experience local craftsmanship transparency and true commitment",
       description:
-        "Homeowners buy from contractors they trust. Quickupp AI Studio crafts relatable, authentic video ads that highlight your licensing, craftsmanship, and verified customer reviews, turning casual local scrollers into confirmed in-home estimates.",
+        "Homeowners buy from contractors they trust. We craft relatable, authentic video ads that highlight your licensing, craftsmanship, and customer reviews, turning casual local scrollers into confirmed in-home estimates.",
       statValue: "390+",
       statLabel: "Contractor & Trade Videos Produced",
       socialProofBadge: "110+ Home Service Companies",
-      socialProofSubtext: "4.8/5 Client Lead Quality Rating",
-      image: "/images/11th card.png",
+      socialProofSubtext: "4.8/5 Lead Quality Rating",
+      image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1000&q=80",
     },
     featuredFormats: [
       {
@@ -811,23 +768,19 @@ export const industriesData: Record<string, IndustryData> = {
     faqs: [
       {
         question: "Can these videos target specific cities and zip codes?",
-        answer:
-          "Yes! We tailor the script hooks and text overlays to mention your specific city, county, or service territory for maximum local resonance.",
+        answer: "Yes! We tailor the script hooks and text overlays to mention your specific city or service territory for maximum local resonance.",
       },
       {
-        question: "How do these video ads perform on Meta (Facebook/Instagram) & TikTok?",
-        answer:
-          "Home services UGC video ads typically generate 40-60% cheaper cost-per-lead compared to static image ads because they build emotional rapport and trust.",
+        question: "How do these video ads perform on Facebook & TikTok?",
+        answer: "Home services UGC video ads typically generate 40-60% cheaper cost-per-lead compared to static image ads because they build trust fast.",
       },
       {
         question: "Can we provide photos of our past jobs to include in the video?",
-        answer:
-          "Absolutely. We incorporate your real job site photos into dynamic before-and-after split screens and motion graphics.",
+        answer: "Absolutely. We incorporate your real job site photos into dynamic before-and-after split screens.",
       },
       {
-        question: "How fast can we get an ad campaign live for an incoming storm season?",
-        answer:
-          "With our standard 48-72h delivery, you can have high-converting storm response ads live before the weather clears.",
+        question: "How fast can we get an ad campaign live for storm season?",
+        answer: "With our standard 48-72h delivery, you can have high-converting storm response ads live before the weather clears.",
       },
     ],
     relatedSlugs: ["real-estate", "professional-services", "interior-design"],
@@ -837,57 +790,53 @@ export const industriesData: Record<string, IndustryData> = {
     slug: "education",
     name: "Education & Coaching",
     shortName: "Education",
-    tagline: "AI Video Production for Online Courses, Coaches, Universities & EdTech",
-    heroHeading: "Scale Student Enrollments & Course Retention with",
-    heroHighlight: "Engaging AI Learning Reels",
+    tagline: "AI tutor reels, animated curriculum explainers & course enrollment ads",
+    heroHeading: "Scale course enrollments & student retention with",
+    heroHighlight: "trusted AI learning videos",
     heroSubheading:
-      "Transform curriculum concepts, masterclass promotions, and student breakthroughs into viral bite-sized lessons. Deliver world-class animated lessons and creator-led enrollment ads at scale.",
+      "Transform curriculum concepts, masterclass promotions, and student breakthroughs into viral bite-sized lessons. Deliver animated lessons and enrollment ads at scale.",
     heroMetrics: [
-      { value: "4.7x", label: "Course Enrollment Lift" },
-      { value: "85%", label: "Lesson Completion Rate" },
-      { value: "48h", label: "Curriculum Turnaround" },
+      { value: "380K+", label: "Students & Learners Reached" },
+      { value: "85%", label: "Course Completion Rate" },
+      { value: "95%", label: "Concept Retention Rate" },
     ],
+    heroImageUrl: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1600&q=80",
     mediaVideoUrl: "/videos/Avtar%20Sample%20new.mp4?v=1",
-    mediaPosterUrl: "/images/7th card.png",
     mediaBadge: "Featured EdTech Showcase",
-    introSubhead:
-      "We help edtech founders, online academies, and executive coaches turn complex knowledge into addictive, high-retention video lessons.",
+    introSubhead: "We guide edtech founders, academies, and coaches with clarity — from syllabus to scale.",
     benefitCards: [
       {
         iconName: "GraduationCap",
-        title: "Bite-Sized Lesson Reels",
-        description:
-          "Break down complex academic theories, language drills, or coding fundamentals into punchy 60-second animated micro-lessons.",
-        formatTag: "AI Cartoon & Animated",
-        ctaText: "Explore Animated Lessons ↘",
+        title: "Bite-sized micro lessons",
+        description: "Break down complex academic theories, language drills, or coding fundamentals into punchy 60-second lessons.",
+        formatTag: "Animated Lessons",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "UserCheck",
-        title: "Instructor AI Digital Twins",
-        description:
-          "Clone your head instructor to record hundreds of modular course lessons, Q&A responses, and weekly student updates effortlessly.",
-        formatTag: "Digital Twin & Voice",
-        ctaText: "Explore Instructor Clones ↘",
+        title: "Instructor AI digital twin",
+        description: "Clone your head instructor to record hundreds of modular course lessons and Q&A responses effortlessly.",
+        formatTag: "Instructor Clone",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "Sparkles",
-        title: "Student Enrollment Ads",
-        description:
-          "High-converting student transformation reels that showcase career breakthroughs, salary increases, and certificate prestige.",
-        formatTag: "AI UGC Creator",
-        ctaText: "Explore Enrollment Ads ↘",
+        title: "Student enrollment ads",
+        description: "High-converting student transformation reels that showcase career breakthroughs, salary boosts, and certificates.",
+        formatTag: "Enrollment Ads",
+        ctaText: "Read more ↘",
       },
     ],
     story: {
-      eyebrow: "Trusted EdTech Media Partner",
-      heading: "Experience pedagogical clarity and explosive enrollment growth",
+      eyebrow: "Our story",
+      heading: "Experience pedagogical clarity transparency and true commitment",
       description:
-        "Attention spans are shorter than ever. Quickupp AI Studio combines cognitive visual storytelling with charismatic AI presenters and kinetic motion graphics, ensuring your educational content educates, entertains, and converts scrollers into committed students.",
+        "Attention spans are shorter than ever. We combine cognitive visual storytelling with charismatic AI presenters and kinetic graphics, ensuring your educational content educates, entertains, and converts scrollers into committed students.",
       statValue: "750+",
       statLabel: "Educational & Coaching Reels Delivered",
       socialProofBadge: "180+ Academies & Coaches",
       socialProofSubtext: "4.9/5 Student Rating",
-      image: "/images/7th card.png",
+      image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1000&q=80",
     },
     featuredFormats: [
       {
@@ -926,23 +875,19 @@ export const industriesData: Record<string, IndustryData> = {
     faqs: [
       {
         question: "Can we build an entire 20-lesson course module with AI avatars?",
-        answer:
-          "Yes! Many academies use our Growth and Enterprise packages to generate entire video curriculums in days instead of spending months in a studio.",
+        answer: "Yes! Many academies use our packages to generate entire video curriculums in days instead of spending months in a studio.",
       },
       {
         question: "Can the videos be rendered with dual-language subtitles?",
-        answer:
-          "Yes, we can provide animated on-screen subtitles in English, Spanish, French, German, and 25+ other languages for international students.",
+        answer: "Yes, we can provide animated subtitles in English, Spanish, French, German, and 25+ other languages.",
       },
       {
-        question: "How do you ensure the tone matches academic or executive coaching standards?",
-        answer:
-          "We calibrate the script, pacing, avatar styling, and background environment to perfectly match your target audience (K-12, university, or corporate executive).",
+        question: "How do you ensure the tone matches academic standards?",
+        answer: "We calibrate the script, pacing, avatar styling, and background environment to perfectly match your target audience.",
       },
       {
         question: "Do we retain full commercial ownership of all video assets?",
-        answer:
-          "Yes, you receive 100% full commercial rights to use the videos inside your paid courses, YouTube channels, and ad campaigns.",
+        answer: "Yes, you receive 100% full commercial rights to use the videos inside your paid courses and ad campaigns.",
       },
     ],
     relatedSlugs: ["it-saas", "professional-services", "healthcare"],
@@ -952,57 +897,53 @@ export const industriesData: Record<string, IndustryData> = {
     slug: "ecommerce",
     name: "eCommerce & D2C Brands",
     shortName: "eCommerce",
-    tagline: "AI Video Production for D2C Brands, Shopify Stores & Amazon Sellers",
-    heroHeading: "Supercharge ROAS & Scale Viral Product Sales with",
-    heroHighlight: "High-Converting AI UGC Ads",
+    tagline: "High-converting UGC ads, unboxings & cinematic product commercials",
+    heroHeading: "Supercharge ROAS & viral product sales with",
+    heroHighlight: "trusted AI UGC video ads",
     heroSubheading:
       "Generate high-energy creator unboxings, problem→solution hooks, and 3D product commercials without shipping physical samples or negotiating expensive creator contracts.",
     heroMetrics: [
+      { value: "750K+", label: "Shoppers Converted with AI Ads" },
+      { value: "85%", label: "Higher Click-Through Rate" },
       { value: "5.4x", label: "Average Campaign ROAS" },
-      { value: "48h", label: "Delivery Per Video Creative" },
-      { value: "-52%", label: "Customer Acquisition Cost" },
     ],
+    heroImageUrl: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1600&q=80",
     mediaVideoUrl: "/videos/Portfolio%201.mp4",
-    mediaPosterUrl: "/images/3rd card.png",
     mediaBadge: "Featured D2C Brand Campaign",
-    introSubhead:
-      "We help direct-to-consumer brands and fast-scaling Shopify merchants pump out high-converting video ad creatives every single week.",
+    introSubhead: "We guide fast-scaling Shopify merchants and brands with clarity — from hook to checkout.",
     benefitCards: [
       {
         iconName: "ShoppingBag",
-        title: "AI UGC Product Reviews",
-        description:
-          "Deploy diverse, hyper-authentic creator avatars demonstrating product benefits, morning routines, and unboxing reactions.",
-        formatTag: "AI Creator UGC",
-        ctaText: "Explore D2C UGC ↘",
+        title: "AI UGC product reviews",
+        description: "Deploy diverse, authentic creator avatars demonstrating product benefits, daily routines, and unboxings.",
+        formatTag: "Creator UGC Ads",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "Sparkles",
-        title: "Hyper-Realistic Commercials",
-        description:
-          "Produce luxury studio commercial spots with macro product angles, dynamic particle simulations, and 3D liquid physics.",
-        formatTag: "Hyper-Realistic 3D",
-        ctaText: "Explore 3D Commercials ↘",
+        title: "Hyper-realistic 3D spots",
+        description: "Produce luxury studio commercial spots with macro product angles, dynamic lighting, and 3D fluid physics.",
+        formatTag: "3D Commercials",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "Zap",
-        title: "Viral TikTok & Reel Hooks",
-        description:
-          "Test 10+ hook variations per product to discover the winning creative angle and scale your ad spend profitably.",
-        formatTag: "Direct Response Video",
-        ctaText: "Explore Hook Variations ↘",
+        title: "Viral TikTok ad hooks",
+        description: "Test 10+ hook variations per product to discover the winning creative angle and scale your ad spend profitably.",
+        formatTag: "Hook Variations",
+        ctaText: "Read more ↘",
       },
     ],
     story: {
-      eyebrow: "Trusted D2C Creative Engine",
-      heading: "Experience creative velocity that beats ad fatigue and scales revenue",
+      eyebrow: "Our story",
+      heading: "Experience creative velocity transparency and true commitment",
       description:
-        "Modern eCommerce algorithms demand endless fresh creative iterations. Quickupp AI Studio gives you a scalable video production pipeline that outputs 10 to 30 high-converting reels every month, cutting your production costs by up to 80% while boosting ROAS.",
+        "Modern eCommerce algorithms demand endless fresh creative iterations. We give you a scalable video production pipeline that outputs 10 to 30 high-converting reels every month, cutting production costs by up to 80% while boosting ROAS.",
       statValue: "1,200+",
       statLabel: "eCommerce & D2C Video Ads Produced",
       socialProofBadge: "340+ D2C Brands Scaled",
       socialProofSubtext: "5.4x Average Verified ROAS",
-      image: "/images/3rd card.png",
+      image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1000&q=80",
     },
     featuredFormats: [
       {
@@ -1041,23 +982,19 @@ export const industriesData: Record<string, IndustryData> = {
     faqs: [
       {
         question: "Do I need to ship physical product samples to your studio?",
-        answer:
-          "No! You can simply upload clean product photos, packaging artwork, or 3D CAD files. Our AI engine places your product seamlessly into realistic lifestyle scenes.",
+        answer: "No! You can simply upload clean product photos or 3D CAD files. Our AI engine places your product seamlessly into realistic lifestyle scenes.",
       },
       {
-        question: "Can we test multiple different creator demographics for the same product?",
-        answer:
-          "Yes! We can render the exact same script across multiple AI creator ages, ethnicities, and genders to find which demographic yields the highest conversion for your brand.",
+        question: "Can we test multiple creator demographics for the same product?",
+        answer: "Yes! We can render the exact same script across multiple AI creator ages and ethnicities to find which demographic yields highest conversion.",
       },
       {
-        question: "How quickly can we get 10 variations for a TikTok / Meta ad test?",
-        answer:
-          "With our Growth package (10 videos), you receive all 10 creatives within 7 days, ready to plug directly into your Meta Ads Manager or TikTok Ads account.",
+        question: "How quickly can we get 10 variations for a TikTok ad test?",
+        answer: "With our Growth package, you receive all 10 creatives within 7 days, ready to plug directly into your Ads Manager.",
       },
       {
         question: "Can you include on-screen review screenshots and trust badges?",
-        answer:
-          "Yes, we can include Trustpilot ratings, press mentions (Forbes, Vogue, etc.), customer quote popups, and custom discount code overlays.",
+        answer: "Yes, we can include Trustpilot ratings, press mentions, customer quote popups, and custom discount code overlays.",
       },
     ],
     relatedSlugs: ["interior-design", "healthcare", "it-saas"],
@@ -1067,57 +1004,53 @@ export const industriesData: Record<string, IndustryData> = {
     slug: "interior-design",
     name: "Interior Design & Architecture",
     shortName: "Interior Design",
-    tagline: "AI Video Production for Interior Designers, Architects & Luxury Home Brands",
-    heroHeading: "Showcase Aesthetic Spaces & Attract Luxury Clients with",
-    heroHighlight: "Cinematic AI Design Reels",
+    tagline: "3D aesthetic walkthroughs, room makeover reels & portfolio showcases",
+    heroHeading: "Showcase aesthetic spaces & luxury clients with",
+    heroHighlight: "trusted AI design reels",
     heroSubheading:
       "Transform 2D blueprints, mood boards, and render stills into breathtaking cinematic room walkthroughs, lighting transitions, and high-converting designer portfolio reels.",
     heroMetrics: [
-      { value: "4.9x", label: "Higher Portfolio Engagement" },
-      { value: "72h", label: "Project Render to Video" },
+      { value: "210K+", label: "Design Admirers & Clients Reached" },
+      { value: "85%", label: "Portfolio Inquiry Growth" },
       { value: "100%", label: "Photorealistic Aesthetic" },
     ],
+    heroImageUrl: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1600&q=80",
     mediaVideoUrl: "/videos/Hyper%20Realistic%20Sample.mp4",
-    mediaPosterUrl: "/images/5th card.png",
     mediaBadge: "Featured Architecture & Interior Showcase",
-    introSubhead:
-      "We help elite interior designers and architectural studios present dream spaces with cinematic elegance and motion.",
+    introSubhead: "We guide elite interior designers and architects with clarity — from blueprint to built beauty.",
     benefitCards: [
       {
         iconName: "Home",
-        title: "3D Room Walkthroughs",
-        description:
-          "Turn static 3D interior renders into ultra-fluid camera pans, showcasing natural sunlight shifts, textures, and bespoke furniture.",
-        formatTag: "Hyper-Realistic AI",
-        ctaText: "Explore Walkthroughs ↘",
+        title: "3D room walkthroughs",
+        description: "Turn static 3D interior renders into ultra-fluid camera pans, showcasing sunlight shifts, textures, and bespoke furniture.",
+        formatTag: "3D Walkthroughs",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "Palette",
-        title: "Material & Moodboard Reels",
-        description:
-          "Highlight fabric selections, marble vein details, and custom lighting fixtures with macro luxury closeups and soft acoustic scores.",
-        formatTag: "Cinematic Showcase",
-        ctaText: "Explore Material Reels ↘",
+        title: "Material & moodboard reels",
+        description: "Highlight fabric selections, marble vein details, and custom lighting fixtures with macro luxury closeups.",
+        formatTag: "Material Reels",
+        ctaText: "Read more ↘",
       },
       {
         iconName: "UserCheck",
-        title: "Designer Vision Clones",
-        description:
-          "Clone your lead designer to explain design philosophy, project transformations, and architectural concepts to high-net-worth clients.",
-        formatTag: "Digital Twin & Avatar",
-        ctaText: "Explore Designer Clones ↘",
+        title: "Designer vision clones",
+        description: "Clone your lead designer to explain design philosophy, transformations, and concepts to high-net-worth clients.",
+        formatTag: "Designer Clones",
+        ctaText: "Read more ↘",
       },
     ],
     story: {
-      eyebrow: "Trusted Design Media Partner",
-      heading: "Experience sophisticated visual aesthetics that command premium design fees",
+      eyebrow: "Our story",
+      heading: "Experience aesthetic excellence transparency and true commitment",
       description:
-        "Interior design is about ambiance, texture, and emotion. Quickupp AI Studio crafts broadcast-quality reels with warm organic lighting, soothing ambient sound design, and elegant kinetic typography that elevate your studio's brand into the luxury echelon.",
+        "Interior design is about ambiance, texture, and emotion. We craft broadcast-quality reels with warm organic lighting, soothing acoustic sound design, and elegant kinetic typography that elevate your studio into the luxury echelon.",
       statValue: "310+",
       statLabel: "Interior & Architecture Reels Produced",
       socialProofBadge: "75+ Design Studios Scaled",
-      socialProofSubtext: "99% Client Aesthetic Approval",
-      image: "/images/5th card.png",
+      socialProofSubtext: "99% Aesthetic Approval",
+      image: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=1000&q=80",
     },
     featuredFormats: [
       {
@@ -1155,24 +1088,20 @@ export const industriesData: Record<string, IndustryData> = {
     ],
     faqs: [
       {
-        question: "Can you generate video motion from SketchUp, 3ds Max, or Lumion still renders?",
-        answer:
-          "Yes! We take your static 3D render images and synthesize continuous camera motion, natural light progression, and atmospheric depth.",
+        question: "Can you generate video motion from SketchUp, 3ds Max, or Lumion renders?",
+        answer: "Yes! We take your static 3D render images and synthesize continuous camera motion and natural light progression.",
       },
       {
-        question: "How do you ensure the video aesthetics match our high-end studio brand?",
-        answer:
-          "We carefully curate typography, color grading, and acoustic soundtracks to reflect the minimalism, warmth, and refinement of your architectural portfolio.",
+        question: "How do you ensure the video aesthetics match our high-end brand?",
+        answer: "We carefully curate typography, color grading, and acoustic soundtracks to reflect the minimalism and warmth of your portfolio.",
       },
       {
         question: "Can we include the designer's voice explaining the project?",
-        answer:
-          "Yes. You can either provide an audio recording, or we can train an AI voice clone of the designer to narrate the walkthrough seamlessly.",
+        answer: "Yes. You can provide an audio recording, or we can train an AI voice clone of the designer to narrate the walkthrough seamlessly.",
       },
       {
-        question: "Are these videos suitable for Instagram Reels, Pinterest, and website hero banners?",
-        answer:
-          "Yes, we provide 9:16 vertical files for Reels/TikTok/Pinterest and can also render widescreen 16:9 for your website portfolio.",
+        question: "Are these videos suitable for Instagram Reels and Pinterest?",
+        answer: "Yes, we provide 9:16 vertical files for Reels/TikTok/Pinterest and can also render widescreen 16:9 for your portfolio.",
       },
     ],
     relatedSlugs: ["real-estate", "travel-hospitality", "ecommerce"],

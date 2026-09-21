@@ -15,7 +15,6 @@ import {
   Cpu,
   GraduationCap,
   Home,
-  MapPin,
   MessageCircle,
   Pause,
   Play,
@@ -45,8 +44,8 @@ import {
   QuotePopupModal,
 } from "./sections";
 
-// Icon mapping helper matching Assurix line icon style
-function renderIndustryIcon(iconName: string, className = "h-6 w-6") {
+// Assurix SVG line icon renderer
+function renderAssurixIcon(iconName: string, className = "h-7 w-7") {
   switch (iconName) {
     case "Stethoscope":
       return <Stethoscope className={className} strokeWidth={1.75} />;
@@ -87,6 +86,7 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
   const [isMuted, setIsMuted] = useState(true);
   const [showReplay, setShowReplay] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [useVideo, setUseVideo] = useState(Boolean(data.mediaVideoUrl));
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -129,17 +129,17 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
   };
 
   return (
-    <div id="top" className="min-h-screen w-full overflow-x-clip bg-[#fafbfc] text-[#0f172a] selection:bg-purple-600 selection:text-white font-sans antialiased">
-      {/* Universal Header with Assurix-Style Dropdown */}
+    <div id="top" className="min-h-screen w-full overflow-x-clip bg-[#f4f7f9] text-[#0f172a] selection:bg-purple-600 selection:text-white font-sans antialiased">
+      {/* Universal Navigation Header */}
       <Header />
 
       <main id="main-content" className="pt-20 lg:pt-24">
         {/* ========================================================================= */}
         {/* ASSURIX SECTION 1: HERO V7 (Screenshot 2 exact replica) */}
         {/* ========================================================================= */}
-        <section className="relative bg-[#f4f7f9] pt-12 pb-20 md:pt-16 md:pb-28 border-b border-slate-200/70">
+        <section className="relative bg-[#f4f7f9] pt-12 pb-20 md:pt-16 md:pb-24 border-b border-slate-200/60">
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
-            {/* Breadcrumbs */}
+            {/* Breadcrumb Navigation */}
             <div className="mb-6 flex items-center gap-2 text-xs font-semibold text-slate-500">
               <Link to="/" className="hover:text-purple-600 transition-colors">
                 Home
@@ -152,9 +152,9 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
               <span className="text-purple-700 font-bold">{data.name}</span>
             </div>
 
-            {/* Split Hero: Left Title & Paragraph, Right Dark Assurix Metric Card */}
+            {/* Split Hero Layout */}
             <div className="grid items-center gap-10 lg:grid-cols-12 lg:gap-14">
-              {/* Left Column */}
+              {/* Left Column: Heading + Subtitle + Action buttons */}
               <div className="lg:col-span-7">
                 <div className="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1 text-xs font-bold text-purple-700 shadow-xs border border-purple-100 mb-4">
                   <span className="h-2 w-2 rounded-full bg-purple-600 animate-pulse" />
@@ -172,7 +172,6 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
                   {data.heroSubheading}
                 </p>
 
-                {/* Primary Action Buttons */}
                 <div className="mt-8 flex flex-wrap items-center gap-3.5">
                   <NeonButton
                     href="#contact"
@@ -207,14 +206,14 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
 
               {/* Right Column: Assurix Screenshot 2 Deep Accent Stat Card */}
               <div className="lg:col-span-5">
-                <div className="rounded-[2.2rem] bg-gradient-to-b from-[#15102a] to-[#0c0919] p-8 md:p-10 text-white shadow-2xl border border-purple-900/40 relative overflow-hidden">
+                <div className="rounded-[2.2rem] bg-gradient-to-b from-[#130f2c] via-[#1a143b] to-[#0c081c] p-8 md:p-10 text-white shadow-2xl border border-purple-900/40 relative overflow-hidden">
                   <div className="pointer-events-none absolute -top-16 -right-16 h-36 w-36 rounded-full bg-purple-500/20 blur-2xl" />
 
                   <div className="space-y-6 divide-y divide-white/10">
                     {data.heroMetrics.map((metric, idx) => (
                       <div key={idx} className={idx === 0 ? "pt-0" : "pt-6"}>
-                        <div className="text-4xl sm:text-5xl font-black tracking-tight text-white">
-                          {metric.value}
+                        <div className="text-4xl sm:text-5xl font-black tracking-tight text-white flex items-baseline gap-1">
+                          <span>{metric.value}</span>
                         </div>
                         <div className="mt-1.5 text-xs sm:text-sm font-medium text-purple-200/90 tracking-wide">
                           {metric.label}
@@ -229,77 +228,88 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
         </section>
 
         {/* ========================================================================= */}
-        {/* ASSURIX SECTION 2: CURVED PARALLAX / VIDEO BANNER (Screenshot 2 & 3) */}
+        {/* ASSURIX SECTION 2: CURVED MEDIA SHOWCASE BANNER (Screenshot 2 & 3) */}
         {/* ========================================================================= */}
         <section className="relative -mt-10 sm:-mt-14 max-w-6xl mx-auto px-5 sm:px-6 z-20">
           <div className="relative overflow-hidden rounded-[2.5rem] md:rounded-[3.5rem] border-4 border-white bg-slate-950 shadow-2xl">
-            <div className="relative aspect-video w-full max-h-[540px] bg-slate-900 flex items-center justify-center overflow-hidden">
-              <video
-                ref={videoRef}
-                src={data.mediaVideoUrl}
-                poster={data.mediaPosterUrl}
-                playsInline
-                loop
-                muted={isMuted}
-                onEnded={() => setShowReplay(true)}
-                className="h-full w-full object-cover"
-              />
+            {useVideo && data.mediaVideoUrl ? (
+              <div className="relative aspect-video w-full max-h-[540px] bg-slate-900 flex items-center justify-center overflow-hidden">
+                <video
+                  ref={videoRef}
+                  src={data.mediaVideoUrl}
+                  poster={data.heroImageUrl}
+                  playsInline
+                  loop
+                  muted={isMuted}
+                  onEnded={() => setShowReplay(true)}
+                  className="h-full w-full object-cover"
+                />
 
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
 
-              {/* Floating Top Badge */}
-              <div className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 rounded-full bg-black/60 px-3.5 py-1.5 text-xs font-bold text-white backdrop-blur-md border border-white/15">
-                <span className="flex h-2 w-2 rounded-full bg-purple-400 animate-ping" />
-                <span>{data.mediaBadge}</span>
-              </div>
-
-              {/* Video Overlay Controls */}
-              <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  {showReplay ? (
-                    <button
-                      onClick={handleReplay}
-                      className="flex items-center gap-2 rounded-full bg-purple-600 px-4 py-2 text-xs font-bold text-white shadow-lg transition-transform hover:scale-105"
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                      <span>Watch Again</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={togglePlay}
-                      className="flex items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-xs font-bold text-slate-900 shadow-lg backdrop-blur-md transition-transform hover:scale-105"
-                    >
-                      {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-slate-900" />}
-                      <span>{isPlaying ? "Pause" : "Play Sample"}</span>
-                    </button>
-                  )}
-
-                  <button
-                    onClick={toggleMute}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md border border-white/20 transition-colors hover:bg-black/80"
-                    aria-label={isMuted ? "Unmute audio" : "Mute audio"}
-                  >
-                    {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-purple-300" />}
-                  </button>
+                {/* Floating Top Badge */}
+                <div className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 rounded-full bg-black/60 px-3.5 py-1.5 text-xs font-bold text-white backdrop-blur-md border border-white/15">
+                  <span className="flex h-2 w-2 rounded-full bg-purple-400 animate-ping" />
+                  <span>{data.mediaBadge}</span>
                 </div>
 
-                <div className="hidden sm:flex items-center gap-2 rounded-full bg-black/50 px-3.5 py-1 text-[11px] font-medium text-slate-200 backdrop-blur-md">
-                  <Clock className="h-3.5 w-3.5 text-purple-400" />
-                  <span>9:16 Vertical Reel Format</span>
+                {/* Video Overlay Controls */}
+                <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    {showReplay ? (
+                      <button
+                        onClick={handleReplay}
+                        className="flex items-center gap-2 rounded-full bg-purple-600 px-4 py-2 text-xs font-bold text-white shadow-lg transition-transform hover:scale-105"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        <span>Watch Again</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={togglePlay}
+                        className="flex items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-xs font-bold text-slate-900 shadow-lg backdrop-blur-md transition-transform hover:scale-105"
+                      >
+                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-slate-900" />}
+                        <span>{isPlaying ? "Pause" : "Play Sample"}</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={toggleMute}
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md border border-white/20 transition-colors hover:bg-black/80"
+                      aria-label={isMuted ? "Unmute audio" : "Mute audio"}
+                    >
+                      {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-purple-300" />}
+                    </button>
+                  </div>
+
+                  <div className="hidden sm:flex items-center gap-2 rounded-full bg-black/50 px-3.5 py-1 text-[11px] font-medium text-slate-200 backdrop-blur-md">
+                    <Clock className="h-3.5 w-3.5 text-purple-400" />
+                    <span>9:16 Vertical Reel Format</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="relative aspect-video w-full max-h-[540px] bg-slate-900 flex items-center justify-center overflow-hidden">
+                <img
+                  src={data.heroImageUrl}
+                  alt={data.name}
+                  className="h-full w-full object-cover"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              </div>
+            )}
           </div>
         </section>
 
         {/* ========================================================================= */}
         {/* ASSURIX SECTION 3: 3 KEY BENEFIT CARDS (Screenshot 3 exact replica) */}
         {/* ========================================================================= */}
-        <section className="relative bg-[#fafbfc] pt-20 pb-24 md:pt-28 md:pb-32 border-b border-slate-200/70">
+        <section className="relative bg-[#f4f7f9] pt-20 pb-24 md:pt-28 md:pb-32 border-b border-slate-200/60">
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
             {/* Centered Intro Tagline */}
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-sm sm:text-base font-semibold text-slate-600">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-base sm:text-lg font-medium text-slate-700">
                 {data.introSubhead}
               </p>
             </div>
@@ -313,11 +323,11 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
                 >
                   {/* Floating Circular / Rounded Badge overlapping top center border */}
                   <div className="absolute -top-7 left-1/2 -translate-x-1/2 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eef4f8] text-purple-700 border border-purple-100 shadow-sm transition-all duration-300 group-hover:bg-purple-600 group-hover:text-white group-hover:scale-110">
-                    {renderIndustryIcon(card.iconName, "h-6 w-6")}
+                    {renderAssurixIcon(card.iconName, "h-6 w-6")}
                   </div>
 
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900 group-hover:text-purple-700 transition-colors">
+                    <h3 className="text-xl font-bold text-[#0f172a] group-hover:text-purple-700 transition-colors">
                       {card.title}
                     </h3>
 
@@ -343,7 +353,7 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
         {/* ========================================================================= */}
         {/* ASSURIX SECTION 4: STORY / TRANSFORMATION SPLIT (Screenshot 4 exact replica) */}
         {/* ========================================================================= */}
-        <section className="relative bg-white py-20 md:py-28 border-b border-slate-200/70">
+        <section className="relative bg-white py-20 md:py-28 border-b border-slate-200/60">
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
             <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-16">
               {/* Left Column: Rounded Image + Assurix Floating Social Proof Box */}
@@ -387,11 +397,11 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
 
               {/* Right Column: Eyebrow, Heading, Description, Stat Row + Button */}
               <div className="lg:col-span-6">
-                <div className="text-xs font-bold uppercase tracking-wider text-purple-600 mb-2">
-                  ✦ {data.story.eyebrow}
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-purple-700 border border-purple-200 mb-3">
+                  <span>✦ {data.story.eyebrow}</span>
                 </div>
 
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#0f172a] leading-tight">
                   {data.story.heading}
                 </h2>
 
@@ -425,7 +435,7 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
         {/* ========================================================================= */}
         {/* ASSURIX SECTION 5: ALL SERVICES / INDUSTRY OUTLINE GRID (Screenshot 4 bottom) */}
         {/* ========================================================================= */}
-        <section className="relative bg-[#fafbfc] py-20 md:py-28 border-b border-slate-200/70">
+        <section className="relative bg-[#f4f7f9] py-20 md:py-28 border-b border-slate-200/60">
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
             <div className="text-center max-w-2xl mx-auto mb-12">
               <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
@@ -433,7 +443,7 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
               </h2>
             </div>
 
-            {/* 4/3 Column Outline Cards Grid */}
+            {/* 4-Column Outline Cards Grid */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {allIndustriesList.map((item) => {
                 const isCurrent = item.slug === data.slug;
@@ -449,7 +459,7 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
                     }`}
                   >
                     <div className="text-slate-700">
-                      {renderIndustryIcon(item.icon, "h-8 w-8")}
+                      {renderAssurixIcon(item.icon, "h-8 w-8")}
                     </div>
                     <div className="text-sm font-bold text-slate-900">
                       {item.name}
@@ -464,7 +474,7 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
         {/* ========================================================================= */}
         {/* SECTION 6: PACKAGES & FORMATS WITH PRICING */}
         {/* ========================================================================= */}
-        <section className="relative bg-white py-20 md:py-28 border-b border-slate-200/70">
+        <section className="relative bg-white py-20 md:py-28 border-b border-slate-200/60">
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
             <div className="text-center max-w-2xl mx-auto mb-14">
               <span className="text-xs font-bold uppercase tracking-wider text-purple-600">
@@ -533,7 +543,7 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
         {/* ========================================================================= */}
         {/* SECTION 7: FAQS ACCORDION */}
         {/* ========================================================================= */}
-        <section className="relative bg-[#fafbfc] py-16 md:py-24 border-b border-slate-200/70">
+        <section className="relative bg-[#f4f7f9] py-16 md:py-24 border-b border-slate-200/60">
           <div className="mx-auto max-w-4xl px-5 sm:px-6">
             <div className="text-center mb-10">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
@@ -623,11 +633,11 @@ export function IndustrySubpage({ data }: { data: IndustryData }) {
 // Directory Hub component
 export function IndustriesDirectoryHub() {
   return (
-    <div id="top" className="min-h-screen w-full overflow-x-clip bg-[#fafbfc] text-[#0f172a] selection:bg-purple-600 selection:text-white font-sans antialiased">
+    <div id="top" className="min-h-screen w-full overflow-x-clip bg-[#f4f7f9] text-[#0f172a] selection:bg-purple-600 selection:text-white font-sans antialiased">
       <Header />
 
       <main id="main-content" className="pt-24 pb-20">
-        <section className="bg-[#f4f7f9] py-16 border-b border-slate-200/70">
+        <section className="bg-[#f4f7f9] py-16 border-b border-slate-200/60">
           <div className="mx-auto max-w-6xl px-5 sm:px-6 text-center">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900">
               Industries We Scale with{" "}
@@ -653,7 +663,7 @@ export function IndustriesDirectoryHub() {
                 >
                   <div>
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef4f8] text-purple-700">
-                      {renderIndustryIcon(item.icon, "h-6 w-6")}
+                      {renderAssurixIcon(item.icon, "h-6 w-6")}
                     </div>
                     <h2 className="mt-5 text-xl font-bold text-slate-900">
                       {item.name}
