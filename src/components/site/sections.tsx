@@ -1027,6 +1027,7 @@ export function Samples() {
   const [isInView, setIsInView] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [completedMap, setCompletedMap] = useState<Record<number, boolean>>({});
+  const [mutedMap, setMutedMap] = useState<Record<number, boolean>>({ 0: true, 1: true });
 
   const cardsContainerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
@@ -1096,15 +1097,17 @@ export function Samples() {
 
   const currentPair = useMemo(() => pairs[currentIndex] || pairs[0] || [], [pairs, currentIndex]);
 
-  // Autoplay active video pair smoothly across mobile and desktop
+  // Autoplay active video pair smoothly across mobile and desktop (default muted)
   useEffect(() => {
     if (!isInView) return;
 
     currentPair.forEach((_, idx) => {
       const video = videoRefs.current[idx];
       if (video) {
+        const isMuted = mutedMap[idx] ?? true;
         video.defaultMuted = true;
-        video.muted = true;
+        video.muted = isMuted;
+        video.volume = isMuted ? 0 : 1;
         video.playsInline = true;
         const playPromise = video.play();
         if (playPromise !== undefined) {
@@ -1113,7 +1116,7 @@ export function Samples() {
               const v = videoRefs.current[idx];
               if (v) {
                 v.defaultMuted = true;
-                v.muted = true;
+                v.muted = mutedMap[idx] ?? true;
                 v.play().catch(() => {});
               }
               window.removeEventListener("touchstart", onGesture);
@@ -1125,24 +1128,31 @@ export function Samples() {
         }
       }
     });
-  }, [isInView, currentIndex, activeTab, currentPair]);
+  }, [isInView, currentIndex, activeTab, currentPair, mutedMap]);
+
+  const toggleMute = (idx: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const video = videoRefs.current[idx];
+    if (!video) return;
+    const isCurrentlyMuted = mutedMap[idx] ?? true;
+    const nextMuted = !isCurrentlyMuted;
+    video.muted = nextMuted;
+    video.volume = nextMuted ? 0 : 1;
+    setMutedMap((prev) => ({ ...prev, [idx]: nextMuted }));
+    if (!nextMuted && video.paused) {
+      video.play().catch(() => {});
+    }
+  };
 
   const handleVideoEnded = (idx: number) => {
     setCompletedMap((prev) => {
       const updated = { ...prev, [idx]: true };
-      const totalInPair = currentPair.length;
-      const allDone = totalInPair > 0 && currentPair.every((_, i) => updated[i] === true);
-
-      if (allDone && pairs.length > 1) {
-        setTimeout(() => {
-          handleAdvance();
-        }, 700);
-      }
       return updated;
     });
   };
 
-  const handleReplay = (idx: number) => {
+  const handleReplay = (idx: number, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setCompletedMap((prev) => ({ ...prev, [idx]: false }));
     const video = videoRefs.current[idx];
     if (video) {
@@ -1223,7 +1233,7 @@ export function Samples() {
             : `opacity-0 ${isSecond ? "translate-x-10" : "-translate-x-10"}`;
 
           const isEnded = Boolean(completedMap[idx]);
-          const showWatchAgain = (isEnded && !allPairCompleted) || (isEnded && pairs.length <= 1);
+          const isVideoMuted = mutedMap[idx] ?? true;
 
           return (
             <div
@@ -1240,8 +1250,13 @@ export function Samples() {
                   onClick={() => {
                     const v = videoRefs.current[idx];
                     if (v) {
-                      if (v.paused) v.play().catch(() => {});
-                      else v.pause();
+                      if (v.ended || completedMap[idx]) {
+                        handleReplay(idx);
+                      } else if (v.paused) {
+                        v.play().catch(() => {});
+                      } else {
+                        v.pause();
+                      }
                     }
                   }}
                   className="relative aspect-[9/16] w-full max-w-[260px] sm:max-w-[280px] shrink-0 overflow-hidden rounded-2xl border-2 border-slate-800 bg-black shadow-lg transition-all duration-300 hover:border-neon cursor-pointer"
@@ -1251,15 +1266,15 @@ export function Samples() {
                       videoRefs.current[idx] = el;
                       if (el) {
                         el.defaultMuted = true;
-                        el.muted = true;
-                        el.volume = 0;
+                        el.muted = isVideoMuted;
+                        el.volume = isVideoMuted ? 0 : 1;
                         el.playsInline = true;
                       }
                     }}
                     key={item.videoUrl}
                     src={item.videoUrl}
                     autoPlay
-                    muted
+                    muted={isVideoMuted}
                     playsInline
                     preload="metadata"
                     onEnded={() => handleVideoEnded(idx)}
@@ -1268,23 +1283,44 @@ export function Samples() {
                     <track kind="captions" src="" label="English" default />
                   </video>
 
-                  {/* "Watch Again" Overlay if this video finished before other video in the pair */}
-                  {showWatchAgain && (
-                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/65 p-3 text-center backdrop-blur-[2px] animate-in fade-in duration-300">
+                  {/* Audio Unmute / Sound On Toggle Button (Default Muted) */}
+                  <div className="absolute top-2.5 left-2.5 z-30">
+                    <button
+                      type="button"
+                      onClick={(e) => toggleMute(idx, e)}
+                      className="group/mute inline-flex min-h-[34px] items-center gap-1.5 rounded-full border border-white/20 bg-black/80 px-3 py-1.5 text-[10px] sm:text-xs font-semibold text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:border-neon hover:bg-neon/20 hover:scale-105 active:scale-95 cursor-pointer"
+                      title={isVideoMuted ? "Click to Unmute Audio" : "Click to Mute Audio"}
+                      aria-label={isVideoMuted ? "Unmute sample video" : "Mute sample video"}
+                    >
+                      {isVideoMuted ? (
+                        <>
+                          <VolumeX className="h-3.5 w-3.5 text-red-400 group-hover/mute:text-neon" />
+                          <span className="text-white/90">Unmute</span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="h-3.5 w-3.5 text-neon animate-pulse" />
+                          <span className="text-neon font-bold">Sound On</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* "Watch Again" Overlay when video reaches end */}
+                  {isEnded && (
+                    <div
+                      onClick={(e) => handleReplay(idx, e)}
+                      className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/70 p-3 text-center backdrop-blur-[2px] animate-in fade-in duration-300 cursor-pointer"
+                    >
                       <button
                         type="button"
-                        onClick={() => handleReplay(idx)}
-                        className="group/btn inline-flex items-center gap-1.5 rounded-full bg-gradient-brand px-4 py-2 text-xs font-bold text-neon-foreground shadow-lg transition-all hover:scale-105 active:scale-95 glow-neon cursor-pointer"
+                        onClick={(e) => handleReplay(idx, e)}
+                        className="group/btn inline-flex items-center gap-2 rounded-full bg-gradient-brand px-5 py-2.5 text-xs sm:text-sm font-bold text-neon-foreground shadow-xl transition-all hover:scale-105 active:scale-95 glow-neon cursor-pointer"
                         aria-label={`Watch ${item.format} video again`}
                       >
-                        <RotateCcw className="h-3.5 w-3.5 transition-transform duration-300 group-hover/btn:-rotate-45" />
+                        <RotateCcw className="h-4 w-4 transition-transform duration-300 group-hover/btn:-rotate-45" />
                         <span>Watch Again</span>
                       </button>
-                      {pairs.length > 1 && !allPairCompleted && (
-                        <span className="mt-2 text-[10px] text-white/70 font-medium tracking-wide">
-                          Waiting for next video to finish...
-                        </span>
-                      )}
                     </div>
                   )}
 
