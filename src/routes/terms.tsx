@@ -399,7 +399,9 @@ export function TermsPage() {
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-3">
               <a
-                href="https://wa.me/918177828748?text=Hi%20Quickupp%20AI%20Studio%2C%20I%20have%20a%20question%20regarding%20the%20Terms%20%26%20Conditions."
+                href={`https://wa.me/918177828748?text=${encodeURIComponent(
+                  "Hello Quickupp AI Studio Team,\n\nI have a question regarding the Terms & Conditions on quickuppaistudio.us.",
+                )}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-full bg-gradient-brand px-5 py-2 text-xs font-bold text-neon-foreground shadow-md transition-all hover:brightness-110 sm:text-sm"

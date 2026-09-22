@@ -40,8 +40,8 @@ import {
   footerCopyright,
   footerDescription,
   footerEmail,
-  footerIndiaAddress,
-  footerIndiaMapUrl,
+  footerCanadaAddress,
+  footerCanadaMapUrl,
   footerPhone,
   footerTagline,
   footerUsaAddress,
@@ -284,7 +284,9 @@ export function Header() {
                   Get AI Video Quote
                 </a>
                 <a
-                  href="https://wa.me/918177828748"
+                  href={`https://wa.me/918177828748?text=${encodeURIComponent(
+                    "Hello Quickupp AI Studio Team,\n\nI visited quickuppaistudio.us and would like to explore AI Video Production services for my business.\n\nThank you!",
+                  )}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMobileMenuOpen(false)}
@@ -2427,7 +2429,9 @@ export function Pricing() {
               Get Custom Quote
             </NeonButton>
             <a
-              href="https://wa.me/918177828748"
+              href={`https://wa.me/918177828748?text=${encodeURIComponent(
+                "Hello Quickupp AI Studio Team,\n\nI visited quickuppaistudio.us and would like to chat with your production team about AI video services for my brand.\n\nThank you!",
+              )}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs sm:text-sm font-semibold text-slate-800 shadow-xs transition-all hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 active:scale-95"
@@ -3363,7 +3367,7 @@ export function LeadFormSection() {
 
 export function WhatsAppCtaSection() {
   const professionalMessage = encodeURIComponent(
-    "Hello Quickupp AI Studio Team,\n\nI would like to explore AI Video Production services for my business. Please share details regarding available video formats, packages, pricing, and turnaround time.\n\nLooking forward to your response.\n\nThank you!",
+    "Hello Quickupp AI Studio Team,\n\nI visited quickuppaistudio.us and would like to explore AI Video Production services for my business. Please share details regarding available video formats, packages, pricing, and turnaround time.\n\nLooking forward to your response.\n\nThank you!",
   );
 
   return (
@@ -3661,17 +3665,17 @@ export function Footer() {
                 </a>
 
                 <a
-                  href={footerIndiaMapUrl}
+                  href={footerCanadaMapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-start gap-2 text-slate-400 hover:text-neon transition-colors"
+                  className="group flex items-start gap-2 text-slate-400 hover:text-red-400 transition-colors"
                 >
-                  <MapPin className="h-4 w-4 text-neon shrink-0 mt-0.5" />
+                  <MapPin className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-semibold text-white group-hover:text-neon">
-                      India Office:{" "}
+                    <span className="font-semibold text-white group-hover:text-red-400">
+                      Canada Office:{" "}
                     </span>
-                    <span>{footerIndiaAddress}</span>
+                    <span>{footerCanadaAddress}</span>
                   </div>
                 </a>
               </div>
@@ -3772,7 +3776,7 @@ export function FloatingWhatsAppButton() {
       {/* Official WhatsApp Floating Button */}
       <a
         href={`https://wa.me/918177828748?text=${encodeURIComponent(
-          "Hello Quickupp AI Studio Team,\n\nI would like to explore AI Video Production services for my business. Please share details regarding available video formats, packages, pricing, and turnaround time.\n\nLooking forward to your response.\n\nThank you!",
+          "Hello Quickupp AI Studio Team,\n\nI visited quickuppaistudio.us and would like to explore AI Video Production services for my business. Please share details regarding available video formats, packages, pricing, and turnaround time.\n\nLooking forward to your response.\n\nThank you!",
         )}`}
         target="_blank"
         rel="noopener noreferrer"

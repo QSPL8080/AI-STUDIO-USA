@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, MessageCircle, Shield, FileText, Cookie } from "lucide-react";
 import { Footer, FloatingWhatsAppButton } from "@/components/site/sections";
 
@@ -269,7 +269,9 @@ export function CookiePolicyPage() {
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-3">
               <a
-                href="https://wa.me/918177828748?text=Hi%20Quickupp%20AI%20Studio%2C%20I%20have%20a%20question%20regarding%20Cookies%20and%20Privacy."
+                href={`https://wa.me/918177828748?text=${encodeURIComponent(
+                  "Hello Quickupp AI Studio Team,\n\nI have a question regarding Cookies and Privacy on quickuppaistudio.us.",
+                )}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-full bg-gradient-brand px-5 py-2 text-xs font-bold text-neon-foreground shadow-md transition-all hover:brightness-110 sm:text-sm"
