@@ -845,6 +845,8 @@ export function Hero() {
               muted={isMuted}
               playsInline
               preload="auto"
+              // @ts-ignore
+              fetchpriority="high"
               onClick={toggleAudio}
               className="h-full w-full object-cover object-center cursor-pointer"
             >
@@ -991,6 +993,8 @@ export function Hero() {
                 muted={isMuted}
                 playsInline
                 preload="auto"
+                // @ts-ignore
+                fetchpriority="high"
                 onClick={toggleAudio}
                 className="h-full w-full object-cover object-center cursor-pointer"
               >
@@ -1493,14 +1497,18 @@ export function Samples() {
                         el.muted = isVideoMuted;
                         el.volume = isVideoMuted ? 0 : 1;
                         el.playsInline = true;
+                        // Lazy-set src only when element is mounted to avoid
+                        // browser pre-fetching all videos on page load
+                        if (item.videoUrl && !el.src) {
+                          el.src = item.videoUrl;
+                          el.load();
+                        }
                       }
                     }}
                     key={item.videoUrl}
-                    src={item.videoUrl}
-                    autoPlay
                     muted={isVideoMuted}
                     playsInline
-                    preload="metadata"
+                    preload="none"
                     onEnded={() => handleVideoEnded(idx)}
                     className="h-full w-full object-cover"
                   >
@@ -1690,6 +1698,7 @@ function PortfolioCard({ sample }: { sample: (typeof portfolioItems)[number] }) 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
+  const [srcLoaded, setSrcLoaded] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -1702,6 +1711,12 @@ function PortfolioCard({ sample }: { sample: (typeof portfolioItems)[number] }) 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
+          // Lazy-load src only when card scrolls into view
+          if (sample.videoUrl && !video.src) {
+            video.src = sample.videoUrl;
+            video.load();
+            setSrcLoaded(true);
+          }
           const playPromise = video.play();
           if (playPromise !== undefined) {
             playPromise
@@ -1767,7 +1782,7 @@ function PortfolioCard({ sample }: { sample: (typeof portfolioItems)[number] }) 
 
   return (
     <article className="group relative flex aspect-[9/16] w-full flex-col justify-between overflow-hidden rounded-[24px] border border-border/80 bg-black p-4 sm:p-5 shadow-2xl transition-all duration-300 hover:border-neon/60 hover:shadow-[0_0_35px_-5px_rgba(217,70,239,0.35)] sm:w-[calc(50%-0.875rem)] lg:w-[calc(33.333%-1.25rem)]">
-      {/* Background Video (True 9:16 Reel Fit - No Crop) */}
+      {/* Background Video — lazy-loaded: src set only when card enters viewport */}
       {sample.videoUrl && (
         <video
           ref={(el) => {
@@ -1779,16 +1794,19 @@ function PortfolioCard({ sample }: { sample: (typeof portfolioItems)[number] }) 
               el.playsInline = true;
             }
           }}
-          src={sample.videoUrl}
-          autoPlay
           muted={isMuted}
           loop
           playsInline
-          preload="metadata"
+          preload="none"
           className="absolute inset-0 h-full w-full object-cover pointer-events-none"
         >
           <track kind="captions" src="" label="English" default />
         </video>
+      )}
+
+      {/* Loading shimmer shown until video src is assigned */}
+      {sample.videoUrl && !srcLoaded && (
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0e0820] via-[#1a0a2e] to-[#0e0820] animate-pulse pointer-events-none" />
       )}
 
       {/* Blank / Coming Soon state */}
