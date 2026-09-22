@@ -14,32 +14,32 @@ export const samples = [
     format: "AI UGC",
     industry: "Dental & Healthcare",
     description: "Creator-style AI UGC video showcasing dental services and solutions to common teeth problems.",
-    videoUrl: "/videos/UGC%20Sample%20new.mp4?v=1",
+    videoUrl: "",
   },
   {
     format: "AI Avatar",
     industry: "Hospitality & Food",
     description: "AI avatar presenter reel highlighting a hotel's diverse food menu and dining varieties.",
-    videoUrl: "/videos/Avtar%20Sample%20new.mp4?v=1",
+    videoUrl: "",
   },
   {
     format: "Hyper-Realistic",
     industry: "Luxury Cosmetics & Beauty",
     description: "Cinematic 3D hyper-realistic product commercial showcasing DIOR Addict Lip Maximizer with studio lighting and macro details.",
-    videoUrl: "/videos/Hyper%20Realistic%20Sample.mp4",
+    videoUrl: "",
   },
   {
     format: "AI Cartoon",
     industry: "Food & Confectionery",
     description:
       "Engaging animated brand storytelling reel with custom characters for Chitale Kesar Modak.",
-    videoUrl: "/videos/Cartoon%20Sample.mp4?v=2",
+    videoUrl: "",
   },
   {
     format: "Digital Twin",
     industry: "Founder Branding",
     description: "Founder-led update reel created from an approved digital twin.",
-    videoUrl: "/videos/Digital%20Twin%20Sample.mp4?v=2",
+    videoUrl: "",
   },
 ];
 
@@ -60,7 +60,7 @@ export const portfolioItems = [
     industry: "Luxury Cosmetics",
     description:
       "Hyper-realistic cinematic product showcase and close-up lip glow commercial for Dior.",
-    videoUrl: "/videos/Portfolio 3.mp4",
+    videoUrl: "/videos/Hyper%20Realistic%20Sample.mp4",
   },
   {
     industry: "Fine Jewellery & Luxury",
