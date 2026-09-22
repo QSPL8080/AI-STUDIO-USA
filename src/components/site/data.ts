@@ -60,7 +60,7 @@ export const portfolioItems = [
     industry: "Luxury Cosmetics",
     description:
       "Hyper-realistic cinematic product showcase and close-up lip glow commercial for Dior.",
-    videoUrl: "/videos/Portfolio%203.mp4",
+    videoUrl: "/videos/Portfolio 3.mp4",
   },
   {
     industry: "Fine Jewellery & Luxury",
@@ -78,7 +78,7 @@ export const portfolioItems = [
     industry: "Digital Twin & Executive",
     description:
       "Founder-led brand update reel powered by a hyper-realistic digital twin — no camera, no studio needed.",
-    videoUrl: "/videos/Digital%20Twin%20Sample.mp4",
+    videoUrl: "",
   },
 ];
 
