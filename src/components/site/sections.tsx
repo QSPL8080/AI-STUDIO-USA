@@ -66,21 +66,7 @@ import {
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileIndustriesOpen, setMobileIndustriesOpen] = useState(false);
-  const [industriesDropdownOpen, setIndustriesDropdownOpen] = useState(false);
   const [isLogoDocked, setIsLogoDocked] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown on click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIndustriesDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -108,21 +94,6 @@ export function Header() {
       window.removeEventListener("resize", handleScroll);
     };
   }, []);
-
-  const industriesListCol1 = [
-    { name: "Healthcare", href: "/industries/healthcare" },
-    { name: "Professional Services", href: "/industries/professional-services" },
-    { name: "IT & SaaS", href: "/industries/it-saas" },
-    { name: "Real Estate", href: "/industries/real-estate" },
-    { name: "Travel & Hospitality", href: "/industries/travel-hospitality" },
-  ];
-
-  const industriesListCol2 = [
-    { name: "Home Services", href: "/industries/home-services" },
-    { name: "Education", href: "/industries/education" },
-    { name: "eCommerce", href: "/industries/ecommerce" },
-    { name: "Interior Design", href: "/industries/interior-design" },
-  ];
 
   return (
     <header id="site-nav-container" className="fixed top-0 left-0 right-0 z-50 flex flex-col">
@@ -160,81 +131,6 @@ export function Header() {
             >
               Services
             </a>
-
-            {/* Industries Dropdown Trigger */}
-            <div
-              ref={dropdownRef}
-              className="relative"
-              onMouseEnter={() => setIndustriesDropdownOpen(true)}
-              onMouseLeave={() => setIndustriesDropdownOpen(false)}
-            >
-              <button
-                type="button"
-                onClick={() => setIndustriesDropdownOpen(!industriesDropdownOpen)}
-                className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-95 ${
-                  industriesDropdownOpen
-                    ? "bg-white text-purple-600 shadow-xs"
-                    : "text-slate-600 hover:bg-white hover:text-purple-600 hover:shadow-xs"
-                }`}
-                aria-expanded={industriesDropdownOpen}
-              >
-                <span>Industries</span>
-                <ChevronDown
-                  className={`h-3 w-3 transition-transform duration-200 ${
-                    industriesDropdownOpen ? "rotate-180 text-purple-600" : "text-slate-400"
-                  }`}
-                />
-              </button>
-
-              {/* Assurix-Style Dark Glassmorphic Industries Dropdown Menu (Screenshot 1) */}
-              {industriesDropdownOpen && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[420px] rounded-2xl border border-slate-700/80 bg-[#0d0f18]/95 p-5 shadow-2xl backdrop-blur-2xl text-white animate-in fade-in slide-in-from-top-2 duration-200 z-50">
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-800/90">
-                    <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-cyan-400">
-                      <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
-                      <span>INDUSTRIES WE SCALE</span>
-                    </div>
-                    <a
-                      href="/industries"
-                      className="flex items-center gap-1 text-[11px] font-bold text-slate-300 transition-colors hover:text-cyan-400"
-                    >
-                      <span>Explore All</span>
-                      <span className="text-xs">↗</span>
-                    </a>
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2.5">
-                    {/* Column 1 */}
-                    <div className="flex flex-col gap-2">
-                      {industriesListCol1.map((item) => (
-                        <a
-                          key={item.href}
-                          href={item.href}
-                          className="flex items-center gap-2 text-xs font-semibold text-slate-200 transition-all hover:text-cyan-300 hover:translate-x-1 py-1"
-                        >
-                          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400/80 shrink-0" />
-                          <span>{item.name}</span>
-                        </a>
-                      ))}
-                    </div>
-
-                    {/* Column 2 */}
-                    <div className="flex flex-col gap-2">
-                      {industriesListCol2.map((item) => (
-                        <a
-                          key={item.href}
-                          href={item.href}
-                          className="flex items-center gap-2 text-xs font-semibold text-slate-200 transition-all hover:text-cyan-300 hover:translate-x-1 py-1"
-                        >
-                          <span className="h-1.5 w-1.5 rounded-full bg-purple-400/80 shrink-0" />
-                          <span>{item.name}</span>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
 
             <a
               href="/#pricing"
@@ -326,41 +222,6 @@ export function Header() {
                 <span>Services</span>
                 <span className="text-xs text-purple-600">→</span>
               </a>
-
-              {/* Mobile Industries Accordion */}
-              <div className="rounded-lg border border-purple-100 bg-purple-50/50 p-2">
-                <button
-                  type="button"
-                  onClick={() => setMobileIndustriesOpen(!mobileIndustriesOpen)}
-                  className="flex w-full items-center justify-between px-2 py-1.5 text-sm font-bold text-purple-900"
-                >
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-purple-600" />
-                    <span>Industries We Scale</span>
-                  </div>
-                  <ChevronDown
-                    className={`h-4 w-4 text-purple-700 transition-transform ${
-                      mobileIndustriesOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-
-                {mobileIndustriesOpen && (
-                  <div className="mt-2 flex flex-col gap-1 border-t border-purple-200/60 pt-2 pl-2">
-                    {[...industriesListCol1, ...industriesListCol2].map((item) => (
-                      <a
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center justify-between rounded-md px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-purple-100 hover:text-purple-900"
-                      >
-                        <span>{item.name}</span>
-                        <span className="text-purple-600">↗</span>
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
 
               <a
                 href="/#pricing"
