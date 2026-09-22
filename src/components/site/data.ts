@@ -26,7 +26,7 @@ export const samples = [
     format: "Hyper-Realistic",
     industry: "Luxury Cosmetics & Beauty",
     description: "Cinematic 3D hyper-realistic product commercial showcasing DIOR Addict Lip Maximizer with studio lighting and macro details.",
-    videoUrl: "",
+    videoUrl: "/videos/Hyper%20Realistic%20Sample.mp4",
   },
   {
     format: "AI Cartoon",
@@ -60,7 +60,7 @@ export const portfolioItems = [
     industry: "Luxury Cosmetics",
     description:
       "Hyper-realistic cinematic product showcase and close-up lip glow commercial for Dior.",
-    videoUrl: "/videos/Hyper%20Realistic%20Sample.mp4",
+    videoUrl: "/videos/Portfolio%203.mp4",
   },
   {
     industry: "Fine Jewellery & Luxury",
