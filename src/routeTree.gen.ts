@@ -14,8 +14,6 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as TermsRouteImport } from './routes/terms'
-import { Route as IndustriesIndexRouteImport } from './routes/industries.index'
-import { Route as IndustriesSlugRouteImport } from './routes/industries.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -42,16 +40,6 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndustriesIndexRoute = IndustriesIndexRouteImport.update({
-  id: '/industries/',
-  path: '/industries/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndustriesSlugRoute = IndustriesSlugRouteImport.update({
-  id: '/industries/$slug',
-  path: '/industries/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,8 +47,6 @@ export interface FileRoutesByFullPath {
   '/cookie-policy': typeof CookiePolicyRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms': typeof TermsRoute
-  '/industries/$slug': typeof IndustriesSlugRoute
-  '/industries/': typeof IndustriesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -68,8 +54,6 @@ export interface FileRoutesByTo {
   '/cookie-policy': typeof CookiePolicyRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms': typeof TermsRoute
-  '/industries/$slug': typeof IndustriesSlugRoute
-  '/industries': typeof IndustriesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -78,28 +62,12 @@ export interface FileRoutesById {
   '/cookie-policy': typeof CookiePolicyRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms': typeof TermsRoute
-  '/industries/$slug': typeof IndustriesSlugRoute
-  '/industries/': typeof IndustriesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/admin'
-    | '/cookie-policy'
-    | '/privacy-policy'
-    | '/terms'
-    | '/industries/$slug'
-    | '/industries/'
+  fullPaths: '/' | '/admin' | '/cookie-policy' | '/privacy-policy' | '/terms'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/admin'
-    | '/cookie-policy'
-    | '/privacy-policy'
-    | '/terms'
-    | '/industries/$slug'
-    | '/industries'
+  to: '/' | '/admin' | '/cookie-policy' | '/privacy-policy' | '/terms'
   id:
     | '__root__'
     | '/'
@@ -107,8 +75,6 @@ export interface FileRouteTypes {
     | '/cookie-policy'
     | '/privacy-policy'
     | '/terms'
-    | '/industries/$slug'
-    | '/industries/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -117,8 +83,6 @@ export interface RootRouteChildren {
   CookiePolicyRoute: typeof CookiePolicyRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   TermsRoute: typeof TermsRoute
-  IndustriesSlugRoute: typeof IndustriesSlugRoute
-  IndustriesIndexRoute: typeof IndustriesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -158,20 +122,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/industries/': {
-      id: '/industries/'
-      path: '/industries'
-      fullPath: '/industries/'
-      preLoaderRoute: typeof IndustriesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/industries/$slug': {
-      id: '/industries/$slug'
-      path: '/industries/$slug'
-      fullPath: '/industries/$slug'
-      preLoaderRoute: typeof IndustriesSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -181,8 +131,6 @@ const rootRouteChildren: RootRouteChildren = {
   CookiePolicyRoute: CookiePolicyRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   TermsRoute: TermsRoute,
-  IndustriesSlugRoute: IndustriesSlugRoute,
-  IndustriesIndexRoute: IndustriesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

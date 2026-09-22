@@ -9,7 +9,6 @@ import {
   Header,
   Hero,
   HeroOverview,
-  Industries,
   LeadFormSection,
   Portfolio,
   Pricing,
@@ -85,7 +84,6 @@ function Index() {
         <WhyAiVideo />
         <Pricing />
         <DigitalTwin />
-        <Industries />
         <UseCases />
         <StrategyCall />
         <Process />

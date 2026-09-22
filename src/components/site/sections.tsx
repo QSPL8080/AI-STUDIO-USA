@@ -46,7 +46,6 @@ import {
   footerTagline,
   footerUsaAddress,
   footerUsaMapUrl,
-  industries,
   individualPricingList,
   nav,
   packagePricingTiers,
@@ -2663,122 +2662,6 @@ export function DigitalTwin() {
             />
           </div>
         </div>
-      </div>
-    </Section>
-  );
-}
-
-export function Industries() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const [isInView, setIsInView] = useState(false);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setIsInView(true);
-          observer.unobserve(el);
-        }
-      },
-      { threshold: 0.08, rootMargin: "0px 0px -30px 0px" },
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  const getIndustryHref = (name: string) => {
-    switch (name) {
-      case "Real Estate":
-        return "/industries/real-estate";
-      case "Clinics & Doctors":
-        return "/industries/healthcare";
-      case "D2C & E-commerce":
-      case "Beauty & Skincare":
-      case "Jewellery & Luxury":
-        return "/industries/ecommerce";
-      case "Interior Design":
-        return "/industries/interior-design";
-      case "Restaurants & Cafes":
-      case "Travel & Tourism":
-        return "/industries/travel-hospitality";
-      case "Education & Coaching":
-        return "/industries/education";
-      case "IT & SaaS":
-        return "/industries/it-saas";
-      case "Finance & Insurance":
-        return "/industries/professional-services";
-      case "Fitness & Wellness":
-        return "/industries/home-services";
-      default:
-        return "/industries";
-    }
-  };
-
-  return (
-    <Section id="industries" className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-slate-100/70 to-slate-100/90 border-b border-slate-200/80">
-      <SectionHeading
-        eyebrow="AI Video Production for Businesses"
-        title="AI Video Production for Your"
-        highlight="Industry"
-        description="Create industry-specific video content designed around your audience, product and marketing goals."
-      />
-      <div ref={sectionRef} className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {industries.map((industry, i) => {
-          const animationClass = isInView ? "animate-industry-card" : "opacity-0 translate-y-6";
-          const href = getIndustryHref(industry.name);
-
-          return (
-            <a
-              key={industry.name}
-              href={href}
-              style={{ animationDelay: `${(i % 6) * 0.08}s` }}
-              className={`panel panel-hover group relative overflow-hidden p-6 transition-all duration-300 hover:border-purple-400 hover:shadow-[0_0_30px_-5px_rgba(200,80,255,0.35)] block ${animationClass}`}
-            >
-              {industry.image ? (
-                <>
-                  {/* Clearly Visible Background Image with 65% opacity */}
-                  <img
-                    src={industry.image}
-                    alt={industry.name}
-                    className="pointer-events-none absolute -inset-2 h-[calc(100%+16px)] w-[calc(100%+16px)] max-w-none object-cover object-right opacity-65 transition-all duration-500 group-hover:scale-105 group-hover:opacity-80"
-                  />
-                  {/* Balanced directional gradient: dark on bottom/left for text, transparent on top/right to see artwork */}
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-[#0b0816]/90 via-[#0b0816]/55 to-[#0b0816]/15" />
-                </>
-              ) : null}
-
-              <div className="relative z-10 flex flex-col justify-between h-full min-h-[170px]">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-white transition-colors group-hover:text-cyan-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                      {industry.name}
-                    </h3>
-                    <span className="text-xs font-bold text-purple-300 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Explore ↗
-                    </span>
-                  </div>
-                  <p className="mt-2 text-xs sm:text-sm leading-relaxed text-white/95 font-normal drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                    {industry.description}
-                  </p>
-                </div>
-
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-1.5 text-xs font-semibold drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] pt-3 border-t border-white/15">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-amber-300">✦ Recommended:</span>
-                    <span className="text-white font-medium">{industry.recommended}</span>
-                  </div>
-                  <span className="text-purple-300 font-bold group-hover:text-cyan-300 transition-colors">
-                    View Subpage →
-                  </span>
-                </div>
-              </div>
-            </a>
-          );
-        })}
       </div>
     </Section>
   );
