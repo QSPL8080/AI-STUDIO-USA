@@ -57,9 +57,9 @@ export const portfolioItems = [
     videoUrl: "/videos/Portfolio 2.mp4",
   },
   {
-    industry: "Luxury Cosmetics",
+    industry: "Luxury Goods & Accessories",
     description:
-      "Hyper-realistic cinematic product showcase and close-up lip glow commercial for Dior.",
+      "Hyper-realistic cinematic close-up commercial showcasing a premium luxury leather accessory with gold hardware.",
     videoUrl: "/videos/Portfolio 3.mp4",
   },
   {
