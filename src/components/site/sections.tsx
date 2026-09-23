@@ -99,8 +99,8 @@ export function Header() {
 
   return (
     <header id="site-nav-container" className="fixed top-0 left-0 right-0 z-50 flex flex-col">
-      <div className="border-b border-slate-200/80 bg-white/90 backdrop-blur-xl shadow-xs">
-        <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 lg:px-8 py-3 md:py-3.5">
+      <div id="site-header-bar" className="relative border-b border-slate-200/80 bg-white/95 backdrop-blur-xl shadow-xs z-50">
+        <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 md:py-3.5">
           <a
             href="/#top"
             id="navbar-logo-anchor"
@@ -110,13 +110,13 @@ export function Header() {
             <img
               src="/images/LOGO 1.png"
               alt="Quickupp AI Studio logo"
-              className="h-8 sm:h-9 md:h-10 w-auto object-contain"
+              className="h-7 sm:h-8 md:h-9 lg:h-10 w-auto object-contain shrink-0"
               width={125}
               height={40}
             />
           </a>
 
-          {/* Desktop Navigation Links */}
+          {/* Desktop Navigation Links (>=1024px) */}
           <nav
             aria-label="Main Navigation"
             className="hidden items-center gap-1 xl:gap-1.5 rounded-full border border-slate-200 bg-slate-100/70 px-2.5 xl:px-3 py-1.5 lg:flex shadow-xs relative shrink-0"
@@ -167,7 +167,7 @@ export function Header() {
           </nav>
 
           {/* Right CTA & Mobile Toggle */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             <NeonButton
               href={calendlyUrl}
               variant="call"
@@ -201,90 +201,90 @@ export function Header() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-800 transition-colors hover:border-purple-400 hover:text-purple-600 lg:hidden cursor-pointer"
+              className="flex h-10 w-10 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-800 transition-colors hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 lg:hidden cursor-pointer"
               aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
               aria-expanded={mobileMenuOpen}
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5 text-slate-700" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile & Tablet Navigation Menu Dropdown */}
+        {/* Mobile & Tablet Navigation Menu Dropdown (Absolute overlay to prevent jumping layout) */}
         {mobileMenuOpen && (
           <nav
             aria-label="Mobile Navigation"
-            className="border-b border-slate-200 bg-white/98 px-5 py-5 shadow-2xl backdrop-blur-2xl lg:hidden animate-in fade-in slide-in-from-top-2 duration-200 max-h-[85vh] overflow-y-auto"
+            className="absolute top-full left-0 right-0 w-full border-b border-slate-200 bg-white/98 px-5 py-6 shadow-2xl backdrop-blur-2xl lg:hidden animate-in fade-in slide-in-from-top-2 duration-200 max-h-[calc(100dvh-4.5rem)] overflow-y-auto z-50"
           >
-            <div className="mx-auto flex max-w-md flex-col gap-1.5">
+            <div className="mx-auto flex max-w-md flex-col gap-1">
               <a
                 href="/#samples"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700"
+                className="flex min-h-[44px] items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
               >
                 <span>Samples</span>
-                <span className="text-xs text-purple-600">→</span>
+                <span className="text-xs text-purple-600 font-bold">→</span>
               </a>
 
               <a
                 href="/#services"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700"
+                className="flex min-h-[44px] items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
               >
                 <span>Services</span>
-                <span className="text-xs text-purple-600">→</span>
+                <span className="text-xs text-purple-600 font-bold">→</span>
               </a>
 
               <a
                 href="/#pricing"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700"
+                className="flex min-h-[44px] items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
               >
                 <span>Pricing</span>
-                <span className="text-xs text-purple-600">→</span>
+                <span className="text-xs text-purple-600 font-bold">→</span>
               </a>
 
               <a
                 href="/#portfolio"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700"
+                className="flex min-h-[44px] items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
               >
                 <span>Portfolio</span>
-                <span className="text-xs text-purple-600">→</span>
+                <span className="text-xs text-purple-600 font-bold">→</span>
               </a>
 
               <a
                 href="/#process"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700"
+                className="flex min-h-[44px] items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
               >
                 <span>How It Works</span>
-                <span className="text-xs text-purple-600">→</span>
+                <span className="text-xs text-purple-600 font-bold">→</span>
               </a>
 
               <a
                 href="/#faq"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700"
+                className="flex min-h-[44px] items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
               >
                 <span>FAQ</span>
-                <span className="text-xs text-purple-600">→</span>
+                <span className="text-xs text-purple-600 font-bold">→</span>
               </a>
 
               <a
                 href="/#contact"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700"
+                className="flex min-h-[44px] items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
               >
                 <span>Contact</span>
-                <span className="text-xs text-purple-600">→</span>
+                <span className="text-xs text-purple-600 font-bold">→</span>
               </a>
 
-              <div className="mt-3 flex flex-col gap-2 border-t border-slate-200 pt-4">
+              <div className="mt-3 flex flex-col gap-2.5 border-t border-slate-200 pt-4">
                 <a
                   href={calendlyUrl}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-purple-200/90 bg-gradient-to-r from-violet-100 via-purple-100 to-pink-100 py-2.5 text-sm font-bold text-purple-900 shadow-xs transition-all hover:from-violet-200 hover:via-purple-200 hover:to-pink-200 hover:border-purple-400 active:scale-95"
+                  className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-purple-200/90 bg-gradient-to-r from-violet-100 via-purple-100 to-pink-100 py-3 text-sm font-bold text-purple-900 shadow-xs transition-all hover:from-violet-200 hover:via-purple-200 hover:to-pink-200 hover:border-purple-400 active:scale-95"
                 >
                   <Calendar className="h-4 w-4 text-purple-700 shrink-0" />
                   <span>Book a 30 min call</span>
@@ -292,7 +292,7 @@ export function Header() {
                 <a
                   href="/#contact"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex w-full items-center justify-center rounded-lg bg-gradient-brand py-2.5 text-sm font-bold text-white shadow-md hover:brightness-110"
+                  className="flex min-h-[44px] w-full items-center justify-center rounded-xl bg-gradient-brand py-3 text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95"
                 >
                   Get AI Video Quote
                 </a>
@@ -302,7 +302,7 @@ export function Header() {
                     setMobileMenuOpen(false);
                     openCheckoutModal({ itemType: "package" });
                   }}
-                  className="flex w-full items-center justify-center gap-2 rounded-full border border-purple-400/80 bg-slate-900 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-purple-400/80 bg-slate-900 py-3 text-sm font-bold text-white shadow-xs hover:bg-slate-800 transition-colors cursor-pointer active:scale-95"
                 >
                   <Zap className="h-4 w-4 text-white shrink-0" />
                   <span>Buy Plan</span>
@@ -312,7 +312,7 @@ export function Header() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 py-2.5 text-sm font-semibold text-slate-800 transition-colors hover:border-purple-400 hover:text-purple-700"
+                  className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 py-3 text-sm font-semibold text-slate-800 transition-colors hover:border-purple-400 hover:text-purple-700 active:scale-95"
                 >
                   <MessageCircle className="h-4 w-4 text-[#25D366]" />
                   Chat on WhatsApp
@@ -494,9 +494,11 @@ export function Hero() {
 
   useEffect(() => {
     const updateHeaderHeight = () => {
-      const nav = document.getElementById("site-nav-container");
-      if (nav) {
-        setHeaderHeight(nav.offsetHeight);
+      const topBar = document.getElementById("site-header-bar");
+      if (topBar) {
+        setHeaderHeight(topBar.offsetHeight);
+      } else {
+        setHeaderHeight(64);
       }
     };
 
@@ -504,10 +506,10 @@ export function Hero() {
     window.addEventListener("resize", updateHeaderHeight);
 
     let observer: ResizeObserver | null = null;
-    const nav = document.getElementById("site-nav-container");
-    if (nav && typeof ResizeObserver !== "undefined") {
+    const topBar = document.getElementById("site-header-bar");
+    if (topBar && typeof ResizeObserver !== "undefined") {
       observer = new ResizeObserver(updateHeaderHeight);
-      observer.observe(nav);
+      observer.observe(topBar);
     }
 
     return () => {
@@ -676,11 +678,11 @@ export function Hero() {
         id="hero-mobile-section"
         ref={mobileHeroRef}
         aria-hidden={isDesktop}
-        className="block lg:hidden relative overflow-hidden bg-aura-diagonal-soft w-full min-h-[calc(100vh-60px)] px-4 sm:px-6 pb-12 flex flex-col items-center justify-center text-center"
-        style={{ paddingTop: `${headerHeight + 20}px` }}
+        className="block lg:hidden relative overflow-hidden bg-aura-diagonal-soft w-full min-h-[calc(100dvh-60px)] px-4 sm:px-6 pb-12 flex flex-col items-center justify-center text-center"
+        style={{ paddingTop: `calc(${headerHeight}px + 1.25rem)` }}
       >
         {/* Animated podcast-style geometric orbital watermarks & contour waves */}
-        <HeroOrbitalAtmosphere className="scale-90" />
+        <HeroOrbitalAtmosphere className="scale-90 sm:scale-100" />
 
         {/* Ambient atmospheric brand glows */}
         <div
@@ -697,14 +699,14 @@ export function Hero() {
           }}
         />
 
-        <div className="relative z-10 flex flex-col items-center w-full max-w-md mx-auto my-auto">
+        <div className="relative z-10 flex flex-col items-center w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto my-auto">
           {/* Top: AI Studio Title for Mobile & Tablet */}
-          <div className="w-full mb-3 px-2 flex justify-center">
+          <div className="w-full mb-3.5 sm:mb-5 px-2 flex justify-center">
             <img
               src="/images/ai studio logo hero.png"
               alt="Quickupp AI Studio"
               title="Quickupp AI Studio"
-              className="w-full max-w-[280px] xs:max-w-[320px] h-auto object-contain select-none"
+              className="w-full max-w-[280px] xs:max-w-[320px] sm:max-w-[420px] md:max-w-[480px] h-auto object-contain select-none"
               width={1600}
               height={300}
               loading="eager"
@@ -713,7 +715,7 @@ export function Hero() {
           </div>
 
           {/* Video in between (centered, high-impact vertical format) */}
-          <div className="relative w-full max-w-[310px] xs:max-w-[340px] sm:max-w-[390px] aspect-[9/16] max-h-[58vh] rounded-2xl overflow-hidden border border-white/20 bg-[#0e081e] shadow-[0_0_50px_rgba(200,80,255,0.35)] glow-neon">
+          <div className="relative w-full max-w-[310px] xs:max-w-[340px] sm:max-w-[380px] md:max-w-[420px] aspect-[9/16] max-h-[55vh] rounded-2xl overflow-hidden border border-white/20 bg-[#0e081e] shadow-[0_0_50px_rgba(200,80,255,0.35)] glow-neon">
             <video
               ref={(el) => {
                 mobileVideoRef.current = el;
@@ -762,14 +764,14 @@ export function Hero() {
           </div>
 
           {/* Below that: Hero Headline & Subheading */}
-          <div className="mt-4 sm:mt-6 w-full max-w-lg px-2 text-center">
+          <div className="mt-4 sm:mt-6 w-full max-w-lg sm:max-w-xl md:max-w-2xl px-2 text-center">
             <h1 className="font-[var(--font-google-sans)] text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-slate-900">
               <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5">
                 AI Video Creation
               </span>{" "}
               for Businesses That Want to Stand Out
             </h1>
-            <p className="mt-2.5 sm:mt-3 text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
+            <p className="mt-2.5 sm:mt-3.5 text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal">
               Turn your ideas into engaging, professional videos with AI - faster, smarter, and more cost-effectively.
             </p>
           </div>
@@ -2879,9 +2881,9 @@ export function StrategyCall() {
         <div className="relative mx-auto w-full max-w-[620px] overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-2 sm:p-3 shadow-xl">
           <div
             ref={calendlyContainerRef}
-            className="calendly-inline-widget min-w-[320px]"
+            className="calendly-inline-widget w-full"
             data-url={`${calendlyUrl}?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
-            style={{ minWidth: "320px", width: "calc(100% + 24px)", height: "720px" }}
+            style={{ width: "100%", height: "720px" }}
           >
             <iframe
               src={`${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
@@ -2889,8 +2891,8 @@ export function StrategyCall() {
               height="720"
               frameBorder="0"
               title="Select a Date & Time - Strategy Call"
-              className="h-[720px] border-0"
-              style={{ width: "calc(100% + 24px)", height: "720px" }}
+              className="h-[720px] w-full border-0"
+              style={{ width: "100%", height: "720px" }}
             />
           </div>
         </div>
@@ -3178,13 +3180,13 @@ export function LeadFormSection() {
         <div className="panel mx-auto max-w-3xl p-6 sm:p-10">
         {submitted ? (
           <div className="py-8 text-center space-y-3 animate-in fade-in zoom-in-95 duration-300">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-[0_0_25px_rgba(16,185,129,0.3)]">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 border border-emerald-500/40 shadow-[0_0_25px_rgba(16,185,129,0.3)]">
               <BadgeCheck className="h-7 w-7" />
             </div>
-            <h3 className="font-heading text-xl sm:text-2xl font-bold text-white">
+            <h3 className="font-heading text-xl sm:text-2xl font-bold text-slate-900">
               Thank You! Requirement Submitted
             </h3>
-            <p className="max-w-md mx-auto text-xs sm:text-sm text-muted-foreground">
+            <p className="max-w-md mx-auto text-xs sm:text-sm text-slate-600">
               We have received your project details. Our production team will review your
               requirements and contact you directly shortly.
             </p>
@@ -3192,7 +3194,7 @@ export function LeadFormSection() {
               <button
                 type="button"
                 onClick={() => setSubmitted(false)}
-                className="rounded-full border border-border bg-secondary/50 px-5 py-2 text-xs font-semibold text-white hover:border-neon hover:text-neon transition-colors"
+                className="rounded-full border border-slate-200 bg-slate-100 px-5 py-2 text-xs font-semibold text-slate-800 hover:border-purple-300 hover:text-purple-700 transition-colors cursor-pointer"
               >
                 Submit Another Requirement
               </button>
@@ -3290,7 +3292,7 @@ export function LeadFormSection() {
                   name="name"
                   required
                   placeholder="Your name"
-                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
+                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
                 />
               </div>
               <div>
@@ -3306,7 +3308,7 @@ export function LeadFormSection() {
                   name="business"
                   required
                   placeholder="Your business"
-                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
+                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
                 />
               </div>
             </div>
@@ -3325,7 +3327,7 @@ export function LeadFormSection() {
                   name="phone"
                   required
                   placeholder="+1 (555) 000-0000"
-                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
+                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
                 />
               </div>
               <div>
@@ -3340,7 +3342,7 @@ export function LeadFormSection() {
                   type="email"
                   name="email"
                   placeholder="you@company.com"
-                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
+                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
                 />
               </div>
             </div>
@@ -3358,7 +3360,7 @@ export function LeadFormSection() {
                     id="contactIndustry"
                     name="industry"
                     required
-                    className="w-full appearance-none rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 pr-10 text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer"
+                    className="w-full appearance-none rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 pr-10 text-base sm:text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer"
                   >
                     <option value="">Select industry</option>
                     <option value="Real Estate">Real Estate</option>
@@ -3390,7 +3392,7 @@ export function LeadFormSection() {
                     id="contactVideoType"
                     name="videoType"
                     required
-                    className="w-full appearance-none rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 pr-10 text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer"
+                    className="w-full appearance-none rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 pr-10 text-base sm:text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer"
                   >
                     <option value="">Select video type</option>
                     <option value="AI UGC Video">AI UGC Video</option>
@@ -3419,7 +3421,7 @@ export function LeadFormSection() {
                   name="location"
                   required
                   placeholder="e.g. New York, California, Delaware"
-                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
+                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
                 />
               </div>
               <div>
@@ -3432,7 +3434,7 @@ export function LeadFormSection() {
                 <select
                   id="contactBudget"
                   name="budget"
-                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer"
+                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer"
                 >
                   <option value="">Select budget</option>
                   <option value="$100 - $300">$100 - $300</option>
