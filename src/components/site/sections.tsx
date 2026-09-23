@@ -2269,41 +2269,59 @@ export function Pricing() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {individualPricingList.map((item, idx) => (
-                  <tr
-                    key={item.service}
-                    onClick={() => openCheckoutModal({ itemType: "individual", itemId: item.service })}
-                    className={`group cursor-pointer transition-colors hover:bg-purple-50/70 ${
-                      idx % 2 === 1 ? "bg-slate-50/40" : "bg-white"
-                    }`}
-                  >
-                    <td className="px-5 py-3.5 sm:px-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
-                        <span className="font-bold text-slate-900 group-hover:text-purple-700 transition-colors">
-                          {item.service}
-                        </span>
-                        {item.description ? (
-                          <span className="text-xs text-slate-500 font-normal hidden md:inline">
-                            — {item.description}
+                {individualPricingList.map((item, idx) => {
+                  const isSetup = item.service.toLowerCase().includes("setup");
+                  return (
+                    <tr
+                      key={item.service}
+                      onClick={() =>
+                        openCheckoutModal({
+                          itemType: isSetup ? "setup" : "individual",
+                          itemId: item.service,
+                        })
+                      }
+                      className={`group cursor-pointer transition-colors hover:bg-purple-50/70 ${
+                        isSetup
+                          ? "bg-purple-50/30 font-semibold"
+                          : idx % 2 === 1
+                          ? "bg-slate-50/40"
+                          : "bg-white"
+                      }`}
+                    >
+                      <td className="px-5 py-3.5 sm:px-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                          <span className="font-bold text-slate-900 group-hover:text-purple-700 transition-colors">
+                            {item.service}
                           </span>
-                        ) : null}
-                        {item.badge ? (
-                          <span className="w-fit rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700">
-                            {item.badge}
+                          {item.description ? (
+                            <span className="text-xs text-slate-500 font-normal hidden md:inline">
+                              — {item.description}
+                            </span>
+                          ) : null}
+                          {item.badge ? (
+                            <span className="w-fit rounded-full border border-purple-200 bg-purple-100/90 px-2.5 py-0.5 text-[10px] font-bold text-purple-800 shadow-xs">
+                              {item.badge}
+                            </span>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5 text-right font-bold text-purple-700 sm:px-6 sm:text-left text-base whitespace-nowrap">
+                        <div className="flex items-center justify-end sm:justify-between gap-2">
+                          {isSetup ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-brand px-3 py-1 text-sm sm:text-base font-black text-white shadow-md glow-neon">
+                              {item.price}
+                            </span>
+                          ) : (
+                            <span className="font-black text-slate-900 sm:text-purple-700">{item.price}</span>
+                          )}
+                          <span className="hidden sm:inline-flex items-center rounded-lg bg-purple-100/80 px-2.5 py-1 text-[11px] font-bold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-all">
+                            {isSetup ? "Buy Setup →" : "Buy Plan →"}
                           </span>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-right font-bold text-purple-700 sm:px-6 sm:text-left text-base whitespace-nowrap">
-                      <div className="flex items-center justify-end sm:justify-between gap-2">
-                        <span>{item.price}</span>
-                        <span className="hidden sm:inline-flex items-center rounded-lg bg-purple-100/80 px-2.5 py-1 text-[11px] font-bold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-all">
-                          Order Plan →
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
