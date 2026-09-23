@@ -303,84 +303,6 @@ export const digitalTwinSetupItem = {
   description: "One-time fee to build your Digital Twin before ordering Digital Twin videos.",
 };
 
-export interface PricingItem {
-  discounted: string;
-  original?: string;
-  badge?: string;
-}
-
-export interface PricingRow {
-  service: string;
-  prices: PricingItem[];
-}
-
-export const pricingRows: PricingRow[] = [
-  {
-    service: "AI UGC",
-    prices: [
-      { discounted: "$79" },
-      { discounted: "$349" },
-      { discounted: "$649" },
-      { discounted: "$899" },
-      { discounted: "$1,099" },
-      { discounted: "$1,499" },
-    ],
-  },
-  {
-    service: "AI Cartoon",
-    prices: [
-      { discounted: "$79" },
-      { discounted: "$349" },
-      { discounted: "$649" },
-      { discounted: "$899" },
-      { discounted: "$1,099" },
-      { discounted: "$1,499" },
-    ],
-  },
-  {
-    service: "AI Avatar",
-    prices: [
-      { discounted: "$99" },
-      { discounted: "$449" },
-      { discounted: "$799" },
-      { discounted: "$1,099" },
-      { discounted: "$1,399" },
-      { discounted: "$1,999" },
-    ],
-  },
-  {
-    service: "Hyper-Realistic",
-    prices: [
-      { discounted: "$149" },
-      { discounted: "$649" },
-      { discounted: "$1,199" },
-      { discounted: "$1,699" },
-      { discounted: "$2,199" },
-      { discounted: "$3,299" },
-    ],
-  },
-  {
-    service: "Digital Twin",
-    prices: [
-      { discounted: "$179" },
-      { discounted: "$799" },
-      { discounted: "$1,499" },
-      { discounted: "$2,099" },
-      { discounted: "$2,599" },
-      { discounted: "$3,799" },
-    ],
-  },
-];
-
-export const pricingColumns = [
-  { label: "Single Video", details: "24 Hrs", videos: "1" },
-  { label: "Starter", details: "72 Hrs", videos: "5" },
-  { label: "Growth", details: "Within 7 Days", videos: "10" },
-  { label: "Scale", details: "Within 14 Days", videos: "15" },
-  { label: "Pro", details: "Within 16 Days", videos: "20" },
-  { label: "Enterprise", details: "Within 20 Days", videos: "30" },
-];
-
 export const twinFeatures = [
   "Digital Twin Creation & Setup",
   "Face/Avatar Training",
@@ -631,7 +553,6 @@ export const nav = [
 
 export const calendlyUrl =
   "https://calendly.com/qsaistudio/quickupp-ai-studio-30-min-strategy-call";
-export const strategyCallEmail = "qsaistudio@gmail.com";
 
 export const footerTagline = "AI-Powered Videos. Built for Your Business.";
 export const footerDescription =

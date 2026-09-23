@@ -135,7 +135,7 @@ export const capturePayPalOrderServerFn = createServerFn({ method: "POST" })
       let captureId: string | undefined;
       const captures =
         captureResult.purchase_units?.[0]?.payments?.captures;
-      if (captures && captures.length > 0) {
+      if (captures && captures.length > 0 && captures[0]) {
         captureId = captures[0].id;
       }
 

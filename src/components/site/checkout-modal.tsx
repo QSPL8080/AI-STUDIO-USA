@@ -21,7 +21,6 @@ import {
   Star,
   Check,
   Tag,
-  Globe,
 } from "lucide-react";
 import {
   resolvePurchaseItem,

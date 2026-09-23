@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  AlertCircle,
   ArrowLeft,
   Calendar,
   CheckCircle2,
@@ -415,10 +416,9 @@ function AdminPage() {
 
         const brandNewLeads = res.leads.filter((l) => !currentIds.has(l.id));
         if (brandNewLeads.length > 0 && leadsRef.current.length > 0) {
-          if (soundEnabled) {
-            playNotificationChime();
+          if (brandNewLeads[0]) {
+            setNewLeadNotification(brandNewLeads[0]);
           }
-          setNewLeadNotification(brandNewLeads[0]);
           const newIds = brandNewLeads.map((l) => l.id);
           setHighlightedLeadIds((prev) => new Set([...prev, ...newIds]));
           setTimeout(() => {
@@ -500,7 +500,9 @@ function AdminPage() {
           if (soundEnabled) {
             playNotificationChime();
           }
-          setNewOrderNotification(brandNewOrders[0]);
+          if (brandNewOrders[0]) {
+            setNewOrderNotification(brandNewOrders[0]);
+          }
           const newIds = brandNewOrders.map((o) => o.id);
           setHighlightedOrderIds((prev) => new Set([...prev, ...newIds]));
           setTimeout(() => {
