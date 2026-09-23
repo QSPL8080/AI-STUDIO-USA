@@ -55,6 +55,7 @@ import {
   portfolioItems,
   samples,
   services,
+  strategyCallEmail,
   twinFeatures,
   useCases,
   whatsAppUrl,
@@ -733,9 +734,7 @@ export function Hero() {
               loop
               muted={isMuted}
               playsInline
-              preload="auto"
-              // @ts-ignore
-              fetchpriority="high"
+              preload="metadata"
               onClick={toggleAudio}
               className="h-full w-full object-cover object-center cursor-pointer"
             >
@@ -881,9 +880,7 @@ export function Hero() {
                 loop
                 muted={isMuted}
                 playsInline
-                preload="auto"
-                // @ts-ignore
-                fetchpriority="high"
+                preload="metadata"
                 onClick={toggleAudio}
                 className="h-full w-full object-cover object-center cursor-pointer"
               >

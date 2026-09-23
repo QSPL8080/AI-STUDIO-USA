@@ -553,6 +553,7 @@ export const nav = [
 
 export const calendlyUrl =
   "https://calendly.com/qsaistudio/quickupp-ai-studio-30-min-strategy-call";
+export const strategyCallEmail = "qsaistudio@gmail.com";
 
 export const footerTagline = "AI-Powered Videos. Built for Your Business.";
 export const footerDescription =

@@ -20,7 +20,6 @@ import {
   CreditCard,
   Star,
   Check,
-  Tag,
 } from "lucide-react";
 import {
   resolvePurchaseItem,
@@ -85,8 +84,6 @@ export function CheckoutModal() {
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvc, setCardCvc] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("United States");
-  const [couponCode, setCouponCode] = useState("");
-  const [couponApplied, setCouponApplied] = useState(false);
 
   // PayPal config state
   const [paypalClientId, setPayPalClientId] = useState<string>(DEFAULT_PAYPAL_CLIENT_ID);
@@ -551,25 +548,6 @@ export function CheckoutModal() {
                           <Check className="h-3.5 w-3.5 text-green-600" /> Included
                         </span>
                       </div>
-                    </div>
-
-                    {/* Coupon Bar */}
-                    <div className="flex items-center gap-2 rounded-xl bg-purple-50/80 p-2 border border-purple-100 text-xs">
-                      <Tag className="h-3.5 w-3.5 text-purple-600 shrink-0" />
-                      <input
-                        type="text"
-                        placeholder="Coupon: STUDIO10"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        className="w-full bg-transparent text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setCouponApplied(true)}
-                        className="rounded-lg bg-purple-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-purple-700 transition-colors shrink-0 cursor-pointer"
-                      >
-                        {couponApplied ? "Applied" : "Apply"}
-                      </button>
                     </div>
 
                     {/* Total Price Section */}
