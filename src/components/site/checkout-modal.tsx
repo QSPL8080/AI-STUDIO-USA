@@ -220,7 +220,9 @@ export function CheckoutModal() {
       className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-4 md:p-6 overflow-y-auto backdrop-blur-md bg-slate-950/70 animate-in fade-in duration-200"
     >
       <div
-        className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-purple-200/90 bg-white/98 shadow-2xl shadow-purple-950/25 backdrop-blur-2xl transition-all duration-300 animate-in zoom-in-95"
+        className={`relative w-full overflow-hidden rounded-3xl border border-purple-200/90 bg-white/98 shadow-2xl shadow-purple-950/25 backdrop-blur-2xl transition-all duration-300 animate-in zoom-in-95 ${
+          step === "payment" ? "max-w-4xl" : "max-w-xl sm:max-w-2xl"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Gradient Header Accent Bar */}

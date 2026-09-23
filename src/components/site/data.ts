@@ -51,6 +51,12 @@ export const portfolioItems = [
     videoUrl: "/videos/Portfolio 1.mp4",
   },
   {
+    industry: "Luxury Travel & Hospitality",
+    description:
+      "Cinematic destination & luxury resort showcase with breathtaking scenic aerial transitions.",
+    videoUrl: "/videos/Portfolio 2.mp4",
+  },
+  {
     industry: "Luxury Goods & Accessories",
     description:
       "Hyper-realistic cinematic close-up commercial showcasing a premium luxury leather accessory with gold hardware.",

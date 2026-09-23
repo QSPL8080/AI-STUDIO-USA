@@ -1382,70 +1382,86 @@ export function Samples() {
                   }}
                   className="relative aspect-[9/16] w-full max-w-[260px] sm:max-w-[280px] shrink-0 overflow-hidden rounded-2xl border-2 border-slate-800 bg-black shadow-lg transition-all duration-300 hover:border-neon cursor-pointer"
                 >
-                  <video
-                    ref={(el) => {
-                      videoRefs.current[idx] = el;
-                      if (el) {
-                        el.defaultMuted = true;
-                        el.muted = isVideoMuted;
-                        el.volume = isVideoMuted ? 0 : 1;
-                        el.playsInline = true;
-                        // Lazy-set src only when element is mounted to avoid
-                        // browser pre-fetching all videos on page load
-                        if (item.videoUrl && !el.src) {
-                          el.src = item.videoUrl;
-                          el.load();
-                        }
-                      }
-                    }}
-                    key={item.videoUrl}
-                    muted={isVideoMuted}
-                    playsInline
-                    preload="none"
-                    onEnded={() => handleVideoEnded(idx)}
-                    className="h-full w-full object-cover"
-                  >
-                    <track kind="captions" src="" label="English" default />
-                  </video>
-
-                  {/* Audio Unmute / Sound On Toggle Button (Default Muted) */}
-                  <div className="absolute top-2.5 left-2.5 z-30">
-                    <button
-                      type="button"
-                      onClick={(e) => toggleMute(idx, e)}
-                      className="group/mute inline-flex min-h-[34px] items-center gap-1.5 rounded-full border border-white/20 bg-black/80 px-3 py-1.5 text-[10px] sm:text-xs font-semibold text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:border-neon hover:bg-neon/20 hover:scale-105 active:scale-95 cursor-pointer"
-                      title={isVideoMuted ? "Click to Unmute Audio" : "Click to Mute Audio"}
-                      aria-label={isVideoMuted ? "Unmute sample video" : "Mute sample video"}
-                    >
-                      {isVideoMuted ? (
-                        <>
-                          <VolumeX className="h-3.5 w-3.5 text-red-400 group-hover/mute:text-neon" />
-                          <span className="text-white/90">Unmute</span>
-                        </>
-                      ) : (
-                        <>
-                          <Volume2 className="h-3.5 w-3.5 text-neon animate-pulse" />
-                          <span className="text-neon font-bold">Sound On</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* "Watch Again" Overlay when video reaches end */}
-                  {isEnded && (
-                    <div
-                      onClick={(e) => handleReplay(idx, e)}
-                      className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/70 p-3 text-center backdrop-blur-[2px] animate-in fade-in duration-300 cursor-pointer"
-                    >
-                      <button
-                        type="button"
-                        onClick={(e) => handleReplay(idx, e)}
-                        className="group/btn inline-flex items-center gap-2 rounded-full bg-gradient-brand px-5 py-2.5 text-xs sm:text-sm font-bold text-neon-foreground shadow-xl transition-all hover:scale-105 active:scale-95 glow-neon cursor-pointer"
-                        aria-label={`Watch ${item.format} video again`}
+                  {item.videoUrl ? (
+                    <>
+                      <video
+                        ref={(el) => {
+                          videoRefs.current[idx] = el;
+                          if (el) {
+                            el.defaultMuted = true;
+                            el.muted = isVideoMuted;
+                            el.volume = isVideoMuted ? 0 : 1;
+                            el.playsInline = true;
+                            // Lazy-set src only when element is mounted to avoid
+                            // browser pre-fetching all videos on page load
+                            if (item.videoUrl && !el.src) {
+                              el.src = item.videoUrl;
+                              el.load();
+                            }
+                          }
+                        }}
+                        key={item.videoUrl}
+                        muted={isVideoMuted}
+                        playsInline
+                        preload="none"
+                        onEnded={() => handleVideoEnded(idx)}
+                        className="h-full w-full object-cover"
                       >
-                        <RotateCcw className="h-4 w-4 transition-transform duration-300 group-hover/btn:-rotate-45" />
-                        <span>Watch Again</span>
-                      </button>
+                        <track kind="captions" src="" label="English" default />
+                      </video>
+
+                      {/* Audio Unmute / Sound On Toggle Button (Default Muted) */}
+                      <div className="absolute top-2.5 left-2.5 z-30">
+                        <button
+                          type="button"
+                          onClick={(e) => toggleMute(idx, e)}
+                          className="group/mute inline-flex min-h-[34px] items-center gap-1.5 rounded-full border border-white/20 bg-black/80 px-3 py-1.5 text-[10px] sm:text-xs font-semibold text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:border-neon hover:bg-neon/20 hover:scale-105 active:scale-95 cursor-pointer"
+                          title={isVideoMuted ? "Click to Unmute Audio" : "Click to Mute Audio"}
+                          aria-label={isVideoMuted ? "Unmute sample video" : "Mute sample video"}
+                        >
+                          {isVideoMuted ? (
+                            <>
+                              <VolumeX className="h-3.5 w-3.5 text-red-400 group-hover/mute:text-neon" />
+                              <span className="text-white/90">Unmute</span>
+                            </>
+                          ) : (
+                            <>
+                              <Volume2 className="h-3.5 w-3.5 text-neon animate-pulse" />
+                              <span className="text-neon font-bold">Sound On</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* "Watch Again" Overlay when video reaches end */}
+                      {isEnded && (
+                        <div
+                          onClick={(e) => handleReplay(idx, e)}
+                          className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/70 p-3 text-center backdrop-blur-[2px] animate-in fade-in duration-300 cursor-pointer"
+                        >
+                          <button
+                            type="button"
+                            onClick={(e) => handleReplay(idx, e)}
+                            className="group/btn inline-flex items-center gap-2 rounded-full bg-gradient-brand px-5 py-2.5 text-xs sm:text-sm font-bold text-neon-foreground shadow-xl transition-all hover:scale-105 active:scale-95 glow-neon cursor-pointer"
+                            aria-label={`Watch ${item.format} video again`}
+                          >
+                            <RotateCcw className="h-4 w-4 transition-transform duration-300 group-hover/btn:-rotate-45" />
+                            <span>Watch Again</span>
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-950 via-purple-950/60 to-slate-950 p-4 text-center pointer-events-none">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-purple-400/40 bg-purple-900/40 text-purple-300 shadow-lg">
+                        <Sparkles className="h-7 w-7 text-purple-300 animate-pulse" />
+                      </div>
+                      <span className="rounded-full border border-purple-300/30 bg-purple-500/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-purple-200">
+                        Coming Soon
+                      </span>
+                      <p className="text-[11px] text-slate-300 max-w-[190px]">
+                        Sample reel is currently in production.
+                      </p>
                     </div>
                   )}
 
@@ -2305,17 +2321,17 @@ export function Pricing() {
                           ) : null}
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 text-right font-bold text-purple-700 sm:px-6 sm:text-left text-base whitespace-nowrap">
+                      <td className="px-5 py-3.5 text-right font-bold sm:px-6 sm:text-left text-base whitespace-nowrap">
                         <div className="flex items-center justify-end sm:justify-between gap-2">
                           {isSetup ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-brand px-3 py-1 text-sm sm:text-base font-black text-white shadow-md glow-neon">
+                            <span className="inline-flex items-center rounded-xl bg-amber-400 text-slate-950 font-black text-sm sm:text-base px-3.5 py-1.5 shadow-md border border-amber-500 ring-2 ring-amber-300/70">
                               {item.price}
                             </span>
                           ) : (
-                            <span className="font-black text-slate-900 sm:text-purple-700">{item.price}</span>
+                            <span className="font-black text-slate-900">{item.price}</span>
                           )}
                           <span className="hidden sm:inline-flex items-center rounded-lg bg-purple-100/80 px-2.5 py-1 text-[11px] font-bold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-all">
-                            {isSetup ? "Buy Setup →" : "Buy Plan →"}
+                            Buy Plan →
                           </span>
                         </div>
                       </td>
@@ -2350,7 +2366,7 @@ export function Pricing() {
                   <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold uppercase tracking-wider text-slate-700 sm:text-xs">
                     <th className="px-4 py-3.5 sm:px-5">Package</th>
                     <th className="px-4 py-3.5 sm:px-5">Delivery</th>
-                    <th className="px-3 py-3.5 text-center sm:px-4">Videos</th>
+                    <th className="px-3 py-3.5 text-center sm:px-4 text-purple-700">Videos</th>
                     <th className="px-4 py-3.5 text-center sm:px-5">AI UGC</th>
                     <th className="px-4 py-3.5 text-center sm:px-5">AI Avatar</th>
                     <th className="px-4 py-3.5 text-center sm:px-5">AI Cartoon</th>
@@ -2405,9 +2421,9 @@ export function Pricing() {
                           {tier.delivery}
                         </td>
 
-                        {/* Videos Count */}
-                        <td className="px-3 py-3.5 text-center font-bold text-slate-900 sm:px-4 whitespace-nowrap">
-                          <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full border border-purple-100 bg-purple-50/80 px-2 text-xs font-bold text-purple-700">
+                        {/* Videos Count (in PURPLE) */}
+                        <td className="px-3 py-3.5 text-center font-bold sm:px-4 whitespace-nowrap">
+                          <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full border border-purple-200/90 bg-purple-50 px-2 text-xs font-bold text-purple-700">
                             {tier.videos}
                           </span>
                         </td>
@@ -2415,7 +2431,7 @@ export function Pricing() {
                         {/* AI UGC */}
                         <td
                           onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "ai-ugc" })}
-                          className="px-4 py-3.5 text-center font-bold text-slate-800 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-700 hover:bg-purple-100/50 transition-colors"
+                          className="px-4 py-3.5 text-center font-bold text-slate-900 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                           title={`Order ${tier.package} for AI UGC (${tier.aiUgc})`}
                         >
                           {tier.aiUgc}
@@ -2424,7 +2440,7 @@ export function Pricing() {
                         {/* AI Avatar */}
                         <td
                           onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "ai-avatar" })}
-                          className="px-4 py-3.5 text-center font-bold text-slate-800 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-700 hover:bg-purple-100/50 transition-colors"
+                          className="px-4 py-3.5 text-center font-bold text-slate-900 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                           title={`Order ${tier.package} for AI Avatar (${tier.aiAvatar})`}
                         >
                           {tier.aiAvatar}
@@ -2433,7 +2449,7 @@ export function Pricing() {
                         {/* AI Cartoon */}
                         <td
                           onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "ai-cartoon" })}
-                          className="px-4 py-3.5 text-center font-bold text-slate-800 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-700 hover:bg-purple-100/50 transition-colors"
+                          className="px-4 py-3.5 text-center font-bold text-slate-900 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                           title={`Order ${tier.package} for AI Cartoon (${tier.aiCartoon})`}
                         >
                           {tier.aiCartoon}
@@ -2442,7 +2458,7 @@ export function Pricing() {
                         {/* Hyper-Realistic */}
                         <td
                           onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "hyper-realistic" })}
-                          className="px-4 py-3.5 text-center font-bold text-purple-700 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-900 hover:bg-purple-100/50 transition-colors"
+                          className="px-4 py-3.5 text-center font-bold text-slate-900 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                           title={`Order ${tier.package} for Hyper-Realistic (${tier.hyperRealistic})`}
                         >
                           {tier.hyperRealistic}
@@ -2451,7 +2467,7 @@ export function Pricing() {
                         {/* Digital Twin */}
                         <td
                           onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "digital-twin" })}
-                          className="px-4 py-3.5 text-center font-bold text-purple-700 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-900 hover:bg-purple-100/50 transition-colors"
+                          className="px-4 py-3.5 text-center font-bold text-slate-900 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                           title={`Order ${tier.package} for Digital Twin (${tier.digitalTwin})`}
                         >
                           {tier.digitalTwin}
@@ -2499,11 +2515,13 @@ export function Pricing() {
                   <td className="px-5 py-4 text-center text-slate-600 sm:px-6 font-medium">
                     {digitalTwinSetupItem.delivery}
                   </td>
-                  <td className="px-5 py-4 text-right font-bold text-purple-700 sm:px-6 text-base sm:text-lg whitespace-nowrap">
-                    <div className="flex items-center justify-end gap-2">
-                      <span>{digitalTwinSetupItem.price}</span>
+                  <td className="px-5 py-4 text-right font-bold text-slate-900 sm:px-6 text-base sm:text-lg whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-2.5">
+                      <span className="inline-flex items-center rounded-xl bg-amber-400 text-slate-950 font-black text-sm sm:text-base px-3.5 py-1.5 shadow-md border border-amber-500 ring-2 ring-amber-300/70">
+                        {digitalTwinSetupItem.price}
+                      </span>
                       <span className="hidden sm:inline-flex items-center rounded-lg bg-purple-100/80 px-2.5 py-1 text-[11px] font-bold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-all">
-                        Buy Setup →
+                        Buy Plan →
                       </span>
                     </div>
                   </td>
