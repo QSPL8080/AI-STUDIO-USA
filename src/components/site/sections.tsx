@@ -166,13 +166,13 @@ export function Header() {
             </a>
           </nav>
 
-          {/* Right CTA */}
-          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          {/* Right CTA & Mobile Toggle */}
+          <div className="flex items-center gap-2 shrink-0">
             <NeonButton
               href={calendlyUrl}
               variant="call"
               size="sm"
-              className="hidden md:inline-flex items-center gap-1.5 whitespace-nowrap group"
+              className="hidden xl:inline-flex items-center gap-1.5 whitespace-nowrap group"
             >
               <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
               <span>Book a 30 min call</span>
@@ -182,7 +182,7 @@ export function Header() {
               href="/#contact"
               variant="primary"
               size="sm"
-              className="hidden sm:inline-flex whitespace-nowrap"
+              className="hidden sm:inline-flex whitespace-nowrap text-xs py-2 px-3.5"
             >
               Get AI Video Quote
             </NeonButton>
@@ -191,7 +191,7 @@ export function Header() {
               variant="buy"
               size="sm"
               onClick={() => openCheckoutModal({ itemType: "package" })}
-              className="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap group"
+              className="hidden md:inline-flex items-center gap-1.5 whitespace-nowrap group"
             >
               <Zap className="h-3.5 w-3.5 text-white shrink-0 transition-transform duration-200 group-hover:scale-110" />
               <span>Buy Plan</span>
@@ -201,7 +201,7 @@ export function Header() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-800 transition-colors hover:border-purple-400 hover:text-purple-600 lg:hidden"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-800 transition-colors hover:border-purple-400 hover:text-purple-600 lg:hidden cursor-pointer"
               aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
               aria-expanded={mobileMenuOpen}
             >
