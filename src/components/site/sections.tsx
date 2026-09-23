@@ -166,8 +166,8 @@ export function Header() {
             </a>
           </nav>
 
-          {/* Right Action CTA Buttons (Desktop only >= 1024px) & Mobile/Tablet 3-Lines Menu Icon */}
-          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          {/* Desktop Right Action CTA Buttons (Only on Large Screens >= 1024px) */}
+          <div className="hidden lg:flex items-center gap-2 xl:gap-2.5 shrink-0">
             <NeonButton
               href={calendlyUrl}
               variant="call"
@@ -182,7 +182,7 @@ export function Header() {
               href="/#contact"
               variant="primary"
               size="sm"
-              className="hidden lg:inline-flex whitespace-nowrap text-xs py-2 px-3.5"
+              className="whitespace-nowrap text-xs py-2 px-3.5"
             >
               Get AI Video Quote
             </NeonButton>
@@ -191,17 +191,19 @@ export function Header() {
               variant="buy"
               size="sm"
               onClick={() => openCheckoutModal({ itemType: "package" })}
-              className="hidden lg:inline-flex items-center gap-1.5 whitespace-nowrap group"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap group"
             >
               <Zap className="h-3.5 w-3.5 text-white shrink-0 transition-transform duration-200 group-hover:scale-110" />
               <span>Buy Plan</span>
             </NeonButton>
+          </div>
 
-            {/* Mobile & Tablet 3-Lines Menu Button (Under One Icon for Mobile & Tablet) */}
+          {/* Mobile & Tablet 3-Lines Menu Icon ONLY (< 1024px) */}
+          <div className="flex items-center lg:hidden shrink-0">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex h-10 w-10 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-200/90 bg-slate-100/90 text-slate-800 transition-colors hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 active:scale-95 lg:hidden cursor-pointer shadow-xs shrink-0"
+              className="flex h-10 w-10 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-200/90 bg-slate-100/90 text-slate-800 transition-colors hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 active:scale-95 cursor-pointer shadow-xs shrink-0"
               aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
               aria-expanded={mobileMenuOpen}
             >
