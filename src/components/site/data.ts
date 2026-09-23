@@ -57,21 +57,21 @@ export const portfolioItems = [
     videoUrl: "/videos/Portfolio 2.mp4",
   },
   {
-    industry: "Luxury Goods & Accessories",
+    industry: "High Jewelry & Gemstones",
     description:
-      "Hyper-realistic cinematic close-up commercial showcasing a premium luxury leather accessory with gold hardware.",
+      "Cinematic reveal commercial showcasing Bvlgari fine jewelry with volcanic gemstone transitions and macro studio lighting.",
     videoUrl: "/videos/Portfolio 3.mp4",
   },
   {
-    industry: "Fine Jewellery & Luxury",
+    industry: "Athletic Footwear & Sportswear",
     description:
-      "Cinematic lifestyle and transition product commercial for Mejuri Fine Gold Jewellery.",
+      "High-energy performance commercial featuring Nike running shoes with explosive athlete movements and ground-strike closeups.",
     videoUrl: "/videos/Portfolio 4.mp4",
   },
   {
-    industry: "Fashion & Apparel",
+    industry: "Luxury Fashion & Lookbook",
     description:
-      "Dynamic fashion lookbook showcasing 3 distinct day-to-night styles with SKIMS Cami Bodysuit.",
+      "Avant-garde fashion lookbook showcasing high-end couture styling, dynamic runway movement, and cinematic lighting.",
     videoUrl: "/videos/Portfolio 5.mp4",
   },
   {
