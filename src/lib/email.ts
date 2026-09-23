@@ -311,7 +311,7 @@ Call: tel:${cleanPhone}
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: process.env.RESEND_FROM || "Quickupp Leads <leads@quickuppaistudio.com>",
+          from: process.env.RESEND_FROM || "Quickupp Leads <leads@quickuppaistudio.us>",
           to: [NOTIFICATION_EMAIL],
           reply_to: lead.email || undefined,
           subject,
@@ -337,8 +337,8 @@ Call: tel:${cleanPhone}
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
-        "Origin": "https://quickuppaistudio.com",
-        "Referer": "https://quickuppaistudio.com",
+        "Origin": "https://quickuppaistudio.us",
+        "Referer": "https://quickuppaistudio.us",
       },
       body: JSON.stringify({
         _subject: subject,

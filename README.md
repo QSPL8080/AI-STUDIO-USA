@@ -307,8 +307,9 @@ npm start
 
 ## 👥 Authors & Credits
 
-Developed for **Quickupp AI Studio**  
-Website: [quickuppaistudio.com](https://quickuppaistudio.com)  
-YouTube: [Quickupp AI Studio YouTube Channel](https://youtube.com/@quickuppaistudio1@gmail.com?si=QnC53RJK3YyMFtth)  
+- **Quickupp AI Studio** — Enterprise AI UGC & Avatar Video Production Platform
+- **Lead Architect & Developer:** Quickupp Development Team
+- **Official Links:**
+  - Website: [quickuppaistudio.us](https://quickuppaistudio.us)  
+  - YouTube: [Quickupp AI Studio YouTube Channel](https://youtube.com/@quickuppaistudio1@gmail.com?si=QnC53RJK3YyMFtth)  
 Support / Inquiries: [quickuppsoftech1@gmail.com](mailto:quickuppsoftech1@gmail.com)
-
