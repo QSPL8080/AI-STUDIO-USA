@@ -67,7 +67,7 @@ export function NeonButton({
 }: {
   href: string;
   children: ReactNode;
-  variant?: "solid" | "ghost" | "primary" | "call" | "secondary";
+  variant?: "solid" | "ghost" | "primary" | "call" | "secondary" | "buy" | "dark";
   size?: "sm" | "md" | "lg";
   className?: string;
 }) {
@@ -78,10 +78,13 @@ export function NeonButton({
       ? "px-8 py-3.5 text-base"
       : "px-6 py-3 text-sm";
   const base =
-    `inline-flex items-center justify-center rounded-lg font-semibold transition-all duration-200 cursor-pointer ${sizeClasses}`;
+    `inline-flex items-center justify-center rounded-full font-semibold transition-all duration-200 cursor-pointer ${sizeClasses}`;
+
   const styles =
     variant === "call" || variant === "secondary"
       ? "border border-purple-200/90 bg-gradient-to-r from-violet-100 via-purple-100 to-pink-100 text-purple-900 font-bold shadow-xs hover:from-violet-200 hover:via-purple-200 hover:to-pink-200 hover:border-purple-400 hover:text-purple-950 hover:shadow-md hover:shadow-purple-500/15 active:scale-95"
+      : variant === "buy" || variant === "dark"
+      ? "border border-purple-400/80 bg-slate-900 text-white font-bold shadow-xs hover:bg-slate-800 hover:border-purple-300 hover:shadow-md hover:shadow-purple-500/20 active:scale-95 transition-all"
       : variant === "ghost"
       ? "border border-slate-300 bg-white text-slate-800 hover:border-purple-400 hover:text-purple-700 hover:bg-purple-50/60 shadow-xs active:scale-95"
       : "bg-gradient-brand text-white shadow-md glow-neon hover:brightness-110 active:scale-95";

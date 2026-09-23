@@ -59,6 +59,7 @@ import {
   strategyCallEmail,
   twinFeatures,
   useCases,
+  whatsAppUrl,
   whyAiVideo,
   whyUs,
 } from "./data";
@@ -184,6 +185,16 @@ export function Header() {
               Get AI Video Quote
             </NeonButton>
 
+            <NeonButton
+              href="/#pricing"
+              variant="buy"
+              size="sm"
+              className="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap group"
+            >
+              <Zap className="h-3.5 w-3.5 text-white shrink-0 transition-transform duration-200 group-hover:scale-110" />
+              <span>Buy Plan</span>
+            </NeonButton>
+
             {/* Mobile / Tablet Menu Button */}
             <button
               type="button"
@@ -284,9 +295,15 @@ export function Header() {
                   Get AI Video Quote
                 </a>
                 <a
-                  href={`https://wa.me/918177828748?text=${encodeURIComponent(
-                    "Hello Quickupp AI Studio Team,\n\nI visited quickuppaistudio.us and would like to explore AI Video Production services for my business.\n\nThank you!",
-                  )}`}
+                  href="/#pricing"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex w-full items-center justify-center gap-2 rounded-full border border-purple-400/80 bg-slate-900 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-slate-800 transition-colors"
+                >
+                  <Zap className="h-4 w-4 text-white shrink-0" />
+                  <span>Buy Plan</span>
+                </a>
+                <a
+                  href={whatsAppUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMobileMenuOpen(false)}
@@ -1549,7 +1566,15 @@ export function Samples() {
         <p className="mb-4 text-xl font-semibold text-slate-900">
           Want a Similar Video for Your Business?
         </p>
-        <NeonButton href="#contact">Get Your AI Video Quote</NeonButton>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <NeonButton href="#contact" variant="primary">
+            Get Your AI Video Quote
+          </NeonButton>
+          <NeonButton href="#pricing" variant="buy" className="inline-flex items-center gap-2">
+            <Zap className="h-4 w-4 text-white shrink-0 group-hover:scale-110" />
+            <span>Buy Now</span>
+          </NeonButton>
+        </div>
       </div>
       </div>
     </Section>
@@ -1770,7 +1795,7 @@ export function Portfolio() {
           Create a Similar Video
         </a>
         <a
-          href="https://youtube.com/@quickuppaistudios?si=QnC53RJK3YyMFtth"
+          href="https://www.youtube.com/channel/UC7Cy1X5ASFijzI2ky4suVBw"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-8 py-3.5 text-sm font-semibold tracking-wide text-slate-800 shadow-sm transition-all duration-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
@@ -2425,13 +2450,11 @@ export function Pricing() {
               <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
               <span>Book a 30 min call</span>
             </NeonButton>
-            <NeonButton href="#contact" variant="primary" size="sm">
-              Get Custom Quote
+            <NeonButton href="#pricing" variant="primary" size="sm">
+              Buy Plan
             </NeonButton>
             <a
-              href={`https://wa.me/918177828748?text=${encodeURIComponent(
-                "Hello Quickupp AI Studio Team,\n\nI visited quickuppaistudio.us and would like to chat with your production team about AI video services for my brand.\n\nThank you!",
-              )}`}
+              href={whatsAppUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs sm:text-sm font-semibold text-slate-800 shadow-xs transition-all hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 active:scale-95"
@@ -2771,16 +2794,8 @@ export function StrategyCall() {
       />
 
       <div className="mx-auto max-w-[620px]">
-        {/* Contact Action Pills */}
-        <div className="mb-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <a
-            href={`mailto:${strategyCallEmail}`}
-            className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 shadow-xs transition-all duration-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
-          >
-            <Mail className="h-4 w-4 text-purple-600 transition-transform group-hover:scale-110" />
-            <span>{strategyCallEmail}</span>
-          </a>
-
+        {/* Contact Action Pill */}
+        <div className="mb-6 flex items-center justify-center">
           <a
             href={calendlyUrl}
             target="_blank"
@@ -3366,10 +3381,6 @@ export function LeadFormSection() {
 }
 
 export function WhatsAppCtaSection() {
-  const professionalMessage = encodeURIComponent(
-    "Hello Quickupp AI Studio Team,\n\nI visited quickuppaistudio.us and would like to explore AI Video Production services for my business. Please share details regarding available video formats, packages, pricing, and turnaround time.\n\nLooking forward to your response.\n\nThank you!",
-  );
-
   return (
     <section className="border-t border-slate-200 bg-slate-50/60 px-5 py-12 md:py-16">
       <div className="mx-auto max-w-4xl text-center">
@@ -3383,15 +3394,22 @@ export function WhatsAppCtaSection() {
           Send us your product, service or video idea on WhatsApp and our team will recommend the
           right AI video format for your business.
         </p>
-        <div className="mt-6 flex justify-center">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <a
-            href={`https://wa.me/918177828748?text=${professionalMessage}`}
+            href={whatsAppUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-6 py-2.5 text-sm font-semibold text-white shadow transition-transform hover:scale-105"
+            className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:scale-105 hover:brightness-105 active:scale-95"
           >
             <MessageCircle className="h-4 w-4" />
-            Chat on WhatsApp
+            <span>Chat on WhatsApp</span>
+          </a>
+          <a
+            href="/#pricing"
+            className="inline-flex items-center gap-2 rounded-full border border-purple-400/80 bg-slate-900 px-6 py-2.5 text-sm font-bold text-white shadow-xs transition-all hover:border-purple-300 hover:bg-slate-800 hover:scale-105 active:scale-95 group"
+          >
+            <Zap className="h-4 w-4 text-white shrink-0 group-hover:scale-110" />
+            <span>Buy Plan</span>
           </a>
         </div>
       </div>
@@ -3706,8 +3724,40 @@ export function Footer() {
           </div>
         </div>
 
+        {/* Footer Action CTA Buttons: 30 min call, Quote, Buy Now */}
+        <div className="mt-10 pt-8 border-t border-slate-800/80 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+          <NeonButton
+            href={calendlyUrl}
+            variant="call"
+            size="sm"
+            className="inline-flex items-center gap-1.5 whitespace-nowrap group"
+          >
+            <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+            <span>Book a 30 min call</span>
+          </NeonButton>
+
+          <NeonButton
+            href="/#contact"
+            variant="primary"
+            size="sm"
+            className="inline-flex items-center gap-1.5 whitespace-nowrap"
+          >
+            <span>Get AI Video Quote</span>
+          </NeonButton>
+
+          <NeonButton
+            href="/#pricing"
+            variant="buy"
+            size="sm"
+            className="inline-flex items-center gap-1.5 whitespace-nowrap"
+          >
+            <Zap className="h-3.5 w-3.5 text-white shrink-0" />
+            <span>Buy Now</span>
+          </NeonButton>
+        </div>
+
         {/* Brand Giant Logo seamlessly integrated inside the footer */}
-        <div className="mt-10 mb-6 md:mt-12 md:mb-8 flex items-center justify-center select-none">
+        <div className="mt-8 mb-6 md:mt-10 md:mb-8 flex items-center justify-center select-none">
           <img
             src="/images/footer logo.png"
             alt="Quickupp AI Studio"
@@ -3775,9 +3825,7 @@ export function FloatingWhatsAppButton() {
 
       {/* Official WhatsApp Floating Button */}
       <a
-        href={`https://wa.me/918177828748?text=${encodeURIComponent(
-          "Hello Quickupp AI Studio Team,\n\nI visited quickuppaistudio.us and would like to explore AI Video Production services for my business. Please share details regarding available video formats, packages, pricing, and turnaround time.\n\nLooking forward to your response.\n\nThank you!",
-        )}`}
+        href={whatsAppUrl}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat with Quickupp AI Studio on WhatsApp"
@@ -4188,7 +4236,7 @@ export function QuotePopupModal() {
                 {loading ? "Submitting..." : "Submit & Request Quote"}
               </button>
 
-              {/* Alternative Quick Booking Option */}
+              {/* Alternative Buy Plan Option */}
               <div className="pt-0.5">
                 <div className="relative my-2 flex items-center justify-center">
                   <div className="w-full border-t border-slate-200"></div>
@@ -4198,13 +4246,13 @@ export function QuotePopupModal() {
                 </div>
 
                 <a
-                  href="#book-call"
+                  href="/#pricing"
                   onClick={handleClose}
-                  className="group flex w-full items-center justify-center gap-2 rounded-lg border border-purple-200/90 bg-gradient-to-r from-violet-100 via-purple-100 to-pink-100 py-2 text-xs font-bold text-purple-900 shadow-xs transition-all hover:from-violet-200 hover:via-purple-200 hover:to-pink-200 hover:border-purple-400 active:scale-95 sm:text-sm"
+                  className="group flex w-full items-center justify-center gap-2 rounded-lg border border-purple-400/80 bg-slate-900 py-2.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-slate-800 hover:border-purple-300 active:scale-95 sm:text-sm"
                 >
-                  <Calendar className="h-3.5 w-3.5 text-purple-700 transition-transform duration-200 group-hover:scale-110" />
-                  <span>Book a 30 Min Strategy Call Directly</span>
-                  <span className="text-xs text-purple-600 font-bold transition-transform duration-200 group-hover:translate-x-0.5">→</span>
+                  <Zap className="h-3.5 w-3.5 text-white shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                  <span>Explore Packages &amp; Buy Plan</span>
+                  <span className="text-xs text-white/80 font-bold transition-transform duration-200 group-hover:translate-x-0.5">→</span>
                 </a>
               </div>
             </form>

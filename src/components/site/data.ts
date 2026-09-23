@@ -12,9 +12,9 @@ export const formats = ["AI UGC", "AI Cartoon", "AI Avatar", "Hyper-Realistic", 
 export const samples = [
   {
     format: "AI UGC",
-    industry: "Dental & Healthcare",
-    description: "Creator-style AI UGC video showcasing dental services and solutions to common teeth problems.",
-    videoUrl: "",
+    industry: "Dermatological Skincare",
+    description: "Engaging creator-led daily skincare hydration routine featuring CeraVe Moisturizing Cream.",
+    videoUrl: "/videos/UGC%20Sample.mp4",
   },
   {
     format: "AI Avatar",
@@ -49,12 +49,6 @@ export const portfolioItems = [
     description:
       "Authentic creator-style morning routine and product review for Rhode Peptide Glazing Fluid.",
     videoUrl: "/videos/Portfolio 1.mp4",
-  },
-  {
-    industry: "Dermatological Skincare",
-    description:
-      "Engaging creator-led daily skincare hydration routine featuring CeraVe Moisturizing Cream.",
-    videoUrl: "/videos/Portfolio 2.mp4",
   },
   {
     industry: "Luxury Goods & Accessories",
@@ -643,3 +637,17 @@ export const footerUsaMapUrl = "https://maps.app.goo.gl/2rLqrCN4rco2XpQr5";
 export const footerCanadaAddress = "Jacques St, Montréal, QC H2Y 1P5";
 export const footerCanadaMapUrl = "https://maps.google.com/?q=Jacques+St,+Montr%C3%A9al,+QC+H2Y+1P5";
 export const footerCopyright = `© ${new Date().getFullYear()} Quickupp AI Studio. All rights reserved.`;
+
+export const whatsAppPhoneNumber = "918177828748";
+export const whatsAppDefaultMessage = `Hello Quickupp AI Studio Team,
+
+I visited quickuppaistudio.us and I'm interested in exploring your AI Video Production services for my business.
+
+Could you please share details regarding:
+• Available AI video formats (UGC, Avatar, Hyper-Realistic, Cartoon, Digital Twin)
+• Pricing packages & turnaround timelines
+• Next steps to get started
+
+Looking forward to connecting with your team!`;
+
+export const whatsAppUrl = `https://wa.me/${whatsAppPhoneNumber}?text=${encodeURIComponent(whatsAppDefaultMessage)}`;
