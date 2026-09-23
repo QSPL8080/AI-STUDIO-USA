@@ -399,15 +399,29 @@ function AdminPage() {
     }
   };
 
-  const sanitizePhoneNumber = (phone: string) => {
+  const sanitizePhoneNumber = (phone: string, isUsa?: boolean) => {
     let clean = phone.replace(/[^0-9]/g, "");
     if (clean.length === 10) {
-      clean = `91${clean}`;
+      clean = isUsa ? `1${clean}` : `91${clean}`;
     }
     return clean;
   };
 
   const getAdminWhatsAppPlainText = (lead: Lead) => {
+    const isUsa = lead.source?.includes("USA");
+
+    if (isUsa) {
+      let msg = `Hi ${lead.name},\n\nThank you for reaching out to Quickupp AI Studio USA! 🇺🇸\n\nWe have received your AI Video Production inquiry with the following details:\n\n👤 Client Name: ${lead.name}`;
+      if (lead.business) msg += `\n🏢 Business / Brand: ${lead.business}`;
+      if (lead.video_type) msg += `\n🎬 Video Format: ${lead.video_type}`;
+      if (lead.location) msg += `\n📍 Location: ${lead.location}`;
+      if (lead.industry) msg += `\n🏷️ Industry: ${lead.industry}`;
+      if (lead.requirement || lead.additional) msg += `\n📋 Project Scope: ${lead.requirement || lead.additional}`;
+
+      msg += `\n\nOur US team is reviewing your requirements and preparing custom sample concepts, video reels, and a tailored quote for your project.\n\nCould you please confirm if you have a target turnaround timeline or any reference video links in mind?\n\nBest regards,\nQuickupp AI Studio Team (USA)\n🌐 https://quickuppaistudio.us\n📧 info@quickuppaistudio.us\n📍 8 The Green, Suite A, Dover, DE 19901, USA`;
+      return msg;
+    }
+
     let msg = `Hello ${lead.name},\n\nThank you for reaching out to Quickupp AI Studio!\n\nWe have received your project inquiry with the following details:\n\nClient Name: ${lead.name}`;
     if (lead.business) msg += `\nBusiness Name: ${lead.business}`;
     if (lead.video_type) msg += `\nVideo Type: ${lead.video_type}`;
@@ -415,14 +429,15 @@ function AdminPage() {
     if (lead.industry) msg += `\nIndustry: ${lead.industry}`;
     if (lead.requirement || lead.additional) msg += `\nRequirement: ${lead.requirement || lead.additional}`;
 
-    msg += `\n\nOur team is reviewing your requirements and will share the tailored proposal and sample concepts shortly.\n\nCould you please confirm if you have any specific deadline or additional references in mind?\n\nBest regards,\nQuickupp AI Studio Team\nhttps://quickuppaistudio.com`;
+    msg += `\n\nOur team is reviewing your requirements and will share the tailored proposal and sample concepts shortly.\n\nCould you please confirm if you have any specific deadline or additional references in mind?\n\nBest regards,\nQuickupp AI Studio Team\nhttps://quickuppaistudio.us`;
     return msg;
   };
 
   const handleOpenWhatsApp = (lead: Lead) => {
     setSelectedLeadForMsg(lead);
     const text = getAdminWhatsAppPlainText(lead);
-    const phone = sanitizePhoneNumber(lead.phone);
+    const isUsa = lead.source?.includes("USA");
+    const phone = sanitizePhoneNumber(lead.phone, isUsa);
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text).catch(() => {});
@@ -1021,7 +1036,7 @@ function AdminPage() {
                         <td className="whitespace-nowrap px-5 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <a
-                              href={`https://wa.me/${sanitizePhoneNumber(lead.phone)}?text=${encodeURIComponent(
+                              href={`https://wa.me/${sanitizePhoneNumber(lead.phone, lead.source?.includes("USA"))}?text=${encodeURIComponent(
                                 getAdminWhatsAppPlainText(lead),
                               )}`}
                               target="_blank"
@@ -1152,7 +1167,7 @@ function AdminPage() {
                         </select>
 
                         <a
-                          href={`https://wa.me/${sanitizePhoneNumber(lead.phone)}?text=${encodeURIComponent(
+                          href={`https://wa.me/${sanitizePhoneNumber(lead.phone, lead.source?.includes("USA"))}?text=${encodeURIComponent(
                             getAdminWhatsAppPlainText(lead),
                           )}`}
                           target="_blank"
@@ -1191,7 +1206,9 @@ function AdminPage() {
                 <div>
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
                     <MessageSquare className="h-5 w-5 text-emerald-400" />
-                    WhatsApp Confirmation Message
+                    {selectedLeadForMsg.source?.includes("USA")
+                      ? "🇺🇸 WhatsApp Confirmation (USA Lead)"
+                      : "WhatsApp Confirmation Message"}
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     For {selectedLeadForMsg.name} ({selectedLeadForMsg.phone})
@@ -1219,8 +1236,11 @@ function AdminPage() {
                 </button>
 
                 <a
-                  href={`https://wa.me/${sanitizePhoneNumber(selectedLeadForMsg.phone)}?text=${encodeURIComponent(
-                    getAdminWhatsAppPlainText(selectedLeadForMsg)
+                  href={`https://wa.me/${sanitizePhoneNumber(
+                    selectedLeadForMsg.phone,
+                    selectedLeadForMsg.source?.includes("USA"),
+                  )}?text=${encodeURIComponent(
+                    getAdminWhatsAppPlainText(selectedLeadForMsg),
                   )}`}
                   target="_blank"
                   rel="noreferrer"

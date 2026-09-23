@@ -2,6 +2,32 @@ import { createServerFn } from "@tanstack/react-start";
 import { saveLead as saveLeadToDb, getLeads as getLeadsFromDb, updateLeadStatus as updateStatusInDb, deleteLead as deleteLeadFromDb, type Lead } from "./db";
 import { sendLeadNotificationEmail } from "./email";
 
+function sanitizeLeadPhone(phone: string, isUsa: boolean): string {
+  const trimmed = phone.trim();
+  if (!trimmed) return trimmed;
+  const digits = trimmed.replace(/\D/g, "");
+
+  if (trimmed.startsWith("+")) {
+    if (digits.length === 11 && digits.startsWith("1")) {
+      return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+    }
+    return trimmed;
+  }
+
+  if (digits.length === 10) {
+    if (isUsa) {
+      return `+1 (${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    return `+91 ${digits}`;
+  }
+
+  if (digits.length === 11 && digits.startsWith("1")) {
+    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+
+  return digits.length > 10 ? `+${digits}` : trimmed;
+}
+
 export const submitLeadServerFn = createServerFn({ method: "POST" })
   .validator((data: {
     source: "Contact Form" | "Popup Modal" | "USA - Contact Form" | "USA - Popup Modal" | string;
@@ -17,13 +43,19 @@ export const submitLeadServerFn = createServerFn({ method: "POST" })
   }) => data)
   .handler(async ({ data }) => {
     try {
+      const isUsa = data.source?.includes("USA");
+      const normalizedData = {
+        ...data,
+        phone: sanitizeLeadPhone(data.phone, isUsa),
+      };
+
       // 1. Save lead to PostgreSQL / Supabase Database for Admin Panel
-      const saved = await saveLeadToDb(data);
+      const saved = await saveLeadToDb(normalizedData);
 
       // 2. Dispatch Email Notification directly to quickuppaistudio1@gmail.com
       try {
         await sendLeadNotificationEmail({
-          ...data,
+          ...normalizedData,
           leadId: saved.id,
         });
       } catch (mailError) {

@@ -2992,6 +2992,42 @@ export function WhyUs() {
   );
 }
 
+export function formatUsaPhoneInput(input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) return "";
+  const digitsOnly = trimmed.replace(/\D/g, "");
+
+  if (trimmed.startsWith("+")) {
+    if (digitsOnly.length === 11 && digitsOnly.startsWith("1")) {
+      const area = digitsOnly.slice(1, 4);
+      const mid = digitsOnly.slice(4, 7);
+      const last = digitsOnly.slice(7);
+      return `+1 (${area}) ${mid}-${last}`;
+    }
+    return trimmed;
+  }
+
+  if (digitsOnly.length === 10) {
+    const area = digitsOnly.slice(0, 3);
+    const mid = digitsOnly.slice(3, 6);
+    const last = digitsOnly.slice(6);
+    return `+1 (${area}) ${mid}-${last}`;
+  }
+
+  if (digitsOnly.length === 11 && digitsOnly.startsWith("1")) {
+    const area = digitsOnly.slice(1, 4);
+    const mid = digitsOnly.slice(4, 7);
+    const last = digitsOnly.slice(7);
+    return `+1 (${area}) ${mid}-${last}`;
+  }
+
+  if (digitsOnly.length > 10) {
+    return `+${digitsOnly}`;
+  }
+
+  return trimmed;
+}
+
 export function LeadFormSection() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -3111,7 +3147,7 @@ export function LeadFormSection() {
               const form = e.currentTarget;
               const data = new FormData(form);
               const name = String(data.get("name") || "");
-              const phone = String(data.get("phone") || "");
+              const phone = formatUsaPhoneInput(String(data.get("phone") || ""));
               const email = String(data.get("email") || "");
               const business = String(data.get("business") || "");
               const industry = String(data.get("industry") || "");
@@ -3963,7 +3999,7 @@ export function QuotePopupModal() {
                 const form = e.currentTarget;
                 const data = new FormData(form);
                 const name = String(data.get("name") || "");
-                const phone = String(data.get("phone") || "");
+                const phone = formatUsaPhoneInput(String(data.get("phone") || ""));
                 const email = String(data.get("email") || "");
                 const videoType = String(data.get("videoType") || "");
                 const business = String(data.get("business") || "");

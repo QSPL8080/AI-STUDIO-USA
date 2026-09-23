@@ -25,7 +25,11 @@ export async function sendLeadNotificationEmail(lead: LeadEmailPayload): Promise
     : `🚀 New Lead: ${lead.name} (${lead.videoType}) - ${lead.source}`;
 
   const cleanPhone = lead.phone.replace(/[^0-9+]/g, "");
-  const waPhone = cleanPhone.startsWith("+") ? cleanPhone.replace("+", "") : cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+  const waPhone = cleanPhone.startsWith("+")
+    ? cleanPhone.replace("+", "")
+    : cleanPhone.length === 10
+    ? (isUsa ? `1${cleanPhone}` : `91${cleanPhone}`)
+    : cleanPhone;
 
   const htmlContent = `
 <!DOCTYPE html>
