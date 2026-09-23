@@ -399,7 +399,15 @@ function AdminPage() {
     }
   };
 
-  const sanitizePhoneNumber = (phone: string, isUsa?: boolean) => {
+  const isLeadUsa = (lead: Lead | null | undefined): boolean => {
+    if (!lead) return true;
+    if (lead.source?.toLowerCase().includes("india") || lead.source?.includes("IN -")) {
+      return false;
+    }
+    return true;
+  };
+
+  const sanitizePhoneNumber = (phone: string, isUsa: boolean = true) => {
     let clean = phone.replace(/[^0-9]/g, "");
     if (clean.length === 10) {
       clean = isUsa ? `1${clean}` : `91${clean}`;
@@ -408,7 +416,7 @@ function AdminPage() {
   };
 
   const getAdminWhatsAppPlainText = (lead: Lead) => {
-    const isUsa = lead.source?.includes("USA");
+    const isUsa = isLeadUsa(lead);
 
     if (isUsa) {
       let msg = `Hi ${lead.name},\n\nThank you for reaching out to Quickupp AI Studio USA! 🇺🇸\n\nWe have received your AI Video Production inquiry with the following details:\n\n👤 Client Name: ${lead.name}`;
@@ -422,7 +430,7 @@ function AdminPage() {
       return msg;
     }
 
-    let msg = `Hello ${lead.name},\n\nThank you for reaching out to Quickupp AI Studio!\n\nWe have received your project inquiry with the following details:\n\nClient Name: ${lead.name}`;
+    let msg = `Hello ${lead.name},\n\nThank you for reaching out to Quickupp AI Studio!\n\nWe have received your project inquiry with the following details:\n\n👤 Client Name: ${lead.name}`;
     if (lead.business) msg += `\nBusiness Name: ${lead.business}`;
     if (lead.video_type) msg += `\nVideo Type: ${lead.video_type}`;
     if (lead.location) msg += `\nLocation: ${lead.location}`;
@@ -436,7 +444,7 @@ function AdminPage() {
   const handleOpenWhatsApp = (lead: Lead) => {
     setSelectedLeadForMsg(lead);
     const text = getAdminWhatsAppPlainText(lead);
-    const isUsa = lead.source?.includes("USA");
+    const isUsa = isLeadUsa(lead);
     const phone = sanitizePhoneNumber(lead.phone, isUsa);
 
     if (navigator.clipboard) {
@@ -916,7 +924,7 @@ function AdminPage() {
                       >
                         {/* Source */}
                         <td className="whitespace-nowrap px-5 py-4">
-                          {lead.source?.includes("USA") ? (
+                          {isLeadUsa(lead) ? (
                             <span className="inline-flex items-center gap-1 rounded-md border border-blue-500/40 bg-blue-500/15 px-2.5 py-1 text-[11px] font-bold text-blue-300 shadow-sm">
                               <span>🇺🇸</span>
                               <span>{lead.source}</span>
@@ -1036,7 +1044,7 @@ function AdminPage() {
                         <td className="whitespace-nowrap px-5 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <a
-                              href={`https://wa.me/${sanitizePhoneNumber(lead.phone, lead.source?.includes("USA"))}?text=${encodeURIComponent(
+                              href={`https://wa.me/${sanitizePhoneNumber(lead.phone, isLeadUsa(lead))}?text=${encodeURIComponent(
                                 getAdminWhatsAppPlainText(lead),
                               )}`}
                               target="_blank"
@@ -1096,7 +1104,7 @@ function AdminPage() {
                           </span>
                         ) : null}
                       </div>
-                      {lead.source?.includes("USA") ? (
+                      {isLeadUsa(lead) ? (
                         <span className="rounded border border-blue-500/40 bg-blue-500/15 px-2 py-0.5 text-[10px] font-bold text-blue-300">
                           🇺🇸 {lead.source}
                         </span>
@@ -1167,7 +1175,7 @@ function AdminPage() {
                         </select>
 
                         <a
-                          href={`https://wa.me/${sanitizePhoneNumber(lead.phone, lead.source?.includes("USA"))}?text=${encodeURIComponent(
+                          href={`https://wa.me/${sanitizePhoneNumber(lead.phone, isLeadUsa(lead))}?text=${encodeURIComponent(
                             getAdminWhatsAppPlainText(lead),
                           )}`}
                           target="_blank"
@@ -1206,7 +1214,7 @@ function AdminPage() {
                 <div>
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
                     <MessageSquare className="h-5 w-5 text-emerald-400" />
-                    {selectedLeadForMsg.source?.includes("USA")
+                    {isLeadUsa(selectedLeadForMsg)
                       ? "🇺🇸 WhatsApp Confirmation (USA Lead)"
                       : "WhatsApp Confirmation Message"}
                   </h3>
@@ -1238,7 +1246,7 @@ function AdminPage() {
                 <a
                   href={`https://wa.me/${sanitizePhoneNumber(
                     selectedLeadForMsg.phone,
-                    selectedLeadForMsg.source?.includes("USA"),
+                    isLeadUsa(selectedLeadForMsg),
                   )}?text=${encodeURIComponent(
                     getAdminWhatsAppPlainText(selectedLeadForMsg),
                   )}`}
