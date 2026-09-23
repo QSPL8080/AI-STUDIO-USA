@@ -32,6 +32,8 @@ import {
 } from "lucide-react";
 import { NeonButton, Section, SectionHeading } from "./ui";
 import { submitLeadServerFn, broadcastLeadEvent } from "@/lib/lead-actions";
+import { openCheckoutModal, CheckoutModal } from "./checkout-modal";
+export { CheckoutModal, openCheckoutModal };
 import {
   calendlyUrl,
   deliverables,
@@ -186,9 +188,9 @@ export function Header() {
             </NeonButton>
 
             <NeonButton
-              href="/#pricing"
               variant="buy"
               size="sm"
+              onClick={() => openCheckoutModal({ itemType: "package" })}
               className="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap group"
             >
               <Zap className="h-3.5 w-3.5 text-white shrink-0 transition-transform duration-200 group-hover:scale-110" />
@@ -294,14 +296,17 @@ export function Header() {
                 >
                   Get AI Video Quote
                 </a>
-                <a
-                  href="/#pricing"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex w-full items-center justify-center gap-2 rounded-full border border-purple-400/80 bg-slate-900 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-slate-800 transition-colors"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    openCheckoutModal({ itemType: "package" });
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-full border border-purple-400/80 bg-slate-900 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   <Zap className="h-4 w-4 text-white shrink-0" />
                   <span>Buy Plan</span>
-                </a>
+                </button>
                 <a
                   href={whatsAppUrl}
                   target="_blank"
@@ -2024,12 +2029,13 @@ export function Services() {
 
               {/* Clean Gradient Button with Only Pricing */}
               <div className="relative z-10 mt-6 border-t border-slate-100 pt-4">
-                <a
-                  href="#contact"
-                  className="flex w-full items-center justify-center rounded-lg bg-gradient-brand py-2.5 text-sm font-bold tracking-wide text-neon-foreground shadow-md transition-all duration-200 hover:scale-[1.02] hover:brightness-110 active:scale-95 sm:text-base"
+                <button
+                  type="button"
+                  onClick={() => openCheckoutModal({ itemType: "individual", itemId: service.title })}
+                  className="flex w-full items-center justify-center rounded-lg bg-gradient-brand py-2.5 text-sm font-bold tracking-wide text-neon-foreground shadow-md transition-all duration-200 hover:scale-[1.02] hover:brightness-110 active:scale-95 sm:text-base cursor-pointer"
                 >
                   {service.price}
-                </a>
+                </button>
               </div>
             </article>
           );
@@ -2257,13 +2263,16 @@ export function Pricing() {
                 {individualPricingList.map((item, idx) => (
                   <tr
                     key={item.service}
-                    className={`transition-colors hover:bg-purple-50/40 ${
+                    onClick={() => openCheckoutModal({ itemType: "individual", itemId: item.service })}
+                    className={`group cursor-pointer transition-colors hover:bg-purple-50/70 ${
                       idx % 2 === 1 ? "bg-slate-50/40" : "bg-white"
                     }`}
                   >
                     <td className="px-5 py-3.5 sm:px-6">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
-                        <span className="font-bold text-slate-900">{item.service}</span>
+                        <span className="font-bold text-slate-900 group-hover:text-purple-700 transition-colors">
+                          {item.service}
+                        </span>
                         {item.description ? (
                           <span className="text-xs text-slate-500 font-normal hidden md:inline">
                             — {item.description}
@@ -2276,8 +2285,13 @@ export function Pricing() {
                         ) : null}
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-right font-bold text-purple-700 sm:px-6 sm:text-left text-base">
-                      {item.price}
+                    <td className="px-5 py-3.5 text-right font-bold text-purple-700 sm:px-6 sm:text-left text-base whitespace-nowrap">
+                      <div className="flex items-center justify-end sm:justify-between gap-2">
+                        <span>{item.price}</span>
+                        <span className="hidden sm:inline-flex items-center rounded-lg bg-purple-100/80 px-2.5 py-1 text-[11px] font-bold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-all">
+                          Order Plan →
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -2300,7 +2314,7 @@ export function Pricing() {
           <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm backdrop-blur-xl">
             {/* Horizontal Scroll Hint for Mobile */}
             <div className="flex items-center justify-between bg-slate-50/90 px-4 py-2 text-[11px] font-medium text-slate-500 md:hidden border-b border-slate-200">
-              <span>← Swipe horizontally to view all services →</span>
+              <span>← Swipe horizontally to view all services & order →</span>
             </div>
 
             <div className="overflow-x-auto">
@@ -2326,10 +2340,23 @@ export function Pricing() {
                       ? "bg-slate-50/40 hover:bg-purple-50/30"
                       : "bg-white hover:bg-purple-50/30";
 
+                    const tierKeyMap: Record<string, any> = {
+                      "Single Video": "single-video",
+                      "Starter": "starter",
+                      "Growth": "growth",
+                      "Scale": "scale",
+                      "Pro": "pro",
+                      "Enterprise": "enterprise",
+                    };
+                    const tierId = tierKeyMap[tier.package] || "growth";
+
                     return (
                       <tr key={tier.package} className={`transition-colors ${rowBg}`}>
                         {/* Package Name & Badge */}
-                        <td className="px-4 py-3.5 font-bold text-slate-900 sm:px-5 whitespace-nowrap">
+                        <td
+                          onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "ai-ugc" })}
+                          className="px-4 py-3.5 font-bold text-slate-900 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-700"
+                        >
                           <div className="flex items-center gap-2">
                             <span>{tier.package}</span>
                             {tier.badge ? (
@@ -2359,27 +2386,47 @@ export function Pricing() {
                         </td>
 
                         {/* AI UGC */}
-                        <td className="px-4 py-3.5 text-center font-bold text-slate-800 sm:px-5 whitespace-nowrap">
+                        <td
+                          onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "ai-ugc" })}
+                          className="px-4 py-3.5 text-center font-bold text-slate-800 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-700 hover:bg-purple-100/50 transition-colors"
+                          title={`Order ${tier.package} for AI UGC (${tier.aiUgc})`}
+                        >
                           {tier.aiUgc}
                         </td>
 
                         {/* AI Avatar */}
-                        <td className="px-4 py-3.5 text-center font-bold text-slate-800 sm:px-5 whitespace-nowrap">
+                        <td
+                          onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "ai-avatar" })}
+                          className="px-4 py-3.5 text-center font-bold text-slate-800 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-700 hover:bg-purple-100/50 transition-colors"
+                          title={`Order ${tier.package} for AI Avatar (${tier.aiAvatar})`}
+                        >
                           {tier.aiAvatar}
                         </td>
 
                         {/* AI Cartoon */}
-                        <td className="px-4 py-3.5 text-center font-bold text-slate-800 sm:px-5 whitespace-nowrap">
+                        <td
+                          onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "ai-cartoon" })}
+                          className="px-4 py-3.5 text-center font-bold text-slate-800 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-700 hover:bg-purple-100/50 transition-colors"
+                          title={`Order ${tier.package} for AI Cartoon (${tier.aiCartoon})`}
+                        >
                           {tier.aiCartoon}
                         </td>
 
                         {/* Hyper-Realistic */}
-                        <td className="px-4 py-3.5 text-center font-bold text-purple-700 sm:px-5 whitespace-nowrap">
+                        <td
+                          onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "hyper-realistic" })}
+                          className="px-4 py-3.5 text-center font-bold text-purple-700 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-900 hover:bg-purple-100/50 transition-colors"
+                          title={`Order ${tier.package} for Hyper-Realistic (${tier.hyperRealistic})`}
+                        >
                           {tier.hyperRealistic}
                         </td>
 
                         {/* Digital Twin */}
-                        <td className="px-4 py-3.5 text-center font-bold text-purple-700 sm:px-5 whitespace-nowrap">
+                        <td
+                          onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "digital-twin" })}
+                          className="px-4 py-3.5 text-center font-bold text-purple-700 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-900 hover:bg-purple-100/50 transition-colors"
+                          title={`Order ${tier.package} for Digital Twin (${tier.digitalTwin})`}
+                        >
                           {tier.digitalTwin}
                         </td>
                       </tr>
@@ -2412,8 +2459,11 @@ export function Pricing() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="bg-white transition-colors hover:bg-purple-50/40">
-                  <td className="px-5 py-4 sm:px-6 font-bold text-slate-900">
+                <tr
+                  onClick={() => openCheckoutModal({ itemType: "setup" })}
+                  className="bg-white transition-colors hover:bg-purple-50/70 cursor-pointer group"
+                >
+                  <td className="px-5 py-4 sm:px-6 font-bold text-slate-900 group-hover:text-purple-700 transition-colors">
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-purple-600" />
                       <span>{digitalTwinSetupItem.service}</span>
@@ -2422,8 +2472,13 @@ export function Pricing() {
                   <td className="px-5 py-4 text-center text-slate-600 sm:px-6 font-medium">
                     {digitalTwinSetupItem.delivery}
                   </td>
-                  <td className="px-5 py-4 text-right font-bold text-purple-700 sm:px-6 text-base sm:text-lg">
-                    {digitalTwinSetupItem.price}
+                  <td className="px-5 py-4 text-right font-bold text-purple-700 sm:px-6 text-base sm:text-lg whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-2">
+                      <span>{digitalTwinSetupItem.price}</span>
+                      <span className="hidden sm:inline-flex items-center rounded-lg bg-purple-100/80 px-2.5 py-1 text-[11px] font-bold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-all">
+                        Buy Setup →
+                      </span>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -2450,9 +2505,13 @@ export function Pricing() {
               <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
               <span>Book a 30 min call</span>
             </NeonButton>
-            <NeonButton href="#pricing" variant="primary" size="sm">
+            <button
+              type="button"
+              onClick={() => openCheckoutModal({ itemType: "package" })}
+              className="inline-flex items-center justify-center rounded-lg bg-gradient-brand px-4 py-2 text-xs sm:text-sm font-bold text-neon-foreground shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            >
               Buy Plan
-            </NeonButton>
+            </button>
             <a
               href={whatsAppUrl}
               target="_blank"

@@ -64,12 +64,14 @@ export function NeonButton({
   variant = "solid",
   size = "md",
   className = "",
+  onClick,
 }: {
-  href: string;
+  href?: string;
   children: ReactNode;
   variant?: "solid" | "ghost" | "primary" | "call" | "secondary" | "buy" | "dark";
   size?: "sm" | "md" | "lg";
   className?: string;
+  onClick?: (e: React.MouseEvent<HTMLElement>) => void;
 }) {
   const sizeClasses =
     size === "sm"
@@ -88,8 +90,17 @@ export function NeonButton({
       : variant === "ghost"
       ? "border border-slate-300 bg-white text-slate-800 hover:border-purple-400 hover:text-purple-700 hover:bg-purple-50/60 shadow-xs active:scale-95"
       : "bg-gradient-brand text-white shadow-md glow-neon hover:brightness-110 active:scale-95";
+  
+  if (!href && onClick) {
+    return (
+      <button type="button" onClick={onClick} className={`${base} ${styles} ${className}`}>
+        {children}
+      </button>
+    );
+  }
+
   return (
-    <a href={href} className={`${base} ${styles} ${className}`}>
+    <a href={href || "#"} onClick={onClick} className={`${base} ${styles} ${className}`}>
       {children}
     </a>
   );

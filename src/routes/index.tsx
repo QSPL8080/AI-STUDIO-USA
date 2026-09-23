@@ -14,6 +14,7 @@ import {
   Pricing,
   Process,
   QuotePopupModal,
+  CheckoutModal,
   Samples,
   Services,
   StrategyCall,
@@ -97,6 +98,7 @@ function Index() {
       <Footer />
       <FloatingWhatsAppButton />
       <QuotePopupModal />
+      <CheckoutModal />
     </div>
   );
 }
