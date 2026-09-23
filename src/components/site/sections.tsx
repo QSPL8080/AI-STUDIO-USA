@@ -98,11 +98,11 @@ export function Header() {
   return (
     <header id="site-nav-container" className="fixed top-0 left-0 right-0 z-50 flex flex-col">
       <div className="border-b border-slate-200/80 bg-white/90 backdrop-blur-xl shadow-xs">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-5 py-3 md:py-3.5">
+        <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 lg:px-8 py-3 md:py-3.5">
           <a
             href="/#top"
             id="navbar-logo-anchor"
-            className="-ml-3 sm:-ml-5 flex items-center transition-opacity hover:opacity-90"
+            className="flex items-center shrink-0 transition-opacity hover:opacity-90"
             aria-label="Quickupp AI Studio Home"
           >
             <img
@@ -117,55 +117,55 @@ export function Header() {
           {/* Desktop Navigation Links */}
           <nav
             aria-label="Main Navigation"
-            className="hidden items-center gap-1 rounded-full border border-slate-200 bg-slate-100/70 px-2.5 py-1.5 lg:flex shadow-xs relative"
+            className="hidden items-center gap-1 xl:gap-1.5 rounded-full border border-slate-200 bg-slate-100/70 px-2.5 xl:px-3 py-1.5 lg:flex shadow-xs relative shrink-0"
           >
             <a
               href="/#samples"
-              className="rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
             >
               Samples
             </a>
             <a
               href="/#services"
-              className="rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
             >
               Services
             </a>
 
             <a
               href="/#pricing"
-              className="rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
             >
               Pricing
             </a>
             <a
               href="/#portfolio"
-              className="rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
             >
               Portfolio
             </a>
             <a
               href="/#process"
-              className="rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
             >
               How It Works
             </a>
             <a
               href="/#faq"
-              className="rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
             >
               FAQ
             </a>
             <a
               href="/#contact"
-              className="rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
             >
               Contact
             </a>
           </nav>
 
           {/* Right CTA */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             <NeonButton
               href={calendlyUrl}
               variant="call"
