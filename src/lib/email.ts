@@ -415,6 +415,7 @@ export interface PaymentReceiptEmailPayload {
   paymentMethod?: string;
   paymentDate?: string;
   delivery?: string;
+  billingAddress?: string;
 }
 
 /**
@@ -427,10 +428,37 @@ export async function sendPaymentReceiptEmail(
   const currency = payload.currency || "USD";
   const formattedAmount = `$${payload.amount.toFixed(2)} ${currency}`;
   const transactionId = payload.captureId || payload.orderId;
-  const paymentDate = payload.paymentDate || new Date().toUTCString();
-  const paymentMethod = payload.paymentMethod || "PayPal / Card";
+  const firstName = payload.customerName?.trim().split(" ")[0] || "Valued Client";
 
-  const subject = `Receipt & Order Confirmation #${transactionId.slice(-8).toUpperCase()} - Quickupp AI Studio`;
+  // Standardized order invoice number: e.g. QAS-2026-000127
+  const currentYear = new Date().getFullYear();
+  const rawId = (payload.orderId || transactionId).replace(/[^a-zA-Z0-9]/g, "").slice(-6).toUpperCase();
+  const orderNumber = payload.orderId.startsWith("QAS-")
+    ? payload.orderId
+    : `QAS-${currentYear}-${rawId.padStart(6, "0")}`;
+
+  const now = new Date();
+  const paymentDateStr = now.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "America/New_York",
+  });
+
+  const paymentTimeStr =
+    now.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "America/New_York",
+    }) + " EST";
+
+  const paymentMethod = payload.paymentMethod || "PayPal";
+  const packageText = payload.delivery
+    ? `1 × 60-Second Video (${payload.delivery} Delivery)`
+    : "1 × 60-Second Video (4K Ultra HD)";
+
+  const subject = `Payment Confirmed — Quickupp AI Studio | Order #${orderNumber}`;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -438,173 +466,135 @@ export async function sendPaymentReceiptEmail(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Payment Receipt - Quickupp AI Studio</title>
+  <title>Payment Confirmed — Quickupp AI Studio</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: #0b0714;
+      background-color: #f8fafc;
       color: #1e293b;
       margin: 0;
       padding: 32px 12px;
       -webkit-font-smoothing: antialiased;
     }
     .wrapper {
-      max-width: 620px;
+      max-width: 600px;
       margin: 0 auto;
       background: #ffffff;
-      border-radius: 16px;
+      border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
       border: 1px solid #e2e8f0;
     }
     .top-gradient {
-      height: 6px;
-      background: linear-gradient(90deg, #7c3aed 0%, #ec4899 50%, #8b5cf6 100%);
+      height: 5px;
+      background: linear-gradient(90deg, #7c3aed 0%, #ec4899 100%);
     }
     .header {
-      background-color: #ffffff;
-      padding: 32px 28px 24px 28px;
+      padding: 28px 28px 20px 28px;
       border-bottom: 1px solid #f1f5f9;
+    }
+    .logo-text {
+      font-size: 18px;
+      font-weight: 800;
+      color: #7c3aed;
+      letter-spacing: -0.5px;
+      text-transform: uppercase;
+      margin: 0 0 16px 0;
+    }
+    .greeting {
+      font-size: 15px;
+      color: #0f172a;
+      line-height: 1.6;
+      margin: 0 0 12px 0;
+    }
+    .status-badge-card {
+      background: #f5f3ff;
+      border: 1px solid #ddd6fe;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 16px 0 20px 0;
       text-align: center;
     }
-    .logo-img {
-      height: 40px;
-      width: auto;
-      margin-bottom: 16px;
-    }
-    .badge-success {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background-color: #ecfdf5;
-      border: 1px solid #a7f3d0;
-      color: #047857;
-      padding: 6px 14px;
-      border-radius: 9999px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-    .receipt-title {
-      font-size: 24px;
-      font-weight: 800;
-      color: #0f172a;
-      margin: 0 0 6px 0;
-    }
-    .receipt-subtitle {
+    .status-title {
       font-size: 14px;
-      color: #64748b;
-      margin: 0;
-    }
-    .content {
-      padding: 28px;
-      background-color: #ffffff;
-    }
-    .highlight-card {
-      background: linear-gradient(135deg, #f8f6ff 0%, #fdf2f8 100%);
-      border: 1px solid #e9d5ff;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 24px;
-    }
-    .amount-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: #7c3aed;
+      font-weight: 800;
+      color: #6d28d9;
+      letter-spacing: 0.5px;
+      margin: 0 0 2px 0;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 4px;
     }
-    .amount-value {
-      font-size: 32px;
-      font-weight: 900;
-      color: #0f172a;
+    .status-paid {
+      font-size: 13px;
+      font-weight: 700;
+      color: #16a34a;
       margin: 0;
+    }
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 22px 0 10px 0;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #f1f5f9;
     }
     .table-details {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 24px;
       font-size: 13px;
-    }
-    .table-details th {
-      text-align: left;
-      color: #64748b;
-      font-weight: 600;
-      padding: 10px 0;
-      border-bottom: 1px solid #f1f5f9;
-      width: 40%;
+      margin-bottom: 18px;
     }
     .table-details td {
-      text-align: right;
-      color: #0f172a;
-      font-weight: 700;
-      padding: 10px 0;
-      border-bottom: 1px solid #f1f5f9;
+      padding: 8px 0;
+      border-bottom: 1px solid #f8fafc;
+      vertical-align: top;
     }
-    .next-steps-card {
+    .table-details td.label {
+      color: #64748b;
+      font-weight: 500;
+      width: 44%;
+    }
+    .table-details td.val {
+      color: #0f172a;
+      font-weight: 600;
+      text-align: right;
+    }
+    .amount-highlight {
+      color: #7c3aed !important;
+      font-weight: 800 !important;
+      font-size: 14px !important;
+    }
+    .info-box {
       background-color: #f8fafc;
       border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 24px;
-    }
-    .next-steps-title {
+      border-radius: 8px;
+      padding: 14px 18px;
       font-size: 13px;
-      font-weight: 700;
+      line-height: 1.6;
       color: #334155;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-top: 0;
-      margin-bottom: 12px;
+      margin: 18px 0;
     }
-    .step-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 10px;
-      font-size: 13px;
-      color: #475569;
-      line-height: 1.5;
-    }
-    .step-num {
-      background: #7c3aed;
-      color: #ffffff;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
+    .order-callout {
+      background-color: #faf5ff;
+      border: 1px dashed #c084fc;
+      border-radius: 6px;
+      padding: 10px 14px;
       font-weight: 700;
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-    .btn-container {
-      text-align: center;
-      padding-top: 8px;
-    }
-    .btn-contact {
-      display: inline-block;
-      background: linear-gradient(135deg, #7c3aed 0%, #d946ef 100%);
-      color: #ffffff !important;
-      text-decoration: none;
-      padding: 12px 28px;
-      border-radius: 9999px;
-      font-size: 14px;
-      font-weight: 700;
-      box-shadow: 0 4px 14px rgba(217, 70, 239, 0.35);
+      color: #6b21a8;
+      margin-top: 10px;
     }
     .footer {
       background-color: #f8fafc;
-      padding: 20px;
-      text-align: center;
+      padding: 22px 28px;
       font-size: 12px;
-      color: #94a3b8;
+      color: #64748b;
+      line-height: 1.6;
       border-top: 1px solid #f1f5f9;
+    }
+    .footer a {
+      color: #7c3aed;
+      text-decoration: none;
     }
   </style>
 </head>
@@ -612,109 +602,138 @@ export async function sendPaymentReceiptEmail(
   <div class="wrapper">
     <div class="top-gradient"></div>
     <div class="header">
-      <div class="badge-success">&#10004; Payment Confirmed &amp; Verified</div>
-      <h1 class="receipt-title">Payment Receipt</h1>
-      <p class="receipt-subtitle">Thank you for your order with Quickupp AI Studio!</p>
-    </div>
+      <div class="logo-text">Quickupp AI Studio</div>
+      <p class="greeting">
+        Hi <strong>${firstName}</strong>,<br>
+        Thank you for choosing Quickupp AI Studio.<br>
+        We’re pleased to confirm that your payment has been successfully received.
+      </p>
 
-    <div class="content">
-      <div class="highlight-card">
-        <div class="amount-label">Amount Paid</div>
-        <div class="amount-value">${formattedAmount}</div>
-        <p style="margin: 6px 0 0 0; font-size: 12px; color: #6b21a8; font-weight: 600;">
-          &#10003; 100% Satisfaction Guarantee • Official Commercial License Included
-        </p>
+      <div class="status-badge-card">
+        <div class="status-title">PAYMENT CONFIRMED</div>
+        <div class="status-paid">Status: PAID &#10003;</div>
       </div>
 
+      <div class="section-title">Order Details</div>
       <table class="table-details">
         <tr>
-          <th>Customer Name</th>
-          <td>${payload.customerName}</td>
+          <td class="label">Order / Invoice No.</td>
+          <td class="val">${orderNumber}</td>
         </tr>
         <tr>
-          <th>Customer Email</th>
-          <td>${payload.customerEmail}</td>
-        </tr>
-        ${payload.customerPhone ? `<tr><th>Phone Number</th><td>${payload.customerPhone}</td></tr>` : ""}
-        ${payload.customerCompany ? `<tr><th>Company / Brand</th><td>${payload.customerCompany}</td></tr>` : ""}
-        <tr>
-          <th>Service / Package</th>
-          <td style="color: #7c3aed;">${payload.itemName}</td>
+          <td class="label">Service</td>
+          <td class="val">${payload.itemName}</td>
         </tr>
         <tr>
-          <th>Transaction ID</th>
-          <td style="font-family: monospace; font-size: 12px;">${transactionId}</td>
+          <td class="label">Package</td>
+          <td class="val">${packageText}</td>
         </tr>
         <tr>
-          <th>PayPal Order ID</th>
-          <td style="font-family: monospace; font-size: 12px;">${payload.orderId}</td>
+          <td class="label">Amount Paid</td>
+          <td class="val amount-highlight">${formattedAmount}</td>
         </tr>
         <tr>
-          <th>Payment Method</th>
-          <td>${paymentMethod}</td>
+          <td class="label">Payment Date</td>
+          <td class="val">${paymentDateStr}</td>
         </tr>
         <tr>
-          <th>Date &amp; Time</th>
-          <td>${paymentDate}</td>
+          <td class="label">Payment Time</td>
+          <td class="val">${paymentTimeStr}</td>
+        </tr>
+        <tr>
+          <td class="label">Payment Method</td>
+          <td class="val">${paymentMethod}</td>
+        </tr>
+        <tr>
+          <td class="label">Transaction ID</td>
+          <td class="val" style="font-family: monospace; font-size: 12px;">${transactionId}</td>
         </tr>
       </table>
 
-      <div class="next-steps-card">
-        <div class="next-steps-title">&#128640; What Happens Next?</div>
-        <div class="step-item">
-          <span class="step-num">1</span>
-          <div><strong>Creative Briefing:</strong> Our creative director has queued your project and will review your branding requirements.</div>
-        </div>
-        <div class="step-item">
-          <span class="step-num">2</span>
-          <div><strong>Script &amp; AI Production:</strong> We write the engaging hook &amp; script and produce your video in stunning 4K Ultra HD.</div>
-        </div>
-        <div class="step-item">
-          <span class="step-num">3</span>
-          <div><strong>Direct Delivery &amp; Revisions:</strong> Your video is delivered directly via email / WhatsApp with 1 free revision included.</div>
-        </div>
-      </div>
+      <div class="section-title">Billing Information</div>
+      <table class="table-details">
+        <tr>
+          <td class="label">Name</td>
+          <td class="val">${payload.customerName}</td>
+        </tr>
+        <tr>
+          <td class="label">Email</td>
+          <td class="val">${payload.customerEmail}</td>
+        </tr>
+        ${payload.customerCompany ? `<tr><td class="label">Company</td><td class="val">${payload.customerCompany}</td></tr>` : ""}
+        ${payload.customerPhone ? `<tr><td class="label">Phone</td><td class="val">${payload.customerPhone}</td></tr>` : ""}
+        ${payload.billingAddress ? `<tr><td class="label">Billing Address</td><td class="val">${payload.billingAddress}</td></tr>` : ""}
+      </table>
 
-      <div class="btn-container">
-        <a href="https://wa.me/15550000000?text=Hi%20Quickupp%20AI%20Studio,%20I%20just%20completed%20my%20payment%20for%20order%20${transactionId}" class="btn-contact" target="_blank">
-          Connect with Production Team on WhatsApp
-        </a>
+      <div class="info-box">
+        <strong style="color: #0f172a;">What Happens Next?</strong><br>
+        Our team will process your order and contact you with the next steps.<br>
+        If you purchased a video/creative service, please keep your order number handy when communicating with our team.
+        <div class="order-callout">
+          Order Number: ${orderNumber}
+        </div>
       </div>
     </div>
 
     <div class="footer">
-      &copy; ${new Date().getFullYear()} Quickupp AI Studio. All rights reserved.<br>
-      For any inquiries, reply to this email at <a href="mailto:info@quickuppaistudio.us" style="color: #7c3aed; text-decoration: none;">info@quickuppaistudio.us</a>
+      If you have any questions, simply reply to this email or contact us at:<br>
+      <strong>Quickupp AI Studio</strong><br>
+      Email: <a href="mailto:info@quickuppaistudio.us">info@quickuppaistudio.us</a><br>
+      Website: <a href="https://quickuppaistudio.us">quickuppaistudio.us</a><br><br>
+      Thank you for choosing Quickupp AI Studio.<br><br>
+      <strong>Best regards,</strong><br>
+      Quickupp AI Studio<br>
+      AI-Powered Creative & Video Studio<br>
+      <em>Operated by-Quickupp Softech LLC</em>
     </div>
   </div>
 </body>
 </html>
   `;
 
-  const textContent = `
-Quickupp AI Studio - Payment Receipt & Order Confirmation
-=========================================================
-Thank you, ${payload.customerName}! Your payment has been received and verified.
+  const textContent = `Subject: ${subject}
 
-Order & Transaction Summary:
+Hi ${firstName},
+Thank you for choosing Quickupp AI Studio.
+We’re pleased to confirm that your payment has been successfully received.
+
+PAYMENT CONFIRMED
+Status: PAID ✓
+
+Order Details
 ---------------------------------------------------------
+Order / Invoice No.: ${orderNumber}
 Service: ${payload.itemName}
+Package: ${packageText}
 Amount Paid: ${formattedAmount}
-Transaction ID: ${transactionId}
-PayPal Order ID: ${payload.orderId}
+Payment Date: ${paymentDateStr}
+Payment Time: ${paymentTimeStr}
 Payment Method: ${paymentMethod}
-Date: ${paymentDate}
-Customer: ${payload.customerName} (${payload.customerEmail})
-${payload.customerPhone ? `Phone: ${payload.customerPhone}\n` : ""}${payload.customerCompany ? `Company: ${payload.customerCompany}\n` : ""}
-Production Next Steps:
-1. Our creative team will review your order requirements.
-2. We craft your script, generate AI visuals/voice, and render in 4K.
-3. Delivery directly to your email with revisions included.
+Transaction ID: ${transactionId}
 
-Contact & Support:
+Billing Information
+---------------------------------------------------------
+Name: ${payload.customerName}
+Email: ${payload.customerEmail}
+${payload.customerCompany ? `Company: ${payload.customerCompany}\n` : ""}${payload.customerPhone ? `Phone: ${payload.customerPhone}\n` : ""}${payload.billingAddress ? `Billing Address: ${payload.billingAddress}\n` : ""}
+What Happens Next?
+---------------------------------------------------------
+Our team will process your order and contact you with the next steps.
+If you purchased a video/creative service, please keep your order number handy when communicating with our team.
+
+Order Number: ${orderNumber}
+
+If you have any questions, simply reply to this email or contact us at:
+Quickupp AI Studio
 Email: info@quickuppaistudio.us
-Website: https://quickuppaistudio.us
-=========================================================
+Website: quickuppaistudio.us
+
+Thank you for choosing Quickupp AI Studio.
+
+Best regards,
+Quickupp AI Studio
+AI-Powered Creative & Video Studio
+Operated by-Quickupp Softech LLC
   `;
 
   // 1. Send via Hostinger SMTP to customer and BCC to official company mailbox
