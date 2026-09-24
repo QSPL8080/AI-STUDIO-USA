@@ -14,6 +14,7 @@ import {
   type Order,
   type PaymentStatus,
 } from "./db";
+import { sendPaymentReceiptEmail } from "./email";
 
 /**
  * Public configuration helper for client-side PayPal Script initialization.
@@ -149,6 +150,24 @@ export const capturePayPalOrderServerFn = createServerFn({ method: "POST" })
         rawDetails: JSON.stringify(captureResult),
       });
 
+      // Automated Payment Receipt Email Dispatch (Hostinger SMTP)
+      if (isCompleted && updatedOrder && updatedOrder.customer_email) {
+        sendPaymentReceiptEmail({
+          customerName: updatedOrder.customer_name,
+          customerEmail: updatedOrder.customer_email,
+          customerPhone: updatedOrder.customer_phone || undefined,
+          customerCompany: updatedOrder.customer_company || undefined,
+          orderId: data.orderId,
+          captureId,
+          itemName: updatedOrder.item_name,
+          amount: Number(updatedOrder.amount),
+          currency: updatedOrder.currency || "USD",
+          paymentMethod: "PayPal / Credit Card",
+        }).catch((err) => {
+          console.error("Automated payment receipt dispatch error:", err);
+        });
+      }
+
       return {
         success: isCompleted,
         status: captureResult.status,
@@ -208,6 +227,33 @@ export const deleteOrderServerFn = createServerFn({ method: "POST" })
     try {
       const ok = await deleteOrderFromDb(data.id);
       return { success: ok };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+/**
+ * Send or re-send payment receipt email to customer (Admin / Client).
+ */
+export const sendReceiptEmailServerFn = createServerFn({ method: "POST" })
+  .validator(
+    (data: {
+      customerName: string;
+      customerEmail: string;
+      customerPhone?: string;
+      customerCompany?: string;
+      orderId: string;
+      captureId?: string;
+      itemName: string;
+      amount: number;
+      currency?: string;
+      paymentMethod?: string;
+    }) => data
+  )
+  .handler(async ({ data }) => {
+    try {
+      const res = await sendPaymentReceiptEmail(data);
+      return res;
     } catch (error: any) {
       return { success: false, error: error.message };
     }

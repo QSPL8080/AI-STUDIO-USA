@@ -982,9 +982,14 @@ export function CheckoutModal() {
               </div>
 
               {/* Next Steps Notification */}
-              <div className="rounded-xl border border-purple-100 bg-purple-50/60 p-4 text-xs text-purple-900 leading-relaxed font-medium max-w-lg mx-auto">
-                <Sparkles className="h-4 w-4 text-purple-600 inline mr-1.5 -mt-0.5" />
-                Our creative team has received your order and will contact you via email shortly to begin your AI video production script and assets.
+              <div className="rounded-xl border border-purple-100 bg-purple-50/60 p-4 text-xs text-purple-900 leading-relaxed font-medium max-w-lg mx-auto space-y-1">
+                <p>
+                  <Sparkles className="h-4 w-4 text-purple-600 inline mr-1.5 -mt-0.5" />
+                  <strong>Payment Receipt Sent:</strong> An automated email with your payment receipt and transaction details has been sent to your email address.
+                </p>
+                <p className="text-[11px] text-purple-700">
+                  Our creative team has received your order and will contact you shortly to begin your AI video production script and assets.
+                </p>
               </div>
 
               {/* Close / Done Button */}

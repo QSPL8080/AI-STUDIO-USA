@@ -2750,7 +2750,7 @@ export function DigitalTwin() {
             $499 One-Time Setup
           </p>
           <div className="mt-6">
-            <NeonButton href="#contact">Create My Digital Twin</NeonButton>
+            <NeonButton href="#contact">Get Your Digital Twin</NeonButton>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
             Digital twin and voice cloning services require appropriate client authorization and
@@ -3510,6 +3510,50 @@ export function LeadFormSection() {
               />
             </div>
 
+            {/* Legal Terms & Consent Checkbox */}
+            <div className="flex items-start gap-2.5 pt-1 pb-1">
+              <input
+                type="checkbox"
+                id="contactConsent"
+                name="consent"
+                required
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer accent-purple-600 shrink-0"
+              />
+              <label
+                htmlFor="contactConsent"
+                className="text-xs text-slate-600 leading-snug cursor-pointer select-none"
+              >
+                I agree to the{" "}
+                <a
+                  href="/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-purple-600 font-medium underline hover:text-purple-800"
+                >
+                  Privacy Policy
+                </a>
+                ,{" "}
+                <a
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-purple-600 font-medium underline hover:text-purple-800"
+                >
+                  Terms &amp; Conditions
+                </a>
+                , and{" "}
+                <a
+                  href="/cookie-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-purple-600 font-medium underline hover:text-purple-800"
+                >
+                  Cookie Policy
+                </a>
+                .
+              </label>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
@@ -4020,12 +4064,12 @@ export function QuotePopupModal() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-3 sm:p-4 backdrop-blur-[4px] animate-in fade-in duration-300">
-      <div className="panel relative max-h-[96vh] w-full max-w-lg overflow-y-auto overflow-x-hidden border-slate-200 bg-white p-5 shadow-2xl sm:p-7">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-3 sm:p-5 md:p-6 backdrop-blur-[4px] animate-in fade-in duration-300">
+      <div className="panel relative max-h-[94vh] w-full max-w-xl md:max-w-2xl lg:max-w-3xl overflow-y-auto overflow-x-hidden border-slate-200 bg-white p-5 shadow-2xl sm:p-7 md:p-8">
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute right-3.5 top-3.5 rounded-full border border-slate-200 bg-slate-100 p-1.5 text-slate-500 transition-colors hover:border-purple-300 hover:text-slate-900"
+          className="absolute right-3.5 top-3.5 rounded-full border border-slate-200 bg-slate-100 p-2 text-slate-500 transition-colors hover:border-purple-300 hover:text-slate-900"
           aria-label="Close modal"
         >
           <X className="h-4 w-4" />

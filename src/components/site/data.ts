@@ -51,9 +51,9 @@ export const portfolioItems = [
     videoUrl: "/videos/Portfolio 1.mp4",
   },
   {
-    industry: "Luxury Travel & Hospitality",
+    industry: "Luxury Haircare & Beauty",
     description:
-      "Cinematic destination & luxury resort showcase with breathtaking scenic aerial transitions.",
+      "Authentic creator-style hair styling routine and product spotlight reel for Dyson Airwrap.",
     videoUrl: "/videos/Portfolio 2.mp4",
   },
   {
@@ -69,9 +69,9 @@ export const portfolioItems = [
     videoUrl: "/videos/Portfolio 4.mp4",
   },
   {
-    industry: "Luxury Fashion & Lookbook",
+    industry: "Luxury Cosmetics & Lip Care",
     description:
-      "Avant-garde fashion lookbook showcasing high-end couture styling, dynamic runway movement, and cinematic lighting.",
+      "High-gloss commercial reveal reel showcasing Dior Addict Lip Glow with sensory macro textures and studio lighting.",
     videoUrl: "/videos/Portfolio 5.mp4",
   },
   {
@@ -164,7 +164,7 @@ export const services = [
       "Social Media Content",
     ],
     price: "$179 / Reel",
-    cta: "Create My Digital Twin",
+    cta: "Get Your Digital Twin",
   },
 ];
 
@@ -207,7 +207,7 @@ export interface IndividualPricing {
 }
 
 export const individualPricingList: IndividualPricing[] = [
-  { service: "AI UGC", price: "$1", description: "Authentic creator-style product review & demo reels" },
+  { service: "AI UGC", price: "$79", description: "Authentic creator-style product review & demo reels" },
   { service: "AI Cartoon", price: "$79", description: "Engaging 3D & 2D character animation storytelling" },
   { service: "AI Avatar", price: "$99", description: "Professional presenter-style spokesperson reels" },
   { service: "Hyper-Realistic", price: "$149", description: "Cinematic commercial-grade visual storytelling" },
@@ -233,7 +233,7 @@ export const packagePricingTiers: PackagePricingTier[] = [
     package: "Single Video",
     delivery: "24 Hrs",
     videos: 1,
-    aiUgc: "$1",
+    aiUgc: "$79",
     aiAvatar: "$99",
     aiCartoon: "$79",
     hyperRealistic: "$149",
