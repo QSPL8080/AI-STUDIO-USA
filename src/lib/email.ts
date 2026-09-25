@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
-import { generateInvoicePdfBuffer } from "./pdf-receipt";
-import { getCompanyLogoBuffer } from "./receipt-assets";
+import { generateInvoicePdfBuffer } from "./pdf-receipt.ts";
+import { getCompanyLogoBuffer } from "./receipt-assets.ts";
 
 export interface LeadEmailPayload {
   source: "Contact Form" | "Popup Modal" | "USA - Contact Form" | "USA - Popup Modal" | string;

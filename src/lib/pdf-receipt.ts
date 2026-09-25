@@ -3,7 +3,7 @@ import {
   getReceiptRegularFont,
   getReceiptBoldFont,
   getCompanyLogoBuffer,
-} from "./receipt-assets";
+} from "./receipt-assets.ts";
 
 export interface InvoiceData {
   orderNumber: string;
