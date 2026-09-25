@@ -17,7 +17,6 @@ import {
   Clock,
   Zap,
   RotateCcw,
-  CreditCard,
   Star,
   Check,
   Download,
@@ -78,17 +77,10 @@ export function CheckoutModal() {
   const [company, setCompany] = useState("");
 
   // Payment UI States
-  const [activeTab, setActiveTab] = useState<"cards" | "paypal" | "applepay">("cards");
   const [formErrors, setFormErrors] = useState<{ fullName?: string; email?: string }>({});
   const [step, setStep] = useState<"form" | "payment" | "success">("form");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // Card details mock / input state
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvc, setCardCvc] = useState("");
-  const [selectedCountry, setSelectedCountry] = useState("United States");
 
   // PayPal config state
   const [paypalClientId, setPayPalClientId] = useState<string>(DEFAULT_PAYPAL_CLIENT_ID);
@@ -649,376 +641,164 @@ export function CheckoutModal() {
                   </div>
                 </div>
 
-                {/* RIGHT COLUMN: PAYMENT METHODS (Cards | PayPal | Apple Pay) */}
+                {/* RIGHT COLUMN: OFFICIAL PAYPAL CHECKOUT */}
                 <div className="lg:col-span-7 space-y-4">
-                  {/* 3 Tabs: Cards | PayPal | Apple Pay */}
-                  <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-200 bg-slate-100/90 p-1.5">
-                    {/* Cards Tab */}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("cards")}
-                      className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition-all duration-200 cursor-pointer ${
-                        activeTab === "cards"
-                          ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
-                          : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-                      }`}
-                    >
-                      <CreditCard className="h-4 w-4 text-purple-600" />
-                      <span>Cards</span>
-                    </button>
-
-                    {/* PayPal Tab */}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("paypal")}
-                      className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition-all duration-200 cursor-pointer ${
-                        activeTab === "paypal"
-                          ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
-                          : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-                      }`}
-                    >
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                        <path
-                          d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.738A.8.8 0 0 1 5.733 3.1h7.027c2.378 0 4.116.536 5.027 1.551.868.966 1.08 2.373.633 4.187-.04.164-.085.33-.136.498-.946 3.125-3.082 4.71-6.349 4.71H9.288a.8.8 0 0 0-.789.664l-.994 5.308-.429 1.319z"
-                          fill="#003087"
-                        />
-                        <path
-                          d="M19.424 9.336c-.946 3.125-3.082 4.71-6.349 4.71H10.43a.8.8 0 0 0-.789.664l-1.196 6.386a.48.48 0 0 0 .474.565h3.498a.72.72 0 0 0 .71-.607l.794-4.237a.8.8 0 0 1 .789-.664h1.037c2.934 0 4.852-1.424 5.703-4.23.385-1.27.3-2.316-.226-2.587z"
-                          fill="#0079C1"
-                        />
-                      </svg>
-                      <span className="font-bold text-[#003087]">PayPal</span>
-                    </button>
-
-                    {/* Apple Pay Tab */}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("applepay")}
-                      className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition-all duration-200 cursor-pointer ${
-                        activeTab === "applepay"
-                          ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
-                          : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-                      }`}
-                    >
-                      <svg className="h-4 w-4 fill-current text-slate-900" viewBox="0 0 170 170">
-                        <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.74 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.6-7.85-11.75-14.43-5.78-9.13-10.36-19.64-13.73-31.54-3.37-11.9-5.06-23.08-5.06-33.54 0-14.68 3.73-26.79 11.19-36.31 7.46-9.52 16.73-14.39 27.81-14.61 4.58 0 9.77 1.25 15.58 3.75 5.8 2.5 9.72 3.81 11.75 3.93 1.62-.24 5.75-1.63 12.38-4.17 6.64-2.54 12.02-3.68 16.16-3.41 12.43.64 22.38 5.48 29.85 14.52-10.9 6.58-16.19 15.65-15.87 27.21.32 9.06 3.88 16.59 10.68 22.61 6.8 6.01 14.88 9.53 24.23 10.55-2.02 6.13-4.59 12.28-7.71 18.45zM119.22 33.02c0-7.39 2.68-14.36 8.03-20.91 5.36-6.55 12.01-10.87 19.96-12.96.24 1.13.36 2.22.36 3.27 0 7.37-2.81 14.47-8.43 21.29-5.63 6.82-12.57 11.1-20.82 12.86-.36-1.18-.54-2.36-.54-3.55z" />
-                      </svg>
-                      <span>Apple Pay</span>
-                    </button>
-                  </div>
-
-                  {/* TAB 1: CARDS PAYMENT FORM */}
-                  {activeTab === "cards" && (
-                    <div className="space-y-3.5 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs">
-                      {/* Card Number with Brand Logos */}
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          Card number
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            maxLength={19}
-                            placeholder="1234 1234 1234 1234"
-                            value={cardNumber}
-                            onChange={(e) => {
-                              const val = e.target.value.replace(/\D/g, "").slice(0, 16);
-                              const formatted = val.replace(/(\d{4})(?=\d)/g, "$1 ");
-                              setCardNumber(formatted);
-                            }}
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-mono text-slate-800 placeholder-slate-400 shadow-xs focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100 pr-28"
-                          />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
-                            <span className="rounded bg-blue-600 px-1.5 py-0.5 text-[9px] font-black text-white">
-                              VISA
-                            </span>
-                            <span className="rounded bg-red-500 px-1.5 py-0.5 text-[9px] font-black text-white">
-                              MC
-                            </span>
-                            <span className="rounded bg-blue-400 px-1.5 py-0.5 text-[9px] font-black text-white">
-                              AMEX
-                            </span>
-                          </div>
-                        </div>
+                  <div className="space-y-4 rounded-2xl border border-purple-200 bg-white p-5 shadow-xs">
+                    <div className="text-center space-y-1">
+                      <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 border border-purple-100 text-purple-700 text-xs font-semibold mb-1">
+                        <Lock className="h-3.5 w-3.5 text-purple-600" />
+                        <span>Instant 256-Bit Encrypted Payment</span>
                       </div>
-
-                      {/* Expiration & CVC */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">
-                            Expiration date
-                          </label>
-                          <input
-                            type="text"
-                            maxLength={5}
-                            placeholder="MM / YY"
-                            value={cardExpiry}
-                            onChange={(e) => {
-                              let val = e.target.value.replace(/\D/g, "").slice(0, 4);
-                              if (val.length > 2) val = val.slice(0, 2) + " / " + val.slice(2);
-                              setCardExpiry(val);
-                            }}
-                            className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-mono text-slate-800 placeholder-slate-400 shadow-xs focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">
-                            Security code
-                          </label>
-                          <div className="relative">
-                            <input
-                              type="password"
-                              maxLength={4}
-                              placeholder="CVC"
-                              value={cardCvc}
-                              onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                              className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-mono text-slate-800 placeholder-slate-400 shadow-xs focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100 pr-8"
-                            />
-                            <CreditCard className="h-4 w-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Full Name on Card */}
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          Full name on card
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="e.g. John Doe"
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 shadow-xs focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100"
-                        />
-                      </div>
-
-                      {/* Country or Region */}
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          Country or region
-                        </label>
-                        <select
-                          value={selectedCountry}
-                          onChange={(e) => setSelectedCountry(e.target.value)}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-800 shadow-xs focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100"
-                        >
-                          <option value="United States">United States</option>
-                          <option value="Canada">Canada</option>
-                          <option value="United Kingdom">United Kingdom</option>
-                          <option value="Australia">Australia</option>
-                          <option value="India">India</option>
-                          <option value="Germany">Germany</option>
-                          <option value="Singapore">Singapore</option>
-                          <option value="United Arab Emirates">United Arab Emirates</option>
-                        </select>
-                      </div>
-
-                      <p className="text-[10px] text-slate-500 leading-relaxed pt-1">
-                        By providing your card information, you allow Quickupp AI Studio to process your payment for the selected package in accordance with our terms and 100% money-back guarantee.
+                      <h4 className="text-sm font-bold text-slate-900">
+                        Pay with Official PayPal Checkout
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        Fast & secure payment with your PayPal account or linked Debit/Credit card.
                       </p>
-
-                      {/* Pay with PayPal / Card Gateway Button */}
-                      <div className="pt-2">
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab("paypal")}
-                          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-brand py-3 text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-98 transition-all cursor-pointer"
-                        >
-                          <span>Pay {resolvedItem.amountFormatted} with Card (via PayPal Gateway)</span>
-                          <ArrowRight className="h-4 w-4" />
-                        </button>
-                      </div>
                     </div>
-                  )}
 
-                  {/* TAB 2: PAYPAL OFFICIAL BUTTONS */}
-                  {activeTab === "paypal" && (
-                    <div className="space-y-4 rounded-2xl border border-purple-200 bg-white p-5 shadow-xs">
-                      <div className="text-center space-y-1">
-                        <h4 className="text-sm font-bold text-slate-900">
-                          Pay with Official PayPal Checkout
-                        </h4>
-                        <p className="text-xs text-slate-500">
-                          Fast & secure payment with your PayPal account or linked Debit/Credit card.
-                        </p>
-                      </div>
-
-                      <div className="relative min-h-[140px] flex flex-col items-center justify-center rounded-xl bg-slate-50/80 p-4 border border-slate-200/80">
-                        {paypalClientId ? (
-                          <PayPalScriptProvider
-                            options={{
-                              clientId: paypalClientId,
-                              currency: "USD",
-                              intent: "capture",
-                            }}
-                          >
-                            <div className="w-full max-w-sm">
-                              <PayPalButtons
-                                style={{
-                                  layout: "vertical",
-                                  color: "gold",
-                                  shape: "rect",
-                                  label: "pay",
-                                  height: 46,
-                                }}
-                                disabled={isProcessing}
-                                createOrder={async () => {
-                                  try {
-                                    setIsProcessing(true);
-                                    setErrorMessage(null);
-                                    const res = await createPayPalOrderServerFn({
-                                      data: {
-                                        itemType: resolvedItem.itemType,
-                                        itemId: resolvedItem.itemId,
-                                        tierId: resolvedItem.tierId,
-                                        format: resolvedItem.format,
-                                        customerName: fullName,
-                                        customerEmail: email,
-                                        customerPhone: phone,
-                                        customerCompany: company,
-                                      },
-                                    });
-
-                                    if (!res.success || !res.orderId) {
-                                      throw new Error(res.error || "Failed to initialize PayPal order.");
-                                    }
-
-                                    return res.orderId;
-                                  } catch (err: any) {
-                                    console.error("PayPal createOrder error:", err);
-                                    setErrorMessage(
-                                      err.message || "Failed to create PayPal order. Please try again."
-                                    );
-                                    setIsProcessing(false);
-                                    throw err;
-                                  }
-                                }}
-                                onApprove={async (data) => {
-                                  try {
-                                    setIsProcessing(true);
-                                    const res = await capturePayPalOrderServerFn({
-                                      data: { orderId: data.orderID },
-                                    });
-
-                                    if (!res.success) {
-                                      throw new Error(
-                                        res.error || "Payment verification failed on the server."
-                                      );
-                                    }
-
-                                    // Payment Completed Successfully
-                                    const now = new Date();
-                                    const dateStr = now.toLocaleDateString("en-US", {
-                                      month: "long",
-                                      day: "numeric",
-                                      year: "numeric",
-                                      timeZone: "America/New_York",
-                                    });
-                                    const timeStr =
-                                      now.toLocaleTimeString("en-US", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: true,
-                                        timeZone: "America/New_York",
-                                      }) + " EST";
-
-                                    const orderNum = formatOrderInvoiceNumber(res.order?.id || data.orderID);
-
-                                    setSuccessDetails({
-                                      orderId: data.orderID,
-                                      orderNumber: orderNum,
-                                      captureId: res.captureId,
-                                      itemName: resolvedItem.itemName,
-                                      packageName: resolvedItem.itemType === "individual" ? "60-Second Video" : resolvedItem.itemName,
-                                      amount: resolvedItem.amount,
-                                      currency: resolvedItem.currency,
+                    <div className="relative min-h-[140px] flex flex-col items-center justify-center rounded-xl bg-slate-50/80 p-4 border border-slate-200/80">
+                      {paypalClientId ? (
+                        <PayPalScriptProvider
+                          options={{
+                            clientId: paypalClientId,
+                            currency: "USD",
+                            intent: "capture",
+                          }}
+                        >
+                          <div className="w-full max-w-sm">
+                            <PayPalButtons
+                              style={{
+                                layout: "vertical",
+                                color: "gold",
+                                shape: "rect",
+                                label: "pay",
+                                height: 46,
+                              }}
+                              disabled={isProcessing}
+                              createOrder={async () => {
+                                try {
+                                  setIsProcessing(true);
+                                  setErrorMessage(null);
+                                  const res = await createPayPalOrderServerFn({
+                                    data: {
+                                      itemType: resolvedItem.itemType,
+                                      itemId: resolvedItem.itemId,
+                                      tierId: resolvedItem.tierId,
+                                      format: resolvedItem.format,
                                       customerName: fullName,
                                       customerEmail: email,
+                                      customerPhone: phone,
                                       customerCompany: company,
-                                      paymentMethod: "PayPal",
-                                      paymentDate: dateStr,
-                                      paymentTime: timeStr,
-                                    });
+                                    },
+                                  });
 
-                                    // Broadcast real-time event for admin sync
-                                    if (res.order) {
-                                      broadcastOrderEvent({
-                                        type: "NEW_ORDER",
-                                        order: res.order,
-                                      });
-                                    }
-
-                                    // Redirect customer directly to the official Light-theme order confirmation page
-                                    const confirmUrl = `/order-confirmation?orderId=${encodeURIComponent(res.order?.id || data.orderID)}&token=${encodeURIComponent(data.orderID)}&email=${encodeURIComponent(email)}`;
-                                    window.location.href = confirmUrl;
-                                    setStep("success");
-                                  } catch (err: any) {
-                                    console.error("PayPal capture error:", err);
-                                    setErrorMessage(
-                                      err.message || "Payment capture failed. Please contact support."
-                                    );
-                                  } finally {
-                                    setIsProcessing(false);
+                                  if (!res.success || !res.orderId) {
+                                    throw new Error(res.error || "Failed to initialize PayPal order.");
                                   }
-                                }}
-                                onCancel={() => {
-                                  setIsProcessing(false);
-                                  setErrorMessage("Payment was cancelled. You can retry whenever you're ready.");
-                                }}
-                                onError={(err) => {
-                                  console.error("PayPal button error:", err);
-                                  setIsProcessing(false);
+
+                                  return res.orderId;
+                                } catch (err: any) {
+                                  console.error("PayPal createOrder error:", err);
                                   setErrorMessage(
-                                    "An error occurred while communicating with PayPal. Please check your network or try again."
+                                    err.message || "Failed to create PayPal order. Please try again."
                                   );
-                                }}
-                              />
-                            </div>
-                          </PayPalScriptProvider>
-                        ) : (
-                          <div className="text-center py-6 space-y-3">
-                            <div className="inline-flex h-8 w-8 animate-spin items-center justify-center rounded-full border-2 border-purple-600 border-t-transparent" />
-                            <p className="text-xs text-slate-600 font-medium">
-                              Initializing secure PayPal connection...
-                            </p>
+                                  setIsProcessing(false);
+                                  throw err;
+                                }
+                              }}
+                              onApprove={async (data) => {
+                                try {
+                                  setIsProcessing(true);
+                                  const res = await capturePayPalOrderServerFn({
+                                    data: { orderId: data.orderID },
+                                  });
+
+                                  if (!res.success) {
+                                    throw new Error(
+                                      res.error || "Payment verification failed on the server."
+                                    );
+                                  }
+
+                                  // Payment Completed Successfully
+                                  const now = new Date();
+                                  const dateStr = now.toLocaleDateString("en-US", {
+                                    month: "long",
+                                    day: "numeric",
+                                    year: "numeric",
+                                    timeZone: "America/New_York",
+                                  });
+                                  const timeStr =
+                                    now.toLocaleTimeString("en-US", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                      timeZone: "America/New_York",
+                                    }) + " EST";
+
+                                  const orderNum = formatOrderInvoiceNumber(res.order?.id || data.orderID);
+
+                                  setSuccessDetails({
+                                    orderId: data.orderID,
+                                    orderNumber: orderNum,
+                                    captureId: res.captureId,
+                                    itemName: resolvedItem.itemName,
+                                    packageName: resolvedItem.itemType === "individual" ? "60-Second Video" : resolvedItem.itemName,
+                                    amount: resolvedItem.amount,
+                                    currency: resolvedItem.currency,
+                                    customerName: fullName,
+                                    customerEmail: email,
+                                    customerCompany: company,
+                                    paymentMethod: "PayPal",
+                                    paymentDate: dateStr,
+                                    paymentTime: timeStr,
+                                  });
+
+                                  // Broadcast real-time event for admin sync
+                                  if (res.order) {
+                                    broadcastOrderEvent({
+                                      type: "NEW_ORDER",
+                                      order: res.order,
+                                    });
+                                  }
+
+                                  // Redirect customer directly to the official Light-theme order confirmation page
+                                  const confirmUrl = `/order-confirmation?orderId=${encodeURIComponent(res.order?.id || data.orderID)}&token=${encodeURIComponent(data.orderID)}&email=${encodeURIComponent(email)}`;
+                                  window.location.href = confirmUrl;
+                                  setStep("success");
+                                } catch (err: any) {
+                                  console.error("PayPal capture error:", err);
+                                  setErrorMessage(
+                                    err.message || "Payment capture failed. Please contact support."
+                                  );
+                                } finally {
+                                  setIsProcessing(false);
+                                }
+                              }}
+                              onCancel={() => {
+                                setIsProcessing(false);
+                                setErrorMessage("Payment was cancelled. You can retry whenever you're ready.");
+                              }}
+                              onError={(err) => {
+                                console.error("PayPal button error:", err);
+                                setIsProcessing(false);
+                                setErrorMessage(
+                                  "An error occurred while communicating with PayPal. Please check your network or try again."
+                                );
+                              }}
+                            />
                           </div>
-                        )}
-                      </div>
+                        </PayPalScriptProvider>
+                      ) : (
+                        <div className="text-center py-6 space-y-3">
+                          <div className="inline-flex h-8 w-8 animate-spin items-center justify-center rounded-full border-2 border-purple-600 border-t-transparent" />
+                          <p className="text-xs text-slate-600 font-medium">
+                            Initializing secure PayPal connection...
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-
-                  {/* TAB 3: APPLE PAY */}
-                  {activeTab === "applepay" && (
-                    <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs text-center">
-                      <div className="space-y-1">
-                        <h4 className="text-sm font-bold text-slate-900">
-                          Apple Pay Checkout
-                        </h4>
-                        <p className="text-xs text-slate-500">
-                          One-touch checkout with Touch ID / Face ID on Apple devices.
-                        </p>
-                      </div>
-
-                      <div className="py-4">
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab("paypal")}
-                          className="flex h-12 w-full max-w-sm mx-auto items-center justify-center gap-2 rounded-xl bg-black text-white font-semibold shadow-md hover:bg-slate-900 active:scale-98 transition-all cursor-pointer"
-                        >
-                          <svg className="h-5 w-5 fill-current" viewBox="0 0 170 170">
-                            <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.74 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.6-7.85-11.75-14.43-5.78-9.13-10.36-19.64-13.73-31.54-3.37-11.9-5.06-23.08-5.06-33.54 0-14.68 3.73-26.79 11.19-36.31 7.46-9.52 16.73-14.39 27.81-14.61 4.58 0 9.77 1.25 15.58 3.75 5.8 2.5 9.72 3.81 11.75 3.93 1.62-.24 5.75-1.63 12.38-4.17 6.64-2.54 12.02-3.68 16.16-3.41 12.43.64 22.38 5.48 29.85 14.52-10.9 6.58-16.19 15.65-15.87 27.21.32 9.06 3.88 16.59 10.68 22.61 6.8 6.01 14.88 9.53 24.23 10.55-2.02 6.13-4.59 12.28-7.71 18.45zM119.22 33.02c0-7.39 2.68-14.36 8.03-20.91 5.36-6.55 12.01-10.87 19.96-12.96.24 1.13.36 2.22.36 3.27 0 7.37-2.81 14.47-8.43 21.29-5.63 6.82-12.57 11.1-20.82 12.86-.36-1.18-.54-2.36-.54-3.55z" />
-                          </svg>
-                          <span>Pay with Apple Pay</span>
-                        </button>
-                      </div>
-
-                      <p className="text-[11px] text-slate-500">
-                        Apple Pay is available on Safari with an active Apple Wallet card or through PayPal wallet.
-                      </p>
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
             </div>
