@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { generateInvoicePdfBuffer } from "./pdf-receipt";
+import { getCompanyLogoBuffer } from "./receipt-assets";
 
 export interface LeadEmailPayload {
   source: "Contact Form" | "Popup Modal" | "USA - Contact Form" | "USA - Popup Modal" | string;
@@ -196,7 +197,7 @@ export async function sendLeadNotificationEmail(lead: LeadEmailPayload): Promise
     <div class="top-bar"></div>
     <div class="header">
       <div style="margin-bottom: 12px;">
-        <img src="https://quickuppaistudio.us/images/logo.png" alt="Quickupp AI Studio" style="height: 38px; width: auto; display: block; border: 0;" />
+        <img src="cid:quickupp-logo" alt="Quickupp AI Studio" style="height: 38px; width: auto; display: block; border: 0;" />
       </div>
       <div class="brand-pill">Quickupp AI Studio</div>
       <h1 class="title">🎯 New Lead Received</h1>
@@ -289,6 +290,15 @@ Call: tel:${cleanPhone}
         },
       });
 
+      const leadAttachments = [
+        {
+          filename: "logo.png",
+          content: getCompanyLogoBuffer(),
+          cid: "quickupp-logo",
+          contentType: "image/png",
+        },
+      ];
+
       await transporter.sendMail({
         from: `"Quickupp AI Studio" <${fromAddress}>`,
         to: NOTIFICATION_EMAIL,
@@ -296,6 +306,7 @@ Call: tel:${cleanPhone}
         subject,
         text: textContent,
         html: htmlContent,
+        attachments: leadAttachments,
       });
 
       return { success: true };
@@ -326,6 +337,14 @@ Call: tel:${cleanPhone}
         subject,
         text: textContent,
         html: htmlContent,
+        attachments: [
+          {
+            filename: "logo.png",
+            content: getCompanyLogoBuffer(),
+            cid: "quickupp-logo",
+            contentType: "image/png",
+          },
+        ],
       });
 
       return { success: true };
@@ -658,7 +677,9 @@ export async function sendPaymentReceiptEmail(
   <div class="wrapper">
     <div class="top-gradient"></div>
     <div class="header">
-      <div class="logo-text">Quickupp AI Studio</div>
+      <div style="margin-bottom: 18px;">
+        <img src="cid:quickupp-logo" alt="Quickupp AI Studio" style="height: 38px; width: auto; max-width: 180px; display: block; border: 0;" />
+      </div>
       <p class="greeting">
         Hi <strong>${firstName}</strong>,<br>
         Thank you for choosing Quickupp AI Studio.<br>
@@ -726,7 +747,7 @@ export async function sendPaymentReceiptEmail(
           Your payment receipt/invoice is attached to this email as a PDF.
         </p>
         <a href="https://quickuppaistudio.us/api/download-receipt?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}" target="_blank" class="download-btn">
-          [ DOWNLOAD PAYMENT RECEIPT ]
+          Download Payment Receipt (PDF)
         </a>
         <p style="margin: 12px 0 0 0; font-size: 11.5px; color: #64748b;">
           Or <a href="https://quickuppaistudio.us/order-confirmation?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}" style="color: #7c3aed; text-decoration: underline; font-weight: 600;">view your confirmed order details online</a>
@@ -785,7 +806,7 @@ Name: ${payload.customerName}
 Email: ${payload.customerEmail}
 ${payload.customerCompany ? `Company: ${payload.customerCompany}\n` : ""}${payload.customerPhone ? `Phone: ${payload.customerPhone}\n` : ""}${payload.billingAddress ? `Billing Address: ${payload.billingAddress}\n` : ""}
 Your payment receipt/invoice is attached to this email as a PDF.
-[ DOWNLOAD PAYMENT RECEIPT ]: https://quickuppaistudio.us/api/download-receipt?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}
+Download Payment Receipt (PDF): https://quickuppaistudio.us/api/download-receipt?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}
 Online Order Confirmation: https://quickuppaistudio.us/order-confirmation?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}
 
 What Happens Next?
@@ -808,7 +829,17 @@ AI-Powered Creative & Video Studio
 Operated by-Quickupp Softech LLC
   `;
 
-  // 1. Send via Hostinger SMTP to customer and BCC to official company mailbox
+  const emailAttachments = [
+    {
+      filename: "logo.png",
+      content: getCompanyLogoBuffer(),
+      cid: "quickupp-logo",
+      contentType: "image/png",
+    },
+    ...(pdfAttachment ? [pdfAttachment] : []),
+  ];
+
+  // 1. Send via Hostinger SMTP directly to customer (clean transactional headers, no spam BCC)
   const smtpHost = process.env.SMTP_HOST || "smtp.hostinger.com";
   const smtpPort = Number(process.env.SMTP_PORT || 465);
   const smtpSecure = process.env.SMTP_SECURE === "false" ? false : true;
@@ -828,18 +859,40 @@ Operated by-Quickupp Softech LLC
         },
       });
 
+      // Customer transactional receipt
       await transporter.sendMail({
         from: `"Quickupp AI Studio" <${fromAddress}>`,
         to: payload.customerEmail,
-        bcc: [fromAddress, NOTIFICATION_EMAIL].filter((m, idx, arr) => arr.indexOf(m) === idx),
         replyTo: fromAddress,
+        messageId: `<receipt-${orderNumber}-${Date.now()}@quickuppaistudio.us>`,
+        date: new Date(),
+        headers: {
+          "X-Entity-Ref-ID": orderNumber,
+        },
         subject,
         text: textContent,
         html: htmlContent,
-        attachments: pdfAttachment ? [pdfAttachment] : undefined,
+        attachments: emailAttachments,
       });
 
       console.log(`✅ Automated payment receipt sent successfully to ${payload.customerEmail}`);
+
+      // Internal order notification copy to official company inbox
+      try {
+        await transporter.sendMail({
+          from: `"Quickupp AI Studio Orders" <${fromAddress}>`,
+          to: NOTIFICATION_EMAIL,
+          replyTo: payload.customerEmail,
+          messageId: `<admin-order-${orderNumber}-${Date.now()}@quickuppaistudio.us>`,
+          subject: `💳 [New Payment Confirmed] Order #${orderNumber} — $${payload.amount.toFixed(2)} USD`,
+          text: `Payment confirmed for ${payload.customerName} (${payload.customerEmail}): $${payload.amount.toFixed(2)} USD. Order #${orderNumber}. Transaction ID: ${transactionId}`,
+          html: htmlContent,
+          attachments: emailAttachments,
+        });
+      } catch (adminErr: any) {
+        console.warn("Admin notification email copy warning:", adminErr?.message);
+      }
+
       return { success: true };
     } catch (smtpErr: any) {
       console.error("Hostinger SMTP payment receipt email failed:", smtpErr?.message);
@@ -864,12 +917,16 @@ Operated by-Quickupp Softech LLC
       await backupTransporter.sendMail({
         from: `"Quickupp AI Studio" <${backupUser}>`,
         to: payload.customerEmail,
-        bcc: [backupUser, NOTIFICATION_EMAIL],
         replyTo: fromAddress,
+        messageId: `<receipt-${orderNumber}-${Date.now()}@quickuppaistudio.us>`,
+        date: new Date(),
+        headers: {
+          "X-Entity-Ref-ID": orderNumber,
+        },
         subject,
         text: textContent,
         html: htmlContent,
-        attachments: pdfAttachment ? [pdfAttachment] : undefined,
+        attachments: emailAttachments,
       });
 
       console.log(`✅ Backup SMTP payment receipt sent to ${payload.customerEmail}`);

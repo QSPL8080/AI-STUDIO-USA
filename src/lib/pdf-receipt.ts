@@ -1,6 +1,9 @@
 import PDFDocument from "pdfkit";
-import path from "node:path";
-import fs from "node:fs";
+import {
+  getReceiptRegularFont,
+  getReceiptBoldFont,
+  getCompanyLogoBuffer,
+} from "./receipt-assets";
 
 export interface InvoiceData {
   orderNumber: string;
@@ -27,11 +30,17 @@ export interface InvoiceData {
 /**
  * Generates an official, beautiful PDF Payment Receipt / Invoice buffer
  * matching Quickupp AI Studio branding and official format.
+ * 100% self-contained with embedded fonts and logo for zero-crash reliability.
  */
 export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
+      const regularFont = getReceiptRegularFont();
+      const boldFont = getReceiptBoldFont();
+      const logoBuffer = getCompanyLogoBuffer();
+
       const doc = new PDFDocument({
+        font: regularFont,
         margin: 42,
         size: "A4",
         info: {
@@ -41,6 +50,9 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
           Creator: "Quickupp AI Studio Invoice Generator",
         },
       });
+
+      doc.registerFont("ReceiptRegular", regularFont);
+      doc.registerFont("ReceiptBold", boldFont);
 
       const chunks: Buffer[] = [];
       doc.on("data", (chunk) => chunks.push(chunk));
@@ -59,23 +71,11 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       let currentY = 24;
 
       // 1. Logo and Company Header
-      const logoPath = path.resolve(process.cwd(), "public/images/logo.png");
-      const logoExists = fs.existsSync(logoPath);
-
-      if (logoExists) {
-        try {
-          doc.image(logoPath, margin, currentY, { width: 140 });
-        } catch {
-          // Fallback if image fails to render
-          doc
-            .font("Helvetica-Bold")
-            .fontSize(16)
-            .fillColor("#6d28d9")
-            .text("QUICKUPP AI STUDIO", margin, currentY);
-        }
-      } else {
+      try {
+        doc.image(logoBuffer, margin, currentY, { width: 140 });
+      } catch {
         doc
-          .font("Helvetica-Bold")
+          .font("ReceiptBold")
           .fontSize(16)
           .fillColor("#6d28d9")
           .text("QUICKUPP AI STUDIO", margin, currentY);
@@ -84,7 +84,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       // Top Right: PAYMENT RECEIPT header
       const rightColX = 350;
       doc
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fontSize(18)
         .fillColor("#0f172a")
         .text("PAYMENT RECEIPT", rightColX, currentY, { align: "right", width: contentWidth - (rightColX - margin) });
@@ -92,11 +92,11 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       currentY += 24;
 
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9.5)
         .fillColor("#475569")
         .text("Receipt / Invoice No.: ", rightColX, currentY, { continued: true, align: "right", width: contentWidth - (rightColX - margin) })
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fillColor("#0f172a")
         .text(data.orderNumber);
 
@@ -104,50 +104,50 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
 
       const issueDateStr = data.issueDate || data.paymentDate || "September 24, 2026";
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9.5)
         .fillColor("#475569")
         .text("Issue Date: ", rightColX, currentY, { continued: true, align: "right", width: contentWidth - (rightColX - margin) })
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fillColor("#0f172a")
         .text(issueDateStr);
 
       currentY += 14;
 
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9.5)
         .fillColor("#475569")
         .text("Payment Status: ", rightColX, currentY, { continued: true, align: "right", width: contentWidth - (rightColX - margin) })
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fillColor("#16a34a")
         .text("PAID");
 
       // Left subtitle below logo
       currentY = 74;
       doc
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fontSize(12)
         .fillColor("#0f172a")
         .text("QUICKUPP AI STUDIO", margin, currentY);
 
       currentY += 14;
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9)
         .fillColor("#64748b")
         .text("AI-Powered Creative & Video Studio", margin, currentY);
 
       currentY += 12;
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(8.5)
         .fillColor("#64748b")
         .text("Operated by-Quickupp Softech LLC", margin, currentY);
 
       currentY += 12;
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(8.5)
         .fillColor("#64748b")
         .text("Email: info@quickuppaistudio.us  •  Website: quickuppaistudio.us", margin, currentY);
@@ -166,7 +166,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
 
       // 2. BILL TO Section
       doc
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fontSize(10.5)
         .fillColor("#6d28d9")
         .text("BILL TO", margin, currentY);
@@ -174,32 +174,32 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       currentY += 14;
 
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9.5)
         .fillColor("#475569")
         .text("Customer Name: ", margin, currentY, { continued: true })
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fillColor("#0f172a")
         .text(data.customerName);
 
       currentY += 14;
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9.5)
         .fillColor("#475569")
         .text("Email: ", margin, currentY, { continued: true })
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fillColor("#2563eb")
         .text(data.customerEmail);
 
       if (data.customerCompany && data.customerCompany.trim()) {
         currentY += 14;
         doc
-          .font("Helvetica")
+          .font("ReceiptRegular")
           .fontSize(9.5)
           .fillColor("#475569")
           .text("Company: ", margin, currentY, { continued: true })
-          .font("Helvetica-Bold")
+          .font("ReceiptBold")
           .fillColor("#0f172a")
           .text(data.customerCompany);
       }
@@ -207,7 +207,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       if (data.billingAddress && data.billingAddress.trim()) {
         currentY += 14;
         doc
-          .font("Helvetica")
+          .font("ReceiptRegular")
           .fontSize(9.5)
           .fillColor("#475569")
           .text("Billing Address:", margin, currentY);
@@ -220,7 +220,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         for (const line of addressLines) {
           currentY += 13;
           doc
-            .font("Helvetica")
+            .font("ReceiptRegular")
             .fontSize(9)
             .fillColor("#334155")
             .text(line, margin + 12, currentY);
@@ -231,7 +231,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
 
       // 3. PAYMENT DETAILS Table
       doc
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fontSize(10.5)
         .fillColor("#6d28d9")
         .text("PAYMENT DETAILS", margin, currentY);
@@ -252,7 +252,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .stroke();
 
       doc
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fontSize(9)
         .fillColor("#475569")
         .text("Description", tableX + 10, currentY + 6, { width: col1Width - 10 })
@@ -278,14 +278,14 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       const formattedAmount = `$${data.amount.toFixed(2)}`;
 
       doc
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fontSize(9.5)
         .fillColor("#0f172a")
         .text(itemDesc, tableX + 10, currentY + 10, { width: col1Width - 10 })
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9.5)
         .text(String(qty), tableX + col1Width, currentY + 10, { width: col2Width, align: "center" })
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fontSize(9.5)
         .text(formattedAmount, tableX + col1Width + col2Width, currentY + 10, { width: col3Width - 10, align: "right" });
 
@@ -301,21 +301,21 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       const currencyStr = data.currency || "USD";
 
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9.5)
         .fillColor("#475569")
         .text("Subtotal:", totalsX, currentY, { width: totalsWidth - 70 })
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fillColor("#0f172a")
         .text(`$${subtotalVal.toFixed(2)}`, totalsX, currentY, { width: totalsWidth, align: "right" });
 
       currentY += 15;
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9.5)
         .fillColor("#475569")
         .text("Tax:", totalsX, currentY, { width: totalsWidth - 70 })
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fillColor("#0f172a")
         .text(`$${taxVal.toFixed(2)}`, totalsX, currentY, { width: totalsWidth, align: "right" });
 
@@ -330,7 +330,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .stroke();
 
       doc
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fontSize(10.5)
         .fillColor("#6d28d9")
         .text("Total:", totalsX, currentY + 2, { width: totalsWidth - 100 })
@@ -347,7 +347,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .stroke();
 
       doc
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fontSize(9.5)
         .fillColor("#475569")
         .text("PAYMENT INFORMATION", margin + 14, currentY + 10);
@@ -358,51 +358,51 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
 
       const paymentMethodStr = data.paymentMethod || "PayPal";
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9)
         .fillColor("#64748b")
         .text("Payment Method: ", infoLeftX, cardY, { continued: true })
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fillColor("#0f172a")
         .text(paymentMethodStr);
 
       const paymentDateStr = data.paymentDate || "September 24, 2026";
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9)
         .fillColor("#64748b")
         .text("Payment Date: ", infoRightX, cardY, { continued: true })
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fillColor("#0f172a")
         .text(paymentDateStr);
 
       cardY += 15;
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9)
         .fillColor("#64748b")
         .text("Transaction ID: ", infoLeftX, cardY, { continued: true })
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fillColor("#0f172a")
         .text(data.transactionId);
 
       const paymentTimeStr = data.paymentTime || "10:42 AM EST";
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9)
         .fillColor("#64748b")
         .text("Payment Time: ", infoRightX, cardY, { continued: true })
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fillColor("#0f172a")
         .text(paymentTimeStr);
 
       cardY += 15;
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9)
         .fillColor("#64748b")
         .text("Payment Status: ", infoLeftX, cardY, { continued: true })
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fillColor("#16a34a")
         .text("PAID ✓");
 
@@ -410,58 +410,58 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
 
       // 5. THANK YOU FOR YOUR PURCHASE Section
       doc
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fontSize(10.5)
         .fillColor("#0f172a")
         .text("THANK YOU FOR YOUR PURCHASE", margin, currentY);
 
       currentY += 14;
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9)
         .fillColor("#334155")
         .text("Your payment has been successfully received.", margin, currentY);
 
       currentY += 13;
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(9)
         .fillColor("#334155")
         .text("Your order is now being processed by the Quickupp AI Studio team.", margin, currentY);
 
       currentY += 15;
       doc
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fontSize(9)
         .fillColor("#475569")
         .text("For questions regarding your order or payment:", margin, currentY);
 
       currentY += 13;
       doc
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fontSize(9)
         .fillColor("#6d28d9")
         .text("Quickupp AI Studio", margin, currentY);
 
       currentY += 12;
       doc
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fontSize(8.5)
         .fillColor("#475569")
         .text("Email: ", margin, currentY, { continued: true })
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fillColor("#2563eb")
         .text("info@quickuppaistudio.us", { continued: true })
-        .font("Helvetica")
+        .font("ReceiptRegular")
         .fillColor("#475569")
         .text("    Website: ", { continued: true })
-        .font("Helvetica-Bold")
+        .font("ReceiptBold")
         .fillColor("#2563eb")
         .text("quickuppaistudio.us");
 
       currentY += 18;
       doc
-        .font("Helvetica-Oblique")
+        .font("ReceiptRegular")
         .fontSize(8)
         .fillColor("#94a3b8")
         .text(
