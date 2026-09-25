@@ -846,6 +846,13 @@ export function CheckoutModal() {
                 </p>
               </div>
 
+              {/* Next Steps Notice (Sentence only, no heading) */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-center">
+                <p className="text-xs text-slate-700 font-medium">
+                  Our team will review your order and contact you with the next steps.
+                </p>
+              </div>
+
               {/* Need Help & Close Button */}
               <div className="pt-2 text-center space-y-4 border-t border-slate-100">
                 <div className="text-xs text-slate-500 flex items-center justify-center gap-1">

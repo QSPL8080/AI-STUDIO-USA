@@ -753,6 +753,10 @@ export async function sendPaymentReceiptEmail(
           Or <a href="https://quickuppaistudio.us/order-confirmation?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}" style="color: #7c3aed; text-decoration: underline; font-weight: 600;">view your confirmed order details online</a>
         </p>
       </div>
+
+      <p style="margin: 18px 0; font-size: 13px; color: #475569; line-height: 1.6; text-align: center;">
+        Our team will process your order and contact you with the next steps.
+      </p>
     </div>
 
     <div class="footer">
@@ -799,6 +803,8 @@ ${payload.customerCompany ? `Company: ${payload.customerCompany}\n` : ""}${paylo
 Your payment receipt/invoice is attached to this email as a PDF.
 Download Payment Receipt (PDF): https://quickuppaistudio.us/api/download-receipt?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}
 Online Order Confirmation: https://quickuppaistudio.us/order-confirmation?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}
+
+Our team will process your order and contact you with the next steps.
 
 If you have any questions, simply reply to this email or contact us at:
 Quickupp AI Studio

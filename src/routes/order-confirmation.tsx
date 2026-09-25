@@ -302,6 +302,13 @@ export function OrderConfirmationPage() {
                   </p>
                 </div>
 
+                {/* Next Steps Notice (Sentence only, no heading) */}
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center">
+                  <p className="text-xs sm:text-sm text-slate-700 font-medium">
+                    Our team will review your order and contact you with the next steps.
+                  </p>
+                </div>
+
                 {/* Need Help & Footer Actions */}
                 <div className="pt-2 text-center space-y-5 border-t border-slate-200">
                   <div className="text-xs text-slate-500 flex items-center justify-center gap-1.5 flex-wrap">
