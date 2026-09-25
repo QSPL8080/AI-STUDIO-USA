@@ -15,9 +15,6 @@
   "overrides": {
     "rolldown": "1.2.1"
   },
-  "imports": {
-    "#standard-fonts/*": "pdfkit/standard-fonts/*"
-  },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@paypal/react-paypal-js": "^10.5.0",

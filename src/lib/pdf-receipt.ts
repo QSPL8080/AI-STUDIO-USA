@@ -40,7 +40,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       const logoBuffer = getCompanyLogoBuffer();
 
       const doc = new PDFDocument({
-        font: regularFont,
+        font: regularFont as unknown as string,
         margin: 42,
         size: "A4",
         info: {
