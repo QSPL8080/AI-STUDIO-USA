@@ -47,21 +47,7 @@ export function OrderConfirmationPage() {
     billingAddress?: string | undefined;
     paymentDate: string;
     paymentTime: string;
-  }>({
-    orderNumber: "QAS-2026-000127",
-    serviceName: "AI UGC Video",
-    packageName: "60-Second Video",
-    amountPaid: "$79.00 USD",
-    amountNumber: 79.0,
-    paymentMethod: "PayPal",
-    transactionId: "8XX12345XXXXXXX",
-    customerName: "Valued Client",
-    customerEmail: "",
-    customerCompany: undefined,
-    billingAddress: undefined,
-    paymentDate: "September 24, 2026",
-    paymentTime: "10:42 AM EST",
-  });
+  } | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -86,15 +72,6 @@ export function OrderConfirmationPage() {
         timeZone: "America/New_York",
       }) + " EST";
 
-    if (queryEmail) {
-      setOrderData((prev) => ({
-        ...prev,
-        customerEmail: queryEmail,
-        paymentDate: dateStr,
-        paymentTime: timeStr,
-      }));
-    }
-
     async function initializeOrder() {
       try {
         // If returning from PayPal redirect flow with pending token
@@ -106,8 +83,8 @@ export function OrderConfirmationPage() {
             const o = captureRes.order;
             setOrderData({
               orderNumber: formatOrderInvoiceNumber(o.id, o.created_at),
-              serviceName: o.item_name || "AI UGC Video",
-              packageName: o.item_name?.includes("Package") ? o.item_name : "60-Second Video",
+              serviceName: o.item_name || "AI Video Service",
+              packageName: o.item_name?.includes("Package") ? o.item_name : "Video Package",
               amountPaid: `$${Number(o.amount).toFixed(2)} ${o.currency || "USD"}`,
               amountNumber: Number(o.amount),
               paymentMethod: "PayPal",
@@ -133,8 +110,8 @@ export function OrderConfirmationPage() {
             const o = lookupRes.order;
             setOrderData({
               orderNumber: formatOrderInvoiceNumber(o.id, o.created_at),
-              serviceName: o.item_name || "AI UGC Video",
-              packageName: o.item_name?.includes("Package") ? o.item_name : "60-Second Video",
+              serviceName: o.item_name || "AI Video Service",
+              packageName: o.item_name?.includes("Package") ? o.item_name : "Video Package",
               amountPaid: `$${Number(o.amount).toFixed(2)} ${o.currency || "USD"}`,
               amountNumber: Number(o.amount),
               paymentMethod: "PayPal",
@@ -149,14 +126,22 @@ export function OrderConfirmationPage() {
             setLoading(false);
             return;
           } else {
-            // Default with provided token ID formatted as order number
-            setOrderData((prev) => ({
-              ...prev,
+            // Token provided from direct checkout redirect
+            setOrderData({
               orderNumber: formatOrderInvoiceNumber(token),
+              serviceName: "AI Video Service",
+              packageName: "Order Confirmed",
+              amountPaid: "$79.00 USD",
+              amountNumber: 79.0,
+              paymentMethod: "PayPal",
               transactionId: token,
+              customerName: "Valued Client",
+              customerEmail: queryEmail || "",
+              customerCompany: undefined,
+              billingAddress: undefined,
               paymentDate: dateStr,
               paymentTime: timeStr,
-            }));
+            });
           }
         }
       } catch (err) {
@@ -170,6 +155,7 @@ export function OrderConfirmationPage() {
   }, []);
 
   const handleDownloadPdf = async () => {
+    if (!orderData) return;
     try {
       setDownloadingPdf(true);
       const res = await downloadReceiptPdfServerFn({
@@ -181,7 +167,7 @@ export function OrderConfirmationPage() {
           customerName: orderData.customerName,
           customerEmail: orderData.customerEmail,
           customerCompany: orderData.customerCompany,
-          billingAddress: orderData.billingAddress || "United States",
+          billingAddress: orderData.billingAddress,
           serviceName: orderData.serviceName,
           packageDescription: orderData.packageName,
           amount: orderData.amountNumber,
@@ -248,154 +234,183 @@ export function OrderConfirmationPage() {
             {/* Top Brand Accent Bar */}
             <div className="h-2 w-full bg-gradient-brand" />
 
-            <div className="p-6 sm:p-10 space-y-7">
-              {/* Header Icon & Message */}
-              <div className="text-center space-y-2.5">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/60 shadow-inner">
-                  <CheckCircle2 className="h-10 w-10" />
-                </div>
-
-                <div className="space-y-1">
-                  <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                    Payment Successful! 🎉
-                  </h1>
-                  <p className="text-sm sm:text-base font-semibold text-purple-700">
-                    Thank you for your order.
-                  </p>
-                  <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
-                    Your payment has been received successfully and your order is now confirmed.
-                  </p>
-                </div>
+            {loading ? (
+              <div className="p-12 text-center space-y-4">
+                <div className="mx-auto h-10 w-10 animate-spin rounded-full border-3 border-purple-600 border-t-transparent" />
+                <p className="text-sm font-semibold text-slate-700">Verifying order confirmation...</p>
               </div>
-
-              {/* Payment Details Card */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6 space-y-4 shadow-xs">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                  <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-purple-700 flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    <span>Payment Details</span>
-                  </h2>
-                  <span className="inline-flex items-center rounded-full bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                    ✓ PAID
-                  </span>
+            ) : !orderData ? (
+              <div className="p-8 sm:p-12 text-center space-y-4">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-8 ring-amber-50/60">
+                  <FileText className="h-7 w-7" />
                 </div>
-
-                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs sm:text-sm">
-                  <div className="space-y-0.5">
-                    <dt className="text-xs text-slate-500 font-medium">Order Number</dt>
-                    <dd className="font-mono font-bold text-slate-900 select-all">
-                      {orderData.orderNumber}
-                    </dd>
-                  </div>
-
-                  <div className="space-y-0.5">
-                    <dt className="text-xs text-slate-500 font-medium">Service</dt>
-                    <dd className="font-semibold text-slate-900">
-                      {orderData.serviceName}
-                    </dd>
-                  </div>
-
-                  <div className="space-y-0.5">
-                    <dt className="text-xs text-slate-500 font-medium">Package</dt>
-                    <dd className="font-semibold text-slate-900">
-                      {orderData.packageName}
-                    </dd>
-                  </div>
-
-                  <div className="space-y-0.5">
-                    <dt className="text-xs text-slate-500 font-medium">Amount Paid</dt>
-                    <dd className="font-bold text-purple-700 text-sm sm:text-base">
-                      {orderData.amountPaid}
-                    </dd>
-                  </div>
-
-                  <div className="space-y-0.5">
-                    <dt className="text-xs text-slate-500 font-medium">Payment Method</dt>
-                    <dd className="font-medium text-slate-800">
-                      {orderData.paymentMethod}
-                    </dd>
-                  </div>
-
-                  <div className="space-y-0.5">
-                    <dt className="text-xs text-slate-500 font-medium">Transaction ID</dt>
-                    <dd className="font-mono text-xs text-slate-700 select-all truncate">
-                      {orderData.transactionId}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-
-              {/* Your Receipt Has Been Emailed Section */}
-              <div className="rounded-2xl border border-purple-200 bg-purple-50/70 p-5 text-left space-y-2.5 shadow-xs">
-                <div className="flex items-center gap-2 text-purple-900 font-bold text-sm">
-                  <Mail className="h-4.5 w-4.5 text-purple-600" />
-                  <span>Your Receipt Has Been Emailed</span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  A payment confirmation and PDF receipt have been sent to:
-                </p>
-                <div className="font-semibold font-mono text-sm text-purple-900 bg-white px-3.5 py-1.5 rounded-lg border border-purple-200 shadow-xs inline-block">
-                  {orderData.customerEmail || "your email address"}
-                </div>
-                <p className="text-[11px] text-slate-500 italic">
-                  Please check your inbox, and your spam/junk folder if you don't see it shortly.
-                </p>
-
-                {/* Instant PDF Download Button */}
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={handleDownloadPdf}
-                    disabled={downloadingPdf}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-98 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-purple-600/20 transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    <Download className="h-4 w-4" />
-                    <span>
-                      {downloadingPdf ? "Generating PDF Receipt..." : "Download Payment Receipt (PDF)"}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              {/* What's Next? Section */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-2 shadow-xs">
-                <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                  <Sparkles className="h-4 w-4 text-purple-600" />
-                  <span>What's Next?</span>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  Our team will review your order and contact you with the next steps.
-                </p>
-                <p className="text-xs text-slate-500">
-                  Please keep your order number handy when communicating with our team:{" "}
-                  <strong className="text-purple-700 font-mono font-bold">{orderData.orderNumber}</strong>
-                </p>
-              </div>
-
-              {/* Need Help & Footer Actions */}
-              <div className="pt-2 text-center space-y-5 border-t border-slate-200">
-                <div className="text-xs text-slate-500 flex items-center justify-center gap-1.5 flex-wrap">
-                  <HelpCircle className="h-3.5 w-3.5 text-slate-400" />
-                  <span>Need help?</span>
-                  <a
-                    href="mailto:info@quickuppaistudio.us"
-                    className="font-semibold text-purple-600 hover:text-purple-700 underline"
-                  >
+                <h2 className="text-xl font-bold text-slate-900">No Recent Order Found</h2>
+                <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
+                  If you recently placed an order, please check your inbox for your confirmation and PDF receipt, or contact support at{" "}
+                  <a href="mailto:info@quickuppaistudio.us" className="text-purple-600 underline font-semibold">
                     info@quickuppaistudio.us
-                  </a>
-                </div>
-
-                <div>
+                  </a>.
+                </p>
+                <div className="pt-2">
                   <Link
                     to="/"
-                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-600/20 transition-all duration-200 active:scale-98 cursor-pointer"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all active:scale-98"
                   >
                     <span>Back to Quickupp AI Studio</span>
                     <ArrowLeft className="h-4 w-4 rotate-180" />
                   </Link>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-6 sm:p-10 space-y-7">
+                {/* Header Icon & Message */}
+                <div className="text-center space-y-2.5">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/60 shadow-inner">
+                    <CheckCircle2 className="h-10 w-10" />
+                  </div>
+
+                  <div className="space-y-1">
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                      Payment Successful! 🎉
+                    </h1>
+                    <p className="text-sm sm:text-base font-semibold text-purple-700">
+                      Thank you for your order.
+                    </p>
+                    <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
+                      Your payment has been received successfully and your order is now confirmed.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Payment Details Card */}
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6 space-y-4 shadow-xs">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-purple-700 flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <span>Payment Details</span>
+                    </h2>
+                    <span className="inline-flex items-center rounded-full bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                      ✓ PAID
+                    </span>
+                  </div>
+
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs sm:text-sm">
+                    <div className="space-y-0.5">
+                      <dt className="text-xs text-slate-500 font-medium">Order Number</dt>
+                      <dd className="font-mono font-bold text-slate-900 select-all">
+                        {orderData.orderNumber}
+                      </dd>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <dt className="text-xs text-slate-500 font-medium">Service</dt>
+                      <dd className="font-semibold text-slate-900">
+                        {orderData.serviceName}
+                      </dd>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <dt className="text-xs text-slate-500 font-medium">Package</dt>
+                      <dd className="font-semibold text-slate-900">
+                        {orderData.packageName}
+                      </dd>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <dt className="text-xs text-slate-500 font-medium">Amount Paid</dt>
+                      <dd className="font-bold text-purple-700 text-sm sm:text-base">
+                        {orderData.amountPaid}
+                      </dd>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <dt className="text-xs text-slate-500 font-medium">Payment Method</dt>
+                      <dd className="font-medium text-slate-800">
+                        {orderData.paymentMethod}
+                      </dd>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <dt className="text-xs text-slate-500 font-medium">Transaction ID</dt>
+                      <dd className="font-mono text-xs text-slate-700 select-all truncate">
+                        {orderData.transactionId}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+
+                {/* Your Receipt Has Been Emailed Section */}
+                <div className="rounded-2xl border border-purple-200 bg-purple-50/70 p-5 text-left space-y-2.5 shadow-xs">
+                  <div className="flex items-center gap-2 text-purple-900 font-bold text-sm">
+                    <Mail className="h-4.5 w-4.5 text-purple-600" />
+                    <span>Your Receipt Has Been Emailed</span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    A payment confirmation and PDF receipt have been sent to:
+                  </p>
+                  <div className="font-semibold font-mono text-sm text-purple-900 bg-white px-3.5 py-1.5 rounded-lg border border-purple-200 shadow-xs inline-block">
+                    {orderData.customerEmail || "your email address"}
+                  </div>
+                  <p className="text-[11px] text-slate-500 italic">
+                    Please check your inbox, and your spam/junk folder if you don't see it shortly.
+                  </p>
+
+                  {/* Instant PDF Download Button */}
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleDownloadPdf}
+                      disabled={downloadingPdf}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-98 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-purple-600/20 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span>
+                        {downloadingPdf ? "Generating PDF Receipt..." : "Download Payment Receipt (PDF)"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* What's Next? Section */}
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-2 shadow-xs">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
+                    <Sparkles className="h-4 w-4 text-purple-600" />
+                    <span>What's Next?</span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    Our team will review your order and contact you with the next steps.
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Please keep your order number handy when communicating with our team:{" "}
+                    <strong className="text-purple-700 font-mono font-bold">{orderData.orderNumber}</strong>
+                  </p>
+                </div>
+
+                {/* Need Help & Footer Actions */}
+                <div className="pt-2 text-center space-y-5 border-t border-slate-200">
+                  <div className="text-xs text-slate-500 flex items-center justify-center gap-1.5 flex-wrap">
+                    <HelpCircle className="h-3.5 w-3.5 text-slate-400" />
+                    <span>Need help?</span>
+                    <a
+                      href="mailto:info@quickuppaistudio.us"
+                      className="font-semibold text-purple-600 hover:text-purple-700 underline"
+                    >
+                      info@quickuppaistudio.us
+                    </a>
+                  </div>
+
+                  <div>
+                    <Link
+                      to="/"
+                      className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-600/20 transition-all duration-200 active:scale-98 cursor-pointer"
+                    >
+                      <span>Back to Quickupp AI Studio</span>
+                      <ArrowLeft className="h-4 w-4 rotate-180" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

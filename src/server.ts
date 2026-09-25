@@ -57,7 +57,10 @@ export default {
       }
 
       if (url.pathname === "/api/download-receipt") {
-        const orderIdParam = url.searchParams.get("orderId") || url.searchParams.get("id") || "QAS-2026-000127";
+        const orderIdParam = url.searchParams.get("orderId") || url.searchParams.get("id");
+        if (!orderIdParam) {
+          return new Response("Missing orderId parameter.", { status: 400 });
+        }
         const emailParam = url.searchParams.get("email") || "";
         const nameParam = url.searchParams.get("name") || "";
 
@@ -89,8 +92,6 @@ export default {
 
         const orderNum = order
           ? formatOrderInvoiceNumber(order.id, order.created_at)
-          : orderIdParam.startsWith("QAS-")
-          ? orderIdParam
           : formatOrderInvoiceNumber(orderIdParam);
 
         const pdfBuffer = await generateInvoicePdfBuffer({
@@ -112,7 +113,7 @@ export default {
           tax: 0,
           total: order ? Number(order.amount) : 79.0,
           paymentMethod: "PayPal",
-          transactionId: order?.paypal_capture_id || order?.paypal_order_id || "8XX12345XXXXXXX",
+          transactionId: order?.paypal_capture_id || order?.paypal_order_id || orderIdParam,
         });
 
         return new Response(new Uint8Array(pdfBuffer), {
