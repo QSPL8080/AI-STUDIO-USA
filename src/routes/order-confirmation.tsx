@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   CheckCircle2,
-  Download,
   Mail,
   ArrowLeft,
   Sparkles,
@@ -12,7 +11,6 @@ import {
 import {
   capturePayPalOrderServerFn,
   lookupOrderServerFn,
-  downloadReceiptPdfServerFn,
   formatOrderInvoiceNumber,
 } from "@/lib/paypal-actions";
 import { FloatingWhatsAppButton } from "@/components/site/sections";
@@ -32,7 +30,6 @@ export const Route = createFileRoute("/order-confirmation")({
 
 export function OrderConfirmationPage() {
   const [loading, setLoading] = useState(true);
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [orderData, setOrderData] = useState<{
     orderNumber: string;
     serviceName: string;
@@ -153,56 +150,6 @@ export function OrderConfirmationPage() {
 
     initializeOrder();
   }, []);
-
-  const handleDownloadPdf = async () => {
-    if (!orderData) return;
-    try {
-      setDownloadingPdf(true);
-      const res = await downloadReceiptPdfServerFn({
-        data: {
-          orderNumber: orderData.orderNumber,
-          issueDate: orderData.paymentDate,
-          paymentDate: orderData.paymentDate,
-          paymentTime: orderData.paymentTime,
-          customerName: orderData.customerName,
-          customerEmail: orderData.customerEmail,
-          customerCompany: orderData.customerCompany,
-          billingAddress: orderData.billingAddress,
-          serviceName: orderData.serviceName,
-          packageDescription: orderData.packageName,
-          amount: orderData.amountNumber,
-          currency: "USD",
-          paymentMethod: orderData.paymentMethod,
-          transactionId: orderData.transactionId,
-        },
-      });
-
-      if (!res.success || !res.base64) {
-        throw new Error(res.error || "Failed to generate receipt PDF.");
-      }
-
-      // Convert base64 to Blob and trigger instant browser download
-      const binaryString = window.atob(res.base64);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      const blob = new Blob([bytes], { type: "application/pdf" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = res.filename || `Receipt_${orderData.orderNumber}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err: any) {
-      console.error("PDF download error:", err);
-      alert("Failed to download PDF receipt. Please try again or contact info@quickuppaistudio.us.");
-    } finally {
-      setDownloadingPdf(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-purple-500 selection:text-white flex flex-col justify-between">
@@ -354,21 +301,6 @@ export function OrderConfirmationPage() {
                   <p className="text-[11px] text-slate-500 italic">
                     Please check your inbox, and your spam/junk folder if you don't see it shortly.
                   </p>
-
-                  {/* Instant PDF Download Button */}
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      onClick={handleDownloadPdf}
-                      disabled={downloadingPdf}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-98 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-purple-600/20 transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      <Download className="h-4 w-4" />
-                      <span>
-                        {downloadingPdf ? "Generating PDF Receipt..." : "Download Payment Receipt (PDF)"}
-                      </span>
-                    </button>
-                  </div>
                 </div>
 
                 {/* What's Next? Section */}

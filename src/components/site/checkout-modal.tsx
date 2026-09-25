@@ -19,7 +19,6 @@ import {
   RotateCcw,
   Star,
   Check,
-  Download,
   Mail,
   FileText,
 } from "lucide-react";
@@ -37,7 +36,6 @@ import {
   getPayPalConfigServerFn,
   createPayPalOrderServerFn,
   capturePayPalOrderServerFn,
-  downloadReceiptPdfServerFn,
   formatOrderInvoiceNumber,
   broadcastOrderEvent,
 } from "@/lib/paypal-actions";
@@ -85,7 +83,6 @@ export function CheckoutModal() {
   // PayPal config state
   const [paypalClientId, setPayPalClientId] = useState<string>(DEFAULT_PAYPAL_CLIENT_ID);
   const [paypalEnv, setPayPalEnv] = useState<string>("live");
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   // Success details state
   const [successDetails, setSuccessDetails] = useState<{
@@ -103,55 +100,6 @@ export function CheckoutModal() {
     paymentDate: string;
     paymentTime: string;
   } | null>(null);
-
-  const handleDownloadReceiptPdf = async () => {
-    if (!successDetails) return;
-    try {
-      setDownloadingPdf(true);
-      const res = await downloadReceiptPdfServerFn({
-        data: {
-          orderNumber: successDetails.orderNumber,
-          issueDate: successDetails.paymentDate,
-          paymentDate: successDetails.paymentDate,
-          paymentTime: successDetails.paymentTime,
-          customerName: successDetails.customerName,
-          customerEmail: successDetails.customerEmail,
-          customerCompany: successDetails.customerCompany,
-          billingAddress: "United States",
-          serviceName: successDetails.itemName,
-          packageDescription: successDetails.packageName,
-          amount: successDetails.amount,
-          currency: successDetails.currency,
-          paymentMethod: successDetails.paymentMethod || "PayPal",
-          transactionId: successDetails.captureId || successDetails.orderId,
-        },
-      });
-
-      if (!res.success || !res.base64) {
-        throw new Error(res.error || "Failed to generate receipt PDF.");
-      }
-
-      const binaryString = window.atob(res.base64);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      const blob = new Blob([bytes], { type: "application/pdf" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = res.filename || `Receipt_${successDetails.orderNumber}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err: any) {
-      console.error("PDF download error:", err);
-      alert("Failed to download PDF receipt. Please contact info@quickuppaistudio.us.");
-    } finally {
-      setDownloadingPdf(false);
-    }
-  };
 
   // Fetch PayPal public config once on mount
   useEffect(() => {
@@ -896,21 +844,6 @@ export function CheckoutModal() {
                 <p className="text-[11px] text-slate-500 italic">
                   Please check your inbox, and your spam/junk folder if you don't see it shortly.
                 </p>
-
-                {/* Instant PDF Download Button */}
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={handleDownloadReceiptPdf}
-                    disabled={downloadingPdf}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-98 px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    <Download className="h-4 w-4" />
-                    <span>
-                      {downloadingPdf ? "Generating PDF..." : "Download Payment Receipt (PDF)"}
-                    </span>
-                  </button>
-                </div>
               </div>
 
               {/* What's Next? Section */}
