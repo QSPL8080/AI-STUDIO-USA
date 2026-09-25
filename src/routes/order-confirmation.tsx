@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   Mail,
   ArrowLeft,
-  Sparkles,
   HelpCircle,
   FileText,
 } from "lucide-react";
@@ -300,21 +299,6 @@ export function OrderConfirmationPage() {
                   </div>
                   <p className="text-[11px] text-slate-500 italic">
                     Please check your inbox, and your spam/junk folder if you don't see it shortly.
-                  </p>
-                </div>
-
-                {/* What's Next? Section */}
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-2 shadow-xs">
-                  <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                    <Sparkles className="h-4 w-4 text-purple-600" />
-                    <span>What's Next?</span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                    Our team will review your order and contact you with the next steps.
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Please keep your order number handy when communicating with our team:{" "}
-                    <strong className="text-purple-700 font-mono font-bold">{orderData.orderNumber}</strong>
                   </p>
                 </div>
 

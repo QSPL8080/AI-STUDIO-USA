@@ -846,21 +846,6 @@ export function CheckoutModal() {
                 </p>
               </div>
 
-              {/* What's Next? Section */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-1.5 text-xs text-slate-700">
-                <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs sm:text-sm">
-                  <Sparkles className="h-4 w-4 text-purple-600" />
-                  <span>What's Next?</span>
-                </div>
-                <p className="text-xs text-slate-600">
-                  Our team will review your order and contact you with the next steps.
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  Please keep your order number handy when communicating with our team:{" "}
-                  <strong className="text-purple-700 font-mono">{successDetails.orderNumber}</strong>
-                </p>
-              </div>
-
               {/* Need Help & Close Button */}
               <div className="pt-2 text-center space-y-4 border-t border-slate-100">
                 <div className="text-xs text-slate-500 flex items-center justify-center gap-1">
