@@ -20,6 +20,9 @@ import {
   CreditCard,
   Star,
   Check,
+  Download,
+  Mail,
+  FileText,
 } from "lucide-react";
 import {
   resolvePurchaseItem,
@@ -35,6 +38,8 @@ import {
   getPayPalConfigServerFn,
   createPayPalOrderServerFn,
   capturePayPalOrderServerFn,
+  downloadReceiptPdfServerFn,
+  formatOrderInvoiceNumber,
   broadcastOrderEvent,
 } from "@/lib/paypal-actions";
 
@@ -88,17 +93,73 @@ export function CheckoutModal() {
   // PayPal config state
   const [paypalClientId, setPayPalClientId] = useState<string>(DEFAULT_PAYPAL_CLIENT_ID);
   const [paypalEnv, setPayPalEnv] = useState<string>("live");
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   // Success details state
   const [successDetails, setSuccessDetails] = useState<{
     orderId: string;
+    orderNumber: string;
     captureId?: string;
     itemName: string;
+    packageName: string;
     amount: number;
     currency: string;
     customerName: string;
+    customerEmail: string;
+    customerCompany?: string;
     paymentMethod?: string;
+    paymentDate: string;
+    paymentTime: string;
   } | null>(null);
+
+  const handleDownloadReceiptPdf = async () => {
+    if (!successDetails) return;
+    try {
+      setDownloadingPdf(true);
+      const res = await downloadReceiptPdfServerFn({
+        data: {
+          orderNumber: successDetails.orderNumber,
+          issueDate: successDetails.paymentDate,
+          paymentDate: successDetails.paymentDate,
+          paymentTime: successDetails.paymentTime,
+          customerName: successDetails.customerName,
+          customerEmail: successDetails.customerEmail,
+          customerCompany: successDetails.customerCompany,
+          billingAddress: "United States",
+          serviceName: successDetails.itemName,
+          packageDescription: successDetails.packageName,
+          amount: successDetails.amount,
+          currency: successDetails.currency,
+          paymentMethod: successDetails.paymentMethod || "PayPal",
+          transactionId: successDetails.captureId || successDetails.orderId,
+        },
+      });
+
+      if (!res.success || !res.base64) {
+        throw new Error(res.error || "Failed to generate receipt PDF.");
+      }
+
+      const binaryString = window.atob(res.base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.filename || `Receipt_${successDetails.orderNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error("PDF download error:", err);
+      alert("Failed to download PDF receipt. Please contact info@quickuppaistudio.us.");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   // Fetch PayPal public config once on mount
   useEffect(() => {
@@ -848,14 +909,37 @@ export function CheckoutModal() {
                                     }
 
                                     // Payment Completed Successfully
+                                    const now = new Date();
+                                    const dateStr = now.toLocaleDateString("en-US", {
+                                      month: "long",
+                                      day: "numeric",
+                                      year: "numeric",
+                                      timeZone: "America/New_York",
+                                    });
+                                    const timeStr =
+                                      now.toLocaleTimeString("en-US", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: true,
+                                        timeZone: "America/New_York",
+                                      }) + " EST";
+
+                                    const orderNum = formatOrderInvoiceNumber(res.order?.id || data.orderID);
+
                                     setSuccessDetails({
                                       orderId: data.orderID,
+                                      orderNumber: orderNum,
                                       captureId: res.captureId,
                                       itemName: resolvedItem.itemName,
+                                      packageName: resolvedItem.itemType === "individual" ? "60-Second Video" : resolvedItem.itemName,
                                       amount: resolvedItem.amount,
                                       currency: resolvedItem.currency,
                                       customerName: fullName,
+                                      customerEmail: email,
+                                      customerCompany: company,
                                       paymentMethod: "PayPal",
+                                      paymentDate: dateStr,
+                                      paymentTime: timeStr,
                                     });
 
                                     // Broadcast real-time event for admin sync
@@ -937,69 +1021,150 @@ export function CheckoutModal() {
             </div>
           )}
 
-          {/* STEP 3: PAYMENT CONFIRMATION / SUCCESS SCREEN */}
+          {/* STEP 3: PAYMENT CONFIRMATION SCREEN (MATCHING USER SPECIFICATION) */}
           {step === "success" && successDetails && (
-            <div className="text-center py-4 space-y-5 animate-in zoom-in-95">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 ring-8 ring-green-50 shadow-inner">
-                <CheckCircle2 className="h-9 w-9" />
-              </div>
+            <div className="py-2 sm:py-4 space-y-6 animate-in zoom-in-95 text-left">
+              {/* Header Icon & Message */}
+              <div className="text-center space-y-2">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/50 shadow-inner">
+                  <CheckCircle2 className="h-8 w-8" />
+                </div>
 
-              <div>
-                <h3 className="text-xl sm:text-2xl font-black text-slate-900">
-                  Payment Successful!
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                  Payment Successful! 🎉
                 </h3>
-                <p className="mt-1 text-xs sm:text-sm text-slate-600">
-                  Thank you for your purchase, <span className="font-bold">{successDetails.customerName}</span>.
+                <p className="text-sm font-semibold text-purple-700">
+                  Thank you for your order.
+                </p>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  Your payment has been received successfully and your order is now confirmed.
                 </p>
               </div>
 
-              {/* Receipt Summary Card */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 text-left text-xs space-y-2.5 shadow-xs max-w-lg mx-auto">
-                <div className="flex justify-between border-b border-slate-200 pb-2">
-                  <span className="text-slate-500">Service / Package:</span>
-                  <span className="font-bold text-slate-900 text-right">{successDetails.itemName}</span>
-                </div>
-                <div className="flex justify-between border-b border-slate-200 pb-2">
-                  <span className="text-slate-500">Amount Paid:</span>
-                  <span className="font-bold text-purple-700 text-sm">
-                    ${successDetails.amount.toFixed(2)} {successDetails.currency}
+              {/* Payment Details Card */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 space-y-3.5 shadow-xs">
+                <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-purple-700 flex items-center gap-1.5">
+                    <FileText className="h-4 w-4" />
+                    <span>Payment Details</span>
+                  </span>
+                  <span className="inline-flex items-center rounded-full bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                    ✓ PAID
                   </span>
                 </div>
-                <div className="flex justify-between border-b border-slate-200 pb-2">
-                  <span className="text-slate-500">Order ID:</span>
-                  <span className="font-mono text-[11px] text-slate-700 select-all">
-                    {successDetails.orderId}
-                  </span>
-                </div>
-                {successDetails.captureId && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Payment Capture ID:</span>
-                    <span className="font-mono text-[11px] text-slate-700 select-all">
-                      {successDetails.captureId}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-slate-500 block text-[11px]">Order Number</span>
+                    <span className="font-mono font-bold text-slate-900 select-all">
+                      {successDetails.orderNumber}
                     </span>
                   </div>
-                )}
+
+                  <div>
+                    <span className="text-slate-500 block text-[11px]">Service</span>
+                    <span className="font-semibold text-slate-900">
+                      {successDetails.itemName}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-500 block text-[11px]">Package</span>
+                    <span className="font-semibold text-slate-900">
+                      {successDetails.packageName}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-500 block text-[11px]">Amount Paid</span>
+                    <span className="font-bold text-purple-700 text-sm">
+                      ${successDetails.amount.toFixed(2)} {successDetails.currency}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-500 block text-[11px]">Payment Method</span>
+                    <span className="font-medium text-slate-800">
+                      {successDetails.paymentMethod || "PayPal"}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-500 block text-[11px]">Transaction ID</span>
+                    <span className="font-mono text-[11px] text-slate-700 select-all truncate block">
+                      {successDetails.captureId || successDetails.orderId}
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              {/* Next Steps Notification */}
-              <div className="rounded-xl border border-purple-100 bg-purple-50/60 p-4 text-xs text-purple-900 leading-relaxed font-medium max-w-lg mx-auto space-y-1">
-                <p>
-                  <Sparkles className="h-4 w-4 text-purple-600 inline mr-1.5 -mt-0.5" />
-                  <strong>Payment Receipt Sent:</strong> An automated email with your payment receipt and transaction details has been sent to your email address.
+              {/* Your Receipt Has Been Emailed Section */}
+              <div className="rounded-2xl border border-purple-200 bg-purple-50/70 p-4 sm:p-5 text-left space-y-2">
+                <div className="flex items-center gap-2 text-purple-900 font-bold text-xs sm:text-sm">
+                  <Mail className="h-4 w-4 text-purple-600" />
+                  <span>Your Receipt Has Been Emailed</span>
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  A payment confirmation and PDF receipt have been sent to:
                 </p>
-                <p className="text-[11px] text-purple-700">
-                  Our creative team has received your order and will contact you shortly to begin your AI video production script and assets.
+                <div className="font-semibold font-mono text-xs text-purple-900 bg-white px-3 py-1.5 rounded-lg border border-purple-200 inline-block shadow-xs">
+                  {successDetails.customerEmail}
+                </div>
+                <p className="text-[11px] text-slate-500 italic">
+                  Please check your inbox, and your spam/junk folder if you don't see it shortly.
+                </p>
+
+                {/* Instant PDF Download Button */}
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handleDownloadReceiptPdf}
+                    disabled={downloadingPdf}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-98 px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>
+                      {downloadingPdf ? "Generating PDF..." : "Download Payment Receipt (PDF)"}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* What's Next? Section */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-1.5 text-xs text-slate-700">
+                <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs sm:text-sm">
+                  <Sparkles className="h-4 w-4 text-purple-600" />
+                  <span>What's Next?</span>
+                </div>
+                <p className="text-xs text-slate-600">
+                  Our team will review your order and contact you with the next steps.
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  Please keep your order number handy when communicating with our team:{" "}
+                  <strong className="text-purple-700 font-mono">{successDetails.orderNumber}</strong>
                 </p>
               </div>
 
-              {/* Close / Done Button */}
-              <button
-                type="button"
-                onClick={handleClose}
-                className="w-full max-w-xs mx-auto block rounded-xl bg-slate-900 py-3 text-sm font-bold text-white shadow-md transition-all hover:bg-slate-800 active:scale-98 cursor-pointer"
-              >
-                Done
-              </button>
+              {/* Need Help & Close Button */}
+              <div className="pt-2 text-center space-y-4 border-t border-slate-100">
+                <div className="text-xs text-slate-500 flex items-center justify-center gap-1">
+                  <span>Need help?</span>
+                  <a
+                    href="mailto:info@quickuppaistudio.us"
+                    className="font-semibold text-purple-600 hover:underline"
+                  >
+                    info@quickuppaistudio.us
+                  </a>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-98 px-8 py-3 text-xs sm:text-sm font-bold text-white shadow-md transition-all cursor-pointer"
+                >
+                  <span>Back to Quickupp AI Studio</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

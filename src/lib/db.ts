@@ -523,14 +523,21 @@ export async function getOrders(): Promise<Order[]> {
 }
 
 export async function getOrderById(id: string): Promise<Order | null> {
+  return getOrderByAnyId(id);
+}
+
+export async function getOrderByAnyId(identifier: string): Promise<Order | null> {
+  const cleanId = identifier.trim();
   if (getSupabaseConfig()) {
     try {
-      const rows = await supabaseRest(`orders?id=eq.${id}&select=*`);
+      const rows = await supabaseRest(
+        `orders?or=(id.eq.${cleanId},paypal_order_id.eq.${cleanId},paypal_capture_id.eq.${cleanId})&select=*&limit=1`
+      );
       if (Array.isArray(rows) && rows.length > 0) {
         return rows[0];
       }
     } catch (err) {
-      console.warn("Supabase REST getOrderById fallback:", err);
+      console.warn("Supabase REST getOrderByAnyId fallback:", err);
     }
   }
 
@@ -538,7 +545,10 @@ export async function getOrderById(id: string): Promise<Order | null> {
   try {
     const pool = await getPool();
     if (pool) {
-      const res = await pool.query("SELECT * FROM orders WHERE id = $1 LIMIT 1", [id]);
+      const res = await pool.query(
+        "SELECT * FROM orders WHERE id = $1 OR paypal_order_id = $1 OR paypal_capture_id = $1 LIMIT 1",
+        [cleanId]
+      );
       if (res.rows[0]) {
         return {
           ...res.rows[0],
@@ -547,7 +557,7 @@ export async function getOrderById(id: string): Promise<Order | null> {
       }
     }
   } catch (error) {
-    console.error("PostgreSQL getOrderById error:", error);
+    console.error("PostgreSQL getOrderByAnyId error:", error);
   }
   return null;
 }

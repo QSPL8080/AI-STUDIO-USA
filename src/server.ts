@@ -56,6 +56,76 @@ export default {
         return Response.redirect(url.toString(), 301);
       }
 
+      if (url.pathname === "/api/download-receipt") {
+        const orderIdParam = url.searchParams.get("orderId") || url.searchParams.get("id") || "QAS-2026-000127";
+        const emailParam = url.searchParams.get("email") || "";
+        const nameParam = url.searchParams.get("name") || "";
+
+        let order = null;
+        try {
+          const { getOrderByAnyId } = await import("./lib/db");
+          order = await getOrderByAnyId(orderIdParam);
+        } catch (dbErr) {
+          console.warn("DB lookup error in download-receipt:", dbErr);
+        }
+
+        const now = new Date();
+        const dateStr = now.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+          timeZone: "America/New_York",
+        });
+        const timeStr =
+          now.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+            timeZone: "America/New_York",
+          }) + " EST";
+
+        const { generateInvoicePdfBuffer } = await import("./lib/pdf-receipt");
+        const { formatOrderInvoiceNumber } = await import("./lib/paypal-actions");
+
+        const orderNum = order
+          ? formatOrderInvoiceNumber(order.id, order.created_at)
+          : orderIdParam.startsWith("QAS-")
+          ? orderIdParam
+          : formatOrderInvoiceNumber(orderIdParam);
+
+        const pdfBuffer = await generateInvoicePdfBuffer({
+          orderNumber: orderNum,
+          issueDate: dateStr,
+          paymentDate: dateStr,
+          paymentTime: timeStr,
+          paymentStatus: "PAID",
+          customerName: order?.customer_name || nameParam || "Valued Client",
+          customerEmail: order?.customer_email || emailParam || "info@quickuppaistudio.us",
+          customerCompany: order?.customer_company || "ABC Brands LLC",
+          billingAddress: "123 Main Street\nNew York, NY 10001\nUnited States",
+          serviceName: order?.item_name || "AI UGC Video",
+          packageDescription: order?.item_name?.includes("Package") ? order.item_name : "60 Seconds",
+          qty: 1,
+          amount: order ? Number(order.amount) : 79.0,
+          currency: order?.currency || "USD",
+          subtotal: order ? Number(order.amount) : 79.0,
+          tax: 0,
+          total: order ? Number(order.amount) : 79.0,
+          paymentMethod: "PayPal",
+          transactionId: order?.paypal_capture_id || order?.paypal_order_id || "8XX12345XXXXXXX",
+        });
+
+        return new Response(pdfBuffer, {
+          status: 200,
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `attachment; filename="Receipt_${orderNum}.pdf"`,
+            "Content-Length": String(pdfBuffer.length),
+            "Cache-Control": "public, max-age=3600",
+          },
+        });
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       const normalized = await normalizeCatastrophicSsrResponse(response);

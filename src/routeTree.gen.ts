@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
+import { Route as OrderConfirmationRouteImport } from './routes/order-confirmation'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as TermsRouteImport } from './routes/terms'
 
@@ -30,6 +31,11 @@ const CookiePolicyRoute = CookiePolicyRouteImport.update({
   path: '/cookie-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrderConfirmationRoute = OrderConfirmationRouteImport.update({
+  id: '/order-confirmation',
+  path: '/order-confirmation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   id: '/privacy-policy',
   path: '/privacy-policy',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/cookie-policy': typeof CookiePolicyRoute
+  '/order-confirmation': typeof OrderConfirmationRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms': typeof TermsRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/cookie-policy': typeof CookiePolicyRoute
+  '/order-confirmation': typeof OrderConfirmationRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms': typeof TermsRoute
 }
@@ -60,19 +68,33 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/cookie-policy': typeof CookiePolicyRoute
+  '/order-confirmation': typeof OrderConfirmationRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms': typeof TermsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/cookie-policy' | '/privacy-policy' | '/terms'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/cookie-policy'
+    | '/order-confirmation'
+    | '/privacy-policy'
+    | '/terms'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/cookie-policy' | '/privacy-policy' | '/terms'
+  to:
+    | '/'
+    | '/admin'
+    | '/cookie-policy'
+    | '/order-confirmation'
+    | '/privacy-policy'
+    | '/terms'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/cookie-policy'
+    | '/order-confirmation'
     | '/privacy-policy'
     | '/terms'
   fileRoutesById: FileRoutesById
@@ -81,6 +103,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   CookiePolicyRoute: typeof CookiePolicyRoute
+  OrderConfirmationRoute: typeof OrderConfirmationRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   TermsRoute: typeof TermsRoute
 }
@@ -108,6 +131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CookiePolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/order-confirmation': {
+      id: '/order-confirmation'
+      path: '/order-confirmation'
+      fullPath: '/order-confirmation'
+      preLoaderRoute: typeof OrderConfirmationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy-policy': {
       id: '/privacy-policy'
       path: '/privacy-policy'
@@ -129,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   CookiePolicyRoute: CookiePolicyRoute,
+  OrderConfirmationRoute: OrderConfirmationRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   TermsRoute: TermsRoute,
 }

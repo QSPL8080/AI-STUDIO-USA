@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { generateInvoicePdfBuffer } from "./pdf-receipt";
 
 export interface LeadEmailPayload {
   source: "Contact Form" | "Popup Modal" | "USA - Contact Form" | "USA - Popup Modal" | string;
@@ -405,17 +406,17 @@ Call: tel:${cleanPhone}
 export interface PaymentReceiptEmailPayload {
   customerName: string;
   customerEmail: string;
-  customerPhone?: string;
-  customerCompany?: string;
+  customerPhone?: string | undefined;
+  customerCompany?: string | undefined;
   orderId: string;
-  captureId?: string;
+  captureId?: string | undefined;
   itemName: string;
   amount: number;
-  currency?: string;
-  paymentMethod?: string;
-  paymentDate?: string;
-  delivery?: string;
-  billingAddress?: string;
+  currency?: string | undefined;
+  paymentMethod?: string | undefined;
+  paymentDate?: string | undefined;
+  delivery?: string | undefined;
+  billingAddress?: string | undefined;
 }
 
 /**
@@ -454,11 +455,46 @@ export async function sendPaymentReceiptEmail(
     }) + " EST";
 
   const paymentMethod = payload.paymentMethod || "PayPal";
-  const packageText = payload.delivery
-    ? `1 × 60-Second Video (${payload.delivery} Delivery)`
-    : "1 × 60-Second Video (4K Ultra HD)";
+  const packageText = payload.delivery?.includes("Video")
+    ? payload.delivery
+    : payload.delivery
+    ? `1 × 60-Second Video (${payload.delivery})`
+    : "1 × 60-Second Video";
 
   const subject = `Payment Confirmed — Quickupp AI Studio | Order #${orderNumber}`;
+
+  // Generate official PDF Payment Receipt / Invoice buffer
+  let pdfAttachment: { filename: string; content: Buffer; contentType: string } | undefined;
+  try {
+    const pdfBuf = await generateInvoicePdfBuffer({
+      orderNumber,
+      issueDate: paymentDateStr,
+      paymentDate: paymentDateStr,
+      paymentTime: paymentTimeStr,
+      paymentStatus: "PAID",
+      customerName: payload.customerName,
+      customerEmail: payload.customerEmail,
+      customerCompany: payload.customerCompany,
+      billingAddress: payload.billingAddress || "United States",
+      serviceName: payload.itemName,
+      packageDescription: packageText,
+      qty: 1,
+      amount: payload.amount,
+      currency,
+      subtotal: payload.amount,
+      tax: 0,
+      total: payload.amount,
+      paymentMethod,
+      transactionId,
+    });
+    pdfAttachment = {
+      filename: `Receipt_${orderNumber}.pdf`,
+      content: pdfBuf,
+      contentType: "application/pdf",
+    };
+  } catch (pdfErr) {
+    console.error("PDF Invoice generation failed:", pdfErr);
+  }
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -565,6 +601,26 @@ export async function sendPaymentReceiptEmail(
       font-weight: 800 !important;
       font-size: 14px !important;
     }
+    .download-card {
+      background-color: #faf5ff;
+      border: 1px solid #e9d5ff;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 22px 0;
+      text-align: center;
+    }
+    .download-btn {
+      display: inline-block;
+      background: #7c3aed;
+      color: #ffffff !important;
+      padding: 12px 26px;
+      border-radius: 8px;
+      font-weight: 800;
+      text-decoration: none;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);
+    }
     .info-box {
       background-color: #f8fafc;
       border: 1px solid #e2e8f0;
@@ -665,6 +721,18 @@ export async function sendPaymentReceiptEmail(
         ${payload.billingAddress ? `<tr><td class="label">Billing Address</td><td class="val">${payload.billingAddress}</td></tr>` : ""}
       </table>
 
+      <div class="download-card">
+        <p style="margin: 0 0 14px 0; font-size: 13.5px; color: #374151; font-weight: 500;">
+          Your payment receipt/invoice is attached to this email as a PDF.
+        </p>
+        <a href="https://quickuppaistudio.us/api/download-receipt?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}" target="_blank" class="download-btn">
+          [ DOWNLOAD PAYMENT RECEIPT ]
+        </a>
+        <p style="margin: 12px 0 0 0; font-size: 11.5px; color: #64748b;">
+          Or <a href="https://quickuppaistudio.us/order-confirmation?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}" style="color: #7c3aed; text-decoration: underline; font-weight: 600;">view your confirmed order details online</a>
+        </p>
+      </div>
+
       <div class="info-box">
         <strong style="color: #0f172a;">What Happens Next?</strong><br>
         Our team will process your order and contact you with the next steps.<br>
@@ -716,6 +784,10 @@ Billing Information
 Name: ${payload.customerName}
 Email: ${payload.customerEmail}
 ${payload.customerCompany ? `Company: ${payload.customerCompany}\n` : ""}${payload.customerPhone ? `Phone: ${payload.customerPhone}\n` : ""}${payload.billingAddress ? `Billing Address: ${payload.billingAddress}\n` : ""}
+Your payment receipt/invoice is attached to this email as a PDF.
+[ DOWNLOAD PAYMENT RECEIPT ]: https://quickuppaistudio.us/api/download-receipt?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}
+Online Order Confirmation: https://quickuppaistudio.us/order-confirmation?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}
+
 What Happens Next?
 ---------------------------------------------------------
 Our team will process your order and contact you with the next steps.
@@ -764,6 +836,7 @@ Operated by-Quickupp Softech LLC
         subject,
         text: textContent,
         html: htmlContent,
+        attachments: pdfAttachment ? [pdfAttachment] : undefined,
       });
 
       console.log(`✅ Automated payment receipt sent successfully to ${payload.customerEmail}`);
@@ -796,6 +869,7 @@ Operated by-Quickupp Softech LLC
         subject,
         text: textContent,
         html: htmlContent,
+        attachments: pdfAttachment ? [pdfAttachment] : undefined,
       });
 
       console.log(`✅ Backup SMTP payment receipt sent to ${payload.customerEmail}`);

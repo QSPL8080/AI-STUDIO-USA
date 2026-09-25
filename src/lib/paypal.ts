@@ -148,6 +148,8 @@ export async function createPayPalOrderApi(params: {
       landing_page: "NO_PREFERENCE",
       user_action: "PAY_NOW",
       shipping_preference: "NO_SHIPPING",
+      return_url: "https://quickuppaistudio.us/order-confirmation",
+      cancel_url: "https://quickuppaistudio.us/",
     },
   };
 

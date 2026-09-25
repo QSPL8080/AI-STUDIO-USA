@@ -9,12 +9,15 @@ import {
   saveOrder as saveOrderToDb,
   updateOrderPayment as updateOrderPaymentInDb,
   getOrders as getOrdersFromDb,
+  getOrderById as getOrderByIdFromDb,
+  getOrderByAnyId as getOrderByAnyIdFromDb,
   updateOrderStatus as updateOrderStatusInDb,
   deleteOrder as deleteOrderFromDb,
   type Order,
   type PaymentStatus,
 } from "./db";
 import { sendPaymentReceiptEmail } from "./email";
+import { generateInvoicePdfBuffer } from "./pdf-receipt";
 
 /**
  * Public configuration helper for client-side PayPal Script initialization.
@@ -259,6 +262,90 @@ export const sendReceiptEmailServerFn = createServerFn({ method: "POST" })
     }
   });
 
+export function formatOrderInvoiceNumber(orderId: string, createdAt?: string): string {
+  if (orderId.startsWith("QAS-")) return orderId;
+  const year = createdAt ? new Date(createdAt).getFullYear() : new Date().getFullYear();
+  const rawId = orderId.replace(/[^a-zA-Z0-9]/g, "").slice(-6).toUpperCase();
+  return `QAS-${year}-${rawId.padStart(6, "0")}`;
+}
+
+/**
+ * Lookup order by internal ID, PayPal order ID, or capture ID
+ */
+export const lookupOrderServerFn = createServerFn({ method: "POST" })
+  .validator((data: { identifier: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      if (!data.identifier) {
+        return { success: false, error: "Missing order identifier." };
+      }
+      const order = await getOrderByAnyIdFromDb(data.identifier);
+      if (!order) {
+        return { success: false, error: "Order not found." };
+      }
+      return { success: true, order };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  });
+
+/**
+ * Generate official PDF receipt buffer for in-browser download
+ */
+export const downloadReceiptPdfServerFn = createServerFn({ method: "POST" })
+  .validator(
+    (data: {
+      orderNumber: string;
+      issueDate?: string | undefined;
+      paymentDate?: string | undefined;
+      paymentTime?: string | undefined;
+      customerName: string;
+      customerEmail: string;
+      customerCompany?: string | undefined;
+      billingAddress?: string | undefined;
+      serviceName: string;
+      packageDescription?: string | undefined;
+      amount: number;
+      currency?: string | undefined;
+      paymentMethod?: string | undefined;
+      transactionId: string;
+    }) => data
+  )
+  .handler(async ({ data }) => {
+    try {
+      const buffer = await generateInvoicePdfBuffer({
+        orderNumber: data.orderNumber,
+        issueDate: data.issueDate,
+        paymentDate: data.paymentDate,
+        paymentTime: data.paymentTime,
+        paymentStatus: "PAID",
+        customerName: data.customerName,
+        customerEmail: data.customerEmail,
+        customerCompany: data.customerCompany,
+        billingAddress: data.billingAddress || "United States",
+        serviceName: data.serviceName,
+        packageDescription: data.packageDescription || "60 Seconds",
+        qty: 1,
+        amount: data.amount,
+        currency: data.currency || "USD",
+        subtotal: data.amount,
+        tax: 0,
+        total: data.amount,
+        paymentMethod: data.paymentMethod || "PayPal",
+        transactionId: data.transactionId,
+      });
+
+      return {
+        success: true,
+        filename: `Receipt_${data.orderNumber}.pdf`,
+        base64: buffer.toString("base64"),
+      };
+    } catch (error: any) {
+      console.error("PDF Receipt generation failed:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
 /**
  * Client Broadcast helper for real-time order synchronization across tabs.
  */
@@ -279,3 +366,4 @@ export function broadcastOrderEvent(event: {
     console.error("Broadcast order event failed:", e);
   }
 }
+
