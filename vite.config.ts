@@ -5,6 +5,8 @@
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import fs from "node:fs";
+import path from "node:path";
 
 export default defineConfig({
   nitro: {
@@ -18,7 +20,22 @@ export default defineConfig({
     },
     externals: {
       inline: [],
-      external: ["pg", "pg-pool", "pg-protocol", "pg-types"],
+      external: ["pg", "pg-pool", "pg-protocol", "pg-types", "pdfkit", "nodemailer"],
+    },
+    hooks: {
+      "compiled"(nitro: any) {
+        try {
+          const pkgPath = path.resolve(nitro.options.output.serverDir, "package.json");
+          if (fs.existsSync(pkgPath)) {
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+            pkg.imports = pkg.imports || {};
+            pkg.imports["#standard-fonts/*"] = "pdfkit/standard-fonts/*";
+            fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
+          }
+        } catch (e) {
+          console.warn("Nitro post-compile hook warning:", e);
+        }
+      },
     },
   },
   tanstackStart: {

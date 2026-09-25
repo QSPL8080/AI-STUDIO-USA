@@ -203,9 +203,9 @@ export interface ResolvedPurchaseItem {
  */
 export function resolvePurchaseItem(params: {
   itemType: "individual" | "package" | "setup" | string;
-  itemId?: string;
-  tierId?: string;
-  format?: string;
+  itemId?: string | undefined;
+  tierId?: string | undefined;
+  format?: string | undefined;
 }): ResolvedPurchaseItem | null {
   const { itemType, itemId, tierId, format } = params;
 

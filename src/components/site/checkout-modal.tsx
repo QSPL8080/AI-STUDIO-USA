@@ -950,6 +950,9 @@ export function CheckoutModal() {
                                       });
                                     }
 
+                                    // Redirect customer directly to the official Light-theme order confirmation page
+                                    const confirmUrl = `/order-confirmation?orderId=${encodeURIComponent(res.order?.id || data.orderID)}&token=${encodeURIComponent(data.orderID)}&email=${encodeURIComponent(email)}`;
+                                    window.location.href = confirmUrl;
                                     setStep("success");
                                   } catch (err: any) {
                                     console.error("PayPal capture error:", err);

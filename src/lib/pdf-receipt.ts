@@ -204,25 +204,27 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
           .text(data.customerCompany);
       }
 
-      currentY += 14;
-      doc
-        .font("Helvetica")
-        .fontSize(9.5)
-        .fillColor("#475569")
-        .text("Billing Address:", margin, currentY);
-
-      const addressLines = (data.billingAddress || "123 Main Street\nNew York, NY 10001\nUnited States")
-        .split("\n")
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      for (const line of addressLines) {
-        currentY += 13;
+      if (data.billingAddress && data.billingAddress.trim()) {
+        currentY += 14;
         doc
           .font("Helvetica")
-          .fontSize(9)
-          .fillColor("#334155")
-          .text(line, margin + 12, currentY);
+          .fontSize(9.5)
+          .fillColor("#475569")
+          .text("Billing Address:", margin, currentY);
+
+        const addressLines = data.billingAddress
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        for (const line of addressLines) {
+          currentY += 13;
+          doc
+            .font("Helvetica")
+            .fontSize(9)
+            .fillColor("#334155")
+            .text(line, margin + 12, currentY);
+        }
       }
 
       currentY += 24;

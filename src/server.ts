@@ -101,8 +101,8 @@ export default {
           paymentStatus: "PAID",
           customerName: order?.customer_name || nameParam || "Valued Client",
           customerEmail: order?.customer_email || emailParam || "info@quickuppaistudio.us",
-          customerCompany: order?.customer_company || "ABC Brands LLC",
-          billingAddress: "123 Main Street\nNew York, NY 10001\nUnited States",
+          customerCompany: order?.customer_company || undefined,
+          billingAddress: undefined,
           serviceName: order?.item_name || "AI UGC Video",
           packageDescription: order?.item_name?.includes("Package") ? order.item_name : "60 Seconds",
           qty: 1,
@@ -115,7 +115,7 @@ export default {
           transactionId: order?.paypal_capture_id || order?.paypal_order_id || "8XX12345XXXXXXX",
         });
 
-        return new Response(pdfBuffer, {
+        return new Response(new Uint8Array(pdfBuffer), {
           status: 200,
           headers: {
             "Content-Type": "application/pdf",

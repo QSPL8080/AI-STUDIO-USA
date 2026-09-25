@@ -19,19 +19,19 @@ export type PaymentStatus = "PENDING" | "COMPLETED" | "FAILED" | "CANCELLED" | "
 export interface Order {
   id: string;
   paypal_order_id: string;
-  paypal_capture_id?: string;
+  paypal_capture_id?: string | undefined;
   customer_name: string;
   customer_email: string;
-  customer_phone?: string;
-  customer_company?: string;
+  customer_phone?: string | undefined;
+  customer_company?: string | undefined;
   item_type: "individual" | "package" | "setup" | string;
   item_id: string;
   item_name: string;
   amount: number;
   currency: string;
   payment_status: PaymentStatus;
-  paypal_status?: string;
-  raw_details?: string;
+  paypal_status?: string | undefined;
+  raw_details?: string | undefined;
   created_at: string;
   updated_at: string;
 }
@@ -333,16 +333,16 @@ export async function saveOrder(data: {
   paypalOrderId: string;
   customerName: string;
   customerEmail: string;
-  customerPhone?: string;
-  customerCompany?: string;
+  customerPhone?: string | undefined;
+  customerCompany?: string | undefined;
   itemType: "individual" | "package" | "setup" | string;
   itemId: string;
   itemName: string;
   amount: number;
-  currency?: string;
-  paymentStatus?: PaymentStatus;
-  paypalStatus?: string;
-  rawDetails?: string;
+  currency?: string | undefined;
+  paymentStatus?: PaymentStatus | undefined;
+  paypalStatus?: string | undefined;
+  rawDetails?: string | undefined;
 }): Promise<Order> {
   const id = `order_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const now = new Date().toISOString();
@@ -434,10 +434,10 @@ export async function saveOrder(data: {
 
 export async function updateOrderPayment(data: {
   paypalOrderId: string;
-  paypalCaptureId?: string;
+  paypalCaptureId?: string | undefined;
   paymentStatus: PaymentStatus;
-  paypalStatus?: string;
-  rawDetails?: string;
+  paypalStatus?: string | undefined;
+  rawDetails?: string | undefined;
 }): Promise<Order | null> {
   const now = new Date().toISOString();
 
@@ -447,9 +447,9 @@ export async function updateOrderPayment(data: {
         payment_status: data.paymentStatus,
         updated_at: now,
       };
-      if (data.paypalCaptureId) payload.paypal_capture_id = data.paypalCaptureId;
-      if (data.paypalStatus) payload.paypal_status = data.paypalStatus;
-      if (data.rawDetails) payload.raw_details = data.rawDetails;
+      if (data.paypalCaptureId) payload["paypal_capture_id"] = data.paypalCaptureId;
+      if (data.paypalStatus) payload["paypal_status"] = data.paypalStatus;
+      if (data.rawDetails) payload["raw_details"] = data.rawDetails;
 
       const rows = await supabaseRest(`orders?paypal_order_id=eq.${data.paypalOrderId}`, {
         method: "PATCH",

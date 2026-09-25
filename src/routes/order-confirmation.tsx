@@ -6,8 +6,6 @@ import {
   Mail,
   ArrowLeft,
   Sparkles,
-  ShieldCheck,
-  Clock,
   HelpCircle,
   FileText,
 } from "lucide-react";
@@ -17,7 +15,7 @@ import {
   downloadReceiptPdfServerFn,
   formatOrderInvoiceNumber,
 } from "@/lib/paypal-actions";
-import { Footer, FloatingWhatsAppButton } from "@/components/site/sections";
+import { FloatingWhatsAppButton } from "@/components/site/sections";
 
 export const Route = createFileRoute("/order-confirmation")({
   head: () => ({
@@ -58,9 +56,9 @@ export function OrderConfirmationPage() {
     paymentMethod: "PayPal",
     transactionId: "8XX12345XXXXXXX",
     customerName: "Valued Client",
-    customerEmail: "john@company.com",
-    customerCompany: "ABC Brands LLC",
-    billingAddress: "123 Main Street\nNew York, NY 10001\nUnited States",
+    customerEmail: "",
+    customerCompany: undefined,
+    billingAddress: undefined,
     paymentDate: "September 24, 2026",
     paymentTime: "10:42 AM EST",
   });
@@ -88,6 +86,15 @@ export function OrderConfirmationPage() {
         timeZone: "America/New_York",
       }) + " EST";
 
+    if (queryEmail) {
+      setOrderData((prev) => ({
+        ...prev,
+        customerEmail: queryEmail,
+        paymentDate: dateStr,
+        paymentTime: timeStr,
+      }));
+    }
+
     async function initializeOrder() {
       try {
         // If returning from PayPal redirect flow with pending token
@@ -106,9 +113,9 @@ export function OrderConfirmationPage() {
               paymentMethod: "PayPal",
               transactionId: captureRes.captureId || o.paypal_order_id,
               customerName: o.customer_name || "Valued Client",
-              customerEmail: o.customer_email || queryEmail || "info@quickuppaistudio.us",
+              customerEmail: o.customer_email || queryEmail || "",
               customerCompany: o.customer_company || undefined,
-              billingAddress: "United States",
+              billingAddress: undefined,
               paymentDate: dateStr,
               paymentTime: timeStr,
             });
@@ -133,25 +140,24 @@ export function OrderConfirmationPage() {
               paymentMethod: "PayPal",
               transactionId: o.paypal_capture_id || o.paypal_order_id,
               customerName: o.customer_name || "Valued Client",
-              customerEmail: o.customer_email || queryEmail || "info@quickuppaistudio.us",
+              customerEmail: o.customer_email || queryEmail || "",
               customerCompany: o.customer_company || undefined,
-              billingAddress: "United States",
+              billingAddress: undefined,
               paymentDate: dateStr,
               paymentTime: timeStr,
             });
             setLoading(false);
             return;
+          } else {
+            // Default with provided token ID formatted as order number
+            setOrderData((prev) => ({
+              ...prev,
+              orderNumber: formatOrderInvoiceNumber(token),
+              transactionId: token,
+              paymentDate: dateStr,
+              paymentTime: timeStr,
+            }));
           }
-        }
-
-        // Fallback or explicit query params
-        if (queryEmail) {
-          setOrderData((prev) => ({
-            ...prev,
-            customerEmail: queryEmail,
-            paymentDate: dateStr,
-            paymentTime: timeStr,
-          }));
         }
       } catch (err) {
         console.warn("Could not lookup order automatically:", err);
@@ -213,9 +219,9 @@ export function OrderConfirmationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-purple-500 selection:text-white flex flex-col justify-between">
-      {/* Top Header */}
-      <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
+    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-purple-500 selection:text-white flex flex-col justify-between">
+      {/* Top Header - Pure Light Mode */}
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-5 py-3.5">
           <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
             <img
@@ -226,7 +232,7 @@ export function OrderConfirmationPage() {
           </Link>
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-2 text-xs font-semibold text-slate-300 hover:border-purple-500 hover:text-white transition-all shadow-xs"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-purple-600 hover:text-purple-600 transition-all shadow-xs"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Back to Quickupp AI Studio</span>
@@ -234,85 +240,85 @@ export function OrderConfirmationPage() {
         </div>
       </header>
 
-      {/* Main Order Confirmation Screen */}
-      <main className="flex-1 py-10 sm:py-16 px-4">
+      {/* Main Order Confirmation Screen - Light Mode */}
+      <main className="flex-1 py-10 sm:py-16 px-4 bg-slate-50">
         <div className="mx-auto w-full max-w-2xl">
           {/* Card Container */}
-          <div className="overflow-hidden rounded-3xl border border-purple-500/20 bg-slate-900/90 shadow-2xl shadow-purple-950/40 backdrop-blur-xl animate-in zoom-in-95 duration-200">
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/60 animate-in zoom-in-95 duration-200">
             {/* Top Brand Accent Bar */}
             <div className="h-2 w-full bg-gradient-brand" />
 
-            <div className="p-6 sm:p-10 space-y-8">
+            <div className="p-6 sm:p-10 space-y-7">
               {/* Header Icon & Message */}
-              <div className="text-center space-y-3">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400 ring-8 ring-emerald-500/5 shadow-inner">
+              <div className="text-center space-y-2.5">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/60 shadow-inner">
                   <CheckCircle2 className="h-10 w-10" />
                 </div>
 
-                <div className="space-y-1.5">
-                  <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                <div className="space-y-1">
+                  <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                     Payment Successful! 🎉
                   </h1>
-                  <p className="text-sm sm:text-base font-semibold text-purple-300">
+                  <p className="text-sm sm:text-base font-semibold text-purple-700">
                     Thank you for your order.
                   </p>
-                  <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
+                  <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
                     Your payment has been received successfully and your order is now confirmed.
                   </p>
                 </div>
               </div>
 
               {/* Payment Details Card */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 sm:p-6 space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                  <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-purple-400 flex items-center gap-2">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6 space-y-4 shadow-xs">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-purple-700 flex items-center gap-2">
                     <FileText className="h-4 w-4" />
                     <span>Payment Details</span>
                   </h2>
-                  <span className="inline-flex items-center rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 text-xs font-bold text-emerald-400">
+                  <span className="inline-flex items-center rounded-full bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
                     ✓ PAID
                   </span>
                 </div>
 
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs sm:text-sm">
                   <div className="space-y-0.5">
-                    <dt className="text-xs text-slate-400">Order Number</dt>
-                    <dd className="font-mono font-bold text-white select-all">
+                    <dt className="text-xs text-slate-500 font-medium">Order Number</dt>
+                    <dd className="font-mono font-bold text-slate-900 select-all">
                       {orderData.orderNumber}
                     </dd>
                   </div>
 
                   <div className="space-y-0.5">
-                    <dt className="text-xs text-slate-400">Service</dt>
-                    <dd className="font-semibold text-white">
+                    <dt className="text-xs text-slate-500 font-medium">Service</dt>
+                    <dd className="font-semibold text-slate-900">
                       {orderData.serviceName}
                     </dd>
                   </div>
 
                   <div className="space-y-0.5">
-                    <dt className="text-xs text-slate-400">Package</dt>
-                    <dd className="font-semibold text-white">
+                    <dt className="text-xs text-slate-500 font-medium">Package</dt>
+                    <dd className="font-semibold text-slate-900">
                       {orderData.packageName}
                     </dd>
                   </div>
 
                   <div className="space-y-0.5">
-                    <dt className="text-xs text-slate-400">Amount Paid</dt>
-                    <dd className="font-bold text-purple-400">
+                    <dt className="text-xs text-slate-500 font-medium">Amount Paid</dt>
+                    <dd className="font-bold text-purple-700 text-sm sm:text-base">
                       {orderData.amountPaid}
                     </dd>
                   </div>
 
                   <div className="space-y-0.5">
-                    <dt className="text-xs text-slate-400">Payment Method</dt>
-                    <dd className="font-medium text-slate-200">
+                    <dt className="text-xs text-slate-500 font-medium">Payment Method</dt>
+                    <dd className="font-medium text-slate-800">
                       {orderData.paymentMethod}
                     </dd>
                   </div>
 
                   <div className="space-y-0.5">
-                    <dt className="text-xs text-slate-400">Transaction ID</dt>
-                    <dd className="font-mono text-xs text-slate-300 select-all truncate">
+                    <dt className="text-xs text-slate-500 font-medium">Transaction ID</dt>
+                    <dd className="font-mono text-xs text-slate-700 select-all truncate">
                       {orderData.transactionId}
                     </dd>
                   </div>
@@ -320,18 +326,18 @@ export function OrderConfirmationPage() {
               </div>
 
               {/* Your Receipt Has Been Emailed Section */}
-              <div className="rounded-2xl border border-purple-500/30 bg-purple-950/20 p-5 text-left space-y-2.5">
-                <div className="flex items-center gap-2 text-purple-300 font-bold text-sm">
-                  <Mail className="h-4.5 w-4.5 text-purple-400" />
+              <div className="rounded-2xl border border-purple-200 bg-purple-50/70 p-5 text-left space-y-2.5 shadow-xs">
+                <div className="flex items-center gap-2 text-purple-900 font-bold text-sm">
+                  <Mail className="h-4.5 w-4.5 text-purple-600" />
                   <span>Your Receipt Has Been Emailed</span>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <p className="text-xs text-slate-600 leading-relaxed">
                   A payment confirmation and PDF receipt have been sent to:
                 </p>
-                <div className="font-semibold font-mono text-sm text-purple-200 bg-purple-950/40 px-3 py-1.5 rounded-lg border border-purple-500/20 inline-block">
-                  {orderData.customerEmail}
+                <div className="font-semibold font-mono text-sm text-purple-900 bg-white px-3.5 py-1.5 rounded-lg border border-purple-200 shadow-xs inline-block">
+                  {orderData.customerEmail || "your email address"}
                 </div>
-                <p className="text-[11px] text-slate-400 italic">
+                <p className="text-[11px] text-slate-500 italic">
                   Please check your inbox, and your spam/junk folder if you don't see it shortly.
                 </p>
 
@@ -341,7 +347,7 @@ export function OrderConfirmationPage() {
                     type="button"
                     onClick={handleDownloadPdf}
                     disabled={downloadingPdf}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-500 active:scale-98 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-purple-600/30 transition-all cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-98 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-purple-600/20 transition-all cursor-pointer disabled:opacity-50"
                   >
                     <Download className="h-4 w-4" />
                     <span>
@@ -352,28 +358,28 @@ export function OrderConfirmationPage() {
               </div>
 
               {/* What's Next? Section */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-5 space-y-2">
-                <div className="flex items-center gap-2 text-sm font-bold text-white">
-                  <Sparkles className="h-4 w-4 text-purple-400" />
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-2 shadow-xs">
+                <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
+                  <Sparkles className="h-4 w-4 text-purple-600" />
                   <span>What's Next?</span>
                 </div>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                   Our team will review your order and contact you with the next steps.
                 </p>
-                <p className="text-xs text-slate-400">
-                  Please keep your order number handy when communicating with our creative team:{" "}
-                  <strong className="text-purple-300 font-mono">{orderData.orderNumber}</strong>
+                <p className="text-xs text-slate-500">
+                  Please keep your order number handy when communicating with our team:{" "}
+                  <strong className="text-purple-700 font-mono font-bold">{orderData.orderNumber}</strong>
                 </p>
               </div>
 
               {/* Need Help & Footer Actions */}
-              <div className="pt-2 text-center space-y-5 border-t border-slate-800">
-                <div className="text-xs text-slate-400 flex items-center justify-center gap-1.5">
-                  <HelpCircle className="h-3.5 w-3.5 text-slate-500" />
-                  <span>Need help? Contact us anytime:</span>
+              <div className="pt-2 text-center space-y-5 border-t border-slate-200">
+                <div className="text-xs text-slate-500 flex items-center justify-center gap-1.5 flex-wrap">
+                  <HelpCircle className="h-3.5 w-3.5 text-slate-400" />
+                  <span>Need help?</span>
                   <a
                     href="mailto:info@quickuppaistudio.us"
-                    className="font-semibold text-purple-400 hover:text-purple-300 underline"
+                    className="font-semibold text-purple-600 hover:text-purple-700 underline"
                   >
                     info@quickuppaistudio.us
                   </a>
@@ -382,7 +388,7 @@ export function OrderConfirmationPage() {
                 <div>
                   <Link
                     to="/"
-                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-gradient-brand px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all duration-200 hover:brightness-110 active:scale-98 cursor-pointer"
+                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-600/20 transition-all duration-200 active:scale-98 cursor-pointer"
                   >
                     <span>Back to Quickupp AI Studio</span>
                     <ArrowLeft className="h-4 w-4 rotate-180" />
@@ -394,7 +400,19 @@ export function OrderConfirmationPage() {
         </div>
       </main>
 
-      <Footer />
+      {/* Clean Light Footer */}
+      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
+        <div className="mx-auto max-w-5xl px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <img src="/images/logo.png" alt="Quickupp AI Studio" className="h-6 w-auto object-contain" />
+            <span className="font-semibold text-slate-700">Quickupp AI Studio</span>
+          </div>
+          <p className="text-slate-500 text-[11px]">
+            © 2026 Quickupp AI Studio. Operated by Quickupp Softech LLC. All rights reserved.
+          </p>
+        </div>
+      </footer>
+
       <FloatingWhatsAppButton />
     </div>
   );
