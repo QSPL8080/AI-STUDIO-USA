@@ -297,11 +297,12 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       currentY += rowHeight + 10;
 
       // Subtotal, Tax, Total Block (Mathematically right aligned to exact table border)
-      const totalsWidth = 210;
-      const totalsX = tableRight - totalsWidth; // 343.28
+      const totalsWidth = 220;
+      const totalsX = tableRight - totalsWidth; // right side of totals box matches tableRight exactly
+      const totalsLabelX = totalsX + 12;
       const totalsLabelWidth = 90;
-      const totalsValueX = totalsX + totalsLabelWidth; // 433.28
-      const totalsValueWidth = tableRight - 12 - totalsValueX; // 108
+      const totalsValueX = col3X;
+      const totalsValueWidth = col3Width; // Terminates at tableRight - 12 (541.28) identically to Amount column
 
       const subtotalVal = data.subtotal !== undefined ? data.subtotal : data.amount;
       const taxVal = data.tax !== undefined ? data.tax : 0;
@@ -312,7 +313,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .font("ReceiptRegular")
         .fontSize(9)
         .fillColor("#64748b")
-        .text("Subtotal:", totalsX + 10, currentY, { width: totalsLabelWidth - 10, align: "left" })
+        .text("Subtotal:", totalsLabelX, currentY, { width: totalsLabelWidth, align: "left" })
         .font("ReceiptBold")
         .fillColor("#0f172a")
         .text(`$${subtotalVal.toFixed(2)}`, totalsValueX, currentY, { width: totalsValueWidth, align: "right" });
@@ -323,7 +324,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .font("ReceiptRegular")
         .fontSize(9)
         .fillColor("#64748b")
-        .text("Tax (0%):", totalsX + 10, currentY, { width: totalsLabelWidth - 10, align: "left" })
+        .text("Tax (0%):", totalsLabelX, currentY, { width: totalsLabelWidth, align: "left" })
         .font("ReceiptBold")
         .fillColor("#0f172a")
         .text(`$${taxVal.toFixed(2)}`, totalsValueX, currentY, { width: totalsValueWidth, align: "right" });
@@ -342,7 +343,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .font("ReceiptBold")
         .fontSize(10)
         .fillColor("#6d28d9")
-        .text("Total:", totalsX + 10, currentY + 3, { width: 70, align: "left" })
+        .text("Total:", totalsLabelX, currentY + 3, { width: totalsLabelWidth, align: "left" })
         .text(`$${totalVal.toFixed(2)} ${currencyStr}`, totalsValueX, currentY + 3, { width: totalsValueWidth, align: "right" });
 
       currentY += 32;
