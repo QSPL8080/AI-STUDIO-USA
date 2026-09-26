@@ -298,11 +298,12 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
 
       // Subtotal, Tax, Total Block (Mathematically right aligned to exact table border)
       const totalsWidth = 220;
-      const totalsX = tableRight - totalsWidth; // right side of totals box matches tableRight exactly
+      const totalsX = tableRight - totalsWidth; // 333.28 to 553.28
+      const padRight = 12; // Matches table column right padding
       const totalsLabelX = totalsX + 12;
       const totalsLabelWidth = 90;
-      const totalsValueX = col3X;
-      const totalsValueWidth = col3Width; // Terminates at tableRight - 12 (541.28) identically to Amount column
+      const totalsValX = totalsX + totalsLabelWidth;
+      const totalsValWidth = totalsWidth - totalsLabelWidth - padRight; // 220 - 90 - 12 = 118 (terminates at 541.28)
 
       const subtotalVal = data.subtotal !== undefined ? data.subtotal : data.amount;
       const taxVal = data.tax !== undefined ? data.tax : 0;
@@ -316,7 +317,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .text("Subtotal:", totalsLabelX, currentY, { width: totalsLabelWidth, align: "left" })
         .font("ReceiptBold")
         .fillColor("#0f172a")
-        .text(`$${subtotalVal.toFixed(2)}`, totalsValueX, currentY, { width: totalsValueWidth, align: "right" });
+        .text(`$${subtotalVal.toFixed(2)}`, totalsValX, currentY, { width: totalsValWidth, align: "right" });
 
       currentY += 14;
 
@@ -327,13 +328,13 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .text("Tax (0%):", totalsLabelX, currentY, { width: totalsLabelWidth, align: "left" })
         .font("ReceiptBold")
         .fillColor("#0f172a")
-        .text(`$${taxVal.toFixed(2)}`, totalsValueX, currentY, { width: totalsValueWidth, align: "right" });
+        .text(`$${taxVal.toFixed(2)}`, totalsValX, currentY, { width: totalsValWidth, align: "right" });
 
       currentY += 15;
 
       // Total Box (Border and values align perfectly with table)
       doc
-        .rect(totalsX, currentY - 4, totalsWidth, 24)
+        .roundedRect(totalsX, currentY - 4, totalsWidth, 24, 4)
         .fill("#f5f3ff")
         .strokeColor("#ddd6fe")
         .lineWidth(1)
@@ -344,7 +345,12 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .fontSize(10)
         .fillColor("#6d28d9")
         .text("Total:", totalsLabelX, currentY + 3, { width: totalsLabelWidth, align: "left" })
-        .text(`$${totalVal.toFixed(2)} ${currencyStr}`, totalsValueX, currentY + 3, { width: totalsValueWidth, align: "right" });
+        .text(
+          `$${totalVal.toFixed(2)} ${currencyStr}`,
+          totalsValX,
+          currentY + 3,
+          { width: totalsValWidth, align: "right" }
+        );
 
       currentY += 32;
 
