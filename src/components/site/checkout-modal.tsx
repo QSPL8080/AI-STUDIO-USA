@@ -214,10 +214,10 @@ export function CheckoutModal() {
       role="dialog"
       aria-modal="true"
       aria-labelledby="checkout-modal-title"
-      className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-4 md:p-6 overflow-y-auto backdrop-blur-md bg-slate-950/70 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-4 md:p-6 overflow-y-auto bg-slate-950/75 animate-in fade-in duration-200"
     >
       <div
-        className={`relative w-full overflow-hidden rounded-3xl border border-purple-200/90 bg-white/98 shadow-2xl shadow-purple-950/25 backdrop-blur-2xl transition-all duration-300 animate-in zoom-in-95 ${
+        className={`relative w-full overflow-hidden rounded-3xl border border-purple-200 bg-white shadow-2xl shadow-purple-950/25 transition-all duration-300 animate-in zoom-in-95 ${
           step === "payment" ? "max-w-4xl" : "max-w-xl sm:max-w-2xl"
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -375,10 +375,10 @@ export function CheckoutModal() {
                       onChange={(e) => {
                         setFullName(e.target.value);
                         if (formErrors.fullName) {
-                          setFormErrors((prev) => ({ ...prev, fullName: undefined }));
+                           setFormErrors((prev) => ({ ...prev, fullName: undefined }));
                         }
                       }}
-                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-slate-800 shadow-xs transition-all focus:outline-none focus:ring-2 ${
+                      className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-xs transition-all focus:outline-none focus:ring-2 ${
                         formErrors.fullName
                           ? "border-red-400 focus:border-red-500 focus:ring-red-100"
                           : "border-slate-200 focus:border-purple-500 focus:ring-purple-100"
@@ -410,7 +410,7 @@ export function CheckoutModal() {
                           setFormErrors((prev) => ({ ...prev, email: undefined }));
                         }
                       }}
-                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-slate-800 shadow-xs transition-all focus:outline-none focus:ring-2 ${
+                      className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-xs transition-all focus:outline-none focus:ring-2 ${
                         formErrors.email
                           ? "border-red-400 focus:border-red-500 focus:ring-red-100"
                           : "border-slate-200 focus:border-purple-500 focus:ring-purple-100"
@@ -438,7 +438,7 @@ export function CheckoutModal() {
                       placeholder="+1 (555) 000-0000"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 shadow-xs transition-all focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-xs transition-all focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100"
                     />
                   </div>
 
@@ -455,7 +455,7 @@ export function CheckoutModal() {
                       placeholder="e.g. Nexus Media"
                       value={company}
                       onChange={(e) => setCompany(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 shadow-xs transition-all focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-xs transition-all focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100"
                     />
                   </div>
                 </div>
@@ -612,6 +612,8 @@ export function CheckoutModal() {
                             clientId: paypalClientId,
                             currency: "USD",
                             intent: "capture",
+                            components: "buttons",
+                            "disable-funding": "paylater,credit,venmo",
                           }}
                         >
                           <div className="w-full max-w-sm">
