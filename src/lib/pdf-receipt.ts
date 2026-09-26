@@ -241,9 +241,13 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
 
       // Table Header Box
       const tableX = margin;
-      const col1Width = 330;
+      const tableRight = tableX + contentWidth; // 553.28
+      const col1X = tableX + 12;
+      const col1Width = 320;
+      const col2X = tableX + 332;
       const col2Width = 50;
-      const col3Width = contentWidth - col1Width - col2Width;
+      const col3X = tableX + 382;
+      const col3Width = tableRight - 12 - col3X; // 541.28 - 424 = 117.28
 
       doc
         .rect(tableX, currentY, contentWidth, 20)
@@ -256,9 +260,9 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .font("ReceiptBold")
         .fontSize(9)
         .fillColor("#475569")
-        .text("Description", tableX + 10, currentY + 5, { width: col1Width - 10 })
-        .text("Qty", tableX + col1Width, currentY + 5, { width: col2Width, align: "center" })
-        .text("Amount", tableX + col1Width + col2Width, currentY + 5, { width: col3Width - 10, align: "right" });
+        .text("Description", col1X, currentY + 5, { width: col1Width })
+        .text("Qty", col2X, currentY + 5, { width: col2Width, align: "center" })
+        .text("Amount", col3X, currentY + 5, { width: col3Width, align: "right" });
 
       currentY += 20;
 
@@ -282,19 +286,22 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .font("ReceiptBold")
         .fontSize(9.5)
         .fillColor("#0f172a")
-        .text(itemDesc, tableX + 10, currentY + 9, { width: col1Width - 10 })
+        .text(itemDesc, col1X, currentY + 9, { width: col1Width })
         .font("ReceiptRegular")
         .fontSize(9.5)
-        .text(String(qty), tableX + col1Width, currentY + 9, { width: col2Width, align: "center" })
+        .text(String(qty), col2X, currentY + 9, { width: col2Width, align: "center" })
         .font("ReceiptBold")
         .fontSize(9.5)
-        .text(formattedAmount, tableX + col1Width + col2Width, currentY + 9, { width: col3Width - 10, align: "right" });
+        .text(formattedAmount, col3X, currentY + 9, { width: col3Width, align: "right" });
 
       currentY += rowHeight + 10;
 
-      // Subtotal, Tax, Total Block (Neatly right aligned)
-      const totalsX = tableX + 310;
-      const totalsWidth = contentWidth - 310;
+      // Subtotal, Tax, Total Block (Mathematically right aligned to exact table border)
+      const totalsWidth = 210;
+      const totalsX = tableRight - totalsWidth; // 343.28
+      const totalsLabelWidth = 90;
+      const totalsValueX = totalsX + totalsLabelWidth; // 433.28
+      const totalsValueWidth = tableRight - 12 - totalsValueX; // 108
 
       const subtotalVal = data.subtotal !== undefined ? data.subtotal : data.amount;
       const taxVal = data.tax !== undefined ? data.tax : 0;
@@ -305,10 +312,10 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .font("ReceiptRegular")
         .fontSize(9)
         .fillColor("#64748b")
-        .text("Subtotal:", totalsX, currentY, { width: 80, align: "left" })
+        .text("Subtotal:", totalsX + 10, currentY, { width: totalsLabelWidth - 10, align: "left" })
         .font("ReceiptBold")
         .fillColor("#0f172a")
-        .text(`$${subtotalVal.toFixed(2)}`, totalsX + 80, currentY, { width: totalsWidth - 80, align: "right" });
+        .text(`$${subtotalVal.toFixed(2)}`, totalsValueX, currentY, { width: totalsValueWidth, align: "right" });
 
       currentY += 14;
 
@@ -316,16 +323,16 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .font("ReceiptRegular")
         .fontSize(9)
         .fillColor("#64748b")
-        .text("Tax (0%):", totalsX, currentY, { width: 80, align: "left" })
+        .text("Tax (0%):", totalsX + 10, currentY, { width: totalsLabelWidth - 10, align: "left" })
         .font("ReceiptBold")
         .fillColor("#0f172a")
-        .text(`$${taxVal.toFixed(2)}`, totalsX + 80, currentY, { width: totalsWidth - 80, align: "right" });
+        .text(`$${taxVal.toFixed(2)}`, totalsValueX, currentY, { width: totalsValueWidth, align: "right" });
 
       currentY += 15;
 
-      // Total Box
+      // Total Box (Border and values align perfectly with table)
       doc
-        .rect(totalsX - 4, currentY - 3, totalsWidth + 4, 22)
+        .rect(totalsX, currentY - 4, totalsWidth, 24)
         .fill("#f5f3ff")
         .strokeColor("#ddd6fe")
         .lineWidth(1)
@@ -335,8 +342,8 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .font("ReceiptBold")
         .fontSize(10)
         .fillColor("#6d28d9")
-        .text("Total:", totalsX + 4, currentY + 4, { width: 70, align: "left" })
-        .text(`$${totalVal.toFixed(2)} ${currencyStr}`, totalsX + 70, currentY + 4, { width: totalsWidth - 78, align: "right" });
+        .text("Total:", totalsX + 10, currentY + 3, { width: 70, align: "left" })
+        .text(`$${totalVal.toFixed(2)} ${currencyStr}`, totalsValueX, currentY + 3, { width: totalsValueWidth, align: "right" });
 
       currentY += 32;
 
