@@ -26,6 +26,7 @@ import {
   Lock,
   LogOut,
   Mail,
+  Megaphone,
   MessageSquare,
   Package,
   Phone,
@@ -163,7 +164,7 @@ function AdminPage() {
   const [authError, setAuthError] = useState("");
 
   // Tabs Navigation
-  type TabType = "leads" | "orders" | "calendly" | "activity" | "users" | "security" | "recycle_bin" | "settings";
+  type TabType = "leads" | "meta_leads" | "orders" | "calendly" | "activity" | "users" | "security" | "recycle_bin" | "settings";
   const [activeTab, setActiveTab] = useState<TabType>("leads");
 
   // Leads Data
@@ -172,7 +173,7 @@ function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Search & Filtering State (Section 11: Filters & Search)
+  // Search & Filtering State for Website Leads (Section 11: Filters & Search)
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSource, setFilterSource] = useState<string>("All");
   const [filterStatus, setFilterStatus] = useState<string>("All");
@@ -184,33 +185,7 @@ function AdminPage() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
-  // Applied Filters State (Controlled by Apply Filters / Clear Filters buttons)
-  const [appliedFilters, setAppliedFilters] = useState({
-    search: "",
-    source: "All",
-    status: "All",
-    projectStatus: "All",
-    videoType: "All",
-    location: "",
-    closedBy: "All",
-    dateType: "created_at" as "created_at" | "meeting_date" | "closed_at" | "delivery_date",
-    fromDate: "",
-    toDate: "",
-  });
-
   const handleApplyFilters = () => {
-    setAppliedFilters({
-      search: searchTerm,
-      source: filterSource,
-      status: filterStatus,
-      projectStatus: filterProjectStatus,
-      videoType: filterVideoType,
-      location: filterLocation,
-      closedBy: filterClosedBy,
-      dateType: filterDateType,
-      fromDate: fromDate,
-      toDate: toDate,
-    });
     const count = filteredLeads.length;
     showToast(`Filters applied • ${count} lead${count === 1 ? "" : "s"} match`);
   };
@@ -226,19 +201,39 @@ function AdminPage() {
     setFilterDateType("created_at");
     setFromDate("");
     setToDate("");
-    setAppliedFilters({
-      search: "",
-      source: "All",
-      status: "All",
-      projectStatus: "All",
-      videoType: "All",
-      location: "",
-      closedBy: "All",
-      dateType: "created_at",
-      fromDate: "",
-      toDate: "",
-    });
     showToast("All filters cleared");
+  };
+
+  // Meta Leads Dedicated Filtering & Search State
+  const [metaSearchTerm, setMetaSearchTerm] = useState("");
+  const [metaFilterSource, setMetaFilterSource] = useState("All");
+  const [metaFilterStatus, setMetaFilterStatus] = useState("All");
+  const [metaFilterProjectStatus, setMetaFilterProjectStatus] = useState("All");
+  const [metaFilterVideoType, setMetaFilterVideoType] = useState("All");
+  const [metaFilterLocation, setMetaFilterLocation] = useState("");
+  const [metaFilterClosedBy, setMetaFilterClosedBy] = useState("All");
+  const [metaFilterDateType, setMetaFilterDateType] = useState<"created_at" | "closed_at" | "delivery_date">("created_at");
+  const [metaFromDate, setMetaFromDate] = useState("");
+  const [metaToDate, setMetaToDate] = useState("");
+  const [selectedMetaLeadIds, setSelectedMetaLeadIds] = useState<Set<string>>(new Set());
+
+  const handleApplyMetaFilters = () => {
+    const count = filteredMetaLeads.length;
+    showToast(`Meta filters applied • ${count} lead${count === 1 ? "" : "s"} match`);
+  };
+
+  const handleClearMetaFilters = () => {
+    setMetaSearchTerm("");
+    setMetaFilterSource("All");
+    setMetaFilterStatus("All");
+    setMetaFilterProjectStatus("All");
+    setMetaFilterVideoType("All");
+    setMetaFilterLocation("");
+    setMetaFilterClosedBy("All");
+    setMetaFilterDateType("created_at");
+    setMetaFromDate("");
+    setMetaToDate("");
+    showToast("Meta filters cleared");
   };
 
   // Selection & Bulk Actions
@@ -1272,6 +1267,48 @@ function AdminPage() {
     }
   };
 
+  // Meta Leads Bulk Handlers
+  const handleSelectAllMetaLeads = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(filteredMetaLeads.map((l) => l.id));
+      setSelectedMetaLeadIds(allIds);
+    } else {
+      setSelectedMetaLeadIds(new Set());
+    }
+  };
+
+  const handleToggleSelectMetaLead = (id: string) => {
+    setSelectedMetaLeadIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkMetaStatusChange = async (newStatus: LeadStatus) => {
+    if (selectedMetaLeadIds.size === 0) return;
+    if (confirm(`Change status of ${selectedMetaLeadIds.size} selected Meta leads to "${newStatus}"?`)) {
+      for (const id of Array.from(selectedMetaLeadIds)) {
+        const lead = leads.find((l) => l.id === id);
+        if (lead) await handleUpdateLeadStatus(lead, newStatus);
+      }
+      setSelectedMetaLeadIds(new Set());
+      showToast(`Updated ${selectedMetaLeadIds.size} Meta leads to ${newStatus}`);
+    }
+  };
+
+  const handleBulkMetaDelete = async () => {
+    if (selectedMetaLeadIds.size === 0) return;
+    if (confirm(`Move ${selectedMetaLeadIds.size} selected Meta leads to Recycle Bin?`)) {
+      for (const id of Array.from(selectedMetaLeadIds)) {
+        await softDeleteLeadLeadServerFnWrapper(id);
+      }
+      setSelectedMetaLeadIds(new Set());
+      showToast(`Moved ${selectedMetaLeadIds.size} Meta leads to Recycle Bin`);
+    }
+  };
+
   const softDeleteLeadLeadServerFnWrapper = async (id: string) => {
     const target = leads.find((l) => l.id === id);
     setLeads((prev) => prev.filter((l) => l.id !== id));
@@ -1403,6 +1440,61 @@ function AdminPage() {
     document.body.removeChild(link);
   };
 
+  const exportMetaCSV = (selectedOnly = false) => {
+    const listToExport = selectedOnly
+      ? filteredMetaLeads.filter((l) => selectedMetaLeadIds.has(l.id))
+      : filteredMetaLeads;
+
+    if (!listToExport.length) return alert("No Meta leads to export.");
+    const headers = [
+      "ID",
+      "Source",
+      "Client Name",
+      "Business Name",
+      "Phone",
+      "Email",
+      "Video Type",
+      "Video Quantity",
+      "Location",
+      "Lead Status",
+      "Project Status",
+      "Closed By",
+      "Closed Date",
+      "Delivery Date",
+      "Internal Notes",
+      "Created At",
+    ];
+    const rows = listToExport.map((l) => [
+      l.id,
+      `"${l.source}"`,
+      `"${l.name}"`,
+      `"${l.business}"`,
+      `"${l.phone}"`,
+      `"${l.email || ""}"`,
+      `"${l.video_type}"`,
+      `"${l.video_quantity || 1}"`,
+      `"${l.location || ""}"`,
+      l.status,
+      l.project_status || "In Progress",
+      `"${l.closed_by || ""}"`,
+      `"${l.closed_at ? new Date(l.closed_at).toLocaleDateString() : ""}"`,
+      `"${l.delivery_date || ""}"`,
+      `"${(l.notes || "").replace(/"/g, '""')}"`,
+      new Date(l.created_at).toLocaleString(),
+    ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `meta_leads_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Exported ${listToExport.length} Meta leads`);
+  };
+
   const isToday = (dateStr?: string) => {
     if (!dateStr) return false;
     const d = new Date(dateStr);
@@ -1499,11 +1591,32 @@ function AdminPage() {
     }
   };
 
-  // Filtered Leads Calculation (Matching Section 11 Search & Filter Criteria with Real-time & Normalized matching)
+  // Helper to identify Meta Leads
+  const isMetaLead = (lead: Lead) => {
+    const s = (lead.source || "").toLowerCase().trim();
+    return (
+      s.includes("meta") ||
+      s.includes("facebook") ||
+      s.includes("instagram") ||
+      s.includes("fb_") ||
+      s.includes("ig_")
+    );
+  };
+
+  // Distinct Leads Collections: Website Leads (Tab 1) and Meta Leads (Tab 2)
+  const websiteLeads = useMemo(() => {
+    return leads.filter((l) => !isMetaLead(l));
+  }, [leads]);
+
+  const metaLeads = useMemo(() => {
+    return leads.filter((l) => isMetaLead(l));
+  }, [leads]);
+
+  // Filtered Website Leads Calculation (Tab 1: Leads Management)
   const filteredLeads = useMemo(() => {
-    return leads
+    return websiteLeads
       .filter((lead) => {
-        // 1. Source Filter
+        // 1. Source Filter (USA Website, India Website, Manual)
         let matchesSource = true;
         if (filterSource !== "All" && filterSource.trim() !== "") {
           const rawSrc = (lead.source || "").toLowerCase().trim();
@@ -1514,9 +1627,7 @@ function AdminPage() {
             categorySrc === targetSrc ||
             (targetSrc.includes("usa") && (rawSrc.includes("usa") || categorySrc.includes("usa"))) ||
             (targetSrc.includes("india") && (rawSrc.includes("india") || categorySrc.includes("india"))) ||
-            (targetSrc.includes("meta") && (rawSrc.includes("meta") || rawSrc.includes("facebook") || rawSrc.includes("instagram"))) ||
-            (targetSrc.includes("manual") && rawSrc.includes("manual")) ||
-            (targetSrc.includes("calendly") && (rawSrc.includes("calendly") || !!lead.meeting_date));
+            (targetSrc.includes("manual") && rawSrc.includes("manual"));
         }
 
         // 2. Lead Status Filter
@@ -1621,7 +1732,7 @@ function AdminPage() {
       })
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [
-    leads,
+    websiteLeads,
     searchTerm,
     filterSource,
     filterStatus,
@@ -1632,6 +1743,131 @@ function AdminPage() {
     filterDateType,
     fromDate,
     toDate,
+  ]);
+
+  // Filtered Meta Leads Calculation (Tab 2: Dedicated Meta Leads)
+  const filteredMetaLeads = useMemo(() => {
+    return metaLeads
+      .filter((lead) => {
+        // 1. Meta Source Filter
+        let matchesSource = true;
+        if (metaFilterSource !== "All" && metaFilterSource.trim() !== "") {
+          const rawSrc = (lead.source || "").toLowerCase();
+          const targetSrc = metaFilterSource.toLowerCase();
+          matchesSource = rawSrc.includes(targetSrc) || targetSrc.includes(rawSrc);
+        }
+
+        // 2. Status Filter
+        let matchesStatus = true;
+        if (metaFilterStatus !== "All" && metaFilterStatus.trim() !== "") {
+          const st = (lead.status || "").toLowerCase().replace(/[\s_-]/g, "");
+          const fst = metaFilterStatus.toLowerCase().replace(/[\s_-]/g, "");
+          matchesStatus = st === fst || (st.includes("progress") && fst.includes("progress"));
+        }
+
+        // 3. Project Status Filter
+        let matchesProjStatus = true;
+        if (metaFilterProjectStatus !== "All" && metaFilterProjectStatus.trim() !== "") {
+          const ps = (lead.project_status || "In Progress").toLowerCase().replace(/[\s_-]/g, "");
+          const fps = metaFilterProjectStatus.toLowerCase().replace(/[\s_-]/g, "");
+          matchesProjStatus = ps === fps || (ps.includes("progress") && fps.includes("progress"));
+        }
+
+        // 4. Video Type Filter
+        let matchesVideoType = true;
+        if (metaFilterVideoType !== "All" && metaFilterVideoType.trim() !== "") {
+          const vt = (lead.video_type || "").toLowerCase().replace(/ai\s+/g, "").replace(/[\s_-]/g, "");
+          const fvt = metaFilterVideoType.toLowerCase().replace(/ai\s+/g, "").replace(/[\s_-]/g, "");
+          matchesVideoType =
+            vt === fvt ||
+            vt.includes(fvt) ||
+            fvt.includes(vt) ||
+            (lead.video_type || "").toLowerCase().includes(metaFilterVideoType.toLowerCase().trim());
+        }
+
+        // 5. Location Filter
+        let matchesLocation = true;
+        if (metaFilterLocation && metaFilterLocation.trim() !== "" && metaFilterLocation !== "All") {
+          const loc = metaFilterLocation.toLowerCase().trim();
+          const leadLoc = (lead.location || "").toLowerCase();
+          const leadBiz = (lead.business || "").toLowerCase();
+          const leadNotes = (lead.notes || "").toLowerCase();
+          matchesLocation = leadLoc.includes(loc) || leadBiz.includes(loc) || leadNotes.includes(loc);
+        }
+
+        // 6. Lead Closed By Filter
+        let matchesClosedBy = true;
+        if (metaFilterClosedBy !== "All" && metaFilterClosedBy.trim() !== "") {
+          const cb = (lead.closed_by || "").toLowerCase().trim();
+          const fcb = metaFilterClosedBy.toLowerCase().trim();
+          matchesClosedBy = cb.includes(fcb) || fcb.includes(cb);
+        }
+
+        // 7. Search Filter
+        let matchesSearch = true;
+        if (metaSearchTerm && metaSearchTerm.trim() !== "") {
+          const q = metaSearchTerm.toLowerCase().trim();
+          const qDigits = q.replace(/\D/g, "");
+          const leadPhoneDigits = (lead.phone || "").replace(/\D/g, "");
+          matchesSearch =
+            (lead.name || "").toLowerCase().includes(q) ||
+            (lead.business || "").toLowerCase().includes(q) ||
+            (lead.phone || "").toLowerCase().includes(q) ||
+            (qDigits.length > 2 && leadPhoneDigits.includes(qDigits)) ||
+            (lead.email || "").toLowerCase().includes(q) ||
+            (lead.video_type || "").toLowerCase().includes(q) ||
+            (lead.source || "").toLowerCase().includes(q) ||
+            (lead.location || "").toLowerCase().includes(q) ||
+            (lead.notes || "").toLowerCase().includes(q);
+        }
+
+        // 8. Date Range
+        let matchesDate = true;
+        if (metaFromDate || metaToDate) {
+          let dateValue: string | undefined = undefined;
+          if (metaFilterDateType === "created_at") dateValue = lead.created_at;
+          else if (metaFilterDateType === "closed_at") dateValue = lead.closed_at;
+          else if (metaFilterDateType === "delivery_date") dateValue = lead.delivery_date;
+
+          if (dateValue) {
+            const leadD = new Date(dateValue).getTime();
+            if (metaFromDate) {
+              const fD = new Date(metaFromDate + "T00:00:00").getTime();
+              if (!isNaN(fD) && leadD < fD) matchesDate = false;
+            }
+            if (metaToDate) {
+              const tD = new Date(metaToDate + "T23:59:59.999").getTime();
+              if (!isNaN(tD) && leadD > tD) matchesDate = false;
+            }
+          } else {
+            matchesDate = false;
+          }
+        }
+
+        return (
+          matchesSource &&
+          matchesStatus &&
+          matchesProjStatus &&
+          matchesVideoType &&
+          matchesLocation &&
+          matchesClosedBy &&
+          matchesSearch &&
+          matchesDate
+        );
+      })
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, [
+    metaLeads,
+    metaSearchTerm,
+    metaFilterSource,
+    metaFilterStatus,
+    metaFilterProjectStatus,
+    metaFilterVideoType,
+    metaFilterLocation,
+    metaFilterClosedBy,
+    metaFilterDateType,
+    metaFromDate,
+    metaToDate,
   ]);
 
   const uniqueLocations = useMemo(() => {
@@ -1654,15 +1890,24 @@ function AdminPage() {
     return Array.from(set).sort();
   }, [leads]);
 
-  // KPI Summary Counts
-  const totalLeadsCount = leads.length;
-  const newLeadsCount = leads.filter((l) => l.status === "New").length;
-  const contactedCount = leads.filter((l) => l.status === "Contacted").length;
-  const inProgressCount = leads.filter((l) => l.status === "In Progress").length;
-  const holdCount = leads.filter((l) => l.status === "Hold").length;
-  const closedCount = leads.filter((l) => l.status === "Closed").length;
-  const projectsDeliveredCount = leads.filter((l) => l.project_status === "Delivered").length;
-  const projectsInProgressCount = leads.filter((l) => (l.project_status || "In Progress") === "In Progress").length;
+  // Website Leads KPI Summary Counts (Tab 1)
+  const totalLeadsCount = websiteLeads.length;
+  const newLeadsCount = websiteLeads.filter((l) => l.status === "New").length;
+  const contactedCount = websiteLeads.filter((l) => l.status === "Contacted").length;
+  const inProgressCount = websiteLeads.filter((l) => l.status === "In Progress").length;
+  const holdCount = websiteLeads.filter((l) => l.status === "Hold").length;
+  const closedCount = websiteLeads.filter((l) => l.status === "Closed").length;
+  const projectsDeliveredCount = websiteLeads.filter((l) => l.project_status === "Delivered").length;
+  const projectsInProgressCount = websiteLeads.filter((l) => (l.project_status || "In Progress") === "In Progress").length;
+
+  // Meta Leads KPI Summary Counts (Tab 2)
+  const metaTotalCount = metaLeads.length;
+  const metaNewCount = metaLeads.filter((l) => l.status === "New").length;
+  const metaContactedCount = metaLeads.filter((l) => l.status === "Contacted").length;
+  const metaInProgressCount = metaLeads.filter((l) => l.status === "In Progress").length;
+  const metaHoldCount = metaLeads.filter((l) => l.status === "Hold").length;
+  const metaClosedCount = metaLeads.filter((l) => l.status === "Closed").length;
+  const metaDeliveredCount = metaLeads.filter((l) => l.project_status === "Delivered").length;
   const usaLeadsCount = leads.filter((l) => isLeadUsa(l)).length;
   const manualLeadsCount = leads.filter((l) => l.source === "Manual").length;
   const websiteLeadsCount = leads.filter((l) => l.source !== "Manual" && !isLeadUsa(l)).length;
@@ -2081,7 +2326,24 @@ function AdminPage() {
               <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
                 activeTab === "leads" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
               }`}>
-                {leads.length}
+                {websiteLeads.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => { setActiveTab("meta_leads"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
+              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "meta_leads"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              }`}
+            >
+              <Megaphone className="h-4 w-4" />
+              <span>Meta Leads</span>
+              <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
+                activeTab === "meta_leads" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
+              }`}>
+                {metaLeads.length}
               </span>
             </button>
 
@@ -2389,7 +2651,6 @@ function AdminPage() {
                     <option value="All">All Sources</option>
                     <option value="USA Website">USA Website</option>
                     <option value="India Website">India Website</option>
-                    <option value="Meta">Meta</option>
                     <option value="Manual">Manual</option>
                     <option value="Calendly">Calendly</option>
                   </select>
@@ -2923,6 +3184,735 @@ function AdminPage() {
                             type="button"
                             onClick={() => handleSoftDeleteLead(lead.id)}
                             className="rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 transition-colors cursor-pointer"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB: META LEADS MANAGEMENT */}
+        {/* ========================================================================= */}
+        {activeTab === "meta_leads" && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Meta KPI Summary Cards - Pure White Theme with Interactive Clickable Filters */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7 sm:gap-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setMetaFilterStatus("All");
+                  setMetaFilterProjectStatus("All");
+                }}
+                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                  metaFilterStatus === "All" && metaFilterProjectStatus === "All"
+                    ? "border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/20"
+                    : "border-slate-200/90 hover:border-slate-300"
+                }`}
+                title="Click to view all Meta leads"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+                  <span>Total Meta</span>
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                    <Megaphone className="h-3.5 w-3.5" />
+                  </div>
+                </div>
+                <p className="mt-2 text-2xl font-black text-slate-900">{metaTotalCount}</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMetaFilterStatus(metaFilterStatus === "New" ? "All" : "New");
+                }}
+                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                  metaFilterStatus === "New"
+                    ? "border-blue-500 ring-2 ring-blue-500/30 bg-blue-50/30"
+                    : "border-slate-200/90 hover:border-blue-300"
+                }`}
+                title="Click to filter by New status"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                  <span>New Leads</span>
+                  <span className="h-2.5 w-2.5 rounded-full bg-blue-500 shadow-xs" />
+                </div>
+                <p className="mt-2 text-2xl font-black text-blue-600">{metaNewCount}</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMetaFilterStatus(metaFilterStatus === "Contacted" ? "All" : "Contacted");
+                }}
+                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                  metaFilterStatus === "Contacted"
+                    ? "border-amber-500 ring-2 ring-amber-500/30 bg-amber-50/30"
+                    : "border-slate-200/90 hover:border-amber-300"
+                }`}
+                title="Click to filter by Contacted status"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                  <span>Contacted</span>
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500 shadow-xs" />
+                </div>
+                <p className="mt-2 text-2xl font-black text-amber-600">{metaContactedCount}</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMetaFilterStatus(metaFilterStatus === "In Progress" ? "All" : "In Progress");
+                }}
+                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                  metaFilterStatus === "In Progress"
+                    ? "border-orange-500 ring-2 ring-orange-500/30 bg-orange-50/30"
+                    : "border-slate-200/90 hover:border-orange-300"
+                }`}
+                title="Click to filter by In Progress status"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                  <span>In Progress</span>
+                  <span className="h-2.5 w-2.5 rounded-full bg-orange-500 shadow-xs" />
+                </div>
+                <p className="mt-2 text-2xl font-black text-orange-600">{metaInProgressCount}</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMetaFilterStatus(metaFilterStatus === "Hold" ? "All" : "Hold");
+                }}
+                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                  metaFilterStatus === "Hold"
+                    ? "border-slate-500 ring-2 ring-slate-500/30 bg-slate-100/50"
+                    : "border-slate-200/90 hover:border-slate-300"
+                }`}
+                title="Click to filter by On Hold status"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                  <span>On Hold</span>
+                  <span className="h-2.5 w-2.5 rounded-full bg-gray-400 shadow-xs" />
+                </div>
+                <p className="mt-2 text-2xl font-black text-slate-700">{metaHoldCount}</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMetaFilterStatus(metaFilterStatus === "Closed" ? "All" : "Closed");
+                }}
+                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                  metaFilterStatus === "Closed"
+                    ? "border-emerald-500 ring-2 ring-emerald-500/30 bg-emerald-50/30"
+                    : "border-slate-200/90 hover:border-emerald-300"
+                }`}
+                title="Click to filter by Closed status"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                  <span>Closed</span>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                </div>
+                <p className="mt-2 text-2xl font-black text-emerald-600">{metaClosedCount}</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMetaFilterProjectStatus(metaFilterProjectStatus === "Delivered" ? "All" : "Delivered");
+                }}
+                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer col-span-2 sm:col-span-1 ${
+                  metaFilterProjectStatus === "Delivered"
+                    ? "border-purple-500 ring-2 ring-purple-500/30 bg-purple-50/30"
+                    : "border-slate-200/90 hover:border-purple-300"
+                }`}
+                title="Click to filter by Delivered projects"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                  <span>Delivered</span>
+                  <Package className="h-4 w-4 text-purple-500" />
+                </div>
+                <p className="mt-2 text-2xl font-black text-purple-600">{metaDeliveredCount}</p>
+              </button>
+            </div>
+
+            {/* Actions & Filters Bar */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs space-y-3.5 transition-colors">
+              {/* Top Row: Search + Quick Action Buttons */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative flex-1 min-w-0 max-w-lg">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search Meta leads by Name, Business, Phone, Notes..."
+                    value={metaSearchTerm}
+                    onChange={(e) => setMetaSearchTerm(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleApplyMetaFilters();
+                    }}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/60 py-2 pl-9 pr-3 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {metaSearchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setMetaSearchTerm("")}
+                      className="absolute right-2.5 top-2.5 text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => setShowAddLeadModal(true)}
+                    className="flex items-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-500/10 px-3.5 py-2 text-xs font-bold text-blue-700 hover:bg-blue-500/20 transition-all cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>+ Add Meta Lead</span>
+                  </button>
+
+                  <button
+                    onClick={() => exportMetaCSV(false)}
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                  >
+                    <Download className="h-4 w-4 text-blue-500" />
+                    <span>Export CSV</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Bottom Row: Detailed Filters Grid */}
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
+                {/* Meta Source Filter */}
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px] font-semibold text-slate-400">Meta Channel:</span>
+                  <select
+                    value={metaFilterSource}
+                    onChange={(e) => setMetaFilterSource(e.target.value)}
+                    className="rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none cursor-pointer"
+                  >
+                    <option value="All">All Meta Channels</option>
+                    <option value="Meta Ads">Meta Ads</option>
+                    <option value="Facebook">Facebook Ads</option>
+                    <option value="Instagram">Instagram Ads</option>
+                  </select>
+                </div>
+
+                {/* Lead Status Filter */}
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px] font-semibold text-slate-400">Status:</span>
+                  <select
+                    value={metaFilterStatus}
+                    onChange={(e) => setMetaFilterStatus(e.target.value)}
+                    className="rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none cursor-pointer"
+                  >
+                    <option value="All">All Lead Statuses</option>
+                    <option value="New">New</option>
+                    <option value="Contacted">Contacted</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Hold">Hold</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+                </div>
+
+                {/* Project Status Filter */}
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px] font-semibold text-slate-400">Project:</span>
+                  <select
+                    value={metaFilterProjectStatus}
+                    onChange={(e) => setMetaFilterProjectStatus(e.target.value)}
+                    className="rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none cursor-pointer"
+                  >
+                    <option value="All">All Project Statuses</option>
+                    <option value="Hold">Hold</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Delivered">Delivered</option>
+                  </select>
+                </div>
+
+                {/* Video Type Filter */}
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px] font-semibold text-slate-400">Video Type:</span>
+                  <select
+                    value={metaFilterVideoType}
+                    onChange={(e) => setMetaFilterVideoType(e.target.value)}
+                    className="rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none cursor-pointer"
+                  >
+                    <option value="All">All Video Types</option>
+                    {VIDEO_TYPES.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Location Filter */}
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px] font-semibold text-slate-400">Location:</span>
+                  <select
+                    value={metaFilterLocation}
+                    onChange={(e) => setMetaFilterLocation(e.target.value)}
+                    className="rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none cursor-pointer"
+                  >
+                    <option value="">All Locations</option>
+                    {uniqueLocations.map((loc) => (
+                      <option key={loc} value={loc}>{loc}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Lead Closed By Filter */}
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px] font-semibold text-slate-400">Closed By:</span>
+                  <select
+                    value={metaFilterClosedBy}
+                    onChange={(e) => setMetaFilterClosedBy(e.target.value)}
+                    className="rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none cursor-pointer"
+                  >
+                    <option value="All">All Admins</option>
+                    <option value="Super Admin">Super Admin</option>
+                    <option value="Admin">Admin</option>
+                    {uniqueClosedByAdmins.map((adm) => (
+                      <option key={adm} value={adm}>{adm}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Date Filter Selection */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <select
+                    value={metaFilterDateType}
+                    onChange={(e) => setMetaFilterDateType(e.target.value as any)}
+                    className="rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none cursor-pointer"
+                  >
+                    <option value="created_at">Created Date</option>
+                    <option value="closed_at">Closed Date</option>
+                    <option value="delivery_date">Delivery Date</option>
+                  </select>
+
+                  <input
+                    type="date"
+                    value={metaFromDate}
+                    onChange={(e) => setMetaFromDate(e.target.value)}
+                    className="rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1 text-xs text-slate-900 focus:outline-none"
+                    title="From Date"
+                  />
+                  <span className="text-slate-400">to</span>
+                  <input
+                    type="date"
+                    value={metaToDate}
+                    onChange={(e) => setMetaToDate(e.target.value)}
+                    className="rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1 text-xs text-slate-900 focus:outline-none"
+                    title="To Date"
+                  />
+                </div>
+
+                {/* Apply Filter and Clear Filter Buttons */}
+                <div className="flex items-center gap-1.5 ml-auto">
+                  <button
+                    onClick={handleApplyMetaFilters}
+                    className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition-all cursor-pointer"
+                    title="Apply Filters"
+                  >
+                    <Filter className="h-3.5 w-3.5" />
+                    <span>Apply Filter</span>
+                  </button>
+
+                  <button
+                    onClick={handleClearMetaFilters}
+                    className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                    title="Clear Filters"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5 text-slate-400" />
+                    <span>Clear Filter</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Bulk Actions Bar for Meta Leads */}
+            {selectedMetaLeadIds.size > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-500/40 bg-blue-50 p-3 shadow-md">
+                <div className="flex items-center gap-2 text-xs font-bold text-blue-900">
+                  <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                  <span>{selectedMetaLeadIds.size} Meta lead(s) selected</span>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap text-xs">
+                  <span className="text-slate-500">Bulk Status:</span>
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) handleBulkMetaStatusChange(e.target.value as LeadStatus);
+                    }}
+                    defaultValue=""
+                    className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold cursor-pointer"
+                  >
+                    <option value="" disabled>Change Status to...</option>
+                    <option value="New">New</option>
+                    <option value="Contacted">Contacted</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Hold">Hold</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+
+                  <button
+                    onClick={() => exportMetaCSV(true)}
+                    className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-bold text-white hover:bg-blue-700 cursor-pointer"
+                  >
+                    Export Selected
+                  </button>
+
+                  <button
+                    onClick={handleBulkMetaDelete}
+                    className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1 text-xs font-bold text-red-600 hover:bg-red-500/20 cursor-pointer"
+                  >
+                    Move to Recycle Bin
+                  </button>
+
+                  <button
+                    onClick={() => setSelectedMetaLeadIds(new Set())}
+                    className="text-xs text-slate-500 hover:underline cursor-pointer"
+                  >
+                    Deselect All
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Main Meta Leads Table */}
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-colors">
+              {/* Desktop Table with Horizontal Scroll */}
+              <div className="hidden md:block overflow-x-auto w-full">
+                <table className="w-full min-w-[1200px] text-left text-xs">
+                  <thead className="border-b border-slate-200 bg-slate-50 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
+                    <tr>
+                      <th className="px-4 py-3.5">
+                        <input
+                          type="checkbox"
+                          checked={filteredMetaLeads.length > 0 && selectedMetaLeadIds.size === filteredMetaLeads.length}
+                          onChange={(e) => handleSelectAllMetaLeads(e.target.checked)}
+                          className="rounded border-slate-300 text-blue-600 cursor-pointer"
+                        />
+                      </th>
+                      <th className="px-4 py-3.5">Channel</th>
+                      <th className="px-4 py-3.5">Timestamp</th>
+                      <th className="px-4 py-3.5">Client & Business</th>
+                      <th className="px-4 py-3.5">WhatsApp / Phone</th>
+                      <th className="px-4 py-3.5">Video Scope</th>
+                      <th className="px-4 py-3.5">Lead Status</th>
+                      <th className="px-4 py-3.5">Project Status</th>
+                      <th className="px-4 py-3.5">Notes</th>
+                      <th className="px-4 py-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredMetaLeads.length === 0 ? (
+                      <tr>
+                        <td colSpan={10} className="py-16 text-center text-xs text-slate-500">
+                          <Megaphone className="mx-auto h-8 w-8 text-slate-400 mb-2" />
+                          <p className="font-bold text-sm">No Meta leads match current filter criteria</p>
+                          <p className="mt-1 text-slate-400">Incoming leads from Meta Ads, Instagram & Facebook forms will appear here.</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredMetaLeads.map((lead) => {
+                        const isSelected = selectedMetaLeadIds.has(lead.id);
+                        const isNewlyArrived = highlightedLeadIds.has(lead.id);
+
+                        return (
+                          <tr
+                            key={lead.id}
+                            className={`transition-colors hover:bg-slate-50/50 ${
+                              isSelected ? "bg-blue-50/60" : ""
+                            } ${isNewlyArrived ? "bg-blue-100 ring-1 ring-blue-500" : ""}`}
+                          >
+                            {/* Checkbox */}
+                            <td className="px-4 py-3.5">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleToggleSelectMetaLead(lead.id)}
+                                className="rounded border-slate-300 text-blue-600 cursor-pointer"
+                              />
+                            </td>
+
+                            {/* Source */}
+                            <td className="whitespace-nowrap px-4 py-3.5">
+                              <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-bold ${getLeadSourceBadgeClass(lead.source)}`}>
+                                {getLeadSourceDisplay(lead.source)}
+                              </span>
+                            </td>
+
+                            {/* Timestamp */}
+                            <td className="whitespace-nowrap px-4 py-3.5 text-xs text-slate-500">
+                              {isToday(lead.created_at) ? (
+                                <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/40 bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-600">
+                                  <Calendar className="h-3 w-3" />
+                                  Today, {new Date(lead.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                </span>
+                              ) : (
+                                <div>
+                                  <div>{new Date(lead.created_at).toLocaleDateString()}</div>
+                                  <div className="text-[10px] text-slate-400">
+                                    {new Date(lead.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                  </div>
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Client & Business */}
+                            <td className="px-4 py-3.5">
+                              <button
+                                type="button"
+                                onClick={() => setViewLeadDetails(lead)}
+                                className="text-left font-bold text-sm flex items-center gap-1.5 hover:text-blue-600 transition-colors cursor-pointer"
+                                title="Click to view full lead details"
+                              >
+                                <span>{lead.name}</span>
+                                {isNewlyArrived && (
+                                  <span className="rounded bg-blue-600 px-1 py-0.2 text-[8px] font-black text-white animate-pulse">
+                                    JUST NOW
+                                  </span>
+                                )}
+                              </button>
+                              <div className="text-xs text-slate-500 font-medium">
+                                {lead.business}
+                                {lead.location ? ` · ${lead.location}` : ""}
+                              </div>
+                              {lead.email && <div className="text-[11px] text-slate-400 font-mono">{lead.email}</div>}
+                            </td>
+
+                            {/* WhatsApp / Phone */}
+                            <td className="whitespace-nowrap px-4 py-3.5">
+                              <a
+                                href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
+                                className="font-mono text-xs font-semibold hover:text-blue-600 hover:underline flex items-center gap-1"
+                              >
+                                <Phone className="h-3 w-3 text-slate-400" />
+                                <span>{lead.phone}</span>
+                              </a>
+                            </td>
+
+                            {/* Video Scope */}
+                            <td className="px-4 py-3.5">
+                              <div className="font-semibold text-xs flex items-center gap-1">
+                                <Video className="h-3 w-3 text-blue-500" />
+                                <span>{lead.video_type}</span>
+                                {lead.video_quantity && (
+                                  <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[10px] font-bold">
+                                    x{lead.video_quantity}
+                                  </span>
+                                )}
+                              </div>
+                              {(lead.requirement || lead.additional) && (
+                                <p className="mt-0.5 text-[11px] text-slate-400 line-clamp-1 max-w-xs" title={lead.requirement || lead.additional}>
+                                  {lead.requirement || lead.additional}
+                                </p>
+                              )}
+                            </td>
+
+                            {/* Lead Status Dropdown */}
+                            <td className="whitespace-nowrap px-4 py-3.5">
+                              <select
+                                value={lead.status}
+                                onChange={(e) => handleUpdateLeadStatus(lead, e.target.value as LeadStatus)}
+                                className={`rounded-lg border px-2.5 py-1 text-xs font-bold cursor-pointer focus:outline-none ${getLeadStatusBadge(lead.status)}`}
+                              >
+                                <option value="New">New</option>
+                                <option value="Contacted">Contacted</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Hold">Hold</option>
+                                <option value="Closed">Closed</option>
+                              </select>
+                              {lead.closed_by && lead.status === "Closed" && (
+                                <div className="text-[10px] text-emerald-600 mt-0.5">
+                                  By: {lead.closed_by}
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Project Status Dropdown */}
+                            <td className="whitespace-nowrap px-4 py-3.5">
+                              <select
+                                value={lead.project_status || "In Progress"}
+                                onChange={(e) => handleUpdateProjectStatus(lead, e.target.value as ProjectStatus)}
+                                className={`rounded-lg border px-2.5 py-1 text-xs font-bold cursor-pointer focus:outline-none ${getProjectStatusBadge(lead.project_status)}`}
+                              >
+                                <option value="Hold">Hold</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Delivered">Delivered</option>
+                              </select>
+                              {lead.delivery_date && (
+                                <div className="text-[10px] text-slate-400 mt-0.5">
+                                  Due: {lead.delivery_date}
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Notes Snippet */}
+                            <td className="px-4 py-3.5 max-w-[150px]">
+                              {lead.notes ? (
+                                <p className="text-xs text-slate-600 line-clamp-2" title={lead.notes}>
+                                  {lead.notes}
+                                </p>
+                              ) : (
+                                <span className="text-[11px] text-slate-400 italic">No notes</span>
+                              )}
+                            </td>
+
+                            {/* Actions */}
+                            <td className="whitespace-nowrap px-4 py-3.5 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {/* 1-Click WhatsApp */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenWhatsApp(lead)}
+                                  className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-1.5 text-emerald-600 hover:bg-emerald-500/20 transition-all cursor-pointer"
+                                  title="Chat on WhatsApp"
+                                >
+                                  <MessageSquare className="h-3.5 w-3.5" />
+                                </button>
+
+                                {/* View Details */}
+                                <button
+                                  type="button"
+                                  onClick={() => setViewLeadDetails(lead)}
+                                  className="rounded-lg border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 p-1.5 transition-colors cursor-pointer"
+                                  title="View Full Profile"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </button>
+
+                                {/* Edit Lead */}
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingLead(lead)}
+                                  className="rounded-lg border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 p-1.5 transition-colors cursor-pointer"
+                                  title="Edit Lead"
+                                >
+                                  <Edit className="h-3.5 w-3.5" />
+                                </button>
+
+                                {/* Delete / Recycle Bin */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleSoftDeleteLead(lead.id)}
+                                  className="rounded-lg border border-red-200 bg-red-50 p-1.5 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
+                                  title="Move to Recycle Bin"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards View */}
+              <div className="divide-y divide-slate-100 md:hidden">
+                {filteredMetaLeads.length === 0 ? (
+                  <div className="py-12 text-center text-xs text-slate-500">
+                    <Megaphone className="mx-auto h-8 w-8 text-slate-400 mb-2" />
+                    <p className="font-bold text-sm">No Meta leads match filters</p>
+                  </div>
+                ) : (
+                  filteredMetaLeads.map((lead) => (
+                    <div key={lead.id} className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={selectedMetaLeadIds.has(lead.id)}
+                              onChange={() => handleToggleSelectMetaLead(lead.id)}
+                              className="rounded border-slate-300 text-blue-600 cursor-pointer"
+                            />
+                            <h4 className="font-bold text-sm text-slate-900">{lead.name}</h4>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-0.5">{lead.business}</p>
+                        </div>
+                        <span className={`shrink-0 rounded border px-2 py-0.5 text-[10px] font-bold ${getLeadSourceBadgeClass(lead.source)}`}>
+                          {getLeadSourceDisplay(lead.source)}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Lead Status:</span>
+                          <select
+                            value={lead.status}
+                            onChange={(e) => handleUpdateLeadStatus(lead, e.target.value as LeadStatus)}
+                            className={`w-full mt-1 rounded-lg border px-2 py-1 text-xs font-bold ${getLeadStatusBadge(lead.status)}`}
+                          >
+                            <option value="New">New</option>
+                            <option value="Contacted">Contacted</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Hold">Hold</option>
+                            <option value="Closed">Closed</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Project Status:</span>
+                          <select
+                            value={lead.project_status || "In Progress"}
+                            onChange={(e) => handleUpdateProjectStatus(lead, e.target.value as ProjectStatus)}
+                            className={`w-full mt-1 rounded-lg border px-2 py-1 text-xs font-bold ${getProjectStatusBadge(lead.project_status)}`}
+                          >
+                            <option value="Hold">Hold</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Delivered">Delivered</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                        <a
+                          href={`tel:${lead.phone}`}
+                          className="text-xs font-mono font-semibold text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          <Phone className="h-3 w-3" />
+                          <span>{lead.phone}</span>
+                        </a>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenWhatsApp(lead)}
+                            className="rounded-lg bg-emerald-600 p-1.5 text-white hover:bg-emerald-700 transition-colors cursor-pointer"
+                            title="WhatsApp"
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setViewLeadDetails(lead)}
+                            className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
+                          >
+                            Details
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingLead(lead)}
+                            className="rounded-lg border border-slate-200 p-1.5 hover:bg-slate-100 transition-colors cursor-pointer"
+                            title="Edit"
+                          >
+                            <Edit className="h-3.5 w-3.5 text-slate-600" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSoftDeleteLead(lead.id)}
+                            className="rounded-lg border border-red-200 bg-red-50 p-1.5 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
                             title="Delete"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
