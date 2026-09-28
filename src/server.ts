@@ -174,7 +174,7 @@ export default {
               scheduledEvent.location?.join_url ||
               payload.meeting_link ||
               payload.join_url ||
-              "https://calendly.com/quickuppaistudio";
+              "https://calendly.com/qsaistudio/quickupp-ai-studio-30-min-strategy-call";
 
             const parsedDate = new Date(startTime);
             const meetingDate = !isNaN(parsedDate.getTime())
@@ -203,28 +203,6 @@ export default {
               notes: `Received via Calendly Webhook (${eventType})`,
             });
 
-            const lead = await saveLead({
-              source: "USA Website - Calendly",
-              name: clientName,
-              email: clientEmail,
-              phone: clientPhone || "N/A",
-              videoType: eventTitle,
-              business: "Inbound Calendly Strategy Call",
-              status: status === "cancelled" ? "Hold" : "New",
-              notes: `Calendly booking on ${meetingDate} at ${meetingTime}. Meeting Link: ${joinUrl}`,
-              meetingDate: meetingDate,
-              meetingTime: meetingTime,
-              meetingLink: joinUrl,
-            });
-
-            await addActivityLog({
-              lead_id: lead.id,
-              action: `Calendly Meeting (${status})`,
-              details: `Strategy call with ${clientName} on ${meetingDate} at ${meetingTime}`,
-              performed_by: "Calendly Webhook",
-              user_role: "system",
-            });
-
             await saveCRMNotification({
               type: status === "cancelled" ? "meeting_cancelled" : "meeting_new",
               title: status === "cancelled" ? "Meeting Cancelled" : "New Calendly Meeting Booked",
@@ -234,7 +212,7 @@ export default {
             });
 
             return new Response(
-              JSON.stringify({ success: true, meeting_id: meeting.id, lead_id: lead.id }),
+              JSON.stringify({ success: true, meeting_id: meeting.id }),
               {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
