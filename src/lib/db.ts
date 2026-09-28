@@ -393,7 +393,27 @@ export async function saveLead(data: {
     const cleanEmail = data.email ? data.email.trim().toLowerCase() : "";
     const metaId = data.metaLeadId?.trim();
 
+    // Leads are shared with the India site in the same database. Only merge a
+    // duplicate into a lead from the same region, otherwise a USA submission gets
+    // folded into an India lead that the USA admin never shows.
+    const isIndiaRegion = (src?: string, loc?: string, phone?: string) => {
+      const s = (src || "").toLowerCase().trim();
+      const l = (loc || "").toLowerCase().trim();
+      const p = (phone || "").replace(/\D/g, "");
+      return (
+        s.includes("india") ||
+        s.includes("in -") ||
+        s === "contact form" ||
+        s === "popup modal" ||
+        /\bindia\b/.test(l) ||
+        l.includes("bharat") ||
+        (p.startsWith("91") && p.length === 12 && !(phone || "").trim().startsWith("+1"))
+      );
+    };
+    const newIsIndia = isIndiaRegion(data.source, data.location, data.phone);
+
     const matchedLead = existingLeads.find((l) => {
+      if (isIndiaRegion(l.source, l.location, l.phone) !== newIsIndia) return false;
       if (metaId && l.meta_lead_id === metaId) return true;
       if (cleanEmail && l.email && l.email.trim().toLowerCase() === cleanEmail) return true;
       if (cleanDigits.length >= 10 && l.phone) {
@@ -554,7 +574,9 @@ export async function saveLead(data: {
     return res.rows[0];
   }
 
-  return record;
+  // Nothing was persisted: fail loudly instead of returning an unsaved lead,
+  // which would create notifications/activity logs for a lead that doesn't exist.
+  throw new Error("Lead could not be saved: no database connection available");
 }
 
 export async function getLeads(includeDeleted = false): Promise<Lead[]> {

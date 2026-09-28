@@ -89,8 +89,10 @@ export const submitLeadServerFn = createServerFn({ method: "POST" })
       try {
         await addActivityLogInDb({
           lead_id: saved.id,
-          action: "Lead Submitted",
-          details: `New lead received from ${saved.source} for ${saved.name} (${saved.phone})`,
+          action: saved.is_duplicate ? "Duplicate Lead Merged" : "Lead Submitted",
+          details: saved.is_duplicate
+            ? `Repeat submission from ${normalizedData.source} merged into existing lead ${saved.name} (${saved.phone})`
+            : `New lead received from ${saved.source} for ${saved.name} (${saved.phone})`,
           performed_by: "System / Website",
           user_role: "system",
         });

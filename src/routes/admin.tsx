@@ -2084,7 +2084,7 @@ function AdminPage() {
       s.includes("in -") ||
       s === "contact form" ||
       s === "popup modal" ||
-      loc.includes("india") ||
+      /\bindia\b/.test(loc) ||
       loc.includes("bharat") ||
       (phone.startsWith("91") && phone.length === 12 && !lead.phone.startsWith("+1"))
     );
