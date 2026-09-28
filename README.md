@@ -142,7 +142,7 @@ An authenticated, mobile-responsive dashboard designed for real-time lead tracki
 - 🔄 **Lead Status Toggling:** Update leads to `New`, `Contacted`, `In Progress`, or `Closed` with real-time database sync.
 - 💬 **1-Click WhatsApp Client Reply:** Pre-fills client name and opens WhatsApp Web/App ready to send.
 - 📥 **CSV Export:** Download all filtered leads in CSV format for Excel, Google Sheets, or CRM imports.
-- 🔒 **Security Auto-Logout:** Continuously monitors admin activity. Automatically logs out after **5 minutes** of inactivity.
+- 🔒 **Security Auto-Logout:** Continuously monitors admin activity. Automatically logs out after **10 minutes** of inactivity.
 
 ---
 
@@ -297,7 +297,7 @@ npm start
 ## 🛡 Security, Performance & SEO Optimizations
 
 - **Zero Hardcoded Secrets:** All database credentials, tokens, and keys are isolated in environment variables.
-- **Session Auto-Timeout:** Inactivity listener logs out admin sessions automatically after 5 minutes.
+- **Session Auto-Timeout:** Inactivity listener logs out admin sessions automatically after 10 minutes.
 - **Faststart Media Streaming:** All hero and showcase MP4 videos have their `moov` atom located at the beginning of the file for instant buffering.
 - **Semantic SEO Structure:** Complete semantic `<h1>`, descriptive `alt` tags, and OpenGraph/Twitter card metadata.
 - **Core Web Vitals Optimized:** Hero brand assets use `fetchPriority="high"` and `loading="eager"` for sub-second Largest Contentful Paint (LCP).
