@@ -44,6 +44,7 @@ import {
   Trash,
   Trash2,
   TrendingUp,
+  User,
   UserCheck,
   UserPlus,
   Users,
@@ -96,6 +97,13 @@ import {
 } from "@/lib/paypal-actions";
 
 export const Route = createFileRoute("/admin")({
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      tab: typeof search.tab === "string" ? search.tab : undefined,
+      leadId: typeof search.leadId === "string" ? search.leadId : undefined,
+      lead: typeof search.lead === "string" ? search.lead : undefined,
+    };
+  },
   head: () => ({
     meta: [{ title: "CRM & Lead Management Portal | Quickupp AI Studio" }],
   }),
@@ -586,6 +594,22 @@ function AdminPage() {
       }
     }
   }, []);
+
+  const searchParams = Route.useSearch();
+
+  // URL search params sync (e.g. ?leadId=... or ?tab=...)
+  useEffect(() => {
+    const targetLeadId = searchParams.leadId || searchParams.lead;
+    if (targetLeadId && leads.length > 0) {
+      const found = leads.find((l) => l.id === targetLeadId);
+      if (found) {
+        setViewLeadDetails(found);
+      }
+    }
+    if (searchParams.tab && searchParams.tab !== activeTab) {
+      setActiveTab(searchParams.tab as TabType);
+    }
+  }, [searchParams.leadId, searchParams.lead, searchParams.tab, leads]);
 
   // Automatic Tab Guard: Ensure standard Admin is never stranded on a Super Admin-only tab
   useEffect(() => {
