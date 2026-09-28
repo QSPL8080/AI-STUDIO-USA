@@ -2904,6 +2904,7 @@ function AdminPage() {
             </button>
             )}
 
+            {/* Calendly tab temporarily disabled
             <button
               onClick={() => { setActiveTab("calendly"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
@@ -2920,7 +2921,7 @@ function AdminPage() {
               }`}>
                 {meetings.length}
               </span>
-            </button>
+            </button> */}
 
             <button
               onClick={() => { setActiveTab("activity"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
@@ -3133,6 +3134,7 @@ function AdminPage() {
               </div>
 
               {/* Calendly Meetings */}
+              {/* Calendly tab temporarily disabled
               <div
                 onClick={() => setActiveTab("calendly")}
                 className="rounded-2xl border border-indigo-200/90 bg-white p-4 shadow-xs hover:border-indigo-400 hover:shadow-md transition-all cursor-pointer"
@@ -3145,7 +3147,7 @@ function AdminPage() {
                 </div>
                 <p className="mt-2 text-2xl font-black text-indigo-600">{meetings.length}</p>
                 <p className="mt-1 text-[11px] text-slate-500">USA Calendly</p>
-              </div>
+              </div> */}
 
               {/* Closed Conversion Rate */}
               <div
