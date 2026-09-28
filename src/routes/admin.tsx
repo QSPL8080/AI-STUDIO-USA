@@ -6833,7 +6833,7 @@ function AdminPage() {
               <div className="rounded-xl border p-3 bg-slate-50 dark:bg-slate-900/50 space-y-1">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Lead Closed By:</span>
-                  <span className="font-bold">{session.name}</span>
+                  <span className="font-bold">{session?.name || "Admin"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Closed Timestamp:</span>
