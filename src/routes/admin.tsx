@@ -107,6 +107,7 @@ import {
   deleteOrderServerFn,
   broadcastOrderEvent,
   verifyPaymentPinServerFn,
+  resendOrderReceiptServerFn,
 } from "@/lib/paypal-actions";
 
 export const Route = createFileRoute("/admin")({
@@ -755,6 +756,7 @@ function AdminPage() {
   // Real-time Sync & Notification State
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
   const [refreshCountdown, setRefreshCountdown] = useState<number>(10);
+  const [isResendingReceipt, setIsResendingReceipt] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     return localStorage.getItem("ai_studio_sound_enabled") !== "false";
@@ -9344,7 +9346,34 @@ function AdminPage() {
               )}
             </div>
 
-            <div className="flex items-center justify-end pt-2">
+            <div className="flex items-center justify-end gap-2 pt-2">
+              {selectedOrderDetails.payment_status === "COMPLETED" && (
+                <button
+                  type="button"
+                  disabled={isResendingReceipt}
+                  onClick={async () => {
+                    setIsResendingReceipt(true);
+                    try {
+                      const res = await resendOrderReceiptServerFn({
+                        data: { orderId: selectedOrderDetails.id, performedBy: session?.name || "Admin" },
+                      });
+                      showToast(
+                        res.success
+                          ? `Receipt + PDF invoice emailed to ${selectedOrderDetails.customer_email}`
+                          : `Receipt email failed: ${res.error || "SMTP error"}`
+                      );
+                      fetchLogsList();
+                    } catch {
+                      showToast("Receipt email failed. Please try again.");
+                    } finally {
+                      setIsResendingReceipt(false);
+                    }
+                  }}
+                  className="rounded-xl border border-purple-300 bg-white px-4 py-2 text-xs font-bold text-purple-700 hover:bg-purple-50 disabled:opacity-50 cursor-pointer"
+                >
+                  {isResendingReceipt ? "Sending..." : "Resend Receipt Email"}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setSelectedOrderDetails(null)}

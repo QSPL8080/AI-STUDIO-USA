@@ -14,11 +14,51 @@ import {
   updateOrderStatus as updateOrderStatusInDb,
   deleteOrder as deleteOrderFromDb,
   saveCRMNotification as saveCRMNotificationInDb,
+  addActivityLog as addActivityLogInDb,
   type Order,
   type PaymentStatus,
 } from "./db";
 import { sendPaymentReceiptEmail } from "./email";
 import { generateInvoicePdfBuffer } from "./pdf-receipt";
+
+/**
+ * Sends the customer's payment receipt (with PDF) and records the outcome in the
+ * Activity History, plus a CRM notification if it failed, so a missing receipt
+ * is never silent.
+ */
+async function sendReceiptAndLog(
+  payload: Parameters<typeof sendPaymentReceiptEmail>[0],
+  context: { orderRef: string; performedBy?: string }
+): Promise<{ success: boolean; error?: string }> {
+  let result: { success: boolean; error?: string };
+  try {
+    result = await sendPaymentReceiptEmail(payload);
+  } catch (err: any) {
+    result = { success: false, error: err?.message || "Unknown error" };
+  }
+  try {
+    await addActivityLogInDb({
+      action: result.success ? "Payment Receipt Emailed" : "Payment Receipt Email FAILED",
+      details: result.success
+        ? `Receipt + PDF invoice sent to ${payload.customerEmail} for ${context.orderRef} ($${payload.amount.toFixed(2)})`
+        : `Could not email receipt to ${payload.customerEmail} for ${context.orderRef}: ${result.error || "SMTP dispatch failed"}`,
+      performed_by: context.performedBy || "System / Payments",
+      user_role: "system",
+    });
+  } catch {}
+  if (!result.success) {
+    try {
+      await saveCRMNotificationInDb({
+        type: "order_payment",
+        title: "Payment Receipt Email Failed",
+        message: `Receipt for ${context.orderRef} could not be emailed to ${payload.customerEmail}. Open the order and use "Resend Receipt Email".`,
+        entity_id: context.orderRef,
+        actor: "System",
+      });
+    } catch {}
+  }
+  return result;
+}
 
 /**
  * Public configuration helper for client-side PayPal Script initialization.
@@ -146,38 +186,67 @@ export const capturePayPalOrderServerFn = createServerFn({ method: "POST" })
 
       const paymentStatus: PaymentStatus = isCompleted ? "COMPLETED" : "FAILED";
 
-      const updatedOrder = await updateOrderPaymentInDb({
+      let updatedOrder = await updateOrderPaymentInDb({
         paypalOrderId: data.orderId,
         paypalCaptureId: captureId,
         paymentStatus,
         paypalStatus: captureResult.status,
         rawDetails: JSON.stringify(captureResult),
       });
+      // If the update didn't return the row, load it so the receipt still goes out
+      if (!updatedOrder) {
+        try {
+          updatedOrder = await getOrderByAnyIdFromDb(data.orderId);
+        } catch {}
+      }
 
-      // Automated Payment Receipt Email Dispatch (Hostinger SMTP)
-      if (isCompleted && updatedOrder && updatedOrder.customer_email) {
-        sendPaymentReceiptEmail({
-          customerName: updatedOrder.customer_name,
-          customerEmail: updatedOrder.customer_email,
-          customerPhone: updatedOrder.customer_phone || undefined,
-          customerCompany: updatedOrder.customer_company || undefined,
-          orderId: data.orderId,
-          captureId,
-          itemName: updatedOrder.item_name,
-          amount: Number(updatedOrder.amount),
-          currency: updatedOrder.currency || "USD",
-          paymentMethod: "PayPal / Credit Card",
-        }).catch((err) => {
-          console.error("Automated payment receipt dispatch error:", err);
-        });
+      // Automated Payment Receipt Email Dispatch (Hostinger SMTP, Gmail backup)
+      if (isCompleted) {
+        const cap = captures?.[0];
+        const payerName = [captureResult.payer?.name?.given_name, captureResult.payer?.name?.surname]
+          .filter(Boolean)
+          .join(" ");
+        const receiptEmail = updatedOrder?.customer_email || captureResult.payer?.email_address || "";
+        const receiptAmount = updatedOrder ? Number(updatedOrder.amount) : Number(cap?.amount?.value || 0);
+        const customerName = updatedOrder?.customer_name || payerName || "Valued Client";
+        const itemName = updatedOrder?.item_name || "AI Video Service";
+
+        if (receiptEmail) {
+          // Not awaited so the customer sees the confirmation immediately;
+          // the outcome is logged to Activity History either way.
+          sendReceiptAndLog(
+            {
+              customerName,
+              customerEmail: receiptEmail,
+              customerPhone: updatedOrder?.customer_phone || undefined,
+              customerCompany: updatedOrder?.customer_company || undefined,
+              orderId: data.orderId,
+              captureId,
+              itemName,
+              amount: receiptAmount,
+              currency: updatedOrder?.currency || cap?.amount?.currency_code || "USD",
+              paymentMethod: "PayPal / Credit Card",
+            },
+            { orderRef: updatedOrder?.id || data.orderId }
+          ).catch((err) => console.error("Automated payment receipt dispatch error:", err));
+        } else {
+          try {
+            await addActivityLogInDb({
+              action: "Payment Receipt Email FAILED",
+              details: `No customer email found for PayPal order ${data.orderId}; receipt not sent`,
+              performed_by: "System / Payments",
+              user_role: "system",
+            });
+          } catch {}
+        }
 
         try {
           await saveCRMNotificationInDb({
             type: "order_payment",
             title: "New PayPal Payment Received",
-            message: `${updatedOrder.customer_name} completed payment of $${updatedOrder.amount} for ${updatedOrder.item_name}`,
-            entity_id: updatedOrder.id,
-            actor: updatedOrder.customer_name,
+            message: `${customerName} completed payment of $${receiptAmount.toFixed(2)} for ${itemName}`,
+            entity_id: updatedOrder?.id || data.orderId,
+            actor: customerName,
           });
         } catch {}
       }
@@ -190,6 +259,19 @@ export const capturePayPalOrderServerFn = createServerFn({ method: "POST" })
       };
     } catch (error: any) {
       console.error("Error capturing PayPal order:", error);
+      // A second capture of an already-paid order (e.g. from the confirmation page)
+      // must not overwrite COMPLETED with FAILED.
+      try {
+        const existing = await getOrderByAnyIdFromDb(data.orderId);
+        if (existing && existing.payment_status === "COMPLETED") {
+          return {
+            success: true,
+            status: "COMPLETED",
+            captureId: existing.paypal_capture_id || undefined,
+            order: existing,
+          };
+        }
+      } catch {}
       // Mark as failed in DB
       try {
         await updateOrderPaymentInDb({
@@ -403,3 +485,35 @@ export function broadcastOrderEvent(event: {
   }
 }
 
+/**
+ * Admin: re-send the payment receipt + PDF invoice for a completed order.
+ */
+export const resendOrderReceiptServerFn = createServerFn({ method: "POST" })
+  .validator((data: { orderId: string; performedBy?: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const order = await getOrderByAnyIdFromDb(data.orderId);
+      if (!order) return { success: false, error: "Order not found" };
+      if (order.payment_status !== "COMPLETED") {
+        return { success: false, error: "Receipts can only be sent for completed payments" };
+      }
+      if (!order.customer_email) return { success: false, error: "This order has no customer email" };
+      return await sendReceiptAndLog(
+        {
+          customerName: order.customer_name,
+          customerEmail: order.customer_email,
+          customerPhone: order.customer_phone || undefined,
+          customerCompany: order.customer_company || undefined,
+          orderId: order.paypal_order_id,
+          captureId: order.paypal_capture_id || undefined,
+          itemName: order.item_name,
+          amount: Number(order.amount),
+          currency: order.currency || "USD",
+          paymentMethod: "PayPal / Credit Card",
+        },
+        { orderRef: order.id, performedBy: data.performedBy || "Admin" }
+      );
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
