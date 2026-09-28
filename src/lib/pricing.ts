@@ -47,8 +47,8 @@ export const INDIVIDUAL_PRICING: Record<IndividualServiceId, PricingServiceMeta>
   "ai-ugc": {
     id: "ai-ugc",
     name: "AI UGC Video",
-    price: 1,
-    formattedPrice: "$1",
+    price: 79,
+    formattedPrice: "$79",
     description: "Authentic creator-style product review & demo reels",
   },
   "ai-cartoon": {
@@ -96,7 +96,7 @@ export const PACKAGE_TIERS: Record<PackageTierId, PackageTierMeta> = {
     videos: 1,
     delivery: "24 Hrs",
     prices: {
-      "ai-ugc": 1,
+      "ai-ugc": 79,
       "ai-avatar": 99,
       "ai-cartoon": 79,
       "hyper-realistic": 149,
