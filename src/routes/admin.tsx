@@ -575,20 +575,28 @@ function AdminPage() {
     }
   }, []);
 
-  // 5-Minute Inactivity Auto-Logout
+  // Automatic Tab Guard: Ensure standard Admin is never stranded on a Super Admin-only tab
+  useEffect(() => {
+    if (session && session.role !== "super_admin" && (activeTab === "users" || activeTab === "security")) {
+      setActiveTab("leads");
+    }
+  }, [session, activeTab]);
+
+  // 10-Minute Inactivity Auto-Logout for Super Admin & Admin
   useEffect(() => {
     if (!session) return;
     let timeoutId: NodeJS.Timeout;
 
     const resetInactivityTimer = () => {
       clearTimeout(timeoutId);
+      // 10 Minutes = 10 * 60 * 1000 = 600,000 ms
       timeoutId = setTimeout(() => {
         handleLogout();
-        setAuthError("You were logged out due to 5 minutes of inactivity for security.");
-      }, 300000);
+        setAuthError("You were automatically logged out due to 10 minutes of inactivity.");
+      }, 600000);
     };
 
-    const activityEvents = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"];
+    const activityEvents = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click", "wheel"];
     activityEvents.forEach((event) => {
       window.addEventListener(event, resetInactivityTimer, { passive: true });
     });
@@ -948,6 +956,7 @@ function AdminPage() {
       };
 
       setSession(userSession);
+      setActiveTab("leads");
       localStorage.setItem("ai_studio_auth_session", JSON.stringify(userSession));
 
       if (rememberMe) {
@@ -1013,6 +1022,14 @@ function AdminPage() {
 
   const handleLogout = () => {
     setSession(null);
+    setActiveTab("leads");
+    setSelectedLeadIds(new Set());
+    setMetaSelectedLeadIds(new Set());
+    setViewLeadDetails(null);
+    setEditLeadModal(null);
+    setShowAddLeadModal(null);
+    setShowAddAdminModal(false);
+    setShowSecurityModal(false);
     localStorage.removeItem("ai_studio_auth_session");
     const savedEmail = localStorage.getItem("ai_studio_remembered_email");
     if (savedEmail) {
