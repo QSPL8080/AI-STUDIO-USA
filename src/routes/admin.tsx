@@ -6948,7 +6948,7 @@ function AdminPage() {
                     </div>
 
                     <button
-                      onClick={fetchData}
+                      onClick={() => fetchAllData(false)}
                       disabled={isSyncing}
                       className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
                     >
