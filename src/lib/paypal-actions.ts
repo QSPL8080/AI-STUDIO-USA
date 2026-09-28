@@ -13,6 +13,7 @@ import {
   getOrderByAnyId as getOrderByAnyIdFromDb,
   updateOrderStatus as updateOrderStatusInDb,
   deleteOrder as deleteOrderFromDb,
+  saveCRMNotification as saveCRMNotificationInDb,
   type Order,
   type PaymentStatus,
 } from "./db";
@@ -169,6 +170,16 @@ export const capturePayPalOrderServerFn = createServerFn({ method: "POST" })
         }).catch((err) => {
           console.error("Automated payment receipt dispatch error:", err);
         });
+
+        try {
+          await saveCRMNotificationInDb({
+            type: "order_payment",
+            title: "New PayPal Payment Received",
+            message: `${updatedOrder.customer_name} completed payment of $${updatedOrder.amount} for ${updatedOrder.item_name}`,
+            entity_id: updatedOrder.id,
+            actor: updatedOrder.customer_name,
+          });
+        } catch {}
       }
 
       return {
