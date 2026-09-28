@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { generateInvoicePdfBuffer } from "./pdf-receipt.ts";
 import { getCompanyLogoBuffer } from "./receipt-assets.ts";
+import { getCrmSettings } from "./db.ts";
 
 export interface LeadEmailPayload {
   source: "Contact Form" | "Popup Modal" | "USA - Contact Form" | "USA - Popup Modal" | string;
@@ -16,10 +17,27 @@ export interface LeadEmailPayload {
   leadId?: string;
 }
 
-const NOTIFICATION_EMAIL = process.env.LEAD_NOTIFICATION_EMAIL || "qsaistudio@gmail.com";
+const DEFAULT_NOTIFICATION_EMAIL = process.env.LEAD_NOTIFICATION_EMAIL || "qsaistudio@gmail.com";
+
+/**
+ * Recipient for internal lead/payment alerts. Uses the "System Alert
+ * Notification Email" saved in Admin → CRM Settings; falls back to the
+ * LEAD_NOTIFICATION_EMAIL env var when nothing valid is saved.
+ */
+export async function resolveNotificationEmail(): Promise<string> {
+  try {
+    const settings = await getCrmSettings();
+    const saved = (settings["notification_email"] || "").trim();
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(saved)) return saved;
+  } catch (err) {
+    console.warn("Could not load CRM notification email, using default:", err);
+  }
+  return DEFAULT_NOTIFICATION_EMAIL;
+}
 const BACKUP_NOTIFICATION_EMAIL = "quickuppaistudio1@gmail.com";
 
 export async function sendLeadNotificationEmail(lead: LeadEmailPayload): Promise<{ success: boolean; error?: string }> {
+  const NOTIFICATION_EMAIL = await resolveNotificationEmail();
   const timestamp = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
   const subject = `🇺🇸 [Quickupp AI Studio USA] New Lead: ${lead.name} (${lead.videoType}) - ${lead.source}`;
 
@@ -442,6 +460,7 @@ export interface PaymentReceiptEmailPayload {
 export async function sendPaymentReceiptEmail(
   payload: PaymentReceiptEmailPayload
 ): Promise<{ success: boolean; error?: string }> {
+  const NOTIFICATION_EMAIL = await resolveNotificationEmail();
   const currency = payload.currency || "USD";
   const formattedAmount = `$${payload.amount.toFixed(2)} ${currency}`;
   const transactionId = payload.captureId || payload.orderId;

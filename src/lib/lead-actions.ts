@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import {
   saveLead as saveLeadToDb,
   getLeads as getLeadsFromDb,
+  getCrmSettings as getCrmSettingsFromDb,
+  saveCrmSettings as saveCrmSettingsToDb,
   updateLead as updateLeadInDb,
   updateLeadStatus as updateStatusInDb,
   updateProjectStatus as updateProjectStatusInDb,
@@ -1122,3 +1124,52 @@ export function broadcastLeadEvent(event: {
   }
 }
 
+// CRM Settings (shared across admins; notification email is used server-side)
+const DEFAULT_CRM_SETTINGS = {
+  platform_title: "AI STUDIO USA - Enterprise CRM",
+  notification_email: process.env["LEAD_NOTIFICATION_EMAIL"] || "qsaistudio@gmail.com",
+  sync_interval: "10",
+};
+
+export const fetchCrmSettingsServerFn = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const saved = await getCrmSettingsFromDb();
+    return { success: true, settings: { ...DEFAULT_CRM_SETTINGS, ...saved } };
+  } catch (error: any) {
+    return { success: false, error: error.message, settings: DEFAULT_CRM_SETTINGS };
+  }
+});
+
+export const saveCrmSettingsServerFn = createServerFn({ method: "POST" })
+  .validator((data: { platformTitle: string; notificationEmail: string; syncInterval: number; performedBy?: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const title = (data.platformTitle || "").trim().slice(0, 120);
+      const email = (data.notificationEmail || "").trim();
+      const interval = Number(data.syncInterval) === 20 ? 20 : 10;
+      if (!title) return { success: false, error: "Platform / CRM Title cannot be empty" };
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return { success: false, error: "Please enter a valid notification email address" };
+      }
+
+      const ok = await saveCrmSettingsToDb({
+        platform_title: title,
+        notification_email: email,
+        sync_interval: String(interval),
+      });
+      if (!ok) return { success: false, error: "Could not save settings to the database" };
+
+      try {
+        await addActivityLogInDb({
+          action: "CRM Settings Updated",
+          details: `CRM settings updated (title: "${title}", alert email: ${email}, auto-sync: ${interval}s)`,
+          performed_by: data.performedBy || "Super Admin",
+          user_role: "super_admin",
+        });
+      } catch {}
+
+      return { success: true, settings: { platform_title: title, notification_email: email, sync_interval: String(interval) } };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });

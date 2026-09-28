@@ -322,6 +322,12 @@ export async function initDb() {
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
           );
 
+          CREATE TABLE IF NOT EXISTS crm_settings (
+            key VARCHAR(64) PRIMARY KEY,
+            value TEXT,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
           CREATE TABLE IF NOT EXISTS orders (
             id VARCHAR(64) PRIMARY KEY,
             paypal_order_id VARCHAR(128) NOT NULL UNIQUE,
@@ -1731,4 +1737,69 @@ export async function deleteOrder(id: string): Promise<boolean> {
     console.error("PostgreSQL deleteOrder error:", error);
   }
   return false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CRM Settings (key/value, shared by all admins and read by the server, e.g.
+// for the notification email recipient)
+// ─────────────────────────────────────────────────────────────────────────────
+export async function getCrmSettings(): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  if (getSupabaseConfig()) {
+    try {
+      const rows = await supabaseRest("crm_settings?select=key,value");
+      if (Array.isArray(rows)) {
+        for (const r of rows) if (r?.key) out[r.key] = r.value ?? "";
+        return out;
+      }
+    } catch (err) {
+      console.warn("Supabase REST getCrmSettings fallback:", err);
+    }
+  }
+
+  await initDb();
+  try {
+    const pool = await getPool();
+    if (pool) {
+      const res = await pool.query("SELECT key, value FROM crm_settings");
+      for (const r of res.rows) out[r.key] = r.value ?? "";
+    }
+  } catch (error) {
+    console.error("PostgreSQL getCrmSettings error:", error);
+  }
+  return out;
+}
+
+export async function saveCrmSettings(settings: Record<string, string>): Promise<boolean> {
+  const rows = Object.entries(settings).map(([key, value]) => ({
+    key,
+    value,
+    updated_at: new Date().toISOString(),
+  }));
+  if (rows.length === 0) return true;
+
+  if (getSupabaseConfig()) {
+    try {
+      await supabaseRest("crm_settings?on_conflict=key", {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+        body: JSON.stringify(rows),
+      });
+      return true;
+    } catch (err) {
+      console.warn("Supabase REST saveCrmSettings fallback:", err);
+    }
+  }
+
+  await initDb();
+  const pool = await getPool();
+  if (!pool) return false;
+  for (const r of rows) {
+    await pool.query(
+      `INSERT INTO crm_settings (key, value, updated_at) VALUES ($1, $2, NOW())
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [r.key, r.value]
+    );
+  }
+  return true;
 }

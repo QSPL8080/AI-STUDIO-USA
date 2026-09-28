@@ -79,6 +79,8 @@ import {
   recordLoginLogServerFn,
   fetchLoginLogsServerFn,
   fetchAdminUsersServerFn,
+  fetchCrmSettingsServerFn,
+  saveCrmSettingsServerFn,
   createAdminUserServerFn,
   toggleAdminUserStatusServerFn,
   deleteAdminUserServerFn,
@@ -381,15 +383,9 @@ function AdminPage() {
     }
     return "info@quickuppaistudio.us";
   });
-  const [crmCurrency, setCrmCurrency] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("crm_currency") || "USD ($)";
-    }
-    return "USD ($)";
-  });
   const [crmSyncInterval, setCrmSyncInterval] = useState<number>(() => {
     if (typeof window !== "undefined") {
-      return Number(localStorage.getItem("crm_sync_interval")) || 10;
+      return Number(localStorage.getItem("crm_sync_interval")) === 20 ? 20 : 10;
     }
     return 10;
   });
@@ -740,6 +736,30 @@ function AdminPage() {
     } catch {}
   }, [leads]);
 
+  // Load shared CRM settings (title, alert email, auto-sync interval) from the server
+  useEffect(() => {
+    let cancelled = false;
+    fetchCrmSettingsServerFn()
+      .then((res) => {
+        if (cancelled || !res?.settings) return;
+        const st = res.settings as Record<string, string>;
+        if (st["platform_title"]) setCrmPlatformTitle(st["platform_title"]);
+        if (st["notification_email"]) setCrmNotificationEmail(st["notification_email"]);
+        setCrmSyncInterval(Number(st["sync_interval"]) === 20 ? 20 : 10);
+      })
+      .catch((err) => console.warn("Could not load CRM settings:", err));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Show the configured Platform / CRM Title in the browser tab
+  useEffect(() => {
+    if (typeof document !== "undefined" && crmPlatformTitle.trim()) {
+      document.title = crmPlatformTitle.trim();
+    }
+  }, [crmPlatformTitle]);
+
   // Automatic Tab Guard: Ensure standard Admin is never stranded on a Super Admin-only tab
   useEffect(() => {
     if (session && session.role !== "super_admin" && (activeTab === "users" || activeTab === "security" || activeTab === "settings")) {
@@ -897,28 +917,28 @@ function AdminPage() {
     }, 7000);
   };
 
-  // 10-Second Auto-Refresh & Cross-Tab Listeners
+  // Auto-Refresh (interval from CRM Settings: 10s or 20s) & Cross-Tab Listeners
   useEffect(() => {
     if (!session) return;
 
     const countdownTimer = setInterval(() => {
-      setRefreshCountdown((prev) => (prev <= 1 ? 10 : prev - 1));
+      setRefreshCountdown((prev) => (prev <= 1 ? crmSyncInterval : prev - 1));
     }, 1000);
 
     const intervalId = setInterval(() => {
       fetchAllData(true);
-      setRefreshCountdown(10);
-    }, 10000);
+      setRefreshCountdown(crmSyncInterval);
+    }, crmSyncInterval * 1000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         fetchAllData(true);
-        setRefreshCountdown(10);
+        setRefreshCountdown(crmSyncInterval);
       }
     };
     const handleFocus = () => {
       fetchAllData(true);
-      setRefreshCountdown(10);
+      setRefreshCountdown(crmSyncInterval);
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -969,7 +989,7 @@ function AdminPage() {
       if (bcOrders) bcOrders.close();
       window.removeEventListener("ai_studio_lead_event", handleCustomLeadEvent);
     };
-  }, [session, soundEnabled]);
+  }, [session, soundEnabled, crmSyncInterval]);
 
   // Data Fetching
   const fetchAllData = async (silent = false) => {
@@ -1957,11 +1977,31 @@ function AdminPage() {
     }
   };
 
-  const handleSaveCrmSettings = () => {
+  const handleSaveCrmSettings = async () => {
+    // Title, alert email and auto-sync interval are stored on the server so they
+    // apply to every admin and the server uses the email for lead/payment alerts.
+    try {
+      const res = await saveCrmSettingsServerFn({
+        data: {
+          platformTitle: crmPlatformTitle,
+          notificationEmail: crmNotificationEmail,
+          syncInterval: crmSyncInterval,
+          performedBy: session?.name || "Super Admin",
+        },
+      });
+      if (!res.success) {
+        showToast(res.error || "Failed to save CRM settings");
+        return;
+      }
+    } catch (err) {
+      console.error("Save CRM settings error:", err);
+      showToast("Failed to save CRM settings. Please try again.");
+      return;
+    }
     if (typeof window !== "undefined") {
       localStorage.setItem("crm_platform_title", crmPlatformTitle);
       localStorage.setItem("crm_notification_email", crmNotificationEmail);
-      localStorage.setItem("crm_currency", crmCurrency);
+      localStorage.removeItem("crm_currency");
       localStorage.setItem("crm_sync_interval", crmSyncInterval.toString());
       localStorage.setItem("crm_audio_enabled", crmAudioEnabled ? "true" : "false");
       localStorage.setItem("crm_accent_theme", crmAccentTheme);
@@ -2503,7 +2543,7 @@ function AdminPage() {
             </div>
             <h2 className="mt-4 text-2xl font-bold tracking-tight">CRM Admin Portal</h2>
             <p className={`mt-1 text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-              Quickupp AI Studio Lead & Client Management
+              {crmPlatformTitle}
             </p>
           </div>
 
@@ -2623,10 +2663,19 @@ function AdminPage() {
                 />
               </a>
 
+              <span className="hidden md:inline text-sm font-bold text-slate-800 truncate max-w-[260px]" title={crmPlatformTitle}>
+                {crmPlatformTitle}
+              </span>
+
               {isSuperAdmin ? (
                 <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/40 bg-purple-500/15 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-purple-700">
                   <ShieldCheck className="h-3 w-3" />
                   <span>Super Admin</span>
+                </span>
+              ) : isLeadsManager ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-amber-700">
+                  <ShieldCheck className="h-3 w-3" />
+                  <span>Leads Manager</span>
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/40 bg-blue-500/15 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-blue-700">
@@ -2647,7 +2696,7 @@ function AdminPage() {
             <button
               onClick={() => {
                 fetchAllData(false);
-                setRefreshCountdown(10);
+                setRefreshCountdown(crmSyncInterval);
               }}
               className="rounded-lg border border-slate-200 bg-slate-100 p-2 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
               title="Refresh Data Now"
@@ -6574,23 +6623,7 @@ function AdminPage() {
                         className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900"
                         placeholder="info@quickuppaistudio.us"
                       />
-                      <p className="text-[11px] text-slate-400 mt-1">Designated email for high-priority lead and payment notifications.</p>
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">Default Platform Currency</label>
-                      <select
-                        value={crmCurrency}
-                        onChange={(e) => setCrmCurrency(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer"
-                      >
-                        <option value="USD ($)">USD ($) - United States Dollar</option>
-                        <option value="EUR (€)">EUR (€) - Euro</option>
-                        <option value="GBP (£)">GBP (£) - British Pound</option>
-                        <option value="CAD (C$)">CAD (C$) - Canadian Dollar</option>
-                        <option value="AUD (A$)">AUD (A$) - Australian Dollar</option>
-                      </select>
-                      <p className="text-[11px] text-slate-400 mt-1">Applied to revenue calculations and order financial summaries.</p>
+                      <p className="text-[11px] text-slate-400 mt-1">New lead and payment alert emails are sent to this address.</p>
                     </div>
 
                     <div>
@@ -6601,9 +6634,7 @@ function AdminPage() {
                         className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer"
                       >
                         <option value={10}>10 Seconds (Recommended • Real-Time High Precision)</option>
-                        <option value={30}>30 Seconds (Balanced Frequency)</option>
-                        <option value={60}>60 Seconds (Low Bandwidth Mode)</option>
-                        <option value={0}>Manual Refresh Only (No Polling)</option>
+                        <option value={20}>20 Seconds</option>
                       </select>
                       <p className="text-[11px] text-slate-400 mt-1">Background polling cycle for incoming website leads, Meta leads, and meetings.</p>
                     </div>
