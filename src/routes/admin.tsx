@@ -638,6 +638,16 @@ function AdminPage() {
 
   const isSuperAdmin = session?.role === "super_admin";
 
+  // Dynamic accent helpers — consume the CSS vars set by the theme useEffect
+  // Usage:  className={isActive ? accentNavActive : accentNavIdle}
+  const accentNavActive = "text-white shadow-sm" as const;
+  const accentNavActiveStyle = { background: "var(--crm-accent-bg, #0f172a)" } as const;
+  // For primary action buttons (Add Lead, Save, etc.)
+  const accentBtnStyle = { background: "var(--crm-accent-bg, #0f172a)" } as const;
+  // For density: compact = tighter table row padding
+  const rowPadding = crmDensity === "compact" ? "px-3 py-1.5" : "px-4 py-2.5";
+  const cellPadding = crmDensity === "compact" ? "px-3 py-1" : "px-4 py-2";
+
   // Refs for real-time handlers
   const leadsRef = useRef<Lead[]>(leads);
   useEffect(() => {
@@ -727,6 +737,38 @@ function AdminPage() {
       setActiveTab("leads");
     }
   }, [session, activeTab]);
+
+  // ── Live Interface Theme Application ──────────────────────────────────────
+  // Whenever accent, density, or contrast changes: persist to localStorage and
+  // apply CSS custom-properties + data-attributes to <html> so every part of
+  // the CRM reflects the change immediately — no save button required.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const root = document.documentElement;
+
+    // Accent colour palette → CSS vars consumed by Tailwind-compatible inline classes
+    const accentMap: Record<string, { bg: string; text: string; ring: string; border: string }> = {
+      slate:      { bg: "#0f172a", text: "#ffffff", ring: "#0f172a40", border: "#0f172a" },
+      royal_blue: { bg: "#2563eb", text: "#ffffff", ring: "#2563eb40", border: "#2563eb" },
+      purple:     { bg: "#9333ea", text: "#ffffff", ring: "#9333ea40", border: "#9333ea" },
+      emerald:    { bg: "#059669", text: "#ffffff", ring: "#05966940", border: "#059669" },
+      indigo:     { bg: "#4338ca", text: "#ffffff", ring: "#4338ca40", border: "#4338ca" },
+    };
+    const accent = accentMap[crmAccentTheme] || accentMap["slate"];
+    root.style.setProperty("--crm-accent-bg",     accent.bg);
+    root.style.setProperty("--crm-accent-text",   accent.text);
+    root.style.setProperty("--crm-accent-ring",   accent.ring);
+    root.style.setProperty("--crm-accent-border", accent.border);
+
+    // Data-attributes for density + contrast (usable via CSS attribute selectors)
+    root.setAttribute("data-crm-density",   crmDensity);
+    root.setAttribute("data-crm-contrast",  crmHighContrast ? "high" : "normal");
+
+    // Persist
+    localStorage.setItem("crm_accent_theme",  crmAccentTheme);
+    localStorage.setItem("crm_density",       crmDensity);
+    localStorage.setItem("crm_high_contrast", String(crmHighContrast));
+  }, [crmAccentTheme, crmDensity, crmHighContrast]);
 
   // Inactivity Auto-Logout for Super Admin & Admin (Configurable, defaults to 10 Minutes)
   useEffect(() => {
@@ -2797,9 +2839,10 @@ function AdminPage() {
               onClick={() => { setActiveTab("dashboard"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "dashboard"
-                  ? "bg-blue-600 text-white shadow-sm"
+                  ? accentNavActive
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
+              style={activeTab === "dashboard" ? accentNavActiveStyle : undefined}
             >
               <LayoutDashboard className="h-4 w-4" />
               <span>Dashboard</span>
@@ -2809,9 +2852,10 @@ function AdminPage() {
               onClick={() => { setActiveTab("leads"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "leads"
-                  ? "bg-blue-600 text-white shadow-sm"
+                  ? accentNavActive
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
+              style={activeTab === "leads" ? accentNavActiveStyle : undefined}
             >
               <Layers className="h-4 w-4" />
               <span>Leads Management</span>
@@ -2826,9 +2870,10 @@ function AdminPage() {
               onClick={() => { setActiveTab("meta_leads"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "meta_leads"
-                  ? "bg-blue-600 text-white shadow-sm"
+                  ? accentNavActive
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
+              style={activeTab === "meta_leads" ? accentNavActiveStyle : undefined}
             >
               <Megaphone className="h-4 w-4" />
               <span>Meta Leads</span>
@@ -2844,16 +2889,15 @@ function AdminPage() {
               onClick={() => handleSelectOrdersTab()}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "orders"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : isDark
-                  ? "text-slate-400 hover:bg-slate-800 hover:text-white"
+                  ? accentNavActive
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
+              style={activeTab === "orders" ? accentNavActiveStyle : undefined}
             >
               <DollarSign className="h-4 w-4" />
-              <span>Orders & Payments</span>
+              <span>Orders &amp; Payments</span>
               <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
-                activeTab === "orders" ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                activeTab === "orders" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
               }`}>
                 {orders.length}
               </span>
@@ -2864,16 +2908,15 @@ function AdminPage() {
               onClick={() => { setActiveTab("calendly"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "calendly"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : isDark
-                  ? "text-slate-400 hover:bg-slate-800 hover:text-white"
+                  ? accentNavActive
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
+              style={activeTab === "calendly" ? accentNavActiveStyle : undefined}
             >
               <Calendar className="h-4 w-4" />
               <span>Calendly (USA)</span>
               <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
-                activeTab === "calendly" ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                activeTab === "calendly" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
               }`}>
                 {meetings.length}
               </span>
@@ -2883,9 +2926,10 @@ function AdminPage() {
               onClick={() => { setActiveTab("activity"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "activity"
-                  ? "bg-blue-600 text-white shadow-sm"
+                  ? accentNavActive
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
+              style={activeTab === "activity" ? accentNavActiveStyle : undefined}
             >
               <Clock className="h-4 w-4" />
               <span>Activity History</span>
