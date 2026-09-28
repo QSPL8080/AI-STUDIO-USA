@@ -647,9 +647,9 @@ export async function updateProjectStatus(
   const payload: Partial<Lead> = { project_status };
   if (project_status === "Delivered") {
     payload.delivered_at = new Date().toISOString();
-    if (delivery_date) {
-      payload.delivery_date = delivery_date;
-    }
+    payload.delivery_date = delivery_date || new Date().toISOString().split("T")[0];
+  } else if (delivery_date) {
+    payload.delivery_date = delivery_date;
   }
   return updateLead(id, payload);
 }

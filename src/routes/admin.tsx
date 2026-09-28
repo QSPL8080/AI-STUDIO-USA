@@ -6595,20 +6595,20 @@ function AdminPage() {
           <div className={`w-full max-w-md rounded-2xl border p-6 shadow-2xl space-y-4 ${
             isDark ? "border-slate-700 bg-[#151222] text-white" : "border-slate-200 bg-white text-slate-900"
           }`}>
-            <div className="flex items-center justify-between border-b pb-3 dark:border-slate-800">
-              <h3 className="text-base font-bold flex items-center gap-2 text-emerald-600">
-                <Package className="h-5 w-5" />
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-base font-bold flex items-center gap-2 text-slate-900">
+                <Package className="h-5 w-5 text-slate-800" />
                 <span>Mark Project Delivered</span>
               </h3>
               <button
                 onClick={() => setDeliveringLead(null)}
-                className="rounded-lg p-1 text-slate-400 cursor-pointer"
+                className="rounded-lg p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-600">
               Confirm project delivery for <strong>{deliveringLead.name}</strong> ({deliveringLead.video_type}).
             </p>
 
@@ -6623,29 +6623,27 @@ function AdminPage() {
               className="space-y-4 text-xs"
             >
               <div>
-                <label className="block font-bold mb-1">Actual Delivery Date *</label>
+                <label className="block font-bold text-slate-800 mb-1">Actual Delivery Date *</label>
                 <input
                   type="date"
                   name="deliveryDate"
                   required
                   defaultValue={new Date().toISOString().slice(0, 10)}
-                  className={`w-full rounded-xl border p-2.5 font-bold focus:outline-none ${
-                    isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
-                  }`}
+                  className="w-full rounded-xl border border-slate-300 bg-white p-2.5 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setDeliveringLead(null)}
-                  className="rounded-xl border px-4 py-2 font-semibold cursor-pointer"
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-emerald-600 px-5 py-2 font-bold text-white shadow-md hover:bg-emerald-700 cursor-pointer"
+                  className="rounded-xl bg-slate-900 px-5 py-2 font-bold text-white shadow-md hover:bg-black cursor-pointer transition-colors"
                 >
                   Mark Delivered
                 </button>
