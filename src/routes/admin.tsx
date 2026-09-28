@@ -377,9 +377,9 @@ function AdminPage() {
   });
   const [crmNotificationEmail, setCrmNotificationEmail] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("crm_notification_email") || "admin@quickuppaistudio.us";
+      return localStorage.getItem("crm_notification_email") || "info@quickuppaistudio.us";
     }
-    return "admin@quickuppaistudio.us";
+    return "info@quickuppaistudio.us";
   });
   const [crmCurrency, setCrmCurrency] = useState(() => {
     if (typeof window !== "undefined") {
@@ -667,16 +667,22 @@ function AdminPage() {
         // Static check: if it looks like an old alias, boot them out.
         const isOldAlias =
           sessionEmail.endsWith("@aistudio.com") ||
-          sessionEmail.endsWith("@quickuppaistudio.us") ||
+          sessionEmail === "superadmin@quickuppaistudio.us" ||
+          sessionEmail === "sa@quickuppaistudio.us" ||
+          sessionEmail === "admin@quickuppaistudio.us" ||
           sessionEmail === "superadmin" ||
           sessionEmail === "admin" ||
-          sessionEmail === "qsaistudio@gmail.com" ||
-          sessionEmail === "info@quickuppaistudio.us";
+          sessionEmail === "qsaistudio@gmail.com";
         if (isOldAlias || (!isValidStaticEmail && !parsed.role)) {
           // Wipe everything and drop to login
           localStorage.removeItem("ai_studio_auth_session");
           localStorage.removeItem("ai_studio_remembered_email");
           return;
+        }
+        // Migrate stale notification email cache
+        const cachedEmail = localStorage.getItem("crm_notification_email");
+        if (cachedEmail === "admin@quickuppaistudio.us") {
+          localStorage.removeItem("crm_notification_email");
         }
         setSession(parsed);
         fetchAllData(false);
@@ -6497,7 +6503,7 @@ function AdminPage() {
                         value={crmNotificationEmail}
                         onChange={(e) => setCrmNotificationEmail(e.target.value)}
                         className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900"
-                        placeholder="admin@quickuppaistudio.us"
+                        placeholder="info@quickuppaistudio.us"
                       />
                       <p className="text-[11px] text-slate-400 mt-1">Designated email for high-priority lead and payment notifications.</p>
                     </div>
