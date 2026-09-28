@@ -345,8 +345,10 @@ function AdminPage() {
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loginLogs, setLoginLogs] = useState<LoginLog[]>([]);
   const [activityCategoryFilter, setActivityCategoryFilter] = useState<"all" | "calendly" | "leads" | "user_activity">("all");
+  const [leadsActivitySubTab, setLeadsActivitySubTab] = useState<"website_manual" | "meta" | "all">("website_manual");
   const [activitySearchTerm, setActivitySearchTerm] = useState<string>("");
 
+  // 1. Calendly Category: Strictly Calendly & Strategy Call events ONLY
   const calendlyActivityLogs = useMemo(() => {
     return activityLogs.filter((log) => {
       const act = (log.action || "").toLowerCase();
@@ -355,54 +357,130 @@ function AdminPage() {
         act.includes("calendly") ||
         act.includes("meeting") ||
         act.includes("strategy call") ||
-        act.includes("call") ||
         det.includes("calendly") ||
-        det.includes("meeting") ||
+        det.includes("meeting booked") ||
+        det.includes("meeting scheduled") ||
+        det.includes("meeting cancelled") ||
+        det.includes("meeting rescheduled") ||
+        det.includes("meeting updated") ||
         det.includes("strategy call")
       );
     });
   }, [activityLogs]);
 
-  const leadsActivityLogs = useMemo(() => {
+  // 2. User Activity Category: Strictly User/Admin Authentication & Account Management ONLY (Never Leads)
+  const userActivityLogs = useMemo(() => {
     return activityLogs.filter((log) => {
+      // Must NOT be a lead log
+      if (log.lead_id) return false;
       const act = (log.action || "").toLowerCase();
       const det = (log.details || "").toLowerCase();
+
+      // Ignore if it's a calendly action
+      if (act.includes("calendly") || act.includes("meeting") || det.includes("calendly")) return false;
+
+      // Ignore if it's a lead action
+      if (act.includes("lead") || det.includes("lead")) return false;
+
       return (
-        act.includes("lead") ||
-        act.includes("project") ||
-        det.includes("lead") ||
-        det.includes("project") ||
-        Boolean(log.lead_id)
+        act.includes("logged in") ||
+        act.includes("login") ||
+        act.includes("logout") ||
+        act.includes("user created") ||
+        act.includes("admin user") ||
+        act.includes("user status") ||
+        act.includes("user deleted") ||
+        act.includes("password") ||
+        act.includes("security") ||
+        det.includes("logged in from ip") ||
+        det.includes("account created") ||
+        det.includes("status changed to active") ||
+        det.includes("status changed to inactive") ||
+        det.includes("admin account deleted")
       );
     });
   }, [activityLogs]);
 
-  const userActivityLogs = useMemo(() => {
+  // Helper to identify Meta lead logs
+  const isMetaLog = (log: ActivityLog) => {
+    const act = (log.action || "").toLowerCase();
+    const det = (log.details || "").toLowerCase();
+    if (act.includes("meta") || det.includes("meta lead") || det.includes("from meta") || det.includes("meta ads")) {
+      return true;
+    }
+    if (log.lead_id) {
+      const foundLead = leads.find((l) => l.id === log.lead_id);
+      if (foundLead && (foundLead.source?.toLowerCase().includes("meta") || Boolean(foundLead.meta_lead_id))) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // 3. Leads Category: Strictly Lead & Project Actions ONLY
+  const leadsActivityLogs = useMemo(() => {
     return activityLogs.filter((log) => {
+      // Ignore if it's a calendly log
       const act = (log.action || "").toLowerCase();
       const det = (log.details || "").toLowerCase();
+      if (
+        act.includes("calendly") ||
+        act.includes("meeting") ||
+        act.includes("strategy call") ||
+        det.includes("calendly") ||
+        det.includes("meeting booked") ||
+        det.includes("meeting scheduled")
+      ) {
+        return false;
+      }
+
+      // Ignore if it's a user auth log without lead_id
+      if (
+        !log.lead_id &&
+        (act.includes("logged in") ||
+          act.includes("admin user created") ||
+          act.includes("admin user status") ||
+          act.includes("admin user deleted") ||
+          det.includes("logged in from ip"))
+      ) {
+        return false;
+      }
+
       return (
-        act.includes("user") ||
-        act.includes("admin") ||
-        act.includes("login") ||
-        act.includes("logged") ||
-        act.includes("account") ||
-        act.includes("auth") ||
-        act.includes("password") ||
-        act.includes("security") ||
-        det.includes("login") ||
-        det.includes("logged in") ||
-        det.includes("account") ||
-        det.includes("admin")
+        Boolean(log.lead_id) ||
+        act.includes("lead") ||
+        act.includes("project") ||
+        act.includes("recycle bin") ||
+        det.includes("lead") ||
+        det.includes("project")
       );
     });
   }, [activityLogs]);
+
+  // Sub-segregation: Meta Leads vs Website/Manual Leads
+  const metaLeadsActivityLogs = useMemo(() => {
+    return leadsActivityLogs.filter((log) => isMetaLog(log));
+  }, [leadsActivityLogs, leads]);
+
+  const websiteLeadsActivityLogs = useMemo(() => {
+    return leadsActivityLogs.filter((log) => !isMetaLog(log));
+  }, [leadsActivityLogs, leads]);
 
   const filteredActivityLogs = useMemo(() => {
     let list = activityLogs;
-    if (activityCategoryFilter === "calendly") list = calendlyActivityLogs;
-    else if (activityCategoryFilter === "leads") list = leadsActivityLogs;
-    else if (activityCategoryFilter === "user_activity") list = userActivityLogs;
+    if (activityCategoryFilter === "calendly") {
+      list = calendlyActivityLogs;
+    } else if (activityCategoryFilter === "user_activity") {
+      list = userActivityLogs;
+    } else if (activityCategoryFilter === "leads") {
+      if (leadsActivitySubTab === "meta") {
+        list = metaLeadsActivityLogs;
+      } else if (leadsActivitySubTab === "website_manual") {
+        list = websiteLeadsActivityLogs;
+      } else {
+        list = leadsActivityLogs;
+      }
+    }
 
     if (!activitySearchTerm.trim()) return list;
     const term = activitySearchTerm.toLowerCase();
@@ -413,7 +491,17 @@ function AdminPage() {
         (log.performed_by || "").toLowerCase().includes(term) ||
         (log.user_role || "").toLowerCase().includes(term)
     );
-  }, [activityLogs, activityCategoryFilter, calendlyActivityLogs, leadsActivityLogs, userActivityLogs, activitySearchTerm]);
+  }, [
+    activityLogs,
+    activityCategoryFilter,
+    leadsActivitySubTab,
+    calendlyActivityLogs,
+    leadsActivityLogs,
+    metaLeadsActivityLogs,
+    websiteLeadsActivityLogs,
+    userActivityLogs,
+    activitySearchTerm,
+  ]);
 
   // Admin Users Management State
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
@@ -4582,6 +4670,76 @@ function AdminPage() {
                   </span>
                 </button>
               </div>
+
+              {/* 2 Segregation Sub-tabs under Leads Activity: Website/Manual Leads vs Meta Leads */}
+              {activityCategoryFilter === "leads" && (
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-100 overflow-x-auto scrollbar-none">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+                    Segregate Leads:
+                  </span>
+                  <button
+                    onClick={() => setLeadsActivitySubTab("website_manual")}
+                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                      leadsActivitySubTab === "website_manual"
+                        ? "bg-emerald-600 text-white shadow-xs"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    <Users className="h-3 w-3" />
+                    <span>Website & Manual Leads</span>
+                    <span
+                      className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
+                        leadsActivitySubTab === "website_manual"
+                          ? "bg-white/20 text-white"
+                          : "bg-slate-200 text-slate-700"
+                      }`}
+                    >
+                      {websiteLeadsActivityLogs.length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setLeadsActivitySubTab("meta")}
+                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                      leadsActivitySubTab === "meta"
+                        ? "bg-indigo-600 text-white shadow-xs"
+                        : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-100"
+                    }`}
+                  >
+                    <Megaphone className="h-3 w-3" />
+                    <span>Meta Leads</span>
+                    <span
+                      className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
+                        leadsActivitySubTab === "meta"
+                          ? "bg-white/20 text-white"
+                          : "bg-indigo-200 text-indigo-900"
+                      }`}
+                    >
+                      {metaLeadsActivityLogs.length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setLeadsActivitySubTab("all")}
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer shrink-0 ${
+                      leadsActivitySubTab === "all"
+                        ? "bg-slate-800 text-white shadow-xs"
+                        : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span>All Leads</span>
+                    <span
+                      className={`rounded-full px-1.5 py-0.2 text-[10px] ${
+                        leadsActivitySubTab === "all"
+                          ? "bg-white/20 text-white"
+                          : "bg-slate-200 text-slate-600"
+                      }`}
+                    >
+                      {leadsActivityLogs.length}
+                    </span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Activity Feed List */}
@@ -4594,6 +4752,8 @@ function AdminPage() {
                     <p className="text-slate-400 max-w-sm mx-auto">
                       {activitySearchTerm
                         ? `No logs match "${activitySearchTerm}". Try clearing your search.`
+                        : activityCategoryFilter === "leads"
+                        ? `No activity recorded under ${leadsActivitySubTab === "meta" ? "Meta Leads" : leadsActivitySubTab === "website_manual" ? "Website & Manual Leads" : "Leads"}.`
                         : `No activity recorded under category "${activityCategoryFilter}".`}
                     </p>
                     {(activitySearchTerm || activityCategoryFilter !== "all") && (
@@ -4610,22 +4770,9 @@ function AdminPage() {
                   </div>
                 ) : (
                   filteredActivityLogs.map((log) => {
-                    const actLower = (log.action || "").toLowerCase();
-                    const detLower = (log.details || "").toLowerCase();
-                    const isCalendly =
-                      actLower.includes("calendly") ||
-                      actLower.includes("meeting") ||
-                      actLower.includes("strategy call") ||
-                      detLower.includes("calendly") ||
-                      detLower.includes("meeting");
-                    const isUserAct =
-                      actLower.includes("user") ||
-                      actLower.includes("admin") ||
-                      actLower.includes("login") ||
-                      actLower.includes("logged") ||
-                      actLower.includes("account") ||
-                      actLower.includes("password");
-                    const isLead = !isCalendly && !isUserAct;
+                    const isCalendly = calendlyActivityLogs.some((c) => c.id === log.id);
+                    const isUserAct = !isCalendly && userActivityLogs.some((u) => u.id === log.id);
+                    const isMetaLead = !isCalendly && !isUserAct && metaLeadsActivityLogs.some((m) => m.id === log.id);
 
                     return (
                       <div
@@ -4642,6 +4789,10 @@ function AdminPage() {
                             ) : isUserAct ? (
                               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-purple-600 border border-purple-200">
                                 <Shield className="h-4 w-4" />
+                              </div>
+                            ) : isMetaLead ? (
+                              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200">
+                                <Megaphone className="h-4 w-4" />
                               </div>
                             ) : (
                               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200">
@@ -4661,9 +4812,11 @@ function AdminPage() {
                                   ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
                                   : isUserAct
                                   ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                  : isMetaLead
+                                  ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
                                   : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               }`}>
-                                {isCalendly ? "Calendly" : isUserAct ? "User Activity" : "Leads"}
+                                {isCalendly ? "Calendly" : isUserAct ? "User Activity" : isMetaLead ? "Meta Lead" : "Lead"}
                               </span>
 
                               {/* Performer role tag */}
