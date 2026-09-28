@@ -337,7 +337,7 @@ export function PrivacyPolicyPage() {
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-3">
               <a
-                href={`https://wa.me/918177828748?text=${encodeURIComponent(
+                href={`https://wa.me/13027545679?text=${encodeURIComponent(
                   "Hello Quickupp AI Studio Team,\n\nI have a question regarding the Privacy Policy on quickuppaistudio.us.\n\nQuickupp AI Studio USA\nWebsite: https://quickuppaistudio.us\nAddress: 8 The Green, Suite A, Dover, Delaware - 19901, USA\nEmail: info@quickuppaistudio.us",
                 )}`}
                 target="_blank"

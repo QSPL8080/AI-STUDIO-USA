@@ -561,14 +561,14 @@ export const footerTagline = "AI-Powered Videos. Built for Your Business.";
 export const footerDescription =
   "Quickupp AI Studio provides professional AI video production services for businesses, brands and creators. Create AI UGC, AI avatar, cartoon, hyper-realistic and digital twin videos for social media, advertising and digital marketing.";
 export const footerEmail = "info@quickuppaistudio.us";
-export const footerPhone = "+91 8177828748";
+export const footerPhone = "+1 (302) 754-5679";
 export const footerUsaAddress = "8 The Green, Suite A, Dover, Delaware - 19901, USA";
 export const footerUsaMapUrl = "https://maps.app.goo.gl/2rLqrCN4rco2XpQr5";
 export const footerCanadaAddress = "Jacques St, Montréal, QC H2Y 1P5";
 export const footerCanadaMapUrl = "https://maps.google.com/?q=Jacques+St,+Montr%C3%A9al,+QC+H2Y+1P5";
 export const footerCopyright = `© ${new Date().getFullYear()} Quickupp AI Studio. All rights reserved.`;
 
-export const whatsAppPhoneNumber = "918177828748";
+export const whatsAppPhoneNumber = "13027545679";
 export const whatsAppDefaultMessage = `Hello Quickupp AI Studio Team,
 
 I visited quickuppaistudio.us and I am interested in exploring your AI Video Production services for my business.

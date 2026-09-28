@@ -3967,7 +3967,7 @@ export function Footer() {
               </a>
 
               <a
-                href={`tel:${footerPhone.replace(/\s+/g, "")}`}
+                href={`tel:${footerPhone.replace(/[^0-9+]/g, "")}`}
                 className="inline-flex items-center gap-2 text-slate-400 transition-colors hover:text-emerald-400"
                 title="Call Quickupp AI Studio"
               >
