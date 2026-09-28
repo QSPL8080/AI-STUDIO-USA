@@ -18,9 +18,9 @@ export const samples = [
   },
   {
     format: "AI Avatar",
-    industry: "Hospitality & Food",
-    description: "AI avatar presenter reel highlighting a hotel's diverse food menu and dining varieties.",
-    videoUrl: "",
+    industry: "Beauty & Cosmetics",
+    description: "AI avatar presenter reel demonstrating a foundation and concealer makeup routine for a beauty brand.",
+    videoUrl: "/videos/Avtar%20Sample.mp4",
   },
   {
     format: "Hyper-Realistic",

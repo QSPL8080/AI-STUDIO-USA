@@ -130,9 +130,15 @@ export function CheckoutModal() {
         if (detail.itemType === "setup") {
           setIndividualService("digital-twin-setup");
         } else if (detail.itemType === "individual" && detail.itemId) {
-          const validId = detail.itemId as IndividualServiceId;
-          if (INDIVIDUAL_PRICING[validId]) {
-            setIndividualService(validId);
+          // Map display names (e.g. "AI UGC", "AI Avatar Video Production") to a pricing id
+          const directId = detail.itemId as IndividualServiceId;
+          const matchedId = INDIVIDUAL_PRICING[directId]
+            ? directId
+            : (resolvePurchaseItem({ itemType: "individual", itemId: detail.itemId })?.itemId as
+                | IndividualServiceId
+                | undefined);
+          if (matchedId && INDIVIDUAL_PRICING[matchedId]) {
+            setIndividualService(matchedId);
           }
         } else if (detail.itemType === "package") {
           if (detail.tierId && PACKAGE_TIERS[detail.tierId]) {
