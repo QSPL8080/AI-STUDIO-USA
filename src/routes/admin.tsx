@@ -23,6 +23,7 @@ import {
   Filter,
   Globe,
   Layers,
+  LayoutDashboard,
   Loader2,
   Lock,
   LogOut,
@@ -42,6 +43,7 @@ import {
   Sparkles,
   Trash,
   Trash2,
+  TrendingUp,
   UserCheck,
   UserPlus,
   Users,
@@ -173,8 +175,8 @@ function AdminPage() {
   const [authError, setAuthError] = useState("");
 
   // Tabs Navigation
-  type TabType = "leads" | "meta_leads" | "orders" | "calendly" | "activity" | "users" | "security" | "recycle_bin" | "settings";
-  const [activeTab, setActiveTab] = useState<TabType>("leads");
+  type TabType = "dashboard" | "leads" | "meta_leads" | "orders" | "calendly" | "activity" | "users" | "security" | "recycle_bin" | "settings";
+  const [activeTab, setActiveTab] = useState<TabType>("dashboard");
 
   // Leads Data
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -2414,6 +2416,18 @@ function AdminPage() {
         <div className="overflow-x-auto border-t border-slate-200 bg-white scrollbar-none">
           <div className="mx-auto flex w-full max-w-[1750px] items-center gap-1 sm:gap-1.5 px-3 sm:px-6 py-1.5 min-w-max">
             <button
+              onClick={() => { setActiveTab("dashboard"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
+              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "dashboard"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              }`}
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              <span>Dashboard</span>
+            </button>
+
+            <button
               onClick={() => { setActiveTab("leads"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "leads"
@@ -2549,13 +2563,150 @@ function AdminPage() {
       {/* Main Content Area */}
       <main className="w-full max-w-[1750px] mx-auto flex-1 p-3 sm:p-5 lg:p-7 space-y-5 sm:space-y-6">
         {/* ========================================================================= */}
-        {/* TAB 1: LEADS MANAGEMENT */}
+        {/* TAB 0: EXECUTIVE DASHBOARD & CRM OVERVIEW */}
         {/* ========================================================================= */}
-        {activeTab === "leads" && (
+        {activeTab === "dashboard" && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            {/* Section 18 & Section 17: Source-Wise Lead Reporting Overview */}
-            <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs space-y-3">
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-2.5">
+            {/* Dashboard Header with Quick Actions */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
+              <div>
+                <div className="flex items-center gap-2">
+                  <LayoutDashboard className="h-5 w-5 text-blue-600" />
+                  <h2 className="text-base font-bold text-slate-900 sm:text-lg">Executive CRM Dashboard</h2>
+                </div>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Real-time overview of inbound leads across sources, video production pipelines, and revenue.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddLeadModal("Website")}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition-all cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Add Lead</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddLeadModal("Meta Ads")}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-3.5 py-2 text-xs font-bold text-purple-700 hover:bg-purple-100 transition-all cursor-pointer"
+                >
+                  <Megaphone className="h-3.5 w-3.5" />
+                  <span>Add Meta Lead</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportCSV}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Export CSV</span>
+                </button>
+              </div>
+            </div>
+
+            {/* KPI Metrics Cards (6 Metrics) */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 sm:gap-4">
+              {/* Total Leads */}
+              <div
+                onClick={() => { setActiveTab("leads"); setFilterSource("All"); }}
+                className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs hover:border-blue-400 hover:shadow-md transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+                  <span>Total Leads</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                    <Layers className="h-4 w-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-2xl font-black text-slate-900">{allTotalLeadsCount}</p>
+                <p className="mt-1 text-[11px] text-slate-500">All Sources</p>
+              </div>
+
+              {/* Total Revenue */}
+              <div
+                onClick={() => handleSelectOrdersTab()}
+                className="rounded-2xl border border-emerald-200/90 bg-white p-4 shadow-xs hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+                  <span>Revenue</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                    <DollarSign className="h-4 w-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-2xl font-black text-emerald-600 font-mono">
+                  ${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                </p>
+                <p className="mt-1 text-[11px] text-slate-500">{orders.filter((o) => o.payment_status === "COMPLETED").length} Paid Orders</p>
+              </div>
+
+              {/* Active Productions */}
+              <div
+                onClick={() => { setActiveTab("leads"); setFilterProjectStatus("In Progress"); }}
+                className="rounded-2xl border border-orange-200/90 bg-white p-4 shadow-xs hover:border-orange-400 hover:shadow-md transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+                  <span>In Production</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+                    <Video className="h-4 w-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-2xl font-black text-orange-600">{allProjectsInProgressCount}</p>
+                <p className="mt-1 text-[11px] text-slate-500">Active Videos</p>
+              </div>
+
+              {/* Delivered Videos */}
+              <div
+                onClick={() => { setActiveTab("leads"); setFilterProjectStatus("Delivered"); }}
+                className="rounded-2xl border border-purple-200/90 bg-white p-4 shadow-xs hover:border-purple-400 hover:shadow-md transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+                  <span>Delivered</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-2xl font-black text-purple-600">{allProjectsDeliveredCount}</p>
+                <p className="mt-1 text-[11px] text-slate-500">Completed Orders</p>
+              </div>
+
+              {/* Calendly Meetings */}
+              <div
+                onClick={() => setActiveTab("calendly")}
+                className="rounded-2xl border border-indigo-200/90 bg-white p-4 shadow-xs hover:border-indigo-400 hover:shadow-md transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+                  <span>Calls / Meets</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                    <Calendar className="h-4 w-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-2xl font-black text-indigo-600">{meetings.length}</p>
+                <p className="mt-1 text-[11px] text-slate-500">USA Calendly</p>
+              </div>
+
+              {/* Closed Conversion Rate */}
+              <div
+                onClick={() => { setActiveTab("leads"); setFilterStatus("Closed"); }}
+                className="rounded-2xl border border-teal-200/90 bg-white p-4 shadow-xs hover:border-teal-400 hover:shadow-md transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+                  <span>Closed Leads</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-50 text-teal-600">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-2xl font-black text-teal-600">{allClosedCount}</p>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  {allTotalLeadsCount > 0 ? `${Math.round((allClosedCount / allTotalLeadsCount) * 100)}% Conversion` : "0%"}
+                </p>
+              </div>
+            </div>
+
+            {/* Source-Wise Lead Attribution Cards (§18) */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <Globe className="h-4 w-4 text-blue-600" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -2563,78 +2714,262 @@ function AdminPage() {
                   </h3>
                 </div>
                 <span className="text-xs font-semibold text-slate-500 font-mono">
-                  {allTotalLeadsCount} Total Leads Across All Sources
+                  {allTotalLeadsCount} Total Leads Attribution
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 {/* Website Leads */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFilterSource(filterSource === "USA Website" ? "All" : "USA Website");
-                  }}
-                  className={`flex items-center justify-between rounded-xl border p-3.5 transition-all text-left cursor-pointer ${
-                    filterSource === "USA Website"
-                      ? "border-blue-500 bg-blue-50/40 ring-2 ring-blue-500/20 shadow-xs"
-                      : "border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300"
-                  }`}
-                  title="Click to filter by Website leads"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-600 font-bold">
-                      <Globe className="h-4 w-4" />
+                <div className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-slate-50/50 p-4 transition-all hover:bg-blue-50/20 hover:border-blue-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600 font-bold">
+                        <Globe className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">Website Inbound</p>
+                        <p className="text-xs text-slate-500">Landing Page Inquiries</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-800">Website</p>
-                      <p className="text-[11px] text-slate-500">Inbound Landing Forms</p>
-                    </div>
+                    <span className="text-3xl font-black text-blue-600 font-mono">{sourceWebsiteCount}</span>
                   </div>
-                  <span className="text-2xl font-black text-blue-600 font-mono">{sourceWebsiteCount}</span>
-                </button>
+                  <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+                    <span className="text-xs text-slate-500 font-medium">
+                      {allTotalLeadsCount > 0 ? `${Math.round((sourceWebsiteCount / allTotalLeadsCount) * 100)}% of total` : "0%"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => { setActiveTab("leads"); setFilterSource("USA Website"); }}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Manage Leads</span>
+                      <span>→</span>
+                    </button>
+                  </div>
+                </div>
 
                 {/* Manual Leads */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFilterSource(filterSource === "Manual" ? "All" : "Manual");
-                  }}
-                  className={`flex items-center justify-between rounded-xl border p-3.5 transition-all text-left cursor-pointer ${
-                    filterSource === "Manual"
-                      ? "border-amber-500 bg-amber-50/40 ring-2 ring-amber-500/20 shadow-xs"
-                      : "border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300"
-                  }`}
-                  title="Click to filter by Manual leads"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-600 font-bold">
-                      <UserPlus className="h-4 w-4" />
+                <div className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-slate-50/50 p-4 transition-all hover:bg-amber-50/20 hover:border-amber-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600 font-bold">
+                        <UserPlus className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">Manual Entry</p>
+                        <p className="text-xs text-slate-500">Admin Direct Creation</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-800">Manual</p>
-                      <p className="text-[11px] text-slate-500">Admin Direct Entry</p>
-                    </div>
+                    <span className="text-3xl font-black text-amber-600 font-mono">{sourceManualCount}</span>
                   </div>
-                  <span className="text-2xl font-black text-amber-600 font-mono">{sourceManualCount}</span>
-                </button>
+                  <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+                    <span className="text-xs text-slate-500 font-medium">
+                      {allTotalLeadsCount > 0 ? `${Math.round((sourceManualCount / allTotalLeadsCount) * 100)}% of total` : "0%"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => { setActiveTab("leads"); setFilterSource("Manual"); }}
+                      className="text-xs font-bold text-amber-600 hover:text-amber-700 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Manage Leads</span>
+                      <span>→</span>
+                    </button>
+                  </div>
+                </div>
 
                 {/* Meta Leads */}
+                <div className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-slate-50/50 p-4 transition-all hover:bg-purple-50/20 hover:border-purple-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 text-purple-600 font-bold">
+                        <Megaphone className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">Meta Ads</p>
+                        <p className="text-xs text-slate-500">Facebook & IG Campaigns</p>
+                      </div>
+                    </div>
+                    <span className="text-3xl font-black text-purple-600 font-mono">{sourceMetaCount}</span>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+                    <span className="text-xs text-slate-500 font-medium">
+                      {allTotalLeadsCount > 0 ? `${Math.round((sourceMetaCount / allTotalLeadsCount) * 100)}% of total` : "0%"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("meta_leads")}
+                      className="text-xs font-bold text-purple-600 hover:text-purple-700 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Manage Meta Leads</span>
+                      <span>→</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Split Grid: Recent Leads & Recent Activity */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {/* Recent Inbound Leads */}
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-3 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Layers className="h-4 w-4 text-blue-600" />
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Latest Inbound Leads</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("leads")}
+                      className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                    >
+                      View All →
+                    </button>
+                  </div>
+
+                  <div className="mt-3 divide-y divide-slate-100">
+                    {leads.slice(0, 5).map((l) => (
+                      <div
+                        key={l.id}
+                        onClick={() => setViewLeadDetails(l)}
+                        className="py-3 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl transition-colors cursor-pointer"
+                      >
+                        <div className="min-w-0 flex-1 pr-3">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-bold text-slate-900 truncate">{l.name}</p>
+                            <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                              l.source?.includes("Meta")
+                                ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                : l.source === "Manual"
+                                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                : "bg-blue-50 text-blue-700 border border-blue-200"
+                            }`}>
+                              {l.source || "Website"}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                            {l.business_name || l.email || l.phone || "Direct Lead"} • {l.video_type || "AI Video"}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                            l.status === "Closed"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : l.status === "In Progress"
+                              ? "bg-purple-50 text-purple-700 border border-purple-200"
+                              : l.status === "Contacted"
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : "bg-blue-50 text-blue-700 border border-blue-200"
+                          }`}>
+                            {l.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    {leads.length === 0 && (
+                      <p className="py-6 text-center text-xs text-slate-400">No leads received yet.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("leads")}
+                    className="text-xs font-bold text-slate-600 hover:text-blue-600 cursor-pointer"
+                  >
+                    Open Complete Leads Management Table →
+                  </button>
+                </div>
+              </div>
+
+              {/* Recent CRM Activity Logs */}
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-3 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-purple-600" />
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Recent CRM Activity</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("activity")}
+                      className="text-xs font-bold text-purple-600 hover:underline cursor-pointer"
+                    >
+                      View All Logs →
+                    </button>
+                  </div>
+
+                  <div className="mt-3 divide-y divide-slate-100">
+                    {activityLogs.slice(0, 5).map((log) => (
+                      <div key={log.id} className="py-2.5 flex items-start justify-between gap-3 text-xs">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-slate-800 truncate">{log.action}</p>
+                          <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                            {log.details} • by <span className="font-medium text-slate-700">{log.performed_by}</span>
+                          </p>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-mono shrink-0 whitespace-nowrap">
+                          {new Date(log.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    ))}
+                    {activityLogs.length === 0 && (
+                      <p className="py-6 text-center text-xs text-slate-400">No activity recorded yet.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("activity")}
+                    className="text-xs font-bold text-slate-600 hover:text-purple-600 cursor-pointer"
+                  >
+                    Open Full Activity Audit Trail →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 1: LEADS MANAGEMENT (WEBSITE & MANUAL LEADS ONLY) */}
+        {/* ========================================================================= */}
+        {activeTab === "leads" && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Clean Section Header */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-xs">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Layers className="h-5 w-5 text-blue-600" />
+                  <h2 className="text-base font-bold text-slate-900 sm:text-lg">Website & Inbound Leads</h2>
+                  <span className="rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-xs font-bold text-blue-700 font-mono">
+                    {websiteLeads.length} Leads
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Managing client inquiries from website landing page forms and direct admin manual entries.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setActiveTab("meta_leads")}
-                  className="flex items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 transition-all text-left hover:bg-purple-50/30 hover:border-purple-300 cursor-pointer shadow-xs"
-                  title="Click to open Meta Leads tab"
+                  onClick={() => setShowAddLeadModal("Website")}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition-all cursor-pointer"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-100 text-purple-600 font-bold">
-                      <Megaphone className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-800">Meta</p>
-                      <p className="text-[11px] text-slate-500">Facebook & IG Ads</p>
-                    </div>
-                  </div>
-                  <span className="text-2xl font-black text-purple-600 font-mono">{sourceMetaCount}</span>
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Add Lead</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportCSV}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Export CSV</span>
                 </button>
               </div>
             </div>
@@ -3424,85 +3759,37 @@ function AdminPage() {
         {/* ========================================================================= */}
         {activeTab === "meta_leads" && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            {/* Section 18 & Section 17: Source-Wise Lead Reporting Overview */}
-            <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs space-y-3">
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-2.5">
+            {/* Clean Section Header */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-xs">
+              <div>
                 <div className="flex items-center gap-2">
-                  <Megaphone className="h-4 w-4 text-purple-600" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                    Source-Wise Lead Reporting (§18)
-                  </h3>
+                  <Megaphone className="h-5 w-5 text-purple-600" />
+                  <h2 className="text-base font-bold text-slate-900 sm:text-lg">Meta Ads Leads Management</h2>
+                  <span className="rounded-full bg-purple-50 border border-purple-200 px-2.5 py-0.5 text-xs font-bold text-purple-700 font-mono">
+                    {metaLeads.length} Leads
+                  </span>
                 </div>
-                <span className="text-xs font-semibold text-slate-500 font-mono">
-                  {allTotalLeadsCount} Total Leads Across All Sources
-                </span>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Managing client inquiries from Facebook Ads and Instagram lead generation forms.
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {/* Website Leads */}
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setActiveTab("leads");
-                    setFilterSource("USA Website");
-                  }}
-                  className="flex items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 transition-all text-left hover:bg-blue-50/30 hover:border-blue-300 cursor-pointer shadow-xs"
-                  title="Click to open Website Leads tab"
+                  onClick={() => setShowAddLeadModal("Meta Ads")}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-purple-700 transition-all cursor-pointer"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-600 font-bold">
-                      <Globe className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-800">Website</p>
-                      <p className="text-[11px] text-slate-500">Inbound Landing Forms</p>
-                    </div>
-                  </div>
-                  <span className="text-2xl font-black text-blue-600 font-mono">{sourceWebsiteCount}</span>
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Add Meta Lead</span>
                 </button>
-
-                {/* Manual Leads */}
                 <button
                   type="button"
-                  onClick={() => {
-                    setActiveTab("leads");
-                    setFilterSource("Manual");
-                  }}
-                  className="flex items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 transition-all text-left hover:bg-amber-50/30 hover:border-amber-300 cursor-pointer shadow-xs"
-                  title="Click to open Manual Leads"
+                  onClick={handleExportCSV}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-600 font-bold">
-                      <UserPlus className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-800">Manual</p>
-                      <p className="text-[11px] text-slate-500">Admin Direct Entry</p>
-                    </div>
-                  </div>
-                  <span className="text-2xl font-black text-amber-600 font-mono">{sourceManualCount}</span>
-                </button>
-
-                {/* Meta Leads */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMetaFilterStatus("All");
-                    setMetaFilterProjectStatus("All");
-                  }}
-                  className="flex items-center justify-between rounded-xl border border-purple-500 bg-purple-50/40 p-3.5 ring-2 ring-purple-500/20 shadow-xs transition-all text-left cursor-pointer"
-                  title="Viewing Meta Leads"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-100 text-purple-600 font-bold">
-                      <Megaphone className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-800">Meta</p>
-                      <p className="text-[11px] text-slate-500">Facebook & IG Ads</p>
-                    </div>
-                  </div>
-                  <span className="text-2xl font-black text-purple-600 font-mono">{sourceMetaCount}</span>
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Export CSV</span>
                 </button>
               </div>
             </div>
