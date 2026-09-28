@@ -522,6 +522,7 @@ function AdminPage() {
 
   // Modals State
   const [showAddLeadModal, setShowAddLeadModal] = useState(false);
+  const [prefillLeadFromMeeting, setPrefillLeadFromMeeting] = useState<Partial<Lead> | null>(null);
   const [viewLeadDetails, setViewLeadDetails] = useState<Lead | null>(null);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [closingLead, setClosingLead] = useState<Lead | null>(null);
@@ -1665,6 +1666,29 @@ function AdminPage() {
       loc.includes("bharat") ||
       (phone.startsWith("91") && phone.length === 12 && !lead.phone.startsWith("+1"))
     );
+  };
+
+  // Helper to match a Calendly meeting to an existing lead by Email, Phone, or Client Name (Section 14)
+  const findMatchingLeadForMeeting = (meeting: CalendlyMeeting): Lead | undefined => {
+    const meetingEmail = (meeting.email || "").toLowerCase().trim();
+    const meetingPhone = (meeting.phone || "").replace(/\D/g, "").slice(-10);
+    const meetingName = (meeting.client_name || "").toLowerCase().trim();
+
+    return leads.find((l) => {
+      if (isIndiaLead(l)) return false;
+      const leadEmail = (l.email || "").toLowerCase().trim();
+      const leadPhone = (l.phone || "").replace(/\D/g, "").slice(-10);
+      const leadName = (l.name || "").toLowerCase().trim();
+
+      // 1. Match by Email
+      if (meetingEmail && leadEmail && meetingEmail === leadEmail) return true;
+      // 2. Match by Phone (last 10 digits)
+      if (meetingPhone && meetingPhone.length >= 7 && leadPhone && leadPhone.length >= 7 && meetingPhone === leadPhone) return true;
+      // 3. Match by Client Name
+      if (meetingName && leadName && (meetingName === leadName || leadName.includes(meetingName) || meetingName.includes(leadName))) return true;
+
+      return false;
+    });
   };
 
   // Distinct Leads Collections: Website Leads (Tab 1) and Meta Leads (Tab 2) - strictly excluding India leads
@@ -4557,230 +4581,286 @@ function AdminPage() {
                       </td>
                     </tr>
                   ) : (
-                    meetings
-                      .filter((m) => {
-                        const matchSearch =
-                          m.client_name.toLowerCase().includes(meetingSearchTerm.toLowerCase()) ||
-                          m.email.toLowerCase().includes(meetingSearchTerm.toLowerCase()) ||
-                          (m.phone && m.phone.includes(meetingSearchTerm));
-                        const matchStatus =
-                          meetingStatusFilter === "all" ? true : m.meeting_status === meetingStatusFilter;
-                        return matchSearch && matchStatus;
-                      })
-                      .map((m) => (
-                        <tr key={m.id} className="hover:bg-slate-50/75 transition-colors border-b border-slate-100">
-                          {/* 1. Meeting Date & Time */}
-                          <td className="px-4 py-3.5">
-                            <div className="font-bold text-blue-600">{m.meeting_date}</div>
-                            <div className="text-[11px] text-slate-500 font-mono mt-0.5">{m.meeting_time}</div>
-                          </td>
+                      meetings
+                        .filter((m) => {
+                          const matchSearch =
+                            m.client_name.toLowerCase().includes(meetingSearchTerm.toLowerCase()) ||
+                            m.email.toLowerCase().includes(meetingSearchTerm.toLowerCase()) ||
+                            (m.phone && m.phone.includes(meetingSearchTerm));
+                          const matchStatus =
+                            meetingStatusFilter === "all" ? true : m.meeting_status === meetingStatusFilter;
+                          return matchSearch && matchStatus;
+                        })
+                        .map((m) => {
+                          const matchedLead = findMatchingLeadForMeeting(m);
+                          return (
+                          <tr key={m.id} className="hover:bg-slate-50/75 transition-colors border-b border-slate-100">
+                            {/* 1. Meeting Date & Time */}
+                            <td className="px-4 py-3.5">
+                              <div className="font-bold text-blue-600">{m.meeting_date}</div>
+                              <div className="text-[11px] text-slate-500 font-mono mt-0.5">{m.meeting_time}</div>
+                            </td>
 
-                          {/* 2. Client Name & Contact */}
-                          <td className="px-4 py-3.5">
-                            <div className="font-bold text-sm text-slate-900">{m.client_name}</div>
-                            <div className="text-[11px] text-slate-500 font-mono">{m.email}</div>
-                            {m.phone && <div className="text-[10px] text-slate-400 font-mono">{m.phone}</div>}
-                          </td>
+                            {/* 2. Client Name & Contact & Matching Lead (§14) */}
+                            <td className="px-4 py-3.5">
+                              <div className="font-bold text-sm text-slate-900">{m.client_name}</div>
+                              <div className="text-[11px] text-slate-500 font-mono">{m.email}</div>
+                              {m.phone && <div className="text-[10px] text-slate-400 font-mono">{m.phone}</div>}
 
-                          {/* 3. Meeting Type */}
-                          <td className="px-4 py-3.5 font-medium text-slate-800 text-xs">
-                            <span>{m.meeting_type || "Quickupp AI Studio - 30 Min Strategy Call"}</span>
-                          </td>
+                              {/* Lead Matching Badge (§14) */}
+                              <div className="mt-1.5 flex items-center gap-1.5">
+                                {matchedLead ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setViewLeadDetails(matchedLead)}
+                                    className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
+                                    title="Matching lead found! Click to view lead details & update status"
+                                  >
+                                    <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                    <span>CRM Lead: {matchedLead.status}</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPrefillLeadFromMeeting({
+                                        name: m.client_name,
+                                        email: m.email,
+                                        phone: m.phone || "",
+                                        business: `Inbound Call - ${m.client_name}`,
+                                        source: "USA Website - Calendly",
+                                        notes: `Calendly meeting on ${m.meeting_date} at ${m.meeting_time}.\nMeeting Link: ${m.meeting_link || "N/A"}`,
+                                      });
+                                      setShowAddLeadModal(true);
+                                    }}
+                                    className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
+                                    title="No existing lead matched by email/phone/name. Click to create a new lead."
+                                  >
+                                    <Plus className="h-3 w-3 text-blue-600" />
+                                    <span>+ Create Lead</span>
+                                  </button>
+                                )}
+                              </div>
+                            </td>
 
-                          {/* 4. Meeting Status (Locked Badge if Cancelled, Dropdown if Active) */}
-                          <td className="px-4 py-3.5">
-                            {m.meeting_status === "cancelled" ? (
-                              <div className="space-y-1 inline-block">
-                                <div className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-extrabold tracking-wide uppercase bg-red-50 text-red-700 border border-red-200 select-none cursor-not-allowed shadow-xs">
-                                  <Lock className="h-3 w-3 text-red-500 shrink-0" />
-                                  <span>CANCELLED</span>
-                                </div>
-                                <div className="text-[10px] text-red-600 font-semibold leading-tight">
-                                  <div className="text-[9px] uppercase tracking-wider text-red-500 font-bold">CANCELLED ON:</div>
-                                  <div className="font-mono text-[10px] text-red-600">
-                                    {m.cancelled_at
-                                      ? new Date(m.cancelled_at).toLocaleString("en-US", {
-                                          month: "short",
-                                          day: "numeric",
-                                          year: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })
-                                      : new Date(m.created_at || Date.now()).toLocaleString("en-US", {
-                                          month: "short",
-                                          day: "numeric",
-                                          year: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })}
+                            {/* 3. Meeting Type */}
+                            <td className="px-4 py-3.5 font-medium text-slate-800 text-xs">
+                              <span>{m.meeting_type || "Quickupp AI Studio - 30 Min Strategy Call"}</span>
+                            </td>
+
+                            {/* 4. Meeting Status (Locked Badge if Cancelled, Dropdown if Active) */}
+                            <td className="px-4 py-3.5">
+                              {m.meeting_status === "cancelled" ? (
+                                <div className="space-y-1 inline-block">
+                                  <div className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-extrabold tracking-wide uppercase bg-red-50 text-red-700 border border-red-200 select-none cursor-not-allowed shadow-xs">
+                                    <Lock className="h-3 w-3 text-red-500 shrink-0" />
+                                    <span>CANCELLED</span>
+                                  </div>
+                                  <div className="text-[10px] text-red-600 font-semibold leading-tight">
+                                    <div className="text-[9px] uppercase tracking-wider text-red-500 font-bold">CANCELLED ON:</div>
+                                    <div className="font-mono text-[10px] text-red-600">
+                                      {m.cancelled_at
+                                        ? new Date(m.cancelled_at).toLocaleString("en-US", {
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          })
+                                        : new Date(m.created_at || Date.now()).toLocaleString("en-US", {
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          })}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ) : (
-                              <select
-                                value={m.meeting_status || "scheduled"}
-                                onChange={async (e) => {
-                                  const newStatus = e.target.value;
-                                  if (newStatus === "cancelled") {
-                                    setCancellingMeeting(m);
-                                    setCancellationReason("");
-                                    return;
-                                  }
-                                  await updateCalendlyMeetingServerFn({
-                                    id: m.id,
-                                    meeting_status: newStatus,
-                                    performedBy: session?.name || "Admin",
-                                  });
-                                  setMeetings((prev) =>
-                                    prev.map((item) =>
-                                      item.id === m.id ? { ...item, meeting_status: newStatus } : item
-                                    )
-                                  );
-                                  showToast(`Meeting status updated to ${newStatus}`);
-                                  await fetchMeetingsList();
-                                  await fetchNotificationsList();
-                                  await fetchLogsList();
-                                }}
-                                className={`rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase border cursor-pointer ${
-                                  m.meeting_status === "completed"
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                    : m.meeting_status === "rescheduled"
-                                    ? "bg-amber-50 text-amber-700 border-amber-200"
-                                    : "bg-blue-50 text-blue-700 border-blue-200"
-                                }`}
-                              >
-                                <option value="scheduled">Scheduled</option>
-                                <option value="upcoming">Upcoming</option>
-                                <option value="completed">Completed</option>
-                                <option value="rescheduled">Rescheduled</option>
-                                <option value="cancelled">❌ Cancel Meeting...</option>
-                              </select>
-                            )}
-                          </td>
-
-                          {/* 5. Meeting Link */}
-                          <td className="px-4 py-3.5">
-                            {m.meeting_status === "cancelled" ? (
-                              <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600 border border-red-200">
-                                Link Removed
-                              </span>
-                            ) : m.meeting_link ? (
-                              <a
-                                href={m.meeting_link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-blue-600 hover:underline font-mono text-xs font-semibold"
-                              >
-                                <span>Join Call</span>
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            ) : (
-                              <span className="text-slate-400 italic">No link</span>
-                            )}
-                          </td>
-
-                          {/* 6. Admin / Handling User */}
-                          <td className="px-4 py-3.5">
-                            <select
-                              value={m.assigned_admin || ""}
-                              onChange={async (e) => {
-                                const newAdmin = e.target.value;
-                                await updateCalendlyMeetingServerFn({
-                                  id: m.id,
-                                  assigned_admin: newAdmin,
-                                  performedBy: session?.name || "Admin",
-                                });
-                                setMeetings((prev) =>
-                                  prev.map((item) => (item.id === m.id ? { ...item, assigned_admin: newAdmin } : item))
-                                );
-                                showToast("Handling admin assigned");
-                              }}
-                              className="rounded-lg px-2 py-1 text-[11px] font-medium border border-slate-200 bg-slate-50 text-slate-800 cursor-pointer outline-none"
-                            >
-                              <option value="">Unassigned</option>
-                              <option value="superadmin@aistudio.com">Super Admin</option>
-                              <option value="admin@aistudio.com">Admin</option>
-                              {adminUsers.map((u) => (
-                                <option key={u.id} value={u.email}>
-                                  {u.name} ({u.email})
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-
-                          {/* 7. Meeting Created Date */}
-                          <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px]">
-                            {new Date(m.created_at).toLocaleDateString()}
-                          </td>
-
-                          {/* 8. Workflow Actions */}
-                          <td className="px-4 py-3.5 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={() => {
-                                  setShowAddLeadModal(true);
-                                }}
-                                className="rounded-lg border border-blue-500/40 bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-600 hover:bg-blue-100 cursor-pointer"
-                                title="Link to Lead"
-                              >
-                                Link Lead
-                              </button>
-
-                              {m.meeting_status !== "cancelled" && (
-                                <button
-                                  onClick={() => setEditingMeeting(m)}
-                                  className="rounded-lg border border-slate-200 p-1 text-slate-500 hover:bg-slate-100 cursor-pointer"
-                                  title="Edit Meeting Details"
-                                >
-                                  <Edit className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-
-                              {m.meeting_status !== "cancelled" && (
-                                <button
-                                  onClick={() => {
-                                    setCancellingMeeting(m);
-                                    setCancellationReason("");
-                                  }}
-                                  className="rounded-lg border border-red-200 p-1 text-red-500 hover:bg-red-50 cursor-pointer"
-                                  title="Cancel Meeting"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-
-                              <button
-                                onClick={async () => {
-                                  if (confirm(`Permanently delete meeting record for ${m.client_name}?`)) {
-                                    setMeetings((prev) => prev.filter((item) => item.id !== m.id));
-                                    try {
-                                      const res = await deleteCalendlyMeetingServerFn({
-                                        id: m.id,
-                                        client_name: m.client_name,
-                                        performedBy: session?.name || "Admin",
-                                      });
-                                      if (res.success) {
-                                        showToast("Meeting record removed");
-                                      } else {
-                                        showToast("Meeting deleted from list");
-                                      }
-                                    } catch (err: any) {
-                                      showToast("Meeting removed");
+                              ) : (
+                                <select
+                                  value={m.meeting_status || "scheduled"}
+                                  onChange={async (e) => {
+                                    const newStatus = e.target.value;
+                                    if (newStatus === "cancelled") {
+                                      setCancellingMeeting(m);
+                                      setCancellationReason("");
+                                      return;
                                     }
+                                    await updateCalendlyMeetingServerFn({
+                                      id: m.id,
+                                      meeting_status: newStatus,
+                                      performedBy: session?.name || "Admin",
+                                    });
+                                    setMeetings((prev) =>
+                                      prev.map((item) =>
+                                        item.id === m.id ? { ...item, meeting_status: newStatus } : item
+                                      )
+                                    );
+                                    showToast(`Meeting status updated to ${newStatus}`);
                                     await fetchMeetingsList();
                                     await fetchNotificationsList();
                                     await fetchLogsList();
-                                  }
+                                  }}
+                                  className={`rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase border cursor-pointer ${
+                                    m.meeting_status === "completed"
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      : m.meeting_status === "rescheduled"
+                                      ? "bg-amber-50 text-amber-700 border-amber-200"
+                                      : "bg-blue-50 text-blue-700 border-blue-200"
+                                  }`}
+                                >
+                                  <option value="scheduled">Scheduled</option>
+                                  <option value="upcoming">Upcoming</option>
+                                  <option value="completed">Completed</option>
+                                  <option value="rescheduled">Rescheduled</option>
+                                  <option value="cancelled">❌ Cancel Meeting...</option>
+                                </select>
+                              )}
+                            </td>
+
+                            {/* 5. Meeting Link */}
+                            <td className="px-4 py-3.5">
+                              {m.meeting_status === "cancelled" ? (
+                                <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600 border border-red-200">
+                                  Link Removed
+                                </span>
+                              ) : m.meeting_link ? (
+                                <a
+                                  href={m.meeting_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-blue-600 hover:underline font-mono text-xs font-semibold"
+                                >
+                                  <span>Join Call</span>
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              ) : (
+                                <span className="text-slate-400 italic">No link</span>
+                              )}
+                            </td>
+
+                            {/* 6. Admin / Handling User */}
+                            <td className="px-4 py-3.5">
+                              <select
+                                value={m.assigned_admin || ""}
+                                onChange={async (e) => {
+                                  const newAdmin = e.target.value;
+                                  await updateCalendlyMeetingServerFn({
+                                    id: m.id,
+                                    assigned_admin: newAdmin,
+                                    performedBy: session?.name || "Admin",
+                                  });
+                                  setMeetings((prev) =>
+                                    prev.map((item) => (item.id === m.id ? { ...item, assigned_admin: newAdmin } : item))
+                                  );
+                                  showToast("Handling admin assigned");
                                 }}
-                                className="rounded-lg border border-slate-200 p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 cursor-pointer"
-                                title="Delete Meeting Record"
+                                className="rounded-lg px-2 py-1 text-[11px] font-medium border border-slate-200 bg-slate-50 text-slate-800 cursor-pointer outline-none"
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                                <option value="">Unassigned</option>
+                                <option value="superadmin@aistudio.com">Super Admin</option>
+                                <option value="admin@aistudio.com">Admin</option>
+                                {adminUsers.map((u) => (
+                                  <option key={u.id} value={u.email}>
+                                    {u.name} ({u.email})
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+
+                            {/* 7. Meeting Created Date */}
+                            <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px]">
+                              {new Date(m.created_at).toLocaleDateString()}
+                            </td>
+
+                            {/* 8. Workflow Actions (§14) */}
+                            <td className="px-4 py-3.5 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {matchedLead ? (
+                                  <button
+                                    onClick={() => setViewLeadDetails(matchedLead)}
+                                    className="rounded-lg border border-emerald-500/40 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100 cursor-pointer"
+                                    title="View & Update Matching CRM Lead"
+                                  >
+                                    View Lead
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      setPrefillLeadFromMeeting({
+                                        name: m.client_name,
+                                        email: m.email,
+                                        phone: m.phone || "",
+                                        business: `Inbound Call - ${m.client_name}`,
+                                        source: "USA Website - Calendly",
+                                        notes: `Calendly meeting on ${m.meeting_date} at ${m.meeting_time}.\nMeeting Link: ${m.meeting_link || "N/A"}`,
+                                      });
+                                      setShowAddLeadModal(true);
+                                    }}
+                                    className="rounded-lg border border-blue-500/40 bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-600 hover:bg-blue-100 cursor-pointer"
+                                    title="Create CRM Lead from this meeting"
+                                  >
+                                    + Lead
+                                  </button>
+                                )}
+
+                                {m.meeting_status !== "cancelled" && (
+                                  <button
+                                    onClick={() => setEditingMeeting(m)}
+                                    className="rounded-lg border border-slate-200 p-1 text-slate-500 hover:bg-slate-100 cursor-pointer"
+                                    title="Edit Meeting Details"
+                                  >
+                                    <Edit className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+
+                                {m.meeting_status !== "cancelled" && (
+                                  <button
+                                    onClick={() => {
+                                      setCancellingMeeting(m);
+                                      setCancellationReason("");
+                                    }}
+                                    className="rounded-lg border border-red-200 p-1 text-red-500 hover:bg-red-50 cursor-pointer"
+                                    title="Cancel Meeting"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+
+                                <button
+                                  onClick={async () => {
+                                    if (confirm(`Permanently delete meeting record for ${m.client_name}?`)) {
+                                      setMeetings((prev) => prev.filter((item) => item.id !== m.id));
+                                      try {
+                                        const res = await deleteCalendlyMeetingServerFn({
+                                          id: m.id,
+                                          client_name: m.client_name,
+                                          performedBy: session?.name || "Admin",
+                                        });
+                                        if (res.success) {
+                                          showToast("Meeting record removed");
+                                        } else {
+                                          showToast("Meeting deleted from list");
+                                        }
+                                      } catch (err: any) {
+                                        showToast("Meeting removed");
+                                      }
+                                      await fetchMeetingsList();
+                                      await fetchNotificationsList();
+                                      await fetchLogsList();
+                                    }
+                                  }}
+                                  className="rounded-lg border border-slate-200 p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 cursor-pointer"
+                                  title="Delete Meeting Record"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                          );
+                        })
                   )}
                 </tbody>
               </table>
@@ -5514,7 +5594,10 @@ function AdminPage() {
                 <span>Add New Manual Lead</span>
               </h3>
               <button
-                onClick={() => setShowAddLeadModal(false)}
+                onClick={() => {
+                  setShowAddLeadModal(false);
+                  setPrefillLeadFromMeeting(null);
+                }}
                 className="rounded-lg p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
               >
                 <X className="h-5 w-5" />
@@ -5522,6 +5605,7 @@ function AdminPage() {
             </div>
 
             <form
+              key={prefillLeadFromMeeting ? `prefill-${prefillLeadFromMeeting.email || prefillLeadFromMeeting.name}` : "fresh"}
               onSubmit={async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
@@ -5563,6 +5647,7 @@ function AdminPage() {
                     broadcastLeadEvent({ type: "NEW_LEAD", lead: res.lead });
                     showToast(`${source} lead added successfully`);
                     setShowAddLeadModal(false);
+                    setPrefillLeadFromMeeting(null);
                     fetchLogsList();
                   }
                 } catch (err) {
@@ -5576,12 +5661,13 @@ function AdminPage() {
                   <label className="block font-semibold mb-1">Lead Source *</label>
                   <select
                     name="source"
-                    defaultValue="Manual"
+                    defaultValue={prefillLeadFromMeeting?.source || "Manual"}
                     className={`w-full rounded-xl border p-2.5 focus:outline-none ${
                       isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
                     }`}
                   >
                     <option value="USA Website">USA Website</option>
+                    <option value="USA Website - Calendly">USA Website - Calendly</option>
                     <option value="Manual">Manual</option>
                     <option value="Meta Ads">Meta Ads</option>
                   </select>
@@ -5592,6 +5678,7 @@ function AdminPage() {
                   <input
                     name="name"
                     required
+                    defaultValue={prefillLeadFromMeeting?.name || ""}
                     placeholder="John Doe"
                     className={`w-full rounded-xl border p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
@@ -5604,6 +5691,7 @@ function AdminPage() {
                   <input
                     name="business"
                     required
+                    defaultValue={prefillLeadFromMeeting?.business || ""}
                     placeholder="Acme Studio"
                     className={`w-full rounded-xl border p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
@@ -5618,6 +5706,7 @@ function AdminPage() {
                   <input
                     name="phone"
                     required
+                    defaultValue={prefillLeadFromMeeting?.phone || ""}
                     placeholder="+1 (555) 019-2834"
                     className={`w-full rounded-xl border p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
@@ -5630,6 +5719,7 @@ function AdminPage() {
                   <input
                     type="email"
                     name="email"
+                    defaultValue={prefillLeadFromMeeting?.email || ""}
                     placeholder="client@company.com"
                     className={`w-full rounded-xl border p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
@@ -5644,7 +5734,7 @@ function AdminPage() {
                   <select
                     name="videoType"
                     required
-                    defaultValue="AI UGC"
+                    defaultValue={prefillLeadFromMeeting?.video_type || "AI UGC"}
                     className={`w-full rounded-xl border p-2.5 focus:outline-none ${
                       isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
                     }`}
@@ -5672,6 +5762,7 @@ function AdminPage() {
                   <label className="block font-semibold mb-1">Location / City</label>
                   <input
                     name="location"
+                    defaultValue={prefillLeadFromMeeting?.location || "United States"}
                     placeholder="New York, USA"
                     className={`w-full rounded-xl border p-2.5 focus:outline-none ${
                       isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
@@ -5730,6 +5821,7 @@ function AdminPage() {
                 <textarea
                   name="notes"
                   rows={3}
+                  defaultValue={prefillLeadFromMeeting?.notes || ""}
                   placeholder="Add specific requirements, deadlines, or client preferences..."
                   className={`w-full rounded-xl border p-2.5 focus:outline-none ${
                     isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
