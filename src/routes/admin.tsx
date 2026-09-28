@@ -1938,15 +1938,13 @@ function AdminPage() {
         }`}>
           {/* Logo & Header */}
           <div className="text-center">
-            <div className={`mx-auto flex h-14 w-fit items-center justify-center rounded-2xl border px-4 py-2 shadow-md ${
-              isDark ? "border-slate-700 bg-[#181528]" : "border-slate-200 bg-slate-50"
-            }`}>
+            <div className="mx-auto flex items-center justify-center">
               <img
                 src="/images/LOGO 1.png"
                 alt="Quickupp AI Studio logo"
-                className="h-9 w-auto object-contain"
-                width={125}
-                height={40}
+                className="h-10 w-auto object-contain"
+                width={140}
+                height={44}
               />
             </div>
             <h2 className="mt-4 text-2xl font-bold tracking-tight">CRM Admin Portal</h2>
