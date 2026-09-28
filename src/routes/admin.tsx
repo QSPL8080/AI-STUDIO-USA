@@ -1926,11 +1926,11 @@ function AdminPage() {
               isDark ? "border-slate-700 bg-[#181528]" : "border-slate-200 bg-slate-50"
             }`}>
               <img
-                src="/images/ADMIN LOGO.png"
+                src="/images/LOGO 1.png"
                 alt="Quickupp AI Studio logo"
                 className="h-9 w-auto object-contain"
-                width={120}
-                height={36}
+                width={125}
+                height={40}
               />
             </div>
             <h2 className="mt-4 text-2xl font-bold tracking-tight">CRM Admin Portal</h2>
@@ -2047,11 +2047,11 @@ function AdminPage() {
             <div className="flex items-center gap-2 sm:gap-3">
               <a href="/" className="flex items-center transition-opacity hover:opacity-85">
                 <img
-                  src="/images/ADMIN LOGO.png"
+                  src="/images/LOGO 1.png"
                   alt="Quickupp AI Studio logo"
                   className="h-7 sm:h-8 md:h-9 w-auto object-contain"
-                  width={110}
-                  height={34}
+                  width={125}
+                  height={38}
                 />
               </a>
 
