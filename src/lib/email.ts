@@ -957,3 +957,75 @@ Operated by-Quickupp Softech LLC
   return { success: false, error: "SMTP dispatch failed" };
 }
 
+/**
+ * Security alert to the System Alert Notification Email (CRM Settings) when the
+ * failed-login threshold is reached.
+ */
+export async function sendFailedLoginAlertEmail(info: {
+  email: string;
+  ipAddress: string;
+  location?: string | undefined;
+  userAgent?: string | undefined;
+  attempts: number;
+  threshold: number;
+  lockoutMinutes: number;
+}): Promise<{ success: boolean; error?: string }> {
+  const to = await resolveNotificationEmail();
+  const title = await resolvePlatformTitle();
+  const when = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+  const subject = `🚨 [${title}] ${info.attempts} failed admin login attempts — ${info.email || "unknown user"}`;
+  const text = `Security alert from the ${title} admin panel.
+
+${info.attempts} consecutive failed login attempts reached the configured threshold of ${info.threshold}.
+Further logins for this account / IP are locked for ${info.lockoutMinutes} minutes.
+
+Email tried: ${info.email || "N/A"}
+IP address: ${info.ipAddress || "Unknown"}
+Location: ${info.location || "Unknown"}
+Browser: ${info.userAgent || "Unknown"}
+Time (ET): ${when}
+
+If this wasn't you or your team, review Login / IP Tracking in the admin panel.`;
+  const esc = (v: string) => v.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
+  const html = `<div style="font-family:Arial,sans-serif;font-size:14px;color:#0f172a">
+  <h2 style="color:#b91c1c;margin:0 0 8px">🚨 Failed login threshold reached</h2>
+  <p>${info.attempts} consecutive failed login attempts reached the threshold of <b>${info.threshold}</b>.
+  Logins for this account / IP are locked for <b>${info.lockoutMinutes} minutes</b>.</p>
+  <table style="border-collapse:collapse">
+    <tr><td style="padding:4px 12px 4px 0;color:#64748b">Email tried</td><td><b>${esc(info.email || "N/A")}</b></td></tr>
+    <tr><td style="padding:4px 12px 4px 0;color:#64748b">IP address</td><td>${esc(info.ipAddress || "Unknown")}</td></tr>
+    <tr><td style="padding:4px 12px 4px 0;color:#64748b">Location</td><td>${esc(info.location || "Unknown")}</td></tr>
+    <tr><td style="padding:4px 12px 4px 0;color:#64748b">Browser</td><td>${esc(info.userAgent || "Unknown")}</td></tr>
+    <tr><td style="padding:4px 12px 4px 0;color:#64748b">Time (ET)</td><td>${when}</td></tr>
+  </table>
+  <p style="color:#64748b;font-size:12px">Sent by ${esc(title)}. Review Login / IP Tracking in the admin panel.</p>
+</div>`;
+
+  const smtpHost = process.env["SMTP_HOST"] || "smtp.hostinger.com";
+  const smtpPort = Number(process.env["SMTP_PORT"] || 465);
+  const smtpSecure = process.env["SMTP_SECURE"] === "false" ? false : true;
+  const smtpUser = process.env["SMTP_USER"] || process.env["EMAIL_USER"] || "info@quickuppaistudio.us";
+  const smtpPass = process.env["SMTP_PASS"] || process.env["EMAIL_PASS"] || "Quickuppaistudio@8080";
+  const fromAddress = process.env["EMAIL_FROM"] || smtpUser;
+  if (!smtpUser || !smtpPass) return { success: false, error: "SMTP credentials not configured" };
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpSecure,
+      auth: { user: smtpUser, pass: smtpPass.replace(/\s+/g, "") },
+    });
+    await transporter.sendMail({
+      from: `"${title.replace(/"/g, "")} Security" <${fromAddress}>`,
+      to,
+      subject,
+      text,
+      html,
+    });
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed-login alert email error:", error);
+    return { success: false, error: error.message };
+  }
+}

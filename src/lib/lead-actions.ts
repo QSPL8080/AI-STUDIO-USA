@@ -3,6 +3,7 @@ import {
   saveLead as saveLeadToDb,
   getLeads as getLeadsFromDb,
   getCrmSettings as getCrmSettingsFromDb,
+  countRecentFailedLogins,
   saveCrmSettings as saveCrmSettingsToDb,
   updateLead as updateLeadInDb,
   updateLeadStatus as updateStatusInDb,
@@ -38,7 +39,7 @@ import {
   type CalendlyMeeting,
   type CRMNotification,
 } from "./db";
-import { sendLeadNotificationEmail } from "./email";
+import { sendLeadNotificationEmail, sendFailedLoginAlertEmail } from "./email";
 
 function sanitizeLeadPhone(phone: string, _isUsa: boolean = true): string {
   const trimmed = phone.trim();
@@ -1129,6 +1130,9 @@ const DEFAULT_CRM_SETTINGS = {
   platform_title: "AI STUDIO USA - Enterprise CRM",
   notification_email: "info@quickuppaistudio.us",
   sync_interval: "10",
+  inactivity_timeout: "10",
+  login_attempts: "3",
+  broadcast_banner: "",
 };
 
 export const fetchCrmSettingsServerFn = createServerFn({ method: "GET" }).handler(async () => {
@@ -1141,12 +1145,21 @@ export const fetchCrmSettingsServerFn = createServerFn({ method: "GET" }).handle
 });
 
 export const saveCrmSettingsServerFn = createServerFn({ method: "POST" })
-  .validator((data: { platformTitle: string; notificationEmail: string; syncInterval: number; performedBy?: string }) => data)
+  .validator((data: {
+    platformTitle: string;
+    notificationEmail: string;
+    syncInterval: number;
+    inactivityTimeout?: number;
+    loginAttempts?: number;
+    performedBy?: string;
+  }) => data)
   .handler(async ({ data }) => {
     try {
       const title = (data.platformTitle || "").trim().slice(0, 120);
       const email = (data.notificationEmail || "").trim();
       const interval = Number(data.syncInterval) === 20 ? 20 : 10;
+      const inactivity = [5, 10, 15, 30].includes(Number(data.inactivityTimeout)) ? Number(data.inactivityTimeout) : 10;
+      const attempts = [3, 5, 10].includes(Number(data.loginAttempts)) ? Number(data.loginAttempts) : 3;
       if (!title) return { success: false, error: "Platform / CRM Title cannot be empty" };
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return { success: false, error: "Please enter a valid notification email address" };
@@ -1158,6 +1171,8 @@ export const saveCrmSettingsServerFn = createServerFn({ method: "POST" })
         platform_title: title,
         notification_email: email,
         sync_interval: String(interval),
+        inactivity_timeout: String(inactivity),
+        login_attempts: String(attempts),
         settings_updated_at: savedAt,
         settings_updated_by: savedBy,
       });
@@ -1166,7 +1181,7 @@ export const saveCrmSettingsServerFn = createServerFn({ method: "POST" })
       try {
         await addActivityLogInDb({
           action: "CRM Settings Updated",
-          details: `CRM settings updated (title: "${title}", alert email: ${email}, auto-sync: ${interval}s)`,
+          details: `CRM settings updated (title: "${title}", alert email: ${email}, auto-sync: ${interval}s, inactivity logout: ${inactivity} min, failed-login threshold: ${attempts})`,
           performed_by: data.performedBy || "Super Admin",
           user_role: "super_admin",
         });
@@ -1178,6 +1193,8 @@ export const saveCrmSettingsServerFn = createServerFn({ method: "POST" })
           platform_title: title,
           notification_email: email,
           sync_interval: String(interval),
+          inactivity_timeout: String(inactivity),
+          login_attempts: String(attempts),
           settings_updated_at: savedAt,
           settings_updated_by: savedBy,
         },
@@ -1248,5 +1265,101 @@ export const saveAccessControlServerFn = createServerFn({ method: "POST" })
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
+    }
+  });
+
+// ── Broadcast banner (shown to every logged-in admin) ──────────────────────────
+export const saveBroadcastServerFn = createServerFn({ method: "POST" })
+  .validator((data: { message: string; performedBy?: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const message = (data.message || "").trim().slice(0, 300);
+      const ok = await saveCrmSettingsToDb({ broadcast_banner: message });
+      if (!ok) return { success: false, error: "Could not save the broadcast" };
+      try {
+        await addActivityLogInDb({
+          action: message ? "Broadcast Published" : "Broadcast Cleared",
+          details: message ? `System notice: "${message}"` : "System notice banner cleared",
+          performed_by: data.performedBy || "Super Admin",
+          user_role: "super_admin",
+        });
+      } catch {}
+      return { success: true, message };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+// ── Failed-login lockout + email alert ───────────────────────────────────────
+const LOGIN_LOCKOUT_MINUTES = 15;
+
+async function getLoginThreshold(): Promise<number> {
+  try {
+    const st = await getCrmSettingsFromDb();
+    const n = Number(st["login_attempts"]);
+    return [3, 5, 10].includes(n) ? n : 3;
+  } catch {
+    return 3;
+  }
+}
+
+export const checkLoginLockoutServerFn = createServerFn({ method: "POST" })
+  .validator((data: { email: string; ip?: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const threshold = await getLoginThreshold();
+      const failures = await countRecentFailedLogins(data.email, data.ip, LOGIN_LOCKOUT_MINUTES);
+      return { success: true, locked: failures >= threshold, lockoutMinutes: LOGIN_LOCKOUT_MINUTES };
+    } catch (error: any) {
+      return { success: false, locked: false, error: error.message };
+    }
+  });
+
+export const recordFailedLoginServerFn = createServerFn({ method: "POST" })
+  .validator((data: { email: string; ip?: string; location?: string; userAgent?: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      await addLoginLogInDb({
+        email: (data.email || "").toLowerCase().trim() || "unknown",
+        role: "unknown",
+        ip_address: data.ip || "Unknown IP",
+        location: data.location || "Failed Attempt",
+        user_agent: data.userAgent || "Web Browser",
+        status: "failed",
+      });
+
+      const threshold = await getLoginThreshold();
+      const failures = await countRecentFailedLogins(data.email, data.ip, LOGIN_LOCKOUT_MINUTES);
+      const locked = failures >= threshold;
+
+      // Alert exactly once, when the threshold is first reached
+      if (failures === threshold) {
+        const mail = await sendFailedLoginAlertEmail({
+          email: data.email,
+          ipAddress: data.ip || "Unknown",
+          location: data.location,
+          userAgent: data.userAgent,
+          attempts: failures,
+          threshold,
+          lockoutMinutes: LOGIN_LOCKOUT_MINUTES,
+        });
+        try {
+          await addActivityLogInDb({
+            action: "Failed Login Threshold Reached",
+            details: `${failures} failed logins for ${data.email || "unknown"} from ${data.ip || "unknown IP"}; locked ${LOGIN_LOCKOUT_MINUTES} min; alert email ${mail.success ? "sent" : "FAILED: " + (mail.error || "")}`,
+            performed_by: "System / Security",
+            user_role: "system",
+          });
+        } catch {}
+      }
+
+      return {
+        success: true,
+        locked,
+        attemptsLeft: Math.max(threshold - failures, 0),
+        lockoutMinutes: LOGIN_LOCKOUT_MINUTES,
+      };
+    } catch (error: any) {
+      return { success: false, locked: false, attemptsLeft: undefined, error: error.message };
     }
   });

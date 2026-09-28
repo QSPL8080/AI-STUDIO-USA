@@ -1803,3 +1803,57 @@ export async function saveCrmSettings(settings: Record<string, string>): Promise
   }
   return true;
 }
+
+/**
+ * Consecutive failed logins (by email, or by IP when known) inside the window,
+ * counted back to the most recent successful login.
+ */
+export async function countRecentFailedLogins(email: string, ip: string | undefined, windowMinutes: number): Promise<number> {
+  const since = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
+  const cleanEmail = (email || "").toLowerCase().trim();
+  const cleanIp = ip && /^[0-9a-fA-F:.]+$/.test(ip) ? ip : "";
+  let rows: { status: string; created_at: string }[] = [];
+
+  let loaded = false;
+  if (getSupabaseConfig()) {
+    try {
+      const orParts = [`email.eq."${cleanEmail}"`];
+      if (cleanIp) orParts.push(`ip_address.eq."${cleanIp}"`);
+      const endpoint =
+        `login_logs?select=status,created_at&created_at=gte.${encodeURIComponent(since)}` +
+        `&or=(${encodeURIComponent(orParts.join(","))})&order=created_at.desc&limit=100`;
+      const res = await supabaseRest(endpoint);
+      if (Array.isArray(res)) {
+        rows = res;
+        loaded = true;
+      }
+    } catch (err) {
+      console.warn("Supabase REST countRecentFailedLogins fallback:", err);
+    }
+  }
+
+  if (!loaded) {
+    await initDb();
+    try {
+      const pool = await getPool();
+      if (pool) {
+        const res = await pool.query(
+          `SELECT status, created_at FROM login_logs
+           WHERE created_at >= $1 AND (LOWER(email) = $2 OR ($3 <> '' AND ip_address = $3))
+           ORDER BY created_at DESC LIMIT 100`,
+          [since, cleanEmail, cleanIp]
+        );
+        rows = res.rows;
+      }
+    } catch (error) {
+      console.error("PostgreSQL countRecentFailedLogins error:", error);
+    }
+  }
+
+  let count = 0;
+  for (const r of rows) {
+    if (r.status === "success") break;
+    if (r.status === "failed") count++;
+  }
+  return count;
+}

@@ -82,6 +82,9 @@ import {
   fetchCrmSettingsServerFn,
   saveCrmSettingsServerFn,
   saveAccessControlServerFn,
+  saveBroadcastServerFn,
+  checkLoginLockoutServerFn,
+  recordFailedLoginServerFn,
   createAdminUserServerFn,
   toggleAdminUserStatusServerFn,
   deleteAdminUserServerFn,
@@ -537,9 +540,24 @@ function AdminPage() {
   });
   const [crmLoginAttempts, setCrmLoginAttempts] = useState<number>(() => {
     if (typeof window !== "undefined") {
-      return Number(localStorage.getItem("crm_login_attempts")) || 5;
+      const n = Number(localStorage.getItem("crm_login_attempts"));
+      return [3, 5, 10].includes(n) ? n : 3;
     }
-    return 5;
+    return 3;
+  });
+  // Live values used by the app (synced from the server for every admin); the
+  // crm* values above are the editable form fields in CRM Settings.
+  const [appliedSyncInterval, setAppliedSyncInterval] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      return Number(localStorage.getItem("crm_sync_interval")) === 20 ? 20 : 10;
+    }
+    return 10;
+  });
+  const [appliedInactivityTimeout, setAppliedInactivityTimeout] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      return Number(localStorage.getItem("crm_inactivity_timeout")) || 10;
+    }
+    return 10;
   });
   const [crmBroadcastBanner, setCrmBroadcastBanner] = useState(() => {
     if (typeof window !== "undefined") {
@@ -904,6 +922,12 @@ function AdminPage() {
         }
         if (st["notification_email"]) setCrmNotificationEmail(st["notification_email"]);
         setCrmSyncInterval(Number(st["sync_interval"]) === 20 ? 20 : 10);
+        if (st["inactivity_timeout"]) setCrmInactivityTimeout(Number(st["inactivity_timeout"]) || 10);
+        if (st["login_attempts"]) {
+          const n = Number(st["login_attempts"]);
+          setCrmLoginAttempts([3, 5, 10].includes(n) ? n : 3);
+        }
+        applySharedSettings(st);
       })
       .catch((err) => console.warn("Could not load CRM settings:", err));
     return () => {
@@ -984,13 +1008,13 @@ function AdminPage() {
   useEffect(() => {
     if (!session) return;
     let timeoutId: NodeJS.Timeout;
-    const timeoutMs = (crmInactivityTimeout || 10) * 60 * 1000;
+    const timeoutMs = (appliedInactivityTimeout || 10) * 60 * 1000;
 
     const resetInactivityTimer = () => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
         handleLogout();
-        setAuthError(`You were automatically logged out due to ${crmInactivityTimeout || 10} minutes of inactivity.`);
+        setAuthError(`You were automatically logged out due to ${appliedInactivityTimeout || 10} minutes of inactivity.`);
       }, timeoutMs);
     };
 
@@ -1007,7 +1031,7 @@ function AdminPage() {
         window.removeEventListener(event, resetInactivityTimer);
       });
     };
-  }, [session, crmInactivityTimeout]);
+  }, [session, appliedInactivityTimeout]);
 
   // Real-Time Incoming Notifications
   const handleIncomingLead = (newLead: Lead) => {
@@ -1099,23 +1123,23 @@ function AdminPage() {
     if (!session) return;
 
     const countdownTimer = setInterval(() => {
-      setRefreshCountdown((prev) => (prev <= 1 ? crmSyncInterval : prev - 1));
+      setRefreshCountdown((prev) => (prev <= 1 ? appliedSyncInterval : prev - 1));
     }, 1000);
 
     const intervalId = setInterval(() => {
       fetchAllData(true);
-      setRefreshCountdown(crmSyncInterval);
-    }, crmSyncInterval * 1000);
+      setRefreshCountdown(appliedSyncInterval);
+    }, appliedSyncInterval * 1000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         fetchAllData(true);
-        setRefreshCountdown(crmSyncInterval);
+        setRefreshCountdown(appliedSyncInterval);
       }
     };
     const handleFocus = () => {
       fetchAllData(true);
-      setRefreshCountdown(crmSyncInterval);
+      setRefreshCountdown(appliedSyncInterval);
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -1166,7 +1190,7 @@ function AdminPage() {
       if (bcOrders) bcOrders.close();
       window.removeEventListener("ai_studio_lead_event", handleCustomLeadEvent);
     };
-  }, [session, soundEnabled, crmSyncInterval]);
+  }, [session, soundEnabled, appliedSyncInterval]);
 
   // Data Fetching
   const fetchAllData = async (silent = false) => {
@@ -1301,6 +1325,31 @@ function AdminPage() {
     } catch {}
   };
 
+  // Apply server-stored settings that must be live for every admin
+  const applySharedSettings = (st: Record<string, string>) => {
+    if (st["platform_title"]) {
+      setAppliedPlatformTitle(st["platform_title"]);
+      try { localStorage.setItem("crm_platform_title", st["platform_title"]); } catch {}
+    }
+    if (st["sync_interval"]) {
+      const v = Number(st["sync_interval"]) === 20 ? 20 : 10;
+      setAppliedSyncInterval(v);
+      try { localStorage.setItem("crm_sync_interval", String(v)); } catch {}
+    }
+    if (st["inactivity_timeout"]) {
+      const v = [5, 10, 15, 30].includes(Number(st["inactivity_timeout"])) ? Number(st["inactivity_timeout"]) : 10;
+      setAppliedInactivityTimeout(v);
+      try { localStorage.setItem("crm_inactivity_timeout", String(v)); } catch {}
+    }
+    if (st["broadcast_banner"] !== undefined) {
+      setCrmBroadcastBanner(st["broadcast_banner"] || "");
+      try { localStorage.setItem("crm_broadcast_banner", st["broadcast_banner"] || ""); } catch {}
+    }
+    if (st["settings_updated_at"]) {
+      setSettingsLastSaved({ at: st["settings_updated_at"], by: st["settings_updated_by"] || "Super Admin" });
+    }
+  };
+
   // Loads the RBAC matrix + built-in account status (polled with the rest of the data)
   const fetchAccessControl = async () => {
     try {
@@ -1308,13 +1357,7 @@ function AdminPage() {
       const st = (res?.settings || {}) as Record<string, string>;
       setRolePermissions(parseRolePermissions(st["role_permissions"]));
       setAccountStatus(parseAccountStatus(st["account_status"]));
-      if (st["platform_title"]) {
-        setAppliedPlatformTitle(st["platform_title"]);
-        try { localStorage.setItem("crm_platform_title", st["platform_title"]); } catch {}
-      }
-      if (st["settings_updated_at"]) {
-        setSettingsLastSaved({ at: st["settings_updated_at"], by: st["settings_updated_by"] || "Super Admin" });
-      }
+      applySharedSettings(st);
       return st;
     } catch {
       return null;
@@ -1364,11 +1407,55 @@ function AdminPage() {
     } catch {}
   };
 
-  // Authentication Handler with IP/Security Tracking
+  // Best-effort public IP + location of this browser (3s timeout each)
+  const getClientIpInfo = async (): Promise<{ ip: string; location: string }> => {
+    let ip = "";
+    let location = "Unknown Location";
+    const withTimeout = async (url: string) => {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 3000);
+      try {
+        const r = await fetch(url, { signal: ctrl.signal });
+        return await r.json();
+      } finally {
+        clearTimeout(t);
+      }
+    };
+    try {
+      const ipData = await withTimeout("https://api.ipify.org?format=json");
+      if (ipData?.ip) {
+        ip = ipData.ip;
+        try {
+          const geo = await withTimeout(`https://ipwho.is/${ip}`);
+          if (geo && geo.success !== false) {
+            const parts = [geo.city, geo.region, geo.country].filter(Boolean);
+            if (parts.length > 0) location = parts.join(", ");
+          }
+        } catch {}
+      }
+    } catch {}
+    return { ip, location };
+  };
+
+  // Authentication Handler with IP/Security Tracking + failed-login lockout
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanEmail = emailInput.trim().toLowerCase();
     const cleanPass = passwordInput.trim();
+    const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "Web Browser";
+
+    const ipInfo = await getClientIpInfo();
+
+    // 0. Refuse while this email / IP is locked out after too many failed attempts
+    try {
+      const lock = await checkLoginLockoutServerFn({ data: { email: cleanEmail, ip: ipInfo.ip } });
+      if (lock?.locked) {
+        setAuthError(
+          `Too many failed login attempts. This account / IP is locked for ${lock.lockoutMinutes || 15} minutes. The Super Admin has been notified.`
+        );
+        return;
+      }
+    } catch {}
 
     // 1. Static credentials — exactly 3 authorized users
     let authRole: "super_admin" | "admin" | "leads_manager" | null = null;
@@ -1425,35 +1512,15 @@ function AdminPage() {
 
       // Record Login Audit Log with Real IP & Geolocation
       try {
-        let ipAddress = "127.0.0.1";
-        let location = "USA / Web Client";
-        try {
-          const ipRes = await fetch("https://api.ipify.org?format=json");
-          const ipData = await ipRes.json();
-          if (ipData?.ip) {
-            ipAddress = ipData.ip;
-            try {
-              const geoRes = await fetch(`https://ipwho.is/${ipAddress}`);
-              const geoData = await geoRes.json();
-              if (geoData && geoData.success !== false) {
-                const parts = [geoData.city, geoData.region, geoData.country].filter(Boolean);
-                if (parts.length > 0) {
-                  location = parts.join(", ");
-                }
-              }
-            } catch {
-              location = "USA / Web Client";
-            }
-          }
-        } catch {}
-
+        const ipAddress = ipInfo.ip || "Unknown IP";
+        const location = ipInfo.location;
         await recordLoginLogServerFn({
           data: {
             email: cleanEmail,
             role: authRole,
             ip_address: ipAddress,
             location,
-            user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "Web Browser",
+            user_agent: userAgent,
             status: "success",
           },
         });
@@ -1461,16 +1528,18 @@ function AdminPage() {
     } else {
       setAuthError("Invalid credentials. Please verify your email and password.");
       try {
-        await recordLoginLogServerFn({
-          data: {
-            email: cleanEmail,
-            role: "unknown",
-            ip_address: "Unknown IP",
-            location: "Failed Attempt",
-            user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "Web Browser",
-            status: "failed",
-          },
+        const res = await recordFailedLoginServerFn({
+          data: { email: cleanEmail, ip: ipInfo.ip, location: ipInfo.location, userAgent },
         });
+        if (res?.locked) {
+          setAuthError(
+            `Too many failed login attempts. This account / IP is locked for ${res.lockoutMinutes || 15} minutes. The Super Admin has been notified.`
+          );
+        } else if (typeof res?.attemptsLeft === "number") {
+          setAuthError(
+            `Invalid credentials. ${res.attemptsLeft} attempt${res.attemptsLeft === 1 ? "" : "s"} left before a 15-minute lockout.`
+          );
+        }
       } catch {}
     }
   };
@@ -2267,6 +2336,8 @@ function AdminPage() {
           platformTitle: crmPlatformTitle,
           notificationEmail: crmNotificationEmail,
           syncInterval: crmSyncInterval,
+          inactivityTimeout: crmInactivityTimeout,
+          loginAttempts: crmLoginAttempts,
           performedBy: session?.name || "Super Admin",
         },
       });
@@ -2275,6 +2346,7 @@ function AdminPage() {
         return;
       }
       const saved = (res.settings || {}) as Record<string, string>;
+      applySharedSettings(saved);
       setAppliedPlatformTitle(saved["platform_title"] || crmPlatformTitle);
       if (saved["notification_email"]) setCrmNotificationEmail(saved["notification_email"]);
       setSettingsLastSaved({
@@ -2297,23 +2369,35 @@ function AdminPage() {
       localStorage.setItem("crm_high_contrast", crmHighContrast ? "true" : "false");
       localStorage.setItem("crm_inactivity_timeout", crmInactivityTimeout.toString());
       localStorage.setItem("crm_login_attempts", crmLoginAttempts.toString());
-      localStorage.setItem("crm_broadcast_banner", crmBroadcastBanner);
     }
     setCrmSettingsSaved(true);
     setTimeout(() => setCrmSettingsSaved(false), 3000);
     showToast("CRM Settings saved successfully");
   };
 
-  const handlePublishBroadcastBanner = () => {
+  const handlePublishBroadcastBanner = async (clear = false) => {
     if (!can("broadcast")) {
       showToast("You don't have permission to broadcast notices.");
       return;
     }
-    setCrmBroadcastBanner(crmBroadcastDraft);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("crm_broadcast_banner", crmBroadcastDraft);
+    const message = clear ? "" : crmBroadcastDraft.trim();
+    if (!clear && !message) {
+      showToast("Type a notice before publishing.");
+      return;
     }
-    showToast(crmBroadcastDraft ? "Broadcast alert published across CRM" : "Broadcast alert cleared");
+    try {
+      const res = await saveBroadcastServerFn({ data: { message, performedBy: session?.name || "Super Admin" } });
+      if (!res.success) {
+        showToast(res.error || "Failed to update the broadcast");
+        return;
+      }
+      setCrmBroadcastBanner(message);
+      if (clear) setCrmBroadcastDraft("");
+      try { localStorage.setItem("crm_broadcast_banner", message); } catch {}
+      showToast(message ? "Broadcast published to all admins" : "Broadcast banner cleared for all admins");
+    } catch {
+      showToast("Failed to update the broadcast");
+    }
   };
 
   const isToday = (dateStr?: string) => {
@@ -2988,7 +3072,7 @@ function AdminPage() {
             <button
               onClick={() => {
                 fetchAllData(false);
-                setRefreshCountdown(crmSyncInterval);
+                setRefreshCountdown(appliedSyncInterval);
               }}
               className="rounded-lg border border-slate-200 bg-slate-100 p-2 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
               title="Refresh Data Now"
@@ -3377,13 +3461,7 @@ function AdminPage() {
             </div>
             {can("broadcast") && (
               <button
-                onClick={() => {
-                  setCrmBroadcastBanner("");
-                  if (typeof window !== "undefined") {
-                    localStorage.removeItem("crm_broadcast_banner");
-                  }
-                  showToast("Broadcast banner dismissed");
-                }}
+                onClick={() => handlePublishBroadcastBanner(true)}
                 className="text-[11px] font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer shrink-0 self-end sm:self-center"
               >
                 Dismiss Notice
@@ -7597,7 +7675,7 @@ function AdminPage() {
                       <span>Security, Inactivity Timeout, & Access Control Policies</span>
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Configure automated inactivity session expiration, financial PIN requirements, and system-wide broadcast alerts.
+                      Configure automated inactivity logout, failed-login lockout with email alerts, and system-wide broadcast alerts. Click “Save All Settings” to apply the timeout and threshold for every admin.
                     </p>
                   </div>
 
@@ -7639,25 +7717,9 @@ function AdminPage() {
                         <option value={10}>10 Failed Attempts (Relaxed)</option>
                       </select>
                       <p className="text-[11px] text-slate-400">
-                        Enforces temporary 15-minute IP address authentication lockdown when consecutive invalid login attempts exceed this threshold.
+                        After this many consecutive failed logins, that email / IP is locked out for 15 minutes and a security alert is emailed to the System Alert Notification Email ({crmNotificationEmail}).
                       </p>
                     </div>
-                  </div>
-
-                  {/* Master Financial PIN Security Information */}
-                  <div className="rounded-xl border border-slate-200 p-4 space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Key className="h-4 w-4 text-slate-800" />
-                        <span className="font-bold text-slate-900">Master Orders & Payment PIN Security</span>
-                      </div>
-                      <span className="rounded-md bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 text-[10px] border border-emerald-200">
-                        PIN ENFORCED
-                      </span>
-                    </div>
-                    <p className="text-slate-500 text-[11px]">
-                      Access to Orders & Payments tab requires secondary security verification via the master 4-digit PIN code. Both Super Admin and Admin accounts must enter the verified security PIN to unlock financial records.
-                    </p>
                   </div>
 
                   {/* System Broadcast Alert Banner Manager */}
@@ -7667,7 +7729,7 @@ function AdminPage() {
                       <span className="font-bold text-amber-950">System-Wide Operational Notice Broadcast</span>
                     </div>
                     <p className="text-[11px] text-amber-900/80">
-                      Super Admin can publish a banner notification that instantly displays across the top of all active admin users' screens.
+                      Publish a banner that appears at the top of every logged-in admin's screen (within one auto-sync cycle). Clearing it removes it for everyone.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-2">
                       <input
@@ -7678,21 +7740,14 @@ function AdminPage() {
                         className="flex-1 rounded-xl border border-amber-300 bg-white p-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900"
                       />
                       <button
-                        onClick={handlePublishBroadcastBanner}
+                        onClick={() => handlePublishBroadcastBanner(false)}
                         className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-black transition-colors cursor-pointer shrink-0"
                       >
                         Publish Broadcast
                       </button>
                       {crmBroadcastBanner && (
                         <button
-                          onClick={() => {
-                            setCrmBroadcastDraft("");
-                            setCrmBroadcastBanner("");
-                            if (typeof window !== "undefined") {
-                              localStorage.removeItem("crm_broadcast_banner");
-                            }
-                            showToast("Broadcast banner cleared");
-                          }}
+                          onClick={() => handlePublishBroadcastBanner(true)}
                           className="rounded-xl border border-red-300 bg-white px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 transition-colors cursor-pointer shrink-0"
                         >
                           Clear Banner
