@@ -1335,14 +1335,14 @@ function AdminPage() {
   };
 
   const getAdminWhatsAppPlainText = (lead: Lead) => {
-    let msg = `Hi ${lead.name},\n\nThank you for reaching out to Quickupp AI Studio USA!\n\nWe have received your AI Video Production inquiry with the following details:\n\nClient Name: ${lead.name}`;
+    let msg = `Hi ${lead.name},\n\nThank you for reaching out to Quickupp AI Studio USA.\n\nWe have received your AI Video Production inquiry with the following details:\n\nClient Name: ${lead.name}`;
     if (lead.business) msg += `\nBusiness / Brand: ${lead.business}`;
     if (lead.video_type) msg += `\nVideo Format: ${lead.video_type}`;
     if (lead.video_quantity) msg += `\nVideo Quantity: ${lead.video_quantity}`;
     if (lead.location) msg += `\nLocation: ${lead.location}`;
     if (lead.requirement || lead.additional) msg += `\nProject Scope: ${lead.requirement || lead.additional}`;
 
-    msg += `\n\nOur team is reviewing your requirements and preparing custom sample concepts, video reels, and a tailored quote for your project.\n\nCould you please confirm if you have a target turnaround timeline or any reference video links in mind?\n\nBest regards,\nQuickupp AI Studio Team (USA)`;
+    msg += `\n\nOur team is reviewing your requirements and preparing custom sample concepts, video reels, and a tailored quote for your project.\n\nCould you please confirm if you have a target turnaround timeline or any reference video links in mind?\n\nQuickupp AI Studio USA\nWebsite: https://quickuppaistudio.us\nAddress: 8 The Green, Suite A, Dover, Delaware - 19901, USA\nEmail: info@quickuppaistudio.us`;
     return msg;
   };
 

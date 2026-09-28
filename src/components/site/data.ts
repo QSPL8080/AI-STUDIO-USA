@@ -569,13 +569,16 @@ export const footerCopyright = `© ${new Date().getFullYear()} Quickupp AI Studi
 export const whatsAppPhoneNumber = "918177828748";
 export const whatsAppDefaultMessage = `Hello Quickupp AI Studio Team,
 
-I visited quickuppaistudio.us and I'm interested in exploring your AI Video Production services for my business.
+I visited quickuppaistudio.us and I am interested in exploring your AI Video Production services for my business.
 
 Could you please share details regarding:
-• Available AI video formats (UGC, Avatar, Hyper-Realistic, Cartoon, Digital Twin)
-• Pricing packages & turnaround timelines
-• Next steps to get started
+- Available AI video formats (UGC, Avatar, Hyper-Realistic, Cartoon, Digital Twin)
+- Pricing packages and turnaround timelines
+- Next steps to get started
 
-Looking forward to connecting with your team!`;
+Quickupp AI Studio USA
+Website: https://quickuppaistudio.us
+Address: 8 The Green, Suite A, Dover, Delaware - 19901, USA
+Email: info@quickuppaistudio.us`;
 
 export const whatsAppUrl = `https://wa.me/${whatsAppPhoneNumber}?text=${encodeURIComponent(whatsAppDefaultMessage)}`;
