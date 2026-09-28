@@ -129,6 +129,14 @@ function playNotificationChime() {
   } catch {}
 }
 
+function WhatsAppIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={`fill-current ${className}`} xmlns="http://www.w3.org/2000/svg">
+      <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24zm-3.6 3.63c-.2 0-.42.01-.6.04-.24.04-.52.14-.72.37-.25.28-.97.95-.97 2.32s.99 2.69 1.13 2.87c.14.19 1.95 2.98 4.73 4.18.66.29 1.18.46 1.58.59.66.21 1.27.18 1.75.11.53-.08 1.63-.67 1.86-1.31.23-.65.23-1.2.16-1.31-.07-.12-.25-.19-.53-.33-.28-.14-1.63-.8-1.88-.89-.25-.09-.44-.14-.62.14-.19.28-.72.89-.88 1.07-.16.19-.33.21-.61.07-.28-.14-1.18-.44-2.25-1.39-.83-.74-1.4-1.66-1.56-1.94-.16-.28-.02-.43.12-.57.13-.13.28-.33.42-.5.14-.16.19-.28.28-.47.09-.19.05-.35-.02-.49-.07-.14-.62-1.5-.86-2.05-.22-.53-.46-.46-.62-.47z" />
+    </svg>
+  );
+}
+
 const VIDEO_TYPES = [
   "AI UGC",
   "AI Avatar",
@@ -3084,7 +3092,7 @@ function AdminPage() {
                                   className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer"
                                   title="Chat on WhatsApp"
                                 >
-                                  <MessageSquare className="h-3.5 w-3.5" />
+                                  <WhatsAppIcon className="h-3.5 w-3.5" />
                                 </button>
 
                                 {/* View Details */}
@@ -3215,7 +3223,7 @@ function AdminPage() {
                             className="rounded-lg bg-emerald-600 p-1.5 text-white hover:bg-emerald-700 transition-colors cursor-pointer"
                             title="WhatsApp"
                           >
-                            <MessageSquare className="h-3.5 w-3.5" />
+                            <WhatsAppIcon className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
@@ -3828,7 +3836,7 @@ function AdminPage() {
                                   className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-1.5 text-emerald-600 hover:bg-emerald-500/20 transition-all cursor-pointer"
                                   title="Chat on WhatsApp"
                                 >
-                                  <MessageSquare className="h-3.5 w-3.5" />
+                                  <WhatsAppIcon className="h-3.5 w-3.5" />
                                 </button>
 
                                 {/* View Details */}
@@ -3944,7 +3952,7 @@ function AdminPage() {
                             className="rounded-lg bg-emerald-600 p-1.5 text-white hover:bg-emerald-700 transition-colors cursor-pointer"
                             title="WhatsApp"
                           >
-                            <MessageSquare className="h-3.5 w-3.5" />
+                            <WhatsAppIcon className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
@@ -5614,9 +5622,9 @@ function AdminPage() {
                     <button
                       type="button"
                       onClick={() => handleOpenWhatsApp(viewLeadDetails)}
-                      className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-0.5 text-[11px] font-bold text-white hover:bg-emerald-700 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-700 cursor-pointer transition-colors"
                     >
-                      <MessageSquare className="h-3 w-3" />
+                      <WhatsAppIcon className="h-3.5 w-3.5" />
                       <span>Chat on WhatsApp</span>
                     </button>
                   </div>
@@ -5898,9 +5906,9 @@ function AdminPage() {
                 <button
                   type="button"
                   onClick={() => handleOpenWhatsApp(viewLeadDetails)}
-                  className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 flex items-center gap-1.5 cursor-pointer shadow-sm transition-colors"
                 >
-                  <MessageSquare className="h-4 w-4" />
+                  <WhatsAppIcon className="h-4 w-4" />
                   <span>Open WhatsApp</span>
                 </button>
 
