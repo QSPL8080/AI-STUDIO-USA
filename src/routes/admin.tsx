@@ -1139,7 +1139,7 @@ function AdminPage() {
   };
 
   const handleSoftDeleteLead = async (id: string) => {
-    if (confirm("Are you sure you want to move this lead to the Recycle Bin?")) {
+    if (confirm("Are you sure you want to delete this lead?")) {
       const target = leads.find((l) => l.id === id);
       const updated = leads.filter((l) => l.id !== id);
       setLeads(updated);
@@ -2835,7 +2835,7 @@ function AdminPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={() => setShowAddLeadModal(true)}
-                    className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-500/20 transition-all cursor-pointer"
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-900 bg-slate-900 px-3.5 py-2 text-xs font-bold text-white hover:bg-black transition-all cursor-pointer shadow-xs"
                   >
                     <Plus className="h-4 w-4" />
                     <span>+ Add Lead</span>
@@ -2843,9 +2843,9 @@ function AdminPage() {
 
                   <button
                     onClick={() => exportCSV(false)}
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer shadow-xs"
                   >
-                    <Download className="h-4 w-4 text-blue-500" />
+                    <Download className="h-4 w-4 text-slate-800" />
                     <span>Export CSV</span>
                   </button>
                 </div>
@@ -3234,53 +3234,54 @@ function AdminPage() {
                               )}
                             </td>
 
-                            {/* Actions */}
+                            {/* Actions (Section 09: Action Buttons) */}
                             <td className="whitespace-nowrap px-4 py-3.5 text-right">
                               <div className="flex items-center justify-end gap-1.5">
-                                {/* 1-Click WhatsApp */}
+                                {/* 1. Call */}
+                                <a
+                                  href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
+                                  className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all cursor-pointer inline-flex items-center justify-center"
+                                  title="Call Client"
+                                >
+                                  <Phone className="h-3.5 w-3.5" />
+                                </a>
+
+                                {/* 2. WhatsApp */}
                                 <button
                                   type="button"
                                   onClick={() => handleOpenWhatsApp(lead)}
-                                  className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer"
+                                  className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all cursor-pointer inline-flex items-center justify-center"
                                   title="Chat on WhatsApp"
                                 >
                                   <WhatsAppIcon className="h-3.5 w-3.5" />
                                 </button>
 
-                                {/* View Details */}
+                                {/* 3. View Details */}
                                 <button
                                   type="button"
                                   onClick={() => setViewLeadDetails(lead)}
-                                  className={`rounded-lg border p-1.5 transition-colors cursor-pointer ${
-                                    isDark
-                                      ? "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
-                                      : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200"
-                                  }`}
+                                  className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all cursor-pointer inline-flex items-center justify-center"
                                   title="View Full Profile"
                                 >
                                   <Eye className="h-3.5 w-3.5" />
                                 </button>
 
-                                {/* Edit Lead */}
+                                {/* 4. Edit Lead */}
                                 <button
                                   type="button"
                                   onClick={() => setEditingLead(lead)}
-                                  className={`rounded-lg border p-1.5 transition-colors cursor-pointer ${
-                                    isDark
-                                      ? "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
-                                      : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200"
-                                  }`}
+                                  className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all cursor-pointer inline-flex items-center justify-center"
                                   title="Edit Lead"
                                 >
                                   <Edit className="h-3.5 w-3.5" />
                                 </button>
 
-                                {/* Soft Delete */}
+                                {/* 5. Delete Lead */}
                                 <button
                                   type="button"
                                   onClick={() => handleSoftDeleteLead(lead.id)}
-                                  className="rounded-lg border border-red-500/30 bg-red-500/10 p-1.5 text-red-600 dark:text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
-                                  title="Move to Recycle Bin"
+                                  className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all cursor-pointer inline-flex items-center justify-center"
+                                  title="Delete Lead"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </button>
@@ -3322,11 +3323,11 @@ function AdminPage() {
 
                       {/* Phone & Scope */}
                       <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
-                        <a href={`tel:${lead.phone}`} className="font-mono text-blue-600 font-semibold flex items-center gap-1">
-                          <Phone className="h-3 w-3 text-slate-400" /> {lead.phone}
+                        <a href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`} className="font-mono text-slate-900 font-semibold flex items-center gap-1">
+                          <Phone className="h-3 w-3 text-slate-500" /> {lead.phone}
                         </a>
                         <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                          <Video className="h-3 w-3 text-blue-500" /> {lead.video_type}
+                          <Video className="h-3 w-3 text-slate-600" /> {lead.video_type}
                           {lead.video_quantity && ` (x${lead.video_quantity})`}
                         </span>
                       </div>
@@ -3363,16 +3364,23 @@ function AdminPage() {
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-100">
                         <div className="text-[10px] text-slate-400">
                           {new Date(lead.created_at).toLocaleDateString()}
                         </div>
 
                         <div className="flex items-center gap-1.5">
+                          <a
+                            href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
+                            className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
+                            title="Call"
+                          >
+                            <Phone className="h-3.5 w-3.5" />
+                          </a>
                           <button
                             type="button"
                             onClick={() => handleOpenWhatsApp(lead)}
-                            className="rounded-lg bg-emerald-600 p-1.5 text-white hover:bg-emerald-700 transition-colors cursor-pointer"
+                            className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
                             title="WhatsApp"
                           >
                             <WhatsAppIcon className="h-3.5 w-3.5" />
@@ -3380,22 +3388,23 @@ function AdminPage() {
                           <button
                             type="button"
                             onClick={() => setViewLeadDetails(lead)}
-                            className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                            className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
+                            title="View"
                           >
-                            Details
+                            <Eye className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => setEditingLead(lead)}
-                            className="rounded-lg border border-slate-200 dark:border-slate-700 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                            className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
                             title="Edit"
                           >
-                            <Edit className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />
+                            <Edit className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => handleSoftDeleteLead(lead.id)}
-                            className="rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 transition-colors cursor-pointer"
+                            className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
                             title="Delete"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -3694,7 +3703,7 @@ function AdminPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={() => setShowAddLeadModal(true)}
-                    className="flex items-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-500/10 px-3.5 py-2 text-xs font-bold text-blue-700 hover:bg-blue-500/20 transition-all cursor-pointer"
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-900 bg-slate-900 px-3.5 py-2 text-xs font-bold text-white hover:bg-black transition-all cursor-pointer shadow-xs"
                   >
                     <Plus className="h-4 w-4" />
                     <span>+ Add Meta Lead</span>
@@ -3702,9 +3711,9 @@ function AdminPage() {
 
                   <button
                     onClick={() => exportMetaCSV(false)}
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer shadow-xs"
                   >
-                    <Download className="h-4 w-4 text-blue-500" />
+                    <Download className="h-4 w-4 text-slate-800" />
                     <span>Export CSV</span>
                   </button>
                 </div>
@@ -4114,45 +4123,54 @@ function AdminPage() {
                               )}
                             </td>
 
-                            {/* Actions */}
+                            {/* Actions (Section 09: Action Buttons) */}
                             <td className="whitespace-nowrap px-4 py-3.5 text-right">
                               <div className="flex items-center justify-end gap-1.5">
-                                {/* 1-Click WhatsApp */}
+                                {/* 1. Call */}
+                                <a
+                                  href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
+                                  className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all cursor-pointer inline-flex items-center justify-center"
+                                  title="Call Client"
+                                >
+                                  <Phone className="h-3.5 w-3.5" />
+                                </a>
+
+                                {/* 2. WhatsApp */}
                                 <button
                                   type="button"
                                   onClick={() => handleOpenWhatsApp(lead)}
-                                  className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-1.5 text-emerald-600 hover:bg-emerald-500/20 transition-all cursor-pointer"
+                                  className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all cursor-pointer inline-flex items-center justify-center"
                                   title="Chat on WhatsApp"
                                 >
                                   <WhatsAppIcon className="h-3.5 w-3.5" />
                                 </button>
 
-                                {/* View Details */}
+                                {/* 3. View Details */}
                                 <button
                                   type="button"
                                   onClick={() => setViewLeadDetails(lead)}
-                                  className="rounded-lg border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 p-1.5 transition-colors cursor-pointer"
+                                  className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all cursor-pointer inline-flex items-center justify-center"
                                   title="View Full Profile"
                                 >
                                   <Eye className="h-3.5 w-3.5" />
                                 </button>
 
-                                {/* Edit Lead */}
+                                {/* 4. Edit Lead */}
                                 <button
                                   type="button"
                                   onClick={() => setEditingLead(lead)}
-                                  className="rounded-lg border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 p-1.5 transition-colors cursor-pointer"
+                                  className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all cursor-pointer inline-flex items-center justify-center"
                                   title="Edit Lead"
                                 >
                                   <Edit className="h-3.5 w-3.5" />
                                 </button>
 
-                                {/* Delete / Recycle Bin */}
+                                {/* 5. Delete Lead */}
                                 <button
                                   type="button"
                                   onClick={() => handleSoftDeleteLead(lead.id)}
-                                  className="rounded-lg border border-red-200 bg-red-50 p-1.5 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
-                                  title="Move to Recycle Bin"
+                                  className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all cursor-pointer inline-flex items-center justify-center"
+                                  title="Delete Lead"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </button>
@@ -4226,18 +4244,25 @@ function AdminPage() {
 
                       <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                         <a
-                          href={`tel:${lead.phone}`}
-                          className="text-xs font-mono font-semibold text-blue-600 hover:underline flex items-center gap-1"
+                          href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
+                          className="text-xs font-mono font-semibold text-slate-900 hover:underline flex items-center gap-1"
                         >
-                          <Phone className="h-3 w-3" />
+                          <Phone className="h-3 w-3 text-slate-500" />
                           <span>{lead.phone}</span>
                         </a>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <a
+                            href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
+                            className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
+                            title="Call"
+                          >
+                            <Phone className="h-3.5 w-3.5" />
+                          </a>
                           <button
                             type="button"
                             onClick={() => handleOpenWhatsApp(lead)}
-                            className="rounded-lg bg-emerald-600 p-1.5 text-white hover:bg-emerald-700 transition-colors cursor-pointer"
+                            className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
                             title="WhatsApp"
                           >
                             <WhatsAppIcon className="h-3.5 w-3.5" />
@@ -4245,22 +4270,23 @@ function AdminPage() {
                           <button
                             type="button"
                             onClick={() => setViewLeadDetails(lead)}
-                            className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
+                            className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
+                            title="View"
                           >
-                            Details
+                            <Eye className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => setEditingLead(lead)}
-                            className="rounded-lg border border-slate-200 p-1.5 hover:bg-slate-100 transition-colors cursor-pointer"
+                            className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
                             title="Edit"
                           >
-                            <Edit className="h-3.5 w-3.5 text-slate-600" />
+                            <Edit className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => handleSoftDeleteLead(lead.id)}
-                            className="rounded-lg border border-red-200 bg-red-50 p-1.5 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
+                            className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
                             title="Delete"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -4806,7 +4832,7 @@ function AdminPage() {
                                 {matchedLead ? (
                                   <button
                                     onClick={() => setViewLeadDetails(matchedLead)}
-                                    className="rounded-lg border border-emerald-500/40 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100 cursor-pointer"
+                                    className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-800 hover:bg-slate-900 hover:text-white cursor-pointer transition-colors"
                                     title="View & Update Matching CRM Lead"
                                   >
                                     View Lead
@@ -4824,7 +4850,7 @@ function AdminPage() {
                                       });
                                       setShowAddLeadModal(true);
                                     }}
-                                    className="rounded-lg border border-blue-500/40 bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-600 hover:bg-blue-100 cursor-pointer"
+                                    className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-800 hover:bg-slate-900 hover:text-white cursor-pointer transition-colors"
                                     title="Create CRM Lead from this meeting"
                                   >
                                     + Lead
@@ -4834,7 +4860,7 @@ function AdminPage() {
                                 {m.meeting_status !== "cancelled" && (
                                   <button
                                     onClick={() => setEditingMeeting(m)}
-                                    className="rounded-lg border border-slate-200 p-1 text-slate-500 hover:bg-slate-100 cursor-pointer"
+                                    className="rounded-lg border border-slate-300 bg-white p-1 text-slate-700 hover:bg-slate-900 hover:text-white cursor-pointer transition-colors inline-flex items-center justify-center"
                                     title="Edit Meeting Details"
                                   >
                                     <Edit className="h-3.5 w-3.5" />
@@ -4847,7 +4873,7 @@ function AdminPage() {
                                       setCancellingMeeting(m);
                                       setCancellationReason("");
                                     }}
-                                    className="rounded-lg border border-red-200 p-1 text-red-500 hover:bg-red-50 cursor-pointer"
+                                    className="rounded-lg border border-slate-300 bg-white p-1 text-slate-700 hover:bg-slate-900 hover:text-white cursor-pointer transition-colors inline-flex items-center justify-center"
                                     title="Cancel Meeting"
                                   >
                                     <X className="h-3.5 w-3.5" />
@@ -4877,7 +4903,7 @@ function AdminPage() {
                                       await fetchLogsList();
                                     }
                                   }}
-                                  className="rounded-lg border border-slate-200 p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 cursor-pointer"
+                                  className="rounded-lg border border-slate-300 bg-white p-1 text-slate-700 hover:bg-slate-900 hover:text-white cursor-pointer transition-colors inline-flex items-center justify-center"
                                   title="Delete Meeting Record"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
@@ -5576,20 +5602,20 @@ function AdminPage() {
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={() => handleRestoreLead(lead.id)}
-                                className="rounded-lg border border-blue-500/40 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100 flex items-center gap-1 cursor-pointer transition-colors"
+                                className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
                                 title="Restore Lead to Active Leads"
                               >
-                                <RotateCcw className="h-3.5 w-3.5 text-blue-600" />
+                                <RotateCcw className="h-3.5 w-3.5" />
                                 <span>Restore</span>
                               </button>
 
                               {isSuperAdmin && (
                                 <button
                                   onClick={() => handlePermanentDeleteLead(lead.id)}
-                                  className="rounded-lg border border-red-500/40 bg-red-50 px-3 py-1 text-xs font-bold text-red-700 hover:bg-red-100 flex items-center gap-1 cursor-pointer transition-colors"
+                                  className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
                                   title="Permanently Erase from Database"
                                 >
-                                  <Trash2 className="h-3.5 w-3.5 text-red-600" />
+                                  <Trash2 className="h-3.5 w-3.5" />
                                   <span>Permanent Erase</span>
                                 </button>
                               )}
@@ -6256,25 +6282,25 @@ function AdminPage() {
               </div>
             </div>
 
-            {/* Quick Actions Footer */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t dark:border-slate-800">
+            {/* Quick Actions Footer (Section 09: Action Buttons) */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t">
               <div className="flex items-center gap-2">
+                <a
+                  href={`tel:${viewLeadDetails.phone.replace(/[^0-9+]/g, "")}`}
+                  className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                  <span>Call</span>
+                </a>
+
                 <button
                   type="button"
                   onClick={() => handleOpenWhatsApp(viewLeadDetails)}
-                  className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 flex items-center gap-1.5 cursor-pointer shadow-sm transition-colors"
+                  className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
                 >
-                  <WhatsAppIcon className="h-4 w-4" />
-                  <span>Open WhatsApp</span>
+                  <WhatsAppIcon className="h-3.5 w-3.5" />
+                  <span>WhatsApp</span>
                 </button>
-
-                <a
-                  href={`tel:${viewLeadDetails.phone.replace(/[^0-9+]/g, "")}`}
-                  className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Phone className="h-4 w-4" />
-                  <span>Call Client</span>
-                </a>
               </div>
 
               <div className="flex items-center gap-2">
@@ -6284,7 +6310,7 @@ function AdminPage() {
                     setEditingLead(viewLeadDetails);
                     setViewLeadDetails(null);
                   }}
-                  className="rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-xs font-bold text-blue-600 hover:bg-blue-500/20 flex items-center gap-1 cursor-pointer"
+                  className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
                 >
                   <Edit className="h-3.5 w-3.5" />
                   <span>Edit Lead</span>
@@ -6292,8 +6318,21 @@ function AdminPage() {
 
                 <button
                   type="button"
+                  onClick={() => {
+                    const idToDelete = viewLeadDetails.id;
+                    setViewLeadDetails(null);
+                    handleSoftDeleteLead(idToDelete);
+                  }}
+                  className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Delete</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setViewLeadDetails(null)}
-                  className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                  className="rounded-xl border border-slate-200 bg-slate-100 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200 cursor-pointer transition-colors"
                 >
                   Close
                 </button>
