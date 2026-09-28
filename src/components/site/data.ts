@@ -99,7 +99,7 @@ export const services = [
       "Problem → Solution Videos",
       "Social Media Advertisements",
     ],
-    price: "$79 / Reel",
+    price: "$1 / Reel",
     cta: "Create AI UGC Video",
   },
   {
@@ -209,7 +209,7 @@ export interface IndividualPricing {
 }
 
 export const individualPricingList: IndividualPricing[] = [
-  { service: "AI UGC", price: "$79", description: "Authentic creator-style product review & demo reels" },
+  { service: "AI UGC", price: "$1", description: "Authentic creator-style product review & demo reels" },
   { service: "AI Cartoon", price: "$79", description: "Engaging 3D & 2D character animation storytelling" },
   { service: "AI Avatar", price: "$99", description: "Professional presenter-style spokesperson reels" },
   { service: "Hyper-Realistic", price: "$149", description: "Cinematic commercial-grade visual storytelling" },
@@ -235,7 +235,7 @@ export const packagePricingTiers: PackagePricingTier[] = [
     package: "Single Video",
     delivery: "24 Hrs",
     videos: 1,
-    aiUgc: "$79",
+    aiUgc: "$1",
     aiAvatar: "$99",
     aiCartoon: "$79",
     hyperRealistic: "$149",
@@ -499,7 +499,7 @@ export const faqs = [
   {
     question: "How much does AI video production cost?",
     answer:
-      "Our AI video production services start from $79 per reel. Pricing depends on the selected video format, production requirements and package size.",
+      "Our AI video production services start from $1 per reel. Pricing depends on the selected video format, production requirements and package size.",
   },
   {
     question: "What is included in an AI video?",
