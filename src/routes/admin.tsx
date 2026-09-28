@@ -3,7 +3,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertCircle,
   ArrowLeft,
+  Bell,
+  BellRing,
   Calendar,
+  CalendarCheck,
+  Check,
   CheckCircle2,
   ChevronDown,
   Clock,
@@ -12,6 +16,7 @@ import {
   DollarSign,
   Download,
   Edit,
+  ExternalLink,
   Eye,
   EyeOff,
   Filter,
@@ -31,6 +36,7 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
   Sun,
   Trash,
   Trash2,
@@ -41,8 +47,9 @@ import {
   Volume2,
   VolumeX,
   X,
+  Zap,
 } from "lucide-react";
-import type { Lead, LeadStatus, ProjectStatus, Order, PaymentStatus, AdminUser, ActivityLog, LoginLog, CalendlyMeeting } from "@/lib/db";
+import type { Lead, LeadStatus, ProjectStatus, Order, PaymentStatus, AdminUser, ActivityLog, LoginLog, CalendlyMeeting, CRMNotification } from "@/lib/db";
 import {
   fetchLeadsServerFn,
   addManualLeadServerFn,
@@ -62,6 +69,13 @@ import {
   deleteAdminUserServerFn,
   fetchCalendlyMeetingsServerFn,
   saveCalendlyMeetingServerFn,
+  updateCalendlyMeetingServerFn,
+  deleteCalendlyMeetingServerFn,
+  sendTestCalendlyBookingServerFn,
+  fetchNotificationsServerFn,
+  markNotificationReadServerFn,
+  markAllNotificationsReadServerFn,
+  clearNotificationsServerFn,
   broadcastLeadEvent,
 } from "@/lib/lead-actions";
 import {
@@ -69,6 +83,7 @@ import {
   updateOrderStatusServerFn,
   deleteOrderServerFn,
   broadcastOrderEvent,
+  verifyPaymentPinServerFn,
 } from "@/lib/paypal-actions";
 
 export const Route = createFileRoute("/admin")({
@@ -175,10 +190,74 @@ function AdminPage() {
   const [filterOrderStatus, setFilterOrderStatus] = useState<string>("COMPLETED");
   const [orderSearchTerm, setOrderSearchTerm] = useState("");
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<Order | null>(null);
+  // Payment Tab PIN Security State
+  const [isPaymentUnlocked, setIsPaymentUnlocked] = useState(false);
+  const [showPaymentPinModal, setShowPaymentPinModal] = useState(false);
+  const [paymentPinInput, setPaymentPinInput] = useState("");
+  const [paymentPinError, setPaymentPinError] = useState("");
+  const [isVerifyingPin, setIsVerifyingPin] = useState(false);
+  const [showPaymentPin, setShowPaymentPin] = useState(false);
+  const pendingOrdersCallbackRef = useRef<(() => void) | null>(null);
+
+  const handleSelectOrdersTab = (callback?: () => void) => {
+    if (isPaymentUnlocked) {
+      setActiveTab("orders");
+      if (callback) callback();
+    } else {
+      pendingOrdersCallbackRef.current = callback || null;
+      setPaymentPinInput("");
+      setPaymentPinError("");
+      setShowPaymentPinModal(true);
+    }
+  };
+
+  const handleUnlockPaymentPin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!paymentPinInput.trim()) {
+      setPaymentPinError("Please enter the security PIN.");
+      return;
+    }
+
+    setIsVerifyingPin(true);
+    setPaymentPinError("");
+
+    try {
+      const res = await verifyPaymentPinServerFn({
+        data: { pin: paymentPinInput },
+      });
+
+      if (res.success) {
+        setIsPaymentUnlocked(true);
+        setShowPaymentPinModal(false);
+        setPaymentPinInput("");
+        setPaymentPinError("");
+        setActiveTab("orders");
+        if (pendingOrdersCallbackRef.current) {
+          pendingOrdersCallbackRef.current();
+          pendingOrdersCallbackRef.current = null;
+        }
+      } else {
+        setPaymentPinError(res.error || "Incorrect PIN. Please enter the valid security PIN.");
+      }
+    } catch (err: any) {
+      setPaymentPinError(err?.message || "Failed to verify PIN with server.");
+    } finally {
+      setIsVerifyingPin(false);
+    }
+  };
+
 
   // Calendly Meetings State
   const [meetings, setMeetings] = useState<CalendlyMeeting[]>([]);
   const [meetingSearchTerm, setMeetingSearchTerm] = useState("");
+  const [meetingStatusFilter, setMeetingStatusFilter] = useState<string>("all");
+  const [isSendingTestMeeting, setIsSendingTestMeeting] = useState(false);
+  const [calendlyWebhookCopied, setCalendlyWebhookCopied] = useState(false);
+
+  // CRM Notifications State (Image 2 & Image 3)
+  const [notifications, setNotifications] = useState<CRMNotification[]>([]);
+  const [showNotificationsPopover, setShowNotificationsPopover] = useState(false);
+  const [notificationFilter, setNotificationFilter] = useState<"all" | "unread" | "meeting" | "lead">("all");
 
   // Activity & Login Logs State
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
@@ -195,6 +274,7 @@ function AdminPage() {
   const [deliveringLead, setDeliveringLead] = useState<Lead | null>(null);
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
   const [showAddMeetingModal, setShowAddMeetingModal] = useState(false);
+  const [editingMeeting, setEditingMeeting] = useState<CalendlyMeeting | null>(null);
   const [selectedLeadForMsg, setSelectedLeadForMsg] = useState<Lead | null>(null);
 
   // Real-time Sync & Notification State
@@ -420,6 +500,7 @@ function AdminPage() {
         fetchRecycleBinList(),
         fetchOrdersList(),
         fetchMeetingsList(),
+        fetchNotificationsList(),
         fetchLogsList(),
         fetchAdminUsersList(),
       ]);
@@ -470,6 +551,13 @@ function AdminPage() {
     } catch {}
   };
 
+  const fetchNotificationsList = async () => {
+    try {
+      const res = await fetchNotificationsServerFn({ data: { limit: 50 } });
+      if (res.success && res.notifications) setNotifications(res.notifications);
+    } catch {}
+  };
+
   const fetchLogsList = async () => {
     try {
       const [actRes, logRes] = await Promise.all([
@@ -496,22 +584,26 @@ function AdminPage() {
     const cleanEmail = emailInput.trim().toLowerCase();
     const cleanPass = passwordInput.trim();
 
-    // 1. Super Admin Credentials (Exact as requested: superadmin@aistudio.com / SA@123)
+    // 1. Super Admin Credentials (superadmin@aistudio.com / SA@123 or sa@aistudio.com / Anay@123)
     let authRole: "super_admin" | "admin" | null = null;
     let authName = "Admin";
 
-    if (cleanEmail === "superadmin@aistudio.com" && cleanPass === "SA@123") {
+    if (
+      (cleanEmail === "superadmin@aistudio.com" && cleanPass === "SA@123") ||
+      (cleanEmail === "sa@aistudio.com" && (cleanPass === "Anay@123" || cleanPass === "SA@123"))
+    ) {
       authRole = "super_admin";
       authName = "Super Admin";
     }
-    // 2. Existing Admin Credentials (Preserved as requested)
+    // 2. Operational Admin Credentials
     else if (
       (cleanEmail === "admin@aistudio.com" && cleanPass === "Admin@123") ||
       (cleanEmail === "qsaistudio@gmail.com" && cleanPass === "Anay@0079") ||
-      (cleanEmail === "info@quickuppaistudio.us" && cleanPass === "Admin@123")
+      (cleanEmail === "info@quickuppaistudio.us" && cleanPass === "Admin@123") ||
+      (cleanEmail === "admin" && cleanPass === "admin")
     ) {
       authRole = "admin";
-      authName = cleanEmail === "qsaistudio@gmail.com" ? "Anay Admin" : "Admin";
+      authName = "Admin";
     } else {
       // 3. Check dynamically registered admin users in database/local state
       const dynamicUser = adminUsers.find(
@@ -542,14 +634,31 @@ function AdminPage() {
       setAuthError("");
       fetchAllData(false);
 
-      // Record Login Audit Log with IP & Location
+      // Record Login Audit Log with Real IP & Geolocation
       try {
         let ipAddress = "127.0.0.1";
-        let location = "USA / Web Client";
+        let location = "India / Web Client";
         try {
           const ipRes = await fetch("https://api.ipify.org?format=json");
           const ipData = await ipRes.json();
-          if (ipData?.ip) ipAddress = ipData.ip;
+          if (ipData?.ip) {
+            ipAddress = ipData.ip;
+            try {
+              const geoRes = await fetch(`https://ipwho.is/${ipAddress}`);
+              const geoData = await geoRes.json();
+              if (geoData && geoData.success !== false) {
+                const parts = [geoData.city, geoData.region, geoData.country].filter(Boolean);
+                if (parts.length > 0) {
+                  location = parts.join(", ");
+                }
+              }
+            } catch {
+              const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+              if (tz.includes("Calcutta") || tz.includes("Kolkata") || tz.includes("Asia")) {
+                location = "India / Web Client";
+              }
+            }
+          }
         } catch {}
 
         await recordLoginLogServerFn({
@@ -836,23 +945,23 @@ function AdminPage() {
     const isUsa = isLeadUsa(lead);
 
     if (isUsa) {
-      let msg = `Hi ${lead.name},\n\nThank you for reaching out to Quickupp AI Studio USA! 🇺🇸\n\nWe have received your AI Video Production inquiry with the following details:\n\n👤 Client Name: ${lead.name}`;
-      if (lead.business) msg += `\n🏢 Business / Brand: ${lead.business}`;
-      if (lead.video_type) msg += `\n🎬 Video Format: ${lead.video_type}`;
-      if (lead.video_quantity) msg += `\n🔢 Video Quantity: ${lead.video_quantity}`;
-      if (lead.location) msg += `\n📍 Location: ${lead.location}`;
-      if (lead.requirement || lead.additional) msg += `\n📋 Project Scope: ${lead.requirement || lead.additional}`;
+      let msg = `Hi ${lead.name},\n\nThank you for reaching out to Quickupp AI Studio USA!\n\nWe have received your AI Video Production inquiry with the following details:\n\nClient Name: ${lead.name}`;
+      if (lead.business) msg += `\nBusiness / Brand: ${lead.business}`;
+      if (lead.video_type) msg += `\nVideo Format: ${lead.video_type}`;
+      if (lead.video_quantity) msg += `\nVideo Quantity: ${lead.video_quantity}`;
+      if (lead.location) msg += `\nLocation: ${lead.location}`;
+      if (lead.requirement || lead.additional) msg += `\nProject Scope: ${lead.requirement || lead.additional}`;
 
       msg += `\n\nOur team is reviewing your requirements and preparing custom sample concepts, video reels, and a tailored quote for your project.\n\nCould you please confirm if you have a target turnaround timeline or any reference video links in mind?\n\nBest regards,\nQuickupp AI Studio Team (USA)`;
       return msg;
     }
 
-    let msg = `Hello ${lead.name},\n\nThank you for reaching out to Quickupp AI Studio! 🇮🇳\n\nWe have received your AI video inquiry with the following details:\n\n👤 Client Name: ${lead.name}`;
-    if (lead.business) msg += `\n🏢 Business: ${lead.business}`;
-    if (lead.video_type) msg += `\n🎬 Video Type: ${lead.video_type}`;
-    if (lead.video_quantity) msg += `\n🔢 Video Quantity: ${lead.video_quantity}`;
-    if (lead.location) msg += `\n📍 Location: ${lead.location}`;
-    if (lead.requirement || lead.additional) msg += `\n📋 Requirement: ${lead.requirement || lead.additional}`;
+    let msg = `Hello ${lead.name},\n\nThank you for reaching out to Quickupp AI Studio!\n\nWe have received your AI video inquiry with the following details:\n\nClient Name: ${lead.name}`;
+    if (lead.business) msg += `\nBusiness: ${lead.business}`;
+    if (lead.video_type) msg += `\nVideo Type: ${lead.video_type}`;
+    if (lead.video_quantity) msg += `\nVideo Quantity: ${lead.video_quantity}`;
+    if (lead.location) msg += `\nLocation: ${lead.location}`;
+    if (lead.requirement || lead.additional) msg += `\nRequirement: ${lead.requirement || lead.additional}`;
 
     msg += `\n\nOur team is reviewing your requirements and will share the tailored proposal and sample concepts shortly.\n\nCould you please confirm if you have any specific deadline or reference in mind?\n\nBest regards,\nQuickupp AI Studio Team`;
     return msg;
@@ -985,18 +1094,47 @@ function AdminPage() {
     }
   };
 
+  const getLeadSourceDisplay = (source: string): "USA Website" | "India Website" | "Meta" | "Manual" => {
+    if (!source) return "India Website";
+    const s = source.toLowerCase();
+    if (s.includes("usa")) return "USA Website";
+    if (s.includes("meta")) return "Meta";
+    if (s.includes("manual")) return "Manual";
+    return "India Website";
+  };
+
+  const getLeadSourceBadgeClass = (source: string) => {
+    const type = getLeadSourceDisplay(source);
+    switch (type) {
+      case "USA Website":
+        return isDark
+          ? "border-blue-500/40 bg-blue-500/15 text-blue-300"
+          : "border-blue-200 bg-blue-50 text-blue-700";
+      case "India Website":
+        return isDark
+          ? "border-orange-500/40 bg-orange-500/15 text-orange-300"
+          : "border-orange-200 bg-orange-50 text-orange-700";
+      case "Meta":
+        return isDark
+          ? "border-sky-500/40 bg-sky-500/15 text-sky-300"
+          : "border-sky-200 bg-sky-50 text-sky-700";
+      case "Manual":
+        return isDark
+          ? "border-purple-500/40 bg-purple-500/15 text-purple-300"
+          : "border-purple-200 bg-purple-50 text-purple-700";
+    }
+  };
+
   // Filtered Leads Calculation
   const filteredLeads = useMemo(() => {
     return leads
       .filter((lead) => {
         // Source Filter
+        const leadSourceCat = getLeadSourceDisplay(lead.source);
         const matchesSource =
           filterSource === "All" ||
-          (filterSource === "USA Leads"
-            ? isLeadUsa(lead)
-            : filterSource === "Manual"
-            ? lead.source === "Manual"
-            : lead.source === filterSource);
+          filterSource === leadSourceCat ||
+          lead.source === filterSource;
 
         // Status Filter
         const matchesStatus = filterStatus === "All" || lead.status === filterStatus;
@@ -1007,7 +1145,11 @@ function AdminPage() {
 
         // Video Type Filter
         const matchesVideoType =
-          filterVideoType === "All" || lead.video_type === filterVideoType;
+          filterVideoType === "All" ||
+          lead.video_type === filterVideoType ||
+          (lead.video_type &&
+            (lead.video_type.toLowerCase().includes(filterVideoType.toLowerCase().replace("ai ", "")) ||
+              filterVideoType.toLowerCase().includes(lead.video_type.toLowerCase())));
 
         // Text Search (Client Name, Business, Phone, Email, Location)
         const q = searchTerm.toLowerCase().trim();
@@ -1106,7 +1248,7 @@ function AdminPage() {
               isDark ? "border-slate-700 bg-[#181528]" : "border-slate-200 bg-slate-50"
             }`}>
               <img
-                src="/images/logo.png"
+                src="/images/ADMIN LOGO.png"
                 alt="Quickupp AI Studio logo"
                 className="h-9 w-auto object-contain"
                 width={120}
@@ -1136,7 +1278,7 @@ function AdminPage() {
                   required
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="superadmin@aistudio.com"
+                  placeholder="sa@aistudio.com"
                   className={`w-full rounded-xl border py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     isDark
                       ? "border-slate-700 bg-slate-900 text-white placeholder-slate-500"
@@ -1209,13 +1351,13 @@ function AdminPage() {
   // =========================================================================
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors ${
-      isDark ? "bg-[#0c0b14] text-slate-100" : "bg-slate-50/70 text-slate-900"
+      isDark ? "bg-[#0c0b14] text-slate-100" : "bg-white text-slate-900"
     }`}>
       {/* Top Navbar */}
       <header className={`sticky top-0 z-40 border-b backdrop-blur-md transition-colors ${
         isDark ? "border-slate-800 bg-[#12101e]/90" : "border-slate-200 bg-white/90"
       }`}>
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+        <div className="mx-auto flex w-full items-center justify-between px-4 py-3 sm:px-6">
           {/* Brand & Role Badge */}
           <div className="flex items-center gap-3">
             <a
@@ -1230,14 +1372,20 @@ function AdminPage() {
               <ArrowLeft className="h-4 w-4" />
             </a>
 
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold tracking-tight text-base sm:text-lg">
-                Quickupp <span className="text-blue-600 dark:text-blue-400">CRM</span>
-              </span>
+            <div className="flex items-center gap-3">
+              <a href="/" className="flex items-center transition-opacity hover:opacity-85">
+                <img
+                  src="/images/ADMIN LOGO.png"
+                  alt="Quickupp AI Studio logo"
+                  className="h-8 sm:h-9 w-auto object-contain"
+                  width={110}
+                  height={34}
+                />
+              </a>
 
               {isSuperAdmin ? (
                 <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/40 bg-purple-500/15 px-2.5 py-0.5 text-[11px] font-bold text-purple-600 dark:text-purple-300">
-                  <span>👑</span>
+                  <ShieldCheck className="h-3 w-3" />
                   <span>Super Admin</span>
                 </span>
               ) : (
@@ -1289,6 +1437,166 @@ function AdminPage() {
               {soundEnabled ? <Volume2 className="h-4 w-4 text-emerald-500" /> : <VolumeX className="h-4 w-4 text-slate-400" />}
             </button>
 
+            {/* Notification Bell (Doc Requirement 15 & 20) */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNotificationsPopover(!showNotificationsPopover)}
+                className={`relative rounded-lg border p-2 transition-colors cursor-pointer ${
+                  showNotificationsPopover
+                    ? "border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400"
+                    : isDark
+                    ? "border-slate-700 bg-slate-800/80 text-slate-300 hover:bg-slate-700"
+                    : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+                title="Notifications Center"
+              >
+                <Bell className="h-4 w-4" />
+                {notifications.filter((n) => !n.is_read).length > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-extrabold text-white shadow animate-pulse">
+                    {notifications.filter((n) => !n.is_read).length > 99 ? "99+" : notifications.filter((n) => !n.is_read).length}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Popover Dropdown */}
+              {showNotificationsPopover && (
+                <div className={`absolute right-0 top-11 z-50 w-80 sm:w-96 rounded-2xl border p-3 shadow-2xl space-y-3 animate-in fade-in ${
+                  isDark ? "border-slate-700 bg-[#161327] text-white" : "border-slate-200 bg-white text-slate-900"
+                }`}>
+                  <div className="flex items-center justify-between border-b pb-2 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <BellRing className="h-4 w-4 text-blue-500" />
+                      <span className="text-xs font-bold">CRM Notifications</span>
+                      <span className="rounded-full bg-blue-100 px-1.5 py-0.2 text-[10px] font-extrabold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                        {notifications.length}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {notifications.some((n) => !n.is_read) && (
+                        <button
+                          onClick={async () => {
+                            await markAllNotificationsReadServerFn();
+                            setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+                            showToast("All notifications marked as read");
+                          }}
+                          className="text-[10px] font-semibold text-blue-600 hover:underline cursor-pointer px-1"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                      {notifications.length > 0 && (
+                        <button
+                          onClick={async () => {
+                            await clearNotificationsServerFn();
+                            setNotifications([]);
+                            showToast("Notifications cleared");
+                          }}
+                          className="text-[10px] text-slate-400 hover:text-red-500 cursor-pointer px-1"
+                          title="Clear all notifications"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Filter Pills */}
+                  <div className="flex items-center gap-1 text-[10px]">
+                    <button
+                      onClick={() => setNotificationFilter("all")}
+                      className={`rounded px-2 py-0.5 font-bold cursor-pointer ${
+                        notificationFilter === "all" ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => setNotificationFilter("unread")}
+                      className={`rounded px-2 py-0.5 font-bold cursor-pointer ${
+                        notificationFilter === "unread" ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      Unread ({notifications.filter((n) => !n.is_read).length})
+                    </button>
+                    <button
+                      onClick={() => setNotificationFilter("meeting")}
+                      className={`rounded px-2 py-0.5 font-bold cursor-pointer ${
+                        notificationFilter === "meeting" ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      Meetings
+                    </button>
+                    <button
+                      onClick={() => setNotificationFilter("lead")}
+                      className={`rounded px-2 py-0.5 font-bold cursor-pointer ${
+                        notificationFilter === "lead" ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      Leads
+                    </button>
+                  </div>
+
+                  {/* Notification List */}
+                  <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                    {notifications
+                      .filter((n) => {
+                        if (notificationFilter === "unread") return !n.is_read;
+                        if (notificationFilter === "meeting") return n.type.includes("meeting") || n.type.includes("calendly");
+                        if (notificationFilter === "lead") return n.type.includes("lead") || n.type.includes("project");
+                        return true;
+                      })
+                      .length === 0 ? (
+                      <div className="py-6 text-center text-xs text-slate-400">
+                        No notifications found.
+                      </div>
+                    ) : (
+                      notifications
+                        .filter((n) => {
+                          if (notificationFilter === "unread") return !n.is_read;
+                          if (notificationFilter === "meeting") return n.type.includes("meeting") || n.type.includes("calendly");
+                          if (notificationFilter === "lead") return n.type.includes("lead") || n.type.includes("project");
+                          return true;
+                        })
+                        .map((n) => (
+                          <div
+                            key={n.id}
+                            className={`p-2.5 transition-colors flex items-start justify-between gap-2 hover:bg-slate-50 dark:hover:bg-white/[0.03] ${
+                              !n.is_read ? "bg-blue-50/50 dark:bg-blue-950/20 font-medium" : ""
+                            }`}
+                          >
+                            <div className="space-y-0.5 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`h-1.5 w-1.5 rounded-full ${!n.is_read ? "bg-blue-500 animate-ping" : "bg-slate-300 dark:bg-slate-600"}`} />
+                                <span className="font-bold text-[11px]">{n.title}</span>
+                              </div>
+                              <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-2">{n.message}</p>
+                              <div className="flex items-center gap-2 pt-0.5 text-[9px] text-slate-400 font-mono">
+                                <span>{new Date(n.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                                <span>{n.actor}</span>
+                              </div>
+                            </div>
+
+                            {!n.is_read && (
+                              <button
+                                onClick={async () => {
+                                  await markNotificationReadServerFn({ data: { id: n.id } });
+                                  setNotifications((prev) => prev.map((item) => (item.id === n.id ? { ...item, is_read: true } : item)));
+                                }}
+                                className="text-slate-400 hover:text-blue-500 p-1 cursor-pointer"
+                                title="Mark as read"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* White/Dark Theme Toggle (Doc Requirement 1) */}
             <button
               onClick={toggleTheme}
@@ -1326,9 +1634,9 @@ function AdminPage() {
         <div className={`overflow-x-auto border-t transition-colors ${
           isDark ? "border-slate-800 bg-[#151222]" : "border-slate-200 bg-white"
         }`}>
-          <div className="mx-auto flex max-w-7xl items-center gap-1 px-4 py-1.5 sm:px-6">
+          <div className="mx-auto flex w-full items-center gap-1 px-4 py-1.5 sm:px-6">
             <button
-              onClick={() => setActiveTab("leads")}
+              onClick={() => { setActiveTab("leads"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "leads"
                   ? "bg-blue-600 text-white shadow-sm"
@@ -1347,7 +1655,7 @@ function AdminPage() {
             </button>
 
             <button
-              onClick={() => setActiveTab("orders")}
+              onClick={() => handleSelectOrdersTab()}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "orders"
                   ? "bg-blue-600 text-white shadow-sm"
@@ -1366,7 +1674,7 @@ function AdminPage() {
             </button>
 
             <button
-              onClick={() => setActiveTab("calendly")}
+              onClick={() => { setActiveTab("calendly"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "calendly"
                   ? "bg-blue-600 text-white shadow-sm"
@@ -1385,7 +1693,7 @@ function AdminPage() {
             </button>
 
             <button
-              onClick={() => setActiveTab("activity")}
+              onClick={() => { setActiveTab("activity"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "activity"
                   ? "bg-blue-600 text-white shadow-sm"
@@ -1402,7 +1710,7 @@ function AdminPage() {
             {isSuperAdmin && (
               <>
                 <button
-                  onClick={() => setActiveTab("users")}
+                  onClick={() => { setActiveTab("users"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
                   className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                     activeTab === "users"
                       ? "bg-purple-600 text-white shadow-sm"
@@ -1416,7 +1724,7 @@ function AdminPage() {
                 </button>
 
                 <button
-                  onClick={() => setActiveTab("security")}
+                  onClick={() => { setActiveTab("security"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
                   className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                     activeTab === "security"
                       ? "bg-purple-600 text-white shadow-sm"
@@ -1432,7 +1740,7 @@ function AdminPage() {
             )}
 
             <button
-              onClick={() => setActiveTab("recycle_bin")}
+              onClick={() => { setActiveTab("recycle_bin"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "recycle_bin"
                   ? "bg-red-600 text-white shadow-sm"
@@ -1454,82 +1762,70 @@ function AdminPage() {
       </header>
 
       {/* Main Content Area */}
-      <main className="mx-auto max-w-7xl flex-1 p-4 sm:p-6 w-full space-y-6">
+      <main className="w-full flex-1 p-4 sm:p-6 lg:p-8 space-y-6">
         {/* ========================================================================= */}
         {/* TAB 1: LEADS MANAGEMENT */}
         {/* ========================================================================= */}
         {activeTab === "leads" && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            {/* KPI Summary Cards */}
+            {/* KPI Summary Cards - Pure White Theme matching background */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7 sm:gap-4">
-              <div className={`rounded-xl border p-3.5 shadow-sm transition-all ${
-                isDark ? "border-slate-800 bg-[#12101e]" : "border-slate-200 bg-white"
-              }`}>
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all hover:shadow-md hover:border-slate-300">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
                   <span>Total Leads</span>
-                  <Layers className="h-3.5 w-3.5 text-blue-500" />
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-blue-600">
+                    <Layers className="h-3.5 w-3.5" />
+                  </div>
                 </div>
-                <p className="mt-2 text-2xl font-extrabold">{totalLeadsCount}</p>
+                <p className="mt-2 text-2xl font-black text-slate-900">{totalLeadsCount}</p>
               </div>
 
-              <div className={`rounded-xl border p-3.5 shadow-sm transition-all ${
-                isDark ? "border-blue-500/30 bg-blue-950/20 text-blue-300" : "border-blue-200 bg-blue-50/70 text-blue-900"
-              }`}>
-                <div className="flex items-center justify-between text-xs font-semibold">
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all hover:shadow-md hover:border-blue-300">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
                   <span>New Leads</span>
-                  <span className="h-2 w-2 rounded-full bg-blue-500" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-blue-500 shadow-xs" />
                 </div>
-                <p className="mt-2 text-2xl font-extrabold text-blue-600 dark:text-blue-400">{newLeadsCount}</p>
+                <p className="mt-2 text-2xl font-black text-blue-600">{newLeadsCount}</p>
               </div>
 
-              <div className={`rounded-xl border p-3.5 shadow-sm transition-all ${
-                isDark ? "border-amber-500/30 bg-amber-950/20 text-amber-300" : "border-amber-200 bg-amber-50/70 text-amber-900"
-              }`}>
-                <div className="flex items-center justify-between text-xs font-semibold">
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all hover:shadow-md hover:border-amber-300">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
                   <span>Contacted</span>
-                  <span className="h-2 w-2 rounded-full bg-amber-500" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500 shadow-xs" />
                 </div>
-                <p className="mt-2 text-2xl font-extrabold text-amber-600 dark:text-amber-400">{contactedCount}</p>
+                <p className="mt-2 text-2xl font-black text-amber-600">{contactedCount}</p>
               </div>
 
-              <div className={`rounded-xl border p-3.5 shadow-sm transition-all ${
-                isDark ? "border-orange-500/30 bg-orange-950/20 text-orange-300" : "border-orange-200 bg-orange-50/70 text-orange-900"
-              }`}>
-                <div className="flex items-center justify-between text-xs font-semibold">
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all hover:shadow-md hover:border-orange-300">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
                   <span>In Progress</span>
-                  <span className="h-2 w-2 rounded-full bg-orange-500" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-orange-500 shadow-xs" />
                 </div>
-                <p className="mt-2 text-2xl font-extrabold text-orange-600 dark:text-orange-400">{inProgressCount}</p>
+                <p className="mt-2 text-2xl font-black text-orange-600">{inProgressCount}</p>
               </div>
 
-              <div className={`rounded-xl border p-3.5 shadow-sm transition-all ${
-                isDark ? "border-gray-500/30 bg-gray-950/20 text-gray-300" : "border-slate-200 bg-slate-50 text-slate-800"
-              }`}>
-                <div className="flex items-center justify-between text-xs font-semibold">
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all hover:shadow-md hover:border-slate-300">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
                   <span>On Hold</span>
-                  <span className="h-2 w-2 rounded-full bg-gray-500" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-gray-400 shadow-xs" />
                 </div>
-                <p className="mt-2 text-2xl font-extrabold">{holdCount}</p>
+                <p className="mt-2 text-2xl font-black text-slate-700">{holdCount}</p>
               </div>
 
-              <div className={`rounded-xl border p-3.5 shadow-sm transition-all ${
-                isDark ? "border-emerald-500/30 bg-emerald-950/20 text-emerald-300" : "border-emerald-200 bg-emerald-50/70 text-emerald-900"
-              }`}>
-                <div className="flex items-center justify-between text-xs font-semibold">
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all hover:shadow-md hover:border-emerald-300">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
                   <span>Closed</span>
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                 </div>
-                <p className="mt-2 text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{closedCount}</p>
+                <p className="mt-2 text-2xl font-black text-emerald-600">{closedCount}</p>
               </div>
 
-              <div className={`rounded-xl border p-3.5 shadow-sm transition-all col-span-2 sm:col-span-1 ${
-                isDark ? "border-purple-500/30 bg-purple-950/20 text-purple-300" : "border-purple-200 bg-purple-50/70 text-purple-900"
-              }`}>
-                <div className="flex items-center justify-between text-xs font-semibold">
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all hover:shadow-md hover:border-purple-300 col-span-2 sm:col-span-1">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
                   <span>Delivered</span>
-                  <Package className="h-3.5 w-3.5 text-purple-500" />
+                  <Package className="h-4 w-4 text-purple-500" />
                 </div>
-                <p className="mt-2 text-2xl font-extrabold text-purple-600 dark:text-purple-400">{projectsDeliveredCount}</p>
+                <p className="mt-2 text-2xl font-black text-purple-600">{projectsDeliveredCount}</p>
               </div>
             </div>
 
@@ -1593,12 +1889,10 @@ function AdminPage() {
                   }`}
                 >
                   <option value="All">All Sources</option>
-                  <option value="USA Leads">🇺🇸 USA Leads</option>
-                  <option value="Manual">✍️ Manual Leads</option>
-                  <option value="Contact Form">Contact Form</option>
-                  <option value="Popup Modal">Popup Modal</option>
-                  <option value="USA - Contact Form">USA - Contact Form</option>
-                  <option value="USA - Popup Modal">USA - Popup Modal</option>
+                  <option value="USA Website">USA Website</option>
+                  <option value="India Website">India Website</option>
+                  <option value="Meta">Meta</option>
+                  <option value="Manual">Manual</option>
                 </select>
 
                 {/* Lead Status Filter */}
@@ -1753,9 +2047,9 @@ function AdminPage() {
             <div className={`overflow-hidden rounded-2xl border shadow-sm transition-colors ${
               isDark ? "border-slate-800 bg-[#12101e]" : "border-slate-200 bg-white"
             }`}>
-              {/* Desktop Table */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              {/* Desktop Table with Horizontal Scroll */}
+              <div className="hidden md:block overflow-x-auto w-full">
+                <table className="w-full min-w-[1200px] text-left text-xs">
                   <thead className={`border-b text-[11px] font-bold uppercase tracking-wider ${
                     isDark ? "border-slate-800 bg-[#171427] text-slate-400" : "border-slate-200 bg-slate-50 text-slate-600"
                   }`}>
@@ -1812,22 +2106,9 @@ function AdminPage() {
 
                             {/* Source */}
                             <td className="whitespace-nowrap px-4 py-3.5">
-                              {isLeadUsa(lead) ? (
-                                <span className="inline-flex items-center gap-1 rounded-md border border-blue-500/40 bg-blue-500/15 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-300">
-                                  <span>🇺🇸</span>
-                                  <span>{lead.source}</span>
-                                </span>
-                              ) : lead.source === "Manual" ? (
-                                <span className="inline-flex items-center gap-1 rounded-md border border-purple-500/40 bg-purple-500/15 px-2 py-0.5 text-[10px] font-bold text-purple-600 dark:text-purple-300">
-                                  <span>✍️</span>
-                                  <span>Manual</span>
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 rounded-md border border-orange-500/40 bg-orange-500/15 px-2 py-0.5 text-[10px] font-bold text-orange-600 dark:text-orange-300">
-                                  <span>🇮🇳</span>
-                                  <span>{lead.source}</span>
-                                </span>
-                              )}
+                              <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-bold ${getLeadSourceBadgeClass(lead.source)}`}>
+                                {getLeadSourceDisplay(lead.source)}
+                              </span>
                             </td>
 
                             {/* Timestamp */}
@@ -1849,17 +2130,22 @@ function AdminPage() {
 
                             {/* Client & Business */}
                             <td className="px-4 py-3.5">
-                              <div className="font-bold text-sm flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setViewLeadDetails(lead)}
+                                className="text-left font-bold text-sm flex items-center gap-1.5 hover:text-blue-600 transition-colors cursor-pointer"
+                                title="Click to view full lead details"
+                              >
                                 <span>{lead.name}</span>
                                 {isNewlyArrived && (
                                   <span className="rounded bg-blue-600 px-1 py-0.2 text-[8px] font-black text-white animate-pulse">
                                     JUST NOW
                                   </span>
                                 )}
-                              </div>
+                              </button>
                               <div className="text-xs text-slate-500 font-medium">
                                 {lead.business}
-                                {lead.location ? ` · 📍 ${lead.location}` : ""}
+                                {lead.location ? ` · ${lead.location}` : ""}
                               </div>
                               {lead.email && <div className="text-[11px] text-slate-400 font-mono">{lead.email}</div>}
                             </td>
@@ -2003,70 +2289,108 @@ function AdminPage() {
               </div>
 
               {/* Mobile Cards View */}
-              <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800 p-3 space-y-3">
+              <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800 p-3 space-y-4">
                 {filteredLeads.length === 0 ? (
                   <div className="py-12 text-center text-xs text-slate-500">
                     No leads found matching criteria.
                   </div>
                 ) : (
                   filteredLeads.map((lead) => (
-                    <div key={lead.id} className="pt-3 first:pt-0 space-y-2 text-xs">
-                      <div className="flex items-center justify-between">
-                        <div className="font-bold text-sm">{lead.name}</div>
-                        {isLeadUsa(lead) ? (
-                          <span className="rounded border border-blue-500/40 bg-blue-500/15 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-300">
-                            🇺🇸 USA
-                          </span>
-                        ) : (
-                          <span className="rounded border border-orange-500/40 bg-orange-500/15 px-2 py-0.5 text-[10px] font-bold text-orange-600 dark:text-orange-300">
-                            🇮🇳 {lead.source}
-                          </span>
-                        )}
+                    <div key={lead.id} className="pt-3 first:pt-0 space-y-2.5 text-xs">
+                      {/* Header with Name & Source */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                          {lead.name}
+                        </div>
+                        <span className={`shrink-0 rounded border px-2 py-0.5 text-[10px] font-bold ${getLeadSourceBadgeClass(lead.source)}`}>
+                          {getLeadSourceDisplay(lead.source)}
+                        </span>
                       </div>
 
+                      {/* Business & Location */}
                       <div className="text-slate-500">
-                        {lead.business} {lead.location ? `· ${lead.location}` : ""}
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">{lead.business}</span>
+                        {lead.location ? ` · ${lead.location}` : ""}
+                        {lead.email && <div className="text-[11px] font-mono text-slate-400">{lead.email}</div>}
                       </div>
 
-                      <div className="flex items-center justify-between">
+                      {/* Phone & Scope */}
+                      <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
                         <a href={`tel:${lead.phone}`} className="font-mono text-blue-600 font-semibold flex items-center gap-1">
-                          <Phone className="h-3 w-3" /> {lead.phone}
+                          <Phone className="h-3 w-3 text-slate-400" /> {lead.phone}
                         </a>
-                        <span className="font-semibold text-slate-700 dark:text-slate-300">{lead.video_type}</span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                          <Video className="h-3 w-3 text-blue-500" /> {lead.video_type}
+                          {lead.video_quantity && ` (x${lead.video_quantity})`}
+                        </span>
                       </div>
 
-                      <div className="flex items-center justify-between pt-1">
-                        <select
-                          value={lead.status}
-                          onChange={(e) => handleUpdateLeadStatus(lead, e.target.value as LeadStatus)}
-                          className={`rounded px-2 py-0.5 text-[11px] font-bold ${getLeadStatusBadge(lead.status)}`}
-                        >
-                          <option value="New">New</option>
-                          <option value="Contacted">Contacted</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="Hold">Hold</option>
-                          <option value="Closed">Closed</option>
-                        </select>
+                      {/* Status selectors */}
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Lead Status</label>
+                          <select
+                            value={lead.status}
+                            onChange={(e) => handleUpdateLeadStatus(lead, e.target.value as LeadStatus)}
+                            className={`w-full rounded-lg px-2 py-1 text-[11px] font-bold ${getLeadStatusBadge(lead.status)}`}
+                          >
+                            <option value="New">New</option>
+                            <option value="Contacted">Contacted</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Hold">Hold</option>
+                            <option value="Closed">Closed</option>
+                          </select>
+                        </div>
 
-                        <div className="flex items-center gap-2">
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Project Status</label>
+                          <select
+                            value={lead.project_status || "In Progress"}
+                            onChange={(e) => handleUpdateProjectStatus(lead, e.target.value as ProjectStatus)}
+                            className={`w-full rounded-lg px-2 py-1 text-[11px] font-bold ${getProjectStatusBadge(lead.project_status)}`}
+                          >
+                            <option value="Hold">Hold</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Delivered">Delivered</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                        <div className="text-[10px] text-slate-400">
+                          {new Date(lead.created_at).toLocaleDateString()}
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
                           <button
                             type="button"
                             onClick={() => handleOpenWhatsApp(lead)}
-                            className="rounded bg-emerald-600 p-1.5 text-white cursor-pointer"
+                            className="rounded-lg bg-emerald-600 p-1.5 text-white hover:bg-emerald-700 transition-colors cursor-pointer"
+                            title="WhatsApp"
                           >
                             <MessageSquare className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => setViewLeadDetails(lead)}
-                            className="rounded border border-slate-300 dark:border-slate-700 px-2 py-1 text-xs cursor-pointer"
+                            className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                           >
                             Details
                           </button>
                           <button
                             type="button"
+                            onClick={() => setEditingLead(lead)}
+                            className="rounded-lg border border-slate-200 dark:border-slate-700 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                            title="Edit"
+                          >
+                            <Edit className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleSoftDeleteLead(lead.id)}
-                            className="rounded border border-red-300 dark:border-red-800 p-1 text-red-500 cursor-pointer"
+                            className="rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 transition-colors cursor-pointer"
+                            title="Delete"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -2169,10 +2493,10 @@ function AdminPage() {
             </div>
 
             {/* Orders Table */}
-            <div className={`overflow-hidden rounded-2xl border shadow-sm ${
+            <div className={`overflow-x-auto w-full rounded-2xl border shadow-sm ${
               isDark ? "border-slate-800 bg-[#12101e]" : "border-slate-200 bg-white"
             }`}>
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[900px] text-left text-xs">
                 <thead className={`border-b text-[11px] font-bold uppercase tracking-wider ${
                   isDark ? "border-slate-800 bg-[#171427] text-slate-400" : "border-slate-200 bg-slate-50 text-slate-600"
                 }`}>
@@ -2243,31 +2567,69 @@ function AdminPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 3: CALENDLY MEETINGS (USA FOCUS) */}
+        {/* TAB 3: CALENDLY MEETINGS (USA FOCUS & CRM INTEGRATION) */}
         {/* ========================================================================= */}
         {activeTab === "calendly" && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            <div className={`rounded-2xl border p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+            {/* Header & Quick Action Bar */}
+            <div className={`rounded-2xl border p-4 sm:p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
               isDark ? "border-slate-800 bg-[#12101e]" : "border-slate-200 bg-white"
             }`}>
               <div>
-                <h3 className="text-base font-bold flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-blue-500" />
-                  <span>Calendly Meetings (USA Strategy Calls)</span>
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Scheduled strategy and consultation calls booked via Calendly for USA leads.
+                  <h3 className="text-base font-bold">Calendly Strategy Calls & Meetings (USA)</h3>
+                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-extrabold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                    {meetings.length} Total
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Connect Calendly directly with the CRM. Track meeting dates, client info, video requirements, follow-ups, and lead status updates.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={async () => {
+                    setIsSendingTestMeeting(true);
+                    try {
+                      const res = await sendTestCalendlyBookingServerFn({
+                        performedBy: session?.name || "Admin",
+                      });
+                      if (res.success && res.meeting) {
+                        setMeetings((prev) => [res.meeting!, ...prev]);
+                        if (res.lead) {
+                          setLeads((prev) => [res.lead!, ...prev]);
+                        }
+                        if (soundEnabled) playNotificationChime();
+                        showToast("Live Test Calendly Booking generated successfully!");
+                        await fetchNotificationsList();
+                        await fetchLogsList();
+                      } else {
+                        showToast("Failed to create test meeting.");
+                      }
+                    } catch (err: any) {
+                      showToast(err?.message || "Error generating test meeting");
+                    } finally {
+                      setIsSendingTestMeeting(false);
+                    }
+                  }}
+                  disabled={isSendingTestMeeting}
+                  className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  title="Simulate a real incoming Calendly booking from USA"
+                >
+                  <Zap className={`h-3.5 w-3.5 ${isSendingTestMeeting ? "animate-spin text-amber-500" : "text-amber-500"}`} />
+                  <span>{isSendingTestMeeting ? "Booking Test..." : "⚡ Send Test Booking"}</span>
+                </button>
+
                 <a
                   href="https://calendly.com/quickuppaistudio"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="rounded-xl border border-blue-500/40 bg-blue-500/10 px-3.5 py-2 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 flex items-center gap-1.5"
                 >
-                  <span>Open Calendly Page</span>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span>Calendly Page</span>
                 </a>
 
                 <button
@@ -2275,74 +2637,315 @@ function AdminPage() {
                   className="rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-md hover:bg-blue-700 flex items-center gap-1.5 cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
-                  <span>+ Add Meeting</span>
+                  <span>+ Book / Log Meeting</span>
                 </button>
               </div>
             </div>
 
-            {/* Meetings Table */}
-            <div className={`overflow-hidden rounded-2xl border shadow-sm ${
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className={`rounded-xl border p-3.5 ${isDark ? "border-slate-800 bg-[#12101e]" : "border-slate-200 bg-white"}`}>
+                <p className="text-[11px] font-bold text-slate-500 uppercase">Total Meetings</p>
+                <p className="text-xl font-extrabold text-blue-600 mt-1">{meetings.length}</p>
+              </div>
+
+              <div className={`rounded-xl border p-3.5 ${isDark ? "border-slate-800 bg-[#12101e]" : "border-slate-200 bg-white"}`}>
+                <p className="text-[11px] font-bold text-slate-500 uppercase">Upcoming / Scheduled</p>
+                <p className="text-xl font-extrabold text-purple-600 mt-1">
+                  {meetings.filter((m) => m.meeting_status === "scheduled" || m.meeting_status === "upcoming").length}
+                </p>
+              </div>
+
+              <div className={`rounded-xl border p-3.5 ${isDark ? "border-slate-800 bg-[#12101e]" : "border-slate-200 bg-white"}`}>
+                <p className="text-[11px] font-bold text-slate-500 uppercase">Completed Calls</p>
+                <p className="text-xl font-extrabold text-emerald-600 mt-1">
+                  {meetings.filter((m) => m.meeting_status === "completed").length}
+                </p>
+              </div>
+
+              <div className={`rounded-xl border p-3.5 ${isDark ? "border-slate-800 bg-[#12101e]" : "border-slate-200 bg-white"}`}>
+                <p className="text-[11px] font-bold text-slate-500 uppercase">Rescheduled / Cancelled</p>
+                <p className="text-xl font-extrabold text-amber-600 mt-1">
+                  {meetings.filter((m) => m.meeting_status === "rescheduled" || m.meeting_status === "cancelled").length}
+                </p>
+              </div>
+            </div>
+
+            {/* Live Webhook Integration Assistant Card */}
+            <div className={`rounded-xl border p-4 ${
+              isDark ? "border-slate-800 bg-[#161327]" : "border-blue-200/80 bg-blue-50/50"
+            }`}>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-blue-500" />
+                    <span className="text-xs font-bold">Calendly Webhook Auto-Sync Listener</span>
+                    <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 px-2 py-0.2 text-[9px] font-extrabold uppercase">
+                      Active Endpoint
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                    To auto-sync external bookings from Calendly into this CRM, paste this webhook endpoint in your Calendly Webhook Developer Settings:
+                  </p>
+                  <div className="flex items-center gap-2 pt-1">
+                    <code className={`px-2.5 py-1 rounded text-[11px] font-mono select-all ${
+                      isDark ? "bg-slate-900 text-blue-300 border border-slate-800" : "bg-white text-blue-700 border border-blue-200"
+                    }`}>
+                      https://quickuppaistudio.us/api/calendly-webhook
+                    </code>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText("https://quickuppaistudio.us/api/calendly-webhook");
+                        setCalendlyWebhookCopied(true);
+                        showToast("Webhook URL copied to clipboard!");
+                        setTimeout(() => setCalendlyWebhookCopied(false), 2500);
+                      }}
+                      className="text-xs text-blue-600 hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="h-3 w-3" />
+                      <span>{calendlyWebhookCopied ? "Copied!" : "Copy URL"}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search meetings by client, email, phone..."
+                  value={meetingSearchTerm}
+                  onChange={(e) => setMeetingSearchTerm(e.target.value)}
+                  className={`w-full rounded-xl border pl-9 pr-4 py-2 text-xs outline-none focus:border-blue-500 ${
+                    isDark ? "border-slate-800 bg-[#12101e] text-white" : "border-slate-200 bg-white text-slate-900"
+                  }`}
+                />
+              </div>
+
+              {/* Status Filter Tabs */}
+              <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto text-xs">
+                {["all", "scheduled", "upcoming", "completed", "rescheduled", "cancelled"].map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setMeetingStatusFilter(st)}
+                    className={`rounded-lg px-3 py-1.5 font-bold capitalize transition-colors cursor-pointer text-[11px] whitespace-nowrap ${
+                      meetingStatusFilter === st
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : isDark
+                        ? "text-slate-400 hover:bg-slate-800"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    {st === "all" ? "All Statuses" : st}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Meetings Table (Matching Section 14 in Document) */}
+            <div className={`overflow-x-auto w-full rounded-2xl border shadow-sm ${
               isDark ? "border-slate-800 bg-[#12101e]" : "border-slate-200 bg-white"
             }`}>
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[950px] text-left text-xs">
                 <thead className={`border-b text-[11px] font-bold uppercase tracking-wider ${
                   isDark ? "border-slate-800 bg-[#171427] text-slate-400" : "border-slate-200 bg-slate-50 text-slate-600"
                 }`}>
                   <tr>
-                    <th className="px-4 py-3.5">Client Name</th>
-                    <th className="px-4 py-3.5">Contact Info</th>
                     <th className="px-4 py-3.5">Meeting Date & Time</th>
-                    <th className="px-4 py-3.5">Status</th>
+                    <th className="px-4 py-3.5">Client Name & Contact</th>
+                    <th className="px-4 py-3.5">Meeting Type</th>
+                    <th className="px-4 py-3.5">Meeting Status</th>
                     <th className="px-4 py-3.5">Meeting Link</th>
-                    <th className="px-4 py-3.5 text-right">Actions</th>
+                    <th className="px-4 py-3.5">Handling User</th>
+                    <th className="px-4 py-3.5">Created Date</th>
+                    <th className="px-4 py-3.5 text-right">Workflow Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {meetings.length === 0 ? (
+                  {meetings
+                    .filter((m) => {
+                      const matchSearch =
+                        m.client_name.toLowerCase().includes(meetingSearchTerm.toLowerCase()) ||
+                        m.email.toLowerCase().includes(meetingSearchTerm.toLowerCase()) ||
+                        (m.phone && m.phone.includes(meetingSearchTerm));
+                      const matchStatus =
+                        meetingStatusFilter === "all" ? true : m.meeting_status === meetingStatusFilter;
+                      return matchSearch && matchStatus;
+                    })
+                    .length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-xs text-slate-500">
+                      <td colSpan={8} className="py-12 text-center text-xs text-slate-500">
                         <Calendar className="mx-auto h-8 w-8 text-slate-400 mb-2" />
-                        <p className="font-bold">No scheduled Calendly meetings recorded yet.</p>
+                        <p className="font-bold">No Calendly meetings match your search or filter.</p>
+                        <p className="text-[11px] text-slate-400 mt-1">Click "+ Book / Log Meeting" or "⚡ Send Test Booking" to record one.</p>
                       </td>
                     </tr>
                   ) : (
-                    meetings.map((m) => (
-                      <tr key={m.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02]">
-                        <td className="px-4 py-3.5 font-bold text-sm">{m.client_name}</td>
-                        <td className="px-4 py-3.5">
-                          <div className="font-mono">{m.email}</div>
-                          {m.phone && <div className="text-slate-500">{m.phone}</div>}
-                        </td>
-                        <td className="px-4 py-3.5 font-semibold text-blue-600 dark:text-blue-400">
-                          {m.meeting_date} at {m.meeting_time}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span className="rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 px-2.5 py-0.5 text-[10px] font-bold uppercase">
-                            {m.meeting_status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <a
-                            href={m.meeting_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline font-mono text-xs"
-                          >
-                            Join Meeting
-                          </a>
-                        </td>
-                        <td className="px-4 py-3.5 text-right">
-                          <button
-                            onClick={() => {
-                              setShowAddLeadModal(true);
-                            }}
-                            className="rounded border border-slate-200 dark:border-slate-700 px-2 py-1 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                          >
-                            Link to Lead
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    meetings
+                      .filter((m) => {
+                        const matchSearch =
+                          m.client_name.toLowerCase().includes(meetingSearchTerm.toLowerCase()) ||
+                          m.email.toLowerCase().includes(meetingSearchTerm.toLowerCase()) ||
+                          (m.phone && m.phone.includes(meetingSearchTerm));
+                        const matchStatus =
+                          meetingStatusFilter === "all" ? true : m.meeting_status === meetingStatusFilter;
+                        return matchSearch && matchStatus;
+                      })
+                      .map((m) => (
+                        <tr key={m.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02]">
+                          {/* 1. Meeting Date & Time */}
+                          <td className="px-4 py-3.5">
+                            <div className="font-bold text-blue-600 dark:text-blue-400">{m.meeting_date}</div>
+                            <div className="text-[11px] text-slate-500 font-mono mt-0.5">{m.meeting_time}</div>
+                          </td>
+
+                          {/* 2. Client Name & Contact */}
+                          <td className="px-4 py-3.5">
+                            <div className="font-bold text-sm">{m.client_name}</div>
+                            <div className="text-[11px] text-slate-500 font-mono">{m.email}</div>
+                            {m.phone && <div className="text-[10px] text-slate-400 font-mono">{m.phone}</div>}
+                          </td>
+
+                          {/* 3. Meeting Type */}
+                          <td className="px-4 py-3.5 font-medium">
+                            <span>{m.meeting_type || "AI Video Strategy Call (30 min)"}</span>
+                          </td>
+
+                          {/* 4. Meeting Status (Editable Dropdown) */}
+                          <td className="px-4 py-3.5">
+                            <select
+                              value={m.meeting_status || "scheduled"}
+                              onChange={async (e) => {
+                                const newStatus = e.target.value;
+                                await updateCalendlyMeetingServerFn({
+                                  id: m.id,
+                                  meeting_status: newStatus,
+                                  performedBy: session?.name || "Admin",
+                                });
+                                setMeetings((prev) =>
+                                  prev.map((item) => (item.id === m.id ? { ...item, meeting_status: newStatus } : item))
+                                );
+                                showToast(`Meeting status updated to ${newStatus}`);
+                                await fetchNotificationsList();
+                                await fetchLogsList();
+                              }}
+                              className={`rounded-lg px-2 py-1 text-[11px] font-bold uppercase border cursor-pointer ${
+                                m.meeting_status === "completed"
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                  : m.meeting_status === "cancelled"
+                                  ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300"
+                                  : m.meeting_status === "rescheduled"
+                                  ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300"
+                                  : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300"
+                              }`}
+                            >
+                              <option value="scheduled">Scheduled</option>
+                              <option value="upcoming">Upcoming</option>
+                              <option value="completed">Completed</option>
+                              <option value="rescheduled">Rescheduled</option>
+                              <option value="cancelled">Cancelled</option>
+                            </select>
+                          </td>
+
+                          {/* 5. Meeting Link */}
+                          <td className="px-4 py-3.5">
+                            {m.meeting_link ? (
+                              <a
+                                href={m.meeting_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-blue-600 hover:underline font-mono text-xs"
+                              >
+                                <span>Join Call</span>
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            ) : (
+                              <span className="text-slate-400 italic">No link</span>
+                            )}
+                          </td>
+
+                          {/* 6. Admin / Handling User */}
+                          <td className="px-4 py-3.5">
+                            <select
+                              value={m.assigned_admin || ""}
+                              onChange={async (e) => {
+                                const newAdmin = e.target.value;
+                                await updateCalendlyMeetingServerFn({
+                                  id: m.id,
+                                  assigned_admin: newAdmin,
+                                  performedBy: session?.name || "Admin",
+                                });
+                                setMeetings((prev) =>
+                                  prev.map((item) => (item.id === m.id ? { ...item, assigned_admin: newAdmin } : item))
+                                );
+                                showToast("Handling admin assigned");
+                              }}
+                              className={`rounded-lg px-2 py-1 text-[11px] font-medium border cursor-pointer outline-none ${
+                                isDark ? "border-slate-800 bg-[#161327] text-white" : "border-slate-200 bg-slate-50 text-slate-800"
+                              }`}
+                            >
+                              <option value="">Unassigned</option>
+                              <option value="superadmin@aistudio.com">Super Admin</option>
+                              <option value="admin@aistudio.com">Admin</option>
+                              {adminUsers.map((u) => (
+                                <option key={u.id} value={u.email}>
+                                  {u.name} ({u.email})
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+
+                          {/* 7. Meeting Created Date */}
+                          <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px]">
+                            {new Date(m.created_at).toLocaleDateString()}
+                          </td>
+
+                          {/* 8. Workflow Actions */}
+                          <td className="px-4 py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setShowAddLeadModal(true);
+                                }}
+                                className="rounded-lg border border-blue-500/40 bg-blue-500/10 px-2.5 py-1 text-[11px] font-bold text-blue-600 dark:text-blue-300 hover:bg-blue-500/20 cursor-pointer"
+                                title="Lead -> Calendly -> Notification -> Follow-up -> Lead Status"
+                              >
+                                Link Lead
+                              </button>
+
+                              <button
+                                onClick={() => setEditingMeeting(m)}
+                                className="rounded-lg border border-slate-200 dark:border-slate-700 p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                                title="Edit Meeting Details"
+                              >
+                                <Edit className="h-3.5 w-3.5" />
+                              </button>
+
+                              <button
+                                onClick={async () => {
+                                  if (confirm(`Delete meeting record for ${m.client_name}?`)) {
+                                    await deleteCalendlyMeetingServerFn({
+                                      id: m.id,
+                                      client_name: m.client_name,
+                                      performedBy: session?.name || "Admin",
+                                    });
+                                    setMeetings((prev) => prev.filter((item) => item.id !== m.id));
+                                    showToast("Meeting record removed");
+                                    await fetchLogsList();
+                                  }
+                                }}
+                                className="rounded-lg border border-slate-200 dark:border-slate-700 p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer"
+                                title="Delete Meeting"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
                   )}
                 </tbody>
               </table>
@@ -2431,10 +3034,10 @@ function AdminPage() {
             </div>
 
             {/* Admin Users Table */}
-            <div className={`overflow-hidden rounded-2xl border shadow-sm ${
+            <div className={`overflow-x-auto w-full rounded-2xl border shadow-sm ${
               isDark ? "border-slate-800 bg-[#12101e]" : "border-slate-200 bg-white"
             }`}>
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[750px] text-left text-xs">
                 <thead className={`border-b text-[11px] font-bold uppercase tracking-wider ${
                   isDark ? "border-slate-800 bg-[#171427] text-slate-400" : "border-slate-200 bg-slate-50 text-slate-600"
                 }`}>
@@ -2451,7 +3054,7 @@ function AdminPage() {
                   {/* Default Pre-Configured Users */}
                   <tr className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02]">
                     <td className="px-4 py-3.5 font-bold">Super Admin</td>
-                    <td className="px-4 py-3.5 font-mono">superadmin@aistudio.com</td>
+                    <td className="px-4 py-3.5 font-mono">sa@aistudio.com</td>
                     <td className="px-4 py-3.5">
                       <span className="rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 px-2 py-0.5 text-[10px] font-bold">
                         Super Admin
@@ -2565,10 +3168,10 @@ function AdminPage() {
               </p>
             </div>
 
-            <div className={`overflow-hidden rounded-2xl border shadow-sm ${
+            <div className={`overflow-x-auto w-full rounded-2xl border shadow-sm ${
               isDark ? "border-slate-800 bg-[#12101e]" : "border-slate-200 bg-white"
             }`}>
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[900px] text-left text-xs">
                 <thead className={`border-b text-[11px] font-bold uppercase tracking-wider ${
                   isDark ? "border-slate-800 bg-[#171427] text-slate-400" : "border-slate-200 bg-slate-50 text-slate-600"
                 }`}>
@@ -2647,10 +3250,10 @@ function AdminPage() {
               </div>
             </div>
 
-            <div className={`overflow-hidden rounded-2xl border shadow-sm ${
+            <div className={`overflow-x-auto w-full rounded-2xl border shadow-sm ${
               isDark ? "border-slate-800 bg-[#12101e]" : "border-slate-200 bg-white"
             }`}>
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[750px] text-left text-xs">
                 <thead className={`border-b text-[11px] font-bold uppercase tracking-wider ${
                   isDark ? "border-slate-800 bg-[#171427] text-slate-400" : "border-slate-200 bg-slate-50 text-slate-600"
                 }`}>
@@ -2743,6 +3346,7 @@ function AdminPage() {
                 const email = formData.get("email") as string;
                 const business = formData.get("business") as string;
                 const location = formData.get("location") as string;
+                const source = (formData.get("source") as string) || "Manual";
                 const videoType = formData.get("videoType") as string;
                 const videoQuantity = formData.get("videoQuantity") as string;
                 const status = formData.get("status") as LeadStatus;
@@ -2753,6 +3357,7 @@ function AdminPage() {
                 try {
                   const res = await addManualLeadServerFn({
                     data: {
+                      source,
                       name,
                       phone,
                       email: email || undefined,
@@ -2772,17 +3377,33 @@ function AdminPage() {
                   if (res.success && res.lead) {
                     setLeads((prev) => [res.lead, ...prev]);
                     broadcastLeadEvent({ type: "NEW_LEAD", lead: res.lead });
-                    showToast("Manual lead added successfully");
+                    showToast(`${source} lead added successfully`);
                     setShowAddLeadModal(false);
                     fetchLogsList();
                   }
                 } catch (err) {
-                  alert("Failed to create manual lead.");
+                  alert("Failed to create lead.");
                 }
               }}
               className="space-y-3.5 text-xs"
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-semibold mb-1">Lead Source *</label>
+                  <select
+                    name="source"
+                    defaultValue="Manual"
+                    className={`w-full rounded-xl border p-2.5 focus:outline-none ${
+                      isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                    }`}
+                  >
+                    <option value="USA Website">USA Website</option>
+                    <option value="India Website">India Website</option>
+                    <option value="Meta">Meta</option>
+                    <option value="Manual">Manual</option>
+                  </select>
+                </div>
+
                 <div>
                   <label className="block font-semibold mb-1">Client Full Name *</label>
                   <input
@@ -2955,116 +3576,273 @@ function AdminPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 2: LEAD DETAILS FULL DRAWER / VIEW */}
+      {/* MODAL 2: LEAD DETAILS FULL DRAWER / POPUP (DOC REQUIREMENT 8) */}
       {/* ========================================================================= */}
       {viewLeadDetails && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className={`w-full max-w-2xl rounded-2xl border p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto ${
+          <div className={`w-full max-w-3xl rounded-2xl border p-6 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto ${
             isDark ? "border-slate-700 bg-[#151222] text-white" : "border-slate-200 bg-white text-slate-900"
           }`}>
-            <div className="flex items-center justify-between border-b pb-3 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/15 text-blue-600 font-bold">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b pb-4 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-600 font-extrabold text-base">
                   {viewLeadDetails.name.slice(0, 2).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-base font-bold">{viewLeadDetails.name}</h3>
-                  <p className="text-xs text-slate-500">{viewLeadDetails.business}</p>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-black">{viewLeadDetails.name}</h3>
+                    <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold ${getLeadSourceBadgeClass(viewLeadDetails.source)}`}>
+                      {getLeadSourceDisplay(viewLeadDetails.source)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium">{viewLeadDetails.business}</p>
                 </div>
               </div>
 
               <button
                 onClick={() => setViewLeadDetails(null)}
-                className="rounded-lg p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Quick Status Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 p-3 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-semibold">Lead Status:</span>
-                <span className={`rounded-lg border px-2.5 py-0.5 font-bold ${getLeadStatusBadge(viewLeadDetails.status)}`}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 p-3 text-xs">
+              <div>
+                <span className="text-slate-500 font-semibold block text-[10px] uppercase">Lead Status</span>
+                <span className={`inline-block mt-0.5 rounded-lg border px-2.5 py-0.5 font-bold ${getLeadStatusBadge(viewLeadDetails.status)}`}>
                   {viewLeadDetails.status}
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-semibold">Project Status:</span>
-                <span className={`rounded-lg border px-2.5 py-0.5 font-bold ${getProjectStatusBadge(viewLeadDetails.project_status)}`}>
+              <div>
+                <span className="text-slate-500 font-semibold block text-[10px] uppercase">Project Status</span>
+                <span className={`inline-block mt-0.5 rounded-lg border px-2.5 py-0.5 font-bold ${getProjectStatusBadge(viewLeadDetails.project_status)}`}>
                   {viewLeadDetails.project_status || "In Progress"}
                 </span>
               </div>
 
-              <div className="text-slate-400 font-mono">
-                Source: {viewLeadDetails.source}
+              <div>
+                <span className="text-slate-500 font-semibold block text-[10px] uppercase">Created Date</span>
+                <span className="font-mono text-slate-700 dark:text-slate-300 text-[11px] block mt-0.5">
+                  {new Date(viewLeadDetails.created_at).toLocaleDateString()}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-slate-500 font-semibold block text-[10px] uppercase">Delivery Target</span>
+                <span className="font-semibold text-blue-600 dark:text-blue-400 text-xs block mt-0.5">
+                  {viewLeadDetails.delivery_date || "Not scheduled"}
+                </span>
               </div>
             </div>
 
-            {/* Grid Sections */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              {/* Client Info */}
-              <div className="rounded-xl border p-3.5 space-y-2 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Client Information</span>
-                <div>
-                  <p className="text-slate-500">Phone / WhatsApp:</p>
-                  <p className="font-mono font-bold text-sm">{viewLeadDetails.phone}</p>
+            {/* 2-Column Sections: Client Info & Lead Info (Doc Section 8) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              {/* Section 1: Client Information */}
+              <div className="rounded-2xl border p-4 space-y-3 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-xs">
+                <div className="flex items-center gap-1.5 border-b pb-2 dark:border-slate-800">
+                  <User className="h-4 w-4 text-blue-500" />
+                  <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-700 dark:text-slate-300">
+                    Client Information
+                  </span>
                 </div>
-                {viewLeadDetails.email && (
-                  <div>
-                    <p className="text-slate-500">Email:</p>
-                    <p className="font-mono font-semibold">{viewLeadDetails.email}</p>
+
+                <div className="space-y-2.5">
+                  <div className="flex justify-between items-start">
+                    <span className="text-slate-500">Client Name:</span>
+                    <span className="font-bold text-slate-900 dark:text-white text-right">{viewLeadDetails.name}</span>
                   </div>
-                )}
-                {viewLeadDetails.location && (
-                  <div>
-                    <p className="text-slate-500">Location:</p>
-                    <p className="font-semibold">📍 {viewLeadDetails.location}</p>
+
+                  <div className="flex justify-between items-start">
+                    <span className="text-slate-500">Business Name:</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">{viewLeadDetails.business}</span>
                   </div>
-                )}
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Phone Number:</span>
+                    <a
+                      href={`tel:${viewLeadDetails.phone.replace(/[^0-9+]/g, "")}`}
+                      className="font-mono font-bold text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      <Phone className="h-3 w-3" />
+                      <span>{viewLeadDetails.phone}</span>
+                    </a>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">WhatsApp:</span>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenWhatsApp(viewLeadDetails)}
+                      className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-0.5 text-[11px] font-bold text-white hover:bg-emerald-700 cursor-pointer"
+                    >
+                      <MessageSquare className="h-3 w-3" />
+                      <span>Chat on WhatsApp</span>
+                    </button>
+                  </div>
+
+                  <div className="flex justify-between items-start">
+                    <span className="text-slate-500">Email Address:</span>
+                    <span className="font-mono text-slate-700 dark:text-slate-300 text-right">
+                      {viewLeadDetails.email || "Not provided"}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-start">
+                    <span className="text-slate-500">Business Location:</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
+                      {viewLeadDetails.location || "USA / Global"}
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              {/* Project Scope */}
-              <div className="rounded-xl border p-3.5 space-y-2 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Project Scope</span>
-                <div>
-                  <p className="text-slate-500">Video Type & Qty:</p>
-                  <p className="font-bold text-sm">{viewLeadDetails.video_type} (Quantity: {viewLeadDetails.video_quantity || 1})</p>
+              {/* Section 2: Lead Information */}
+              <div className="rounded-2xl border p-4 space-y-3 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-xs">
+                <div className="flex items-center gap-1.5 border-b pb-2 dark:border-slate-800">
+                  <ShieldCheck className="h-4 w-4 text-purple-500" />
+                  <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-700 dark:text-slate-300">
+                    Lead & Project Information
+                  </span>
                 </div>
+
+                <div className="space-y-2.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Lead Source:</span>
+                    <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${getLeadSourceBadgeClass(viewLeadDetails.source)}`}>
+                      {getLeadSourceDisplay(viewLeadDetails.source)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Created Timestamp:</span>
+                    <span className="font-mono text-slate-600 dark:text-slate-400 text-[11px]">
+                      {new Date(viewLeadDetails.created_at).toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Lead Status:</span>
+                    <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${getLeadStatusBadge(viewLeadDetails.status)}`}>
+                      {viewLeadDetails.status}
+                    </span>
+                  </div>
+
+                  {viewLeadDetails.closed_by && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Lead Closed By:</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        {viewLeadDetails.closed_by}
+                      </span>
+                    </div>
+                  )}
+
+                  {viewLeadDetails.closed_at && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Closed Date:</span>
+                      <span className="font-mono text-[11px] text-slate-600 dark:text-slate-400">
+                        {new Date(viewLeadDetails.closed_at).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Delivery Date:</span>
+                    <span className="font-semibold text-blue-600 dark:text-blue-400">
+                      {viewLeadDetails.delivery_date || "Pending schedule"}
+                    </span>
+                  </div>
+
+                  {viewLeadDetails.delivered_at && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Delivered Date:</span>
+                      <span className="font-mono text-[11px] text-emerald-600 font-bold">
+                        {new Date(viewLeadDetails.delivered_at).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Assigned / Handled By:</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      {viewLeadDetails.assigned_admin || session.name || "Admin"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3: Scope & Requirements */}
+            <div className="rounded-2xl border p-4 space-y-3 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 text-xs">
+              <div className="flex items-center justify-between border-b pb-2 dark:border-slate-800">
+                <div className="flex items-center gap-1.5">
+                  <Video className="h-4 w-4 text-blue-500" />
+                  <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-700 dark:text-slate-300">
+                    Video Scope & Project Details
+                  </span>
+                </div>
+                <span className="font-bold text-slate-900 dark:text-white">
+                  {viewLeadDetails.video_type} (Quantity: {viewLeadDetails.video_quantity || 1})
+                </span>
+              </div>
+
+              {(viewLeadDetails.requirement || viewLeadDetails.additional) && (
                 <div>
-                  <p className="text-slate-500">Delivery Target Date:</p>
-                  <p className="font-semibold text-blue-600 dark:text-blue-400">
-                    {viewLeadDetails.delivery_date ? `📅 ${viewLeadDetails.delivery_date}` : "Not set"}
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Requirements / Client Notes</span>
+                  <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed bg-white dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-800">
+                    {viewLeadDetails.requirement || viewLeadDetails.additional}
                   </p>
                 </div>
-                {viewLeadDetails.closed_by && (
-                  <div>
-                    <p className="text-slate-500">Lead Closed By:</p>
-                    <p className="font-semibold text-emerald-600">
-                      {viewLeadDetails.closed_by} {viewLeadDetails.closed_at ? `on ${new Date(viewLeadDetails.closed_at).toLocaleDateString()}` : ""}
-                    </p>
-                  </div>
-                )}
-              </div>
+              )}
+
+              {viewLeadDetails.notes && (
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Internal Team Notes</span>
+                  <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap bg-white dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-800">
+                    {viewLeadDetails.notes}
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Scope / Requirement */}
-            {(viewLeadDetails.requirement || viewLeadDetails.additional) && (
-              <div className="rounded-xl border p-3.5 space-y-1 dark:border-slate-800 text-xs">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Project Requirements & Scope</span>
-                <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
-                  {viewLeadDetails.requirement || viewLeadDetails.additional}
-                </p>
+            {/* Section 4: Live Activity History for this Lead */}
+            <div className="rounded-2xl border p-4 space-y-2 dark:border-slate-800 bg-white dark:bg-slate-900/40 text-xs">
+              <div className="flex items-center gap-1.5 border-b pb-2 dark:border-slate-800">
+                <Clock className="h-4 w-4 text-amber-500" />
+                <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-700 dark:text-slate-300">
+                  Lead Activity History & Audit Trail
+                </span>
               </div>
-            )}
 
-            {/* Internal Notes */}
-            <div className="rounded-xl border p-3.5 space-y-2 dark:border-slate-800 text-xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Internal Team Notes</span>
-              <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
-                {viewLeadDetails.notes || "No notes added yet."}
-              </p>
+              <div className="space-y-2 pt-1 max-h-40 overflow-y-auto">
+                {activityLogs.filter((a) => a.lead_id === viewLeadDetails.id).length === 0 ? (
+                  <div className="text-slate-400 text-xs italic py-2">
+                    Initial lead submission recorded on {new Date(viewLeadDetails.created_at).toLocaleString()}.
+                  </div>
+                ) : (
+                  activityLogs
+                    .filter((a) => a.lead_id === viewLeadDetails.id)
+                    .map((log) => (
+                      <div key={log.id} className="flex items-start justify-between gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-[11px]">{log.action}</span>
+                            <span className="rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-1 py-0.2 text-[9px] font-extrabold uppercase">
+                              {log.performed_by}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-300">{log.details}</p>
+                        </div>
+                        <span className="font-mono text-[10px] text-slate-400 shrink-0">
+                          {new Date(log.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    ))
+                )}
+              </div>
             </div>
 
             {/* Quick Actions Footer */}
@@ -3073,7 +3851,7 @@ function AdminPage() {
                 <button
                   type="button"
                   onClick={() => handleOpenWhatsApp(viewLeadDetails)}
-                  className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 flex items-center gap-1.5 cursor-pointer"
+                  className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 flex items-center gap-1.5 cursor-pointer shadow-sm"
                 >
                   <MessageSquare className="h-4 w-4" />
                   <span>Open WhatsApp</span>
@@ -3615,6 +4393,9 @@ function AdminPage() {
                 const meeting_date = formData.get("meeting_date") as string;
                 const meeting_time = formData.get("meeting_time") as string;
                 const meeting_link = formData.get("meeting_link") as string;
+                const meeting_type = formData.get("meeting_type") as string;
+                const assigned_admin = formData.get("assigned_admin") as string;
+                const notes = formData.get("notes") as string;
 
                 try {
                   const res = await saveCalendlyMeetingServerFn({
@@ -3624,16 +4405,21 @@ function AdminPage() {
                       phone: phone || undefined,
                       meeting_date,
                       meeting_time,
-                      meeting_link: meeting_link || "https://calendly.com/quickuppaistudio",
+                      meeting_link: meeting_link || "https://calendly.com/quickuppaistudio/strategy-call",
+                      meeting_type: meeting_type || "AI Video Strategy Call (30 min)",
+                      assigned_admin: assigned_admin || undefined,
+                      notes: notes || undefined,
                       meeting_status: "scheduled",
-                      performedBy: session.name,
+                      performedBy: session?.name || "Admin",
                     },
                   });
 
                   if (res.success && res.meeting) {
-                    setMeetings((prev) => [res.meeting, ...prev]);
-                    showToast("Meeting scheduled & recorded");
+                    setMeetings((prev) => [res.meeting!, ...prev]);
+                    showToast("Meeting scheduled & recorded in CRM");
                     setShowAddMeetingModal(false);
+                    await fetchNotificationsList();
+                    await fetchLogsList();
                   }
                 } catch (err) {
                   alert("Failed to save meeting.");
@@ -3696,10 +4482,11 @@ function AdminPage() {
                 <div>
                   <label className="block font-semibold mb-1">Meeting Time *</label>
                   <input
-                    type="time"
+                    type="text"
                     name="meeting_time"
                     required
-                    defaultValue="14:00"
+                    defaultValue="3:00 PM EST"
+                    placeholder="e.g. 3:00 PM EST"
                     className={`w-full rounded-xl border p-2.5 focus:outline-none ${
                       isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
                     }`}
@@ -3707,12 +4494,60 @@ function AdminPage() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold mb-1">Meeting Type</label>
+                  <select
+                    name="meeting_type"
+                    defaultValue="AI Video Strategy Call (30 min)"
+                    className={`w-full rounded-xl border p-2.5 focus:outline-none ${
+                      isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                    }`}
+                  >
+                    <option value="AI Video Strategy Call (30 min)">AI Video Strategy Call (30 min)</option>
+                    <option value="Product Demo Call (15 min)">Product Demo Call (15 min)</option>
+                    <option value="Custom Enterprise Consultation">Custom Enterprise Consultation</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold mb-1">Handling Admin</label>
+                  <select
+                    name="assigned_admin"
+                    className={`w-full rounded-xl border p-2.5 focus:outline-none ${
+                      isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                    }`}
+                  >
+                    <option value="">Unassigned</option>
+                    <option value="superadmin@aistudio.com">Super Admin</option>
+                    <option value="admin@aistudio.com">Admin</option>
+                    {adminUsers.map((u) => (
+                      <option key={u.id} value={u.email}>
+                        {u.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div>
-                <label className="block font-semibold mb-1">Calendly / Video Call Link</label>
+                <label className="block font-semibold mb-1">Meeting Link (Google Meet / Zoom / Calendly)</label>
                 <input
                   name="meeting_link"
-                  defaultValue="https://calendly.com/quickuppaistudio"
+                  defaultValue="https://calendly.com/quickuppaistudio/strategy-call"
                   className={`w-full rounded-xl border p-2.5 font-mono focus:outline-none ${
+                    isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">Notes / Client Requirement</label>
+                <textarea
+                  name="notes"
+                  rows={2}
+                  placeholder="Notes about the client's video goals or brand background..."
+                  className={`w-full rounded-xl border p-2.5 focus:outline-none resize-none ${
                     isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
                   }`}
                 />
@@ -3731,6 +4566,246 @@ function AdminPage() {
                   className="rounded-xl bg-blue-600 px-5 py-2 font-bold text-white shadow-md hover:bg-blue-700 cursor-pointer"
                 >
                   Save Meeting
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 7.5: EDIT CALENDLY MEETING DETAILS */}
+      {editingMeeting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className={`w-full max-w-md rounded-2xl border p-6 shadow-2xl space-y-4 ${
+            isDark ? "border-slate-700 bg-[#151222] text-white" : "border-slate-200 bg-white text-slate-900"
+          }`}>
+            <div className="flex items-center justify-between border-b pb-3 dark:border-slate-800">
+              <h3 className="text-base font-bold flex items-center gap-2 text-blue-600">
+                <Edit className="h-5 w-5" />
+                <span>Edit Meeting Details</span>
+              </h3>
+              <button
+                onClick={() => setEditingMeeting(null)}
+                className="rounded-lg p-1 text-slate-400 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const client_name = formData.get("client_name") as string;
+                const email = formData.get("email") as string;
+                const phone = formData.get("phone") as string;
+                const meeting_date = formData.get("meeting_date") as string;
+                const meeting_time = formData.get("meeting_time") as string;
+                const meeting_status = formData.get("meeting_status") as string;
+                const meeting_link = formData.get("meeting_link") as string;
+                const meeting_type = formData.get("meeting_type") as string;
+                const assigned_admin = formData.get("assigned_admin") as string;
+                const notes = formData.get("notes") as string;
+
+                try {
+                  const res = await updateCalendlyMeetingServerFn({
+                    id: editingMeeting.id,
+                    client_name,
+                    email,
+                    phone: phone || undefined,
+                    meeting_date,
+                    meeting_time,
+                    meeting_status,
+                    meeting_link,
+                    meeting_type,
+                    assigned_admin: assigned_admin || undefined,
+                    notes: notes || undefined,
+                    performedBy: session?.name || "Admin",
+                  });
+
+                  if (res.success) {
+                    setMeetings((prev) =>
+                      prev.map((m) =>
+                        m.id === editingMeeting.id
+                          ? {
+                              ...m,
+                              client_name,
+                              email,
+                              phone,
+                              meeting_date,
+                              meeting_time,
+                              meeting_status,
+                              meeting_link,
+                              meeting_type,
+                              assigned_admin,
+                              notes,
+                            }
+                          : m
+                      )
+                    );
+                    showToast("Meeting updated successfully");
+                    setEditingMeeting(null);
+                    await fetchNotificationsList();
+                    await fetchLogsList();
+                  }
+                } catch (err) {
+                  alert("Failed to update meeting.");
+                }
+              }}
+              className="space-y-3 text-xs"
+            >
+              <div>
+                <label className="block font-semibold mb-1">Client Name *</label>
+                <input
+                  name="client_name"
+                  required
+                  defaultValue={editingMeeting.client_name}
+                  className={`w-full rounded-xl border p-2.5 focus:outline-none ${
+                    isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                  }`}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold mb-1">Email *</label>
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    defaultValue={editingMeeting.email}
+                    className={`w-full rounded-xl border p-2.5 focus:outline-none ${
+                      isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold mb-1">Phone</label>
+                  <input
+                    name="phone"
+                    defaultValue={editingMeeting.phone || ""}
+                    className={`w-full rounded-xl border p-2.5 focus:outline-none ${
+                      isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold mb-1">Meeting Date *</label>
+                  <input
+                    type="text"
+                    name="meeting_date"
+                    required
+                    defaultValue={editingMeeting.meeting_date}
+                    className={`w-full rounded-xl border p-2.5 focus:outline-none ${
+                      isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold mb-1">Meeting Time *</label>
+                  <input
+                    type="text"
+                    name="meeting_time"
+                    required
+                    defaultValue={editingMeeting.meeting_time}
+                    className={`w-full rounded-xl border p-2.5 focus:outline-none ${
+                      isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold mb-1">Status</label>
+                  <select
+                    name="meeting_status"
+                    defaultValue={editingMeeting.meeting_status || "scheduled"}
+                    className={`w-full rounded-xl border p-2.5 focus:outline-none ${
+                      isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                    }`}
+                  >
+                    <option value="scheduled">Scheduled</option>
+                    <option value="upcoming">Upcoming</option>
+                    <option value="completed">Completed</option>
+                    <option value="rescheduled">Rescheduled</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold mb-1">Handling Admin</label>
+                  <select
+                    name="assigned_admin"
+                    defaultValue={editingMeeting.assigned_admin || ""}
+                    className={`w-full rounded-xl border p-2.5 focus:outline-none ${
+                      isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                    }`}
+                  >
+                    <option value="">Unassigned</option>
+                    <option value="superadmin@aistudio.com">Super Admin</option>
+                    <option value="admin@aistudio.com">Admin</option>
+                    {adminUsers.map((u) => (
+                      <option key={u.id} value={u.email}>
+                        {u.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">Meeting Link</label>
+                <input
+                  name="meeting_link"
+                  defaultValue={editingMeeting.meeting_link}
+                  className={`w-full rounded-xl border p-2.5 font-mono focus:outline-none ${
+                    isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">Meeting Type</label>
+                <input
+                  name="meeting_type"
+                  defaultValue={editingMeeting.meeting_type || "AI Video Strategy Call (30 min)"}
+                  className={`w-full rounded-xl border p-2.5 focus:outline-none ${
+                    isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">Notes</label>
+                <textarea
+                  name="notes"
+                  rows={2}
+                  defaultValue={editingMeeting.notes || ""}
+                  className={`w-full rounded-xl border p-2.5 focus:outline-none resize-none ${
+                    isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                  }`}
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingMeeting(null)}
+                  className="rounded-xl border px-4 py-2 font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-blue-600 px-5 py-2 font-bold text-white shadow-md hover:bg-blue-700 cursor-pointer"
+                >
+                  Update Meeting
                 </button>
               </div>
             </form>
@@ -3796,6 +4871,118 @@ function AdminPage() {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Tab Security PIN Modal */}
+      {showPaymentPinModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 shadow-2xl text-slate-800">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 text-indigo-600 shadow-xs">
+                  <Lock className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Unlock Payments Tab</h3>
+                  <p className="text-xs text-slate-500">Enter security PIN to view orders &amp; revenue</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPaymentPinModal(false);
+                  setPaymentPinInput("");
+                  setPaymentPinError("");
+                }}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Security PIN
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="security_pin_code"
+                    id="security_pin_code"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-bwignore="true"
+                    data-form-type="other"
+                    autoFocus
+                    placeholder="Enter PIN"
+                    value={paymentPinInput}
+                    style={
+                      {
+                        WebkitTextSecurity: showPaymentPin ? "none" : "disc",
+                      } as React.CSSProperties
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleUnlockPaymentPin();
+                      }
+                    }}
+                    onChange={(e) => {
+                      setPaymentPinInput(e.target.value);
+                      if (paymentPinError) setPaymentPinError("");
+                    }}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all font-mono tracking-wider"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPaymentPin(!showPaymentPin)}
+                    className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                    tabIndex={-1}
+                    title={showPaymentPin ? "Hide PIN" : "Show PIN"}
+                  >
+                    {showPaymentPin ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                  </button>
+                </div>
+
+                {paymentPinError && (
+                  <p className="mt-2 text-xs font-bold text-red-600 animate-in fade-in flex items-center gap-1">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    <span>{paymentPinError}</span>
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPaymentPinModal(false);
+                    setPaymentPinInput("");
+                    setPaymentPinError("");
+                  }}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-100 py-2.5 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUnlockPaymentPin()}
+                  disabled={isVerifyingPin}
+                  className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md hover:brightness-105 transition-all hover:scale-[1.02] active:scale-98 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>{isVerifyingPin ? "Verifying..." : "Unlock"}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

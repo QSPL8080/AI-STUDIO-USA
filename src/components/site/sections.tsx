@@ -2869,6 +2869,50 @@ export function StrategyCall() {
       }
     };
 
+    const handleCalendlyMessage = async (e: MessageEvent) => {
+      if (
+        e.origin.includes("calendly.com") ||
+        (e.data && typeof e.data === "object" && e.data.event && String(e.data.event).startsWith("calendly."))
+      ) {
+        if (e.data.event === "calendly.event_scheduled") {
+          try {
+            const { recordCalendlyBookingServerFn } = await import("@/lib/lead-actions");
+            const payload = e.data.payload || {};
+            const eventDetails = payload.event || {};
+            const inviteeDetails = payload.invitee || {};
+            const clientName = inviteeDetails.name || "USA Strategy Call Client";
+            const email = inviteeDetails.email || "client@calendly-booking.com";
+            const phone = inviteeDetails.text_reminder_number || "";
+            const startTime = eventDetails.start_time || new Date().toISOString();
+            const parsed = new Date(startTime);
+            const meetingDate = !isNaN(parsed.getTime())
+              ? parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+              : new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+            const meetingTime = !isNaN(parsed.getTime())
+              ? parsed.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) + " EST"
+              : "3:00 PM EST";
+
+            await recordCalendlyBookingServerFn({
+              client_name: clientName,
+              email: email,
+              phone: phone,
+              meeting_date: meetingDate,
+              meeting_time: meetingTime,
+              meeting_status: "scheduled",
+              meeting_link: "https://calendly.com/quickuppaistudio/strategy-call",
+              meeting_type: "AI Video Strategy Call (30 min)",
+              notes: "Booked via embedded Calendly widget on quickuppaistudio.us",
+              raw_event: JSON.stringify(e.data),
+            });
+          } catch (err) {
+            console.error("Failed to auto-record Calendly booking:", err);
+          }
+        }
+      }
+    };
+
+    window.addEventListener("message", handleCalendlyMessage);
+
     if (!script) {
       script = document.createElement("script");
       script.id = scriptId;
@@ -2879,6 +2923,10 @@ export function StrategyCall() {
     } else {
       initWidget();
     }
+
+    return () => {
+      window.removeEventListener("message", handleCalendlyMessage);
+    };
   }, []);
 
   return (
