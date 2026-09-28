@@ -4,6 +4,7 @@ import {
   AlertCircle,
   AlertTriangle,
   ArrowLeft,
+  BarChart3,
   Bell,
   BellRing,
   Calendar,
@@ -14,14 +15,18 @@ import {
   Clock,
   Copy,
   CreditCard,
+  Database,
   DollarSign,
   Download,
   Edit,
   ExternalLink,
   Eye,
   EyeOff,
+  FileSpreadsheet,
+  FileText,
   Filter,
   Globe,
+  Key,
   Layers,
   LayoutDashboard,
   Loader2,
@@ -31,6 +36,7 @@ import {
   Megaphone,
   MessageSquare,
   Package,
+  Palette,
   Phone,
   Plus,
   RefreshCw,
@@ -40,6 +46,7 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
+  Sliders,
   Sparkles,
   Trash,
   Trash2,
@@ -360,6 +367,79 @@ function AdminPage() {
   const [leadsActivitySubTab, setLeadsActivitySubTab] = useState<"website_manual" | "meta" | "all">("website_manual");
   const [activitySearchTerm, setActivitySearchTerm] = useState<string>("");
 
+  // Super Admin CRM Settings State (with persistent local storage)
+  const [crmPlatformTitle, setCrmPlatformTitle] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("crm_platform_title") || "AI STUDIO USA - Enterprise CRM";
+    }
+    return "AI STUDIO USA - Enterprise CRM";
+  });
+  const [crmNotificationEmail, setCrmNotificationEmail] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("crm_notification_email") || "admin@quickuppaistudio.us";
+    }
+    return "admin@quickuppaistudio.us";
+  });
+  const [crmCurrency, setCrmCurrency] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("crm_currency") || "USD ($)";
+    }
+    return "USD ($)";
+  });
+  const [crmSyncInterval, setCrmSyncInterval] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      return Number(localStorage.getItem("crm_sync_interval")) || 10;
+    }
+    return 10;
+  });
+  const [crmAudioEnabled, setCrmAudioEnabled] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("crm_audio_enabled") !== "false";
+    }
+    return true;
+  });
+  const [crmAccentTheme, setCrmAccentTheme] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("crm_accent_theme") || "slate";
+    }
+    return "slate";
+  });
+  const [crmDensity, setCrmDensity] = useState<"comfortable" | "compact">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("crm_density") as "comfortable" | "compact") || "comfortable";
+    }
+    return "comfortable";
+  });
+  const [crmHighContrast, setCrmHighContrast] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("crm_high_contrast") === "true";
+    }
+    return false;
+  });
+  const [crmInactivityTimeout, setCrmInactivityTimeout] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      return Number(localStorage.getItem("crm_inactivity_timeout")) || 10;
+    }
+    return 10;
+  });
+  const [crmLoginAttempts, setCrmLoginAttempts] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      return Number(localStorage.getItem("crm_login_attempts")) || 5;
+    }
+    return 5;
+  });
+  const [crmBroadcastBanner, setCrmBroadcastBanner] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("crm_broadcast_banner") || "";
+    }
+    return "";
+  });
+  const [crmBroadcastDraft, setCrmBroadcastDraft] = useState("");
+  const [crmSettingsSaved, setCrmSettingsSaved] = useState(false);
+  const [crmSettingsSubTab, setCrmSettingsSubTab] = useState<
+    "crm_config" | "colors" | "export" | "permissions" | "records" | "reports" | "security"
+  >("crm_config");
+
   // Strict Mutually Exclusive Classification for Activity Logs
   const classifiedLogs = useMemo(() => {
     return activityLogs.map((log) => {
@@ -609,23 +689,23 @@ function AdminPage() {
 
   // Automatic Tab Guard: Ensure standard Admin is never stranded on a Super Admin-only tab
   useEffect(() => {
-    if (session && session.role !== "super_admin" && (activeTab === "users" || activeTab === "security")) {
+    if (session && session.role !== "super_admin" && (activeTab === "users" || activeTab === "security" || activeTab === "settings")) {
       setActiveTab("leads");
     }
   }, [session, activeTab]);
 
-  // 10-Minute Inactivity Auto-Logout for Super Admin & Admin
+  // Inactivity Auto-Logout for Super Admin & Admin (Configurable, defaults to 10 Minutes)
   useEffect(() => {
     if (!session) return;
     let timeoutId: NodeJS.Timeout;
+    const timeoutMs = (crmInactivityTimeout || 10) * 60 * 1000;
 
     const resetInactivityTimer = () => {
       clearTimeout(timeoutId);
-      // 10 Minutes = 10 * 60 * 1000 = 600,000 ms
       timeoutId = setTimeout(() => {
         handleLogout();
-        setAuthError("You were automatically logged out due to 10 minutes of inactivity.");
-      }, 600000);
+        setAuthError(`You were automatically logged out due to ${crmInactivityTimeout || 10} minutes of inactivity.`);
+      }, timeoutMs);
     };
 
     const activityEvents = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click", "wheel"];
@@ -641,7 +721,7 @@ function AdminPage() {
         window.removeEventListener(event, resetInactivityTimer);
       });
     };
-  }, [session]);
+  }, [session, crmInactivityTimeout]);
 
   // Real-Time Incoming Notifications
   const handleIncomingLead = (newLead: Lead) => {
@@ -1569,6 +1649,257 @@ function AdminPage() {
     link.click();
     document.body.removeChild(link);
     showToast(`Exported ${listToExport.length} Meta leads`);
+  };
+
+  // 1-Click Complete System Export Center Handlers
+  const exportOrdersCSV = () => {
+    if (!orders.length) return alert("No payment orders found to export.");
+    const headers = [
+      "Order ID",
+      "Customer Name",
+      "Customer Email",
+      "Customer Phone",
+      "Service Name",
+      "Amount",
+      "Currency",
+      "Payment Status",
+      "PayPal Order ID",
+      "Created At",
+    ];
+    const rows = orders.map((o) => [
+      `"${o.id}"`,
+      `"${o.customer_name || ""}"`,
+      `"${o.customer_email || ""}"`,
+      `"${o.customer_phone || ""}"`,
+      `"${o.service_name || ""}"`,
+      o.amount,
+      `"${o.currency || "USD"}"`,
+      `"${o.payment_status || ""}"`,
+      `"${o.paypal_order_id || ""}"`,
+      `"${new Date(o.created_at).toLocaleString()}"`,
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `ai_studio_orders_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Exported ${orders.length} orders to CSV`);
+  };
+
+  const exportMeetingsCSV = () => {
+    if (!meetings.length) return alert("No Calendly meetings found to export.");
+    const headers = [
+      "Meeting ID",
+      "Event Name",
+      "Invitee Name",
+      "Invitee Email",
+      "Start Time",
+      "End Time",
+      "Status",
+      "Assigned Admin",
+      "Join URL",
+      "Created At",
+    ];
+    const rows = meetings.map((m) => [
+      `"${m.id}"`,
+      `"${m.event_name || "Strategy Session"}"`,
+      `"${m.invitee_name || ""}"`,
+      `"${m.invitee_email || ""}"`,
+      `"${m.start_time ? new Date(m.start_time).toLocaleString() : ""}"`,
+      `"${m.end_time ? new Date(m.end_time).toLocaleString() : ""}"`,
+      `"${m.status || "active"}"`,
+      `"${m.assigned_admin || ""}"`,
+      `"${m.join_url || ""}"`,
+      `"${new Date(m.created_at).toLocaleString()}"`,
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `calendly_meetings_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Exported ${meetings.length} scheduled meetings`);
+  };
+
+  const exportActivityCSV = () => {
+    if (!activityLogs.length) return alert("No activity history logs found to export.");
+    const headers = [
+      "Log ID",
+      "Action Type",
+      "Details / Description",
+      "Admin Email",
+      "IP Address",
+      "Timestamp",
+    ];
+    const rows = activityLogs.map((log) => [
+      `"${log.id}"`,
+      `"${log.action || ""}"`,
+      `"${(log.details || "").replace(/"/g, '""')}"`,
+      `"${log.performed_by || log.admin_email || ""}"`,
+      `"${log.ip_address || ""}"`,
+      `"${new Date(log.timestamp).toLocaleString()}"`,
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `activity_audit_logs_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Exported ${activityLogs.length} audit trail logs`);
+  };
+
+  const exportAllLeadsMasterCSV = () => {
+    if (!leads.length) return alert("No leads found in database to export.");
+    const headers = [
+      "ID",
+      "Source",
+      "Client Name",
+      "Business Name",
+      "Phone",
+      "Email",
+      "Video Type",
+      "Video Quantity",
+      "Location",
+      "Lead Status",
+      "Project Status",
+      "Closed By",
+      "Closed Date",
+      "Delivery Date",
+      "Meeting Date",
+      "Internal Notes",
+      "Created At",
+    ];
+    const rows = leads.map((l) => [
+      l.id,
+      `"${l.source}"`,
+      `"${l.name}"`,
+      `"${l.business}"`,
+      `"${l.phone}"`,
+      `"${l.email || ""}"`,
+      `"${l.video_type}"`,
+      `"${l.video_quantity || 1}"`,
+      `"${l.location || ""}"`,
+      l.status,
+      l.project_status || "In Progress",
+      `"${l.closed_by || ""}"`,
+      `"${l.closed_at ? new Date(l.closed_at).toLocaleDateString() : ""}"`,
+      `"${l.delivery_date || ""}"`,
+      `"${l.meeting_date || ""}"`,
+      `"${(l.notes || "").replace(/"/g, '""')}"`,
+      new Date(l.created_at).toLocaleString(),
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `all_inbound_leads_master_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Exported all ${leads.length} master leads`);
+  };
+
+  const exportFullBackupJSON = () => {
+    const backupData = {
+      system: "AI STUDIO USA CRM - Enterprise Production Database Snapshot",
+      exported_at: new Date().toISOString(),
+      exported_by: session?.email || "Super Admin",
+      version: "2.4.0",
+      database_engine: "SQLite Enterprise Local DB",
+      counts: {
+        total_active_leads: leads.length,
+        recycle_bin_leads: recycleBinLeads.length,
+        total_payment_orders: orders.length,
+        total_calendly_meetings: meetings.length,
+        total_activity_logs: activityLogs.length,
+        total_login_logs: loginLogs.length,
+        admin_users: adminUsers.length,
+      },
+      collections: {
+        leads,
+        recycle_bin: recycleBinLeads,
+        orders,
+        meetings,
+        activity_logs: activityLogs,
+        login_logs: loginLogs,
+        admin_users: adminUsers.map((u) => ({
+          id: u.id,
+          email: u.email,
+          role: u.role,
+          status: u.status,
+          created_at: u.created_at,
+        })),
+      },
+    };
+
+    const jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+    const link = document.createElement("a");
+    link.setAttribute("href", jsonStr);
+    link.setAttribute("download", `ai_studio_master_backup_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("Master Database JSON Backup downloaded successfully");
+  };
+
+  const playTestChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) {
+        showToast("Audio playback not supported in browser");
+        return;
+      }
+      const audioCtx = new AudioCtx();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1); // A5
+      gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.35);
+      showToast("Notification chime test played");
+    } catch {
+      showToast("Could not play audio chime preview");
+    }
+  };
+
+  const handleSaveCrmSettings = () => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("crm_platform_title", crmPlatformTitle);
+      localStorage.setItem("crm_notification_email", crmNotificationEmail);
+      localStorage.setItem("crm_currency", crmCurrency);
+      localStorage.setItem("crm_sync_interval", crmSyncInterval.toString());
+      localStorage.setItem("crm_audio_enabled", crmAudioEnabled ? "true" : "false");
+      localStorage.setItem("crm_accent_theme", crmAccentTheme);
+      localStorage.setItem("crm_density", crmDensity);
+      localStorage.setItem("crm_high_contrast", crmHighContrast ? "true" : "false");
+      localStorage.setItem("crm_inactivity_timeout", crmInactivityTimeout.toString());
+      localStorage.setItem("crm_login_attempts", crmLoginAttempts.toString());
+      localStorage.setItem("crm_broadcast_banner", crmBroadcastBanner);
+    }
+    setCrmSettingsSaved(true);
+    setTimeout(() => setCrmSettingsSaved(false), 3000);
+    showToast("CRM Settings saved successfully");
+  };
+
+  const handlePublishBroadcastBanner = () => {
+    setCrmBroadcastBanner(crmBroadcastDraft);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("crm_broadcast_banner", crmBroadcastDraft);
+    }
+    showToast(crmBroadcastDraft ? "Broadcast alert published across CRM" : "Broadcast alert cleared");
   };
 
   const isToday = (dateStr?: string) => {
@@ -2557,6 +2888,18 @@ function AdminPage() {
                   <ShieldAlert className="h-4 w-4" />
                   <span>Login / IP Tracking</span>
                 </button>
+
+                <button
+                  onClick={() => { setActiveTab("settings"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
+                  className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                    activeTab === "settings"
+                      ? "bg-purple-600 text-white shadow-sm"
+                      : "text-purple-700 hover:bg-purple-50"
+                  }`}
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>CRM Settings</span>
+                </button>
               </>
             )}
 
@@ -2582,6 +2925,31 @@ function AdminPage() {
 
       {/* Main Content Area */}
       <main className="w-full max-w-[1750px] mx-auto flex-1 p-3 sm:p-5 lg:p-7 space-y-5 sm:space-y-6">
+        {/* System-Wide Operational Broadcast Banner (Super Admin Controlled) */}
+        {crmBroadcastBanner && (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50/90 px-4 py-3 text-xs text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-xs animate-in fade-in">
+            <div className="flex items-center gap-2.5">
+              <Megaphone className="h-4 w-4 text-amber-600 shrink-0" />
+              <span className="font-bold text-amber-900 uppercase tracking-wider text-[10px] bg-amber-200/80 px-2 py-0.5 rounded-md">System Notice</span>
+              <span className="font-semibold">{crmBroadcastBanner}</span>
+            </div>
+            {isSuperAdmin && (
+              <button
+                onClick={() => {
+                  setCrmBroadcastBanner("");
+                  if (typeof window !== "undefined") {
+                    localStorage.removeItem("crm_broadcast_banner");
+                  }
+                  showToast("Broadcast banner dismissed");
+                }}
+                className="text-[11px] font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer shrink-0 self-end sm:self-center"
+              >
+                Dismiss Notice
+              </button>
+            )}
+          </div>
+        )}
+
         {/* ========================================================================= */}
         {/* TAB 0: EXECUTIVE DASHBOARD & CRM OVERVIEW */}
         {/* ========================================================================= */}
@@ -5935,6 +6303,905 @@ function AdminPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 8: CRM SETTINGS & SUPER ADMIN SYSTEM CONTROLS */}
+        {/* ========================================================================= */}
+        {activeTab === "settings" && isSuperAdmin && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Header Hero Card */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="rounded-xl bg-slate-900 p-2 text-white">
+                    <Settings className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                      <span>CRM Settings & Super Admin Control Center</span>
+                      <span className="rounded-md bg-purple-100 text-purple-800 text-[10px] font-extrabold px-2 py-0.5 border border-purple-200">
+                        SUPER ADMIN ONLY
+                      </span>
+                    </h2>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      Configure platform rules, personalize interface colors, export data streams, inspect RBAC permissions, review database counts, view analytics reports, and adjust security policies.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={handleSaveCrmSettings}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-black transition-colors cursor-pointer shadow-xs"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  <span>Save All Settings</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Sub-Tab Navigation Bar for the 7 Modules */}
+            <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 pb-3">
+              <button
+                onClick={() => setCrmSettingsSubTab("crm_config")}
+                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                  crmSettingsSubTab === "crm_config"
+                    ? "bg-slate-900 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                }`}
+              >
+                <Sliders className="h-4 w-4" />
+                <span>1. CRM Settings</span>
+              </button>
+
+              <button
+                onClick={() => setCrmSettingsSubTab("colors")}
+                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                  crmSettingsSubTab === "colors"
+                    ? "bg-slate-900 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                }`}
+              >
+                <Palette className="h-4 w-4" />
+                <span>2. Interface Colors</span>
+              </button>
+
+              <button
+                onClick={() => setCrmSettingsSubTab("export")}
+                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                  crmSettingsSubTab === "export"
+                    ? "bg-slate-900 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                }`}
+              >
+                <Download className="h-4 w-4" />
+                <span>3. Export CRM Data</span>
+              </button>
+
+              <button
+                onClick={() => setCrmSettingsSubTab("permissions")}
+                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                  crmSettingsSubTab === "permissions"
+                    ? "bg-slate-900 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                }`}
+              >
+                <ShieldCheck className="h-4 w-4" />
+                <span>4. Permissions Matrix</span>
+              </button>
+
+              <button
+                onClick={() => setCrmSettingsSubTab("records")}
+                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                  crmSettingsSubTab === "records"
+                    ? "bg-slate-900 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                }`}
+              >
+                <Database className="h-4 w-4" />
+                <span>5. Access All Records</span>
+              </button>
+
+              <button
+                onClick={() => setCrmSettingsSubTab("reports")}
+                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                  crmSettingsSubTab === "reports"
+                    ? "bg-slate-900 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                }`}
+              >
+                <BarChart3 className="h-4 w-4" />
+                <span>6. Dashboard Reports</span>
+              </button>
+
+              <button
+                onClick={() => setCrmSettingsSubTab("security")}
+                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                  crmSettingsSubTab === "security"
+                    ? "bg-slate-900 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                }`}
+              >
+                <Lock className="h-4 w-4" />
+                <span>7. Security Settings</span>
+              </button>
+            </div>
+
+            {/* Saved Notification Banner */}
+            {crmSettingsSaved && (
+              <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-3.5 text-xs text-emerald-900 flex items-center gap-2 shadow-xs animate-in fade-in">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <span className="font-semibold">All Super Admin CRM settings have been successfully updated and persisted.</span>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* MODULE 1: MANAGE CRM SETTINGS */}
+            {/* ========================================================================= */}
+            {crmSettingsSubTab === "crm_config" && (
+              <div className="space-y-5 animate-in fade-in">
+                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-5">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <Sliders className="h-4 w-4 text-slate-800" />
+                      <span>General Platform & Operational Settings</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Configure base CRM branding, system notification recipient, default currency, and real-time syncing frequency.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100 text-xs">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Platform / CRM Title</label>
+                      <input
+                        type="text"
+                        value={crmPlatformTitle}
+                        onChange={(e) => setCrmPlatformTitle(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        placeholder="AI STUDIO USA - Enterprise CRM"
+                      />
+                      <p className="text-[11px] text-slate-400 mt-1">Displayed on the admin portal navigation header and page title.</p>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">System Alert Notification Email</label>
+                      <input
+                        type="email"
+                        value={crmNotificationEmail}
+                        onChange={(e) => setCrmNotificationEmail(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        placeholder="admin@quickuppaistudio.us"
+                      />
+                      <p className="text-[11px] text-slate-400 mt-1">Designated email for high-priority lead and payment notifications.</p>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Default Platform Currency</label>
+                      <select
+                        value={crmCurrency}
+                        onChange={(e) => setCrmCurrency(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer"
+                      >
+                        <option value="USD ($)">USD ($) - United States Dollar</option>
+                        <option value="EUR (€)">EUR (€) - Euro</option>
+                        <option value="GBP (£)">GBP (£) - British Pound</option>
+                        <option value="CAD (C$)">CAD (C$) - Canadian Dollar</option>
+                        <option value="AUD (A$)">AUD (A$) - Australian Dollar</option>
+                      </select>
+                      <p className="text-[11px] text-slate-400 mt-1">Applied to revenue calculations and order financial summaries.</p>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Real-Time Data Polling Interval</label>
+                      <select
+                        value={crmSyncInterval}
+                        onChange={(e) => setCrmSyncInterval(Number(e.target.value))}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer"
+                      >
+                        <option value={10}>10 Seconds (Recommended • Real-Time High Precision)</option>
+                        <option value={30}>30 Seconds (Balanced Frequency)</option>
+                        <option value={60}>60 Seconds (Low Bandwidth Mode)</option>
+                        <option value={0}>Manual Refresh Only (No Polling)</option>
+                      </select>
+                      <p className="text-[11px] text-slate-400 mt-1">Background polling cycle for incoming website leads, Meta leads, and meetings.</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="audio_chimes_toggle"
+                        checked={crmAudioEnabled}
+                        onChange={(e) => setCrmAudioEnabled(e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                      />
+                      <div>
+                        <label htmlFor="audio_chimes_toggle" className="text-xs font-bold text-slate-800 cursor-pointer block">
+                          Audio Sound Alerts for Inbound Leads & New Orders
+                        </label>
+                        <span className="text-[11px] text-slate-400">Play an audible chime when real-time leads or checkout events arrive.</span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={playTestChime}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer shrink-0"
+                    >
+                      <Volume2 className="h-3.5 w-3.5" />
+                      <span>Test Audio Chime</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* MODULE 2: CHANGE CRM / INTERFACE COLORS */}
+            {/* ========================================================================= */}
+            {crmSettingsSubTab === "colors" && (
+              <div className="space-y-5 animate-in fade-in">
+                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-5">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <Palette className="h-4 w-4 text-slate-800" />
+                      <span>CRM Interface Appearance & Color Schemes</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Select primary accent highlights, adjust data density modes, and configure visual layout parameters.
+                    </p>
+                  </div>
+
+                  {/* Accent Color Palettes */}
+                  <div className="space-y-3 pt-2 border-t border-slate-100">
+                    <label className="block text-xs font-bold text-slate-700">Primary Theme Accent Palette</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                      {[
+                        { id: "slate", name: "Slate Minimal", desc: "Clean Monochrome (System Default)", color: "bg-slate-900" },
+                        { id: "royal_blue", name: "Royal Blue", desc: "Classic Corporate Blue", color: "bg-blue-600" },
+                        { id: "purple", name: "Electric Purple", desc: "Super Admin Amethyst", color: "bg-purple-600" },
+                        { id: "emerald", name: "Emerald Green", desc: "High Conversion Forest", color: "bg-emerald-600" },
+                        { id: "indigo", name: "Executive Indigo", desc: "Deep Modern SaaS", color: "bg-indigo-600" },
+                      ].map((item) => (
+                        <div
+                          key={item.id}
+                          onClick={() => setCrmAccentTheme(item.id)}
+                          className={`rounded-xl border p-3.5 cursor-pointer transition-all ${
+                            crmAccentTheme === item.id
+                              ? "border-slate-900 bg-slate-50 ring-2 ring-slate-900/20 shadow-xs"
+                              : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 mb-2">
+                            <span className={`h-4 w-4 rounded-full ${item.color}`} />
+                            <span className="text-xs font-bold text-slate-900">{item.name}</span>
+                          </div>
+                          <p className="text-[11px] text-slate-500">{item.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Layout Density */}
+                  <div className="space-y-3 pt-3 border-t border-slate-100">
+                    <label className="block text-xs font-bold text-slate-700">Interface Row Density</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl">
+                      <div
+                        onClick={() => setCrmDensity("comfortable")}
+                        className={`rounded-xl border p-3.5 cursor-pointer transition-all ${
+                          crmDensity === "comfortable"
+                            ? "border-slate-900 bg-slate-50 ring-2 ring-slate-900/20 shadow-xs"
+                            : "border-slate-200 hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="text-xs font-bold text-slate-900 mb-1">Comfortable (Standard)</div>
+                        <p className="text-[11px] text-slate-500">Spacious table row heights, standard padding, and optimal readability.</p>
+                      </div>
+
+                      <div
+                        onClick={() => setCrmDensity("compact")}
+                        className={`rounded-xl border p-3.5 cursor-pointer transition-all ${
+                          crmDensity === "compact"
+                            ? "border-slate-900 bg-slate-50 ring-2 ring-slate-900/20 shadow-xs"
+                            : "border-slate-200 hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="text-xs font-bold text-slate-900 mb-1">Compact (High Density)</div>
+                        <p className="text-[11px] text-slate-500">Tight data row heights, condensed padding for high-volume lead triaging.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* High Contrast Toggle */}
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-slate-800">High Contrast Grid Borders</div>
+                      <div className="text-[11px] text-slate-400">Enhance outer cell borders across all data tables for maximum visual separation.</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={crmHighContrast}
+                      onChange={(e) => setCrmHighContrast(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* MODULE 3: EXPORT CRM DATA */}
+            {/* ========================================================================= */}
+            {crmSettingsSubTab === "export" && (
+              <div className="space-y-5 animate-in fade-in">
+                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-5">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <Download className="h-4 w-4 text-slate-800" />
+                      <span>1-Click Complete System Export Center</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Export individual data collections as structured CSV spreadsheets or trigger a full master database backup in JSON format.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2 border-t border-slate-100">
+                    {/* Card 1: All Inbound Leads */}
+                    <div className="rounded-xl border border-slate-200 p-4 space-y-3 flex flex-col justify-between hover:border-slate-300 transition-colors">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <FileSpreadsheet className="h-4 w-4 text-slate-700" />
+                          <h4 className="text-xs font-bold text-slate-900">All Inbound Leads (Master)</h4>
+                        </div>
+                        <p className="text-[11px] text-slate-500">
+                          Complete list of all inbound leads across USA Website, Meta Ads, and Manual sources ({leads.length} total records).
+                        </p>
+                      </div>
+                      <button
+                        onClick={exportAllLeadsMasterCSV}
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>Export All Leads CSV</span>
+                      </button>
+                    </div>
+
+                    {/* Card 2: Meta Ads Leads */}
+                    <div className="rounded-xl border border-slate-200 p-4 space-y-3 flex flex-col justify-between hover:border-slate-300 transition-colors">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <Megaphone className="h-4 w-4 text-slate-700" />
+                          <h4 className="text-xs font-bold text-slate-900">Meta Ads Campaign Leads</h4>
+                        </div>
+                        <p className="text-[11px] text-slate-500">
+                          Isolated export of leads generated via Facebook & Instagram advertising campaigns ({metaLeads.length} total records).
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => exportMetaCSV(false)}
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>Export Meta Leads CSV</span>
+                      </button>
+                    </div>
+
+                    {/* Card 3: Orders & Financial Transactions */}
+                    <div className="rounded-xl border border-slate-200 p-4 space-y-3 flex flex-col justify-between hover:border-slate-300 transition-colors">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <DollarSign className="h-4 w-4 text-slate-700" />
+                          <h4 className="text-xs font-bold text-slate-900">Orders & Payment Transactions</h4>
+                        </div>
+                        <p className="text-[11px] text-slate-500">
+                          Financial records, customer emails, order values, currency, and PayPal transaction IDs ({orders.length} total records).
+                        </p>
+                      </div>
+                      <button
+                        onClick={exportOrdersCSV}
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>Export Orders CSV</span>
+                      </button>
+                    </div>
+
+                    {/* Card 4: Calendly Meetings */}
+                    <div className="rounded-xl border border-slate-200 p-4 space-y-3 flex flex-col justify-between hover:border-slate-300 transition-colors">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <Calendar className="h-4 w-4 text-slate-700" />
+                          <h4 className="text-xs font-bold text-slate-900">Calendly Strategy Meetings</h4>
+                        </div>
+                        <p className="text-[11px] text-slate-500">
+                          Scheduled client consultation calls, invitee emails, assigned admins, and meeting timestamps ({meetings.length} total records).
+                        </p>
+                      </div>
+                      <button
+                        onClick={exportMeetingsCSV}
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>Export Meetings CSV</span>
+                      </button>
+                    </div>
+
+                    {/* Card 5: Audit Activity History */}
+                    <div className="rounded-xl border border-slate-200 p-4 space-y-3 flex flex-col justify-between hover:border-slate-300 transition-colors">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <Clock className="h-4 w-4 text-slate-700" />
+                          <h4 className="text-xs font-bold text-slate-900">System Activity Audit Trail</h4>
+                        </div>
+                        <p className="text-[11px] text-slate-500">
+                          Comprehensive security audit history containing user actions, status modifications, and timestamps ({activityLogs.length} total records).
+                        </p>
+                      </div>
+                      <button
+                        onClick={exportActivityCSV}
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>Export Audit Trail CSV</span>
+                      </button>
+                    </div>
+
+                    {/* Card 6: Master Database JSON Snapshot */}
+                    <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-4 space-y-3 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <Database className="h-4 w-4 text-slate-900" />
+                          <h4 className="text-xs font-bold text-slate-900">Master Database JSON Backup</h4>
+                        </div>
+                        <p className="text-[11px] text-slate-500">
+                          Complete raw snapshot of all collections, schema definitions, settings, and user entries for full disaster recovery.
+                        </p>
+                      </div>
+                      <button
+                        onClick={exportFullBackupJSON}
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-2 text-xs font-bold text-white hover:bg-black transition-colors cursor-pointer shadow-xs"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>Download Master JSON Snapshot</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* MODULE 4: MANAGE SYSTEM PERMISSIONS */}
+            {/* ========================================================================= */}
+            {crmSettingsSubTab === "permissions" && (
+              <div className="space-y-5 animate-in fade-in">
+                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-5">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4 text-slate-800" />
+                      <span>Role-Based Access Control (RBAC) Matrix</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Operational permissions matrix defining authorization levels between Super Admin and standard Admin accounts.
+                    </p>
+                  </div>
+
+                  <div className="overflow-x-auto rounded-xl border border-slate-200">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                        <tr>
+                          <th className="px-4 py-3">System Module / Capability</th>
+                          <th className="px-4 py-3">Super Admin (sa@aistudio.com)</th>
+                          <th className="px-4 py-3">Standard Admin (admin@aistudio.com)</th>
+                          <th className="px-4 py-3">Security Level</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {[
+                          { cap: "Dashboard & Real-Time Performance Analytics", sa: "Full Access", ad: "Full Access", sec: "Standard" },
+                          { cap: "Website Leads Management & Status Updating", sa: "Full CRUD", ad: "Full CRUD", sec: "Standard" },
+                          { cap: "Meta Ads Leads Management & Notes", sa: "Full CRUD", ad: "Full CRUD", sec: "Standard" },
+                          { cap: "Calendly Strategy Meetings & Rescheduling", sa: "Full Access", ad: "Full Access", sec: "Standard" },
+                          { cap: "Soft-Delete Leads to Recycle Bin", sa: "Full Access", ad: "Full Access", sec: "Standard" },
+                          { cap: "Permanent Lead Purge & Empty Recycle Bin", sa: "Allowed", ad: "Restricted 🔒", sec: "Super Admin Only" },
+                          { cap: "Orders & Financial Revenue Access", sa: "Full + PIN Protected", ad: "PIN Protected", sec: "Elevated PIN" },
+                          { cap: "Change Master Financial Security PIN", sa: "Allowed", ad: "Restricted 🔒", sec: "Super Admin Only" },
+                          { cap: "Export Inbound Leads & Campaign Data", sa: "Allowed", ad: "Allowed", sec: "Standard" },
+                          { cap: "Export Master JSON Disaster Backup", sa: "Allowed", ad: "Restricted 🔒", sec: "Super Admin Only" },
+                          { cap: "Create, Suspend, & Delete Admin Users", sa: "Allowed", ad: "Restricted 🔒", sec: "Super Admin Only" },
+                          { cap: "View Live IP Tracking & Login Audit Logs", sa: "Allowed", ad: "Restricted 🔒", sec: "Super Admin Only" },
+                          { cap: "Modify CRM Settings & Theme Preferences", sa: "Allowed", ad: "Restricted 🔒", sec: "Super Admin Only" },
+                          { cap: "Broadcast Operational System Notice", sa: "Allowed", ad: "Restricted 🔒", sec: "Super Admin Only" },
+                        ].map((row, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50/70 transition-colors">
+                            <td className="px-4 py-3 font-semibold text-slate-800">{row.cap}</td>
+                            <td className="px-4 py-3 font-bold text-purple-700">
+                              <span className="inline-flex items-center gap-1 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+                                <Check className="h-3 w-3" />
+                                {row.sa}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 font-medium text-slate-700">
+                              {row.ad.includes("Restricted") ? (
+                                <span className="inline-flex items-center gap-1 bg-red-50 text-red-700 px-2 py-0.5 rounded-md border border-red-200 font-bold">
+                                  {row.ad}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-200">
+                                  <Check className="h-3 w-3" />
+                                  {row.ad}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                row.sec === "Super Admin Only"
+                                  ? "bg-purple-100 text-purple-800 border-purple-200"
+                                  : row.sec === "Elevated PIN"
+                                  ? "bg-amber-100 text-amber-800 border-amber-200"
+                                  : "bg-slate-100 text-slate-700 border-slate-200"
+                              }`}>
+                                {row.sec}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* MODULE 5: ACCESS ALL RECORDS */}
+            {/* ========================================================================= */}
+            {crmSettingsSubTab === "records" && (
+              <div className="space-y-5 animate-in fade-in">
+                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <Database className="h-4 w-4 text-slate-800" />
+                        <span>Live Database Master Record Counters</span>
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Real-time inspection of total record counts across all system tables and database collections.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={fetchData}
+                      disabled={isSyncing}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+                      <span>{isSyncing ? "Syncing..." : "Force Deep Index Refresh"}</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-2 border-t border-slate-100">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Leads</div>
+                      <div className="text-2xl font-black text-slate-900 mt-1">{leads.length}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Website + Meta leads</div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Recycle Bin</div>
+                      <div className="text-2xl font-black text-slate-900 mt-1">{recycleBinLeads.length}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Soft-deleted items</div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Orders</div>
+                      <div className="text-2xl font-black text-slate-900 mt-1">{orders.length}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">PayPal transactions</div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Revenue</div>
+                      <div className="text-2xl font-black text-emerald-700 mt-1">
+                        ${orders.filter(o => (o.payment_status || "").toUpperCase() === "COMPLETED").reduce((sum, o) => sum + (Number(o.amount) || 0), 0).toLocaleString()}
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Captured payments</div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Calendly Calls</div>
+                      <div className="text-2xl font-black text-slate-900 mt-1">{meetings.length}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Booked sessions</div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Admin Accounts</div>
+                      <div className="text-2xl font-black text-slate-900 mt-1">{adminUsers.length}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Provisioned users</div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Activity Logs</div>
+                      <div className="text-2xl font-black text-slate-900 mt-1">{activityLogs.length}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Audit history entries</div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Security Logs</div>
+                      <div className="text-2xl font-black text-slate-900 mt-1">{loginLogs.length}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Login & IP tracking</div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4 text-xs text-slate-600 flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-slate-800">Database Engine Architecture:</span> SQLite Local Storage • WAL Journal Mode • Direct Server Function Execution
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[11px]">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                      Status: Online & Healthy
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* MODULE 6: VIEW ALL DASHBOARD REPORTS */}
+            {/* ========================================================================= */}
+            {crmSettingsSubTab === "reports" && (
+              <div className="space-y-5 animate-in fade-in">
+                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-5">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4 text-slate-800" />
+                      <span>Master Dashboard Reports & Performance Analytics</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      In-depth breakdown of lead generation sources, video production pipeline velocity, and conversion ratios.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-slate-100">
+                    {/* Source Attribution Report */}
+                    <div className="rounded-xl border border-slate-200 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-900">1. Lead Acquisition Source Breakdown</h4>
+                        <span className="text-[11px] font-semibold text-slate-500">{leads.length} Total</span>
+                      </div>
+                      <div className="space-y-2 text-xs">
+                        {[
+                          { label: "USA Website Direct", count: leads.filter(l => l.source === "USA Website" || l.source === "Website Direct").length, color: "bg-blue-600" },
+                          { label: "Meta Ads (FB/IG)", count: leads.filter(l => (l.source || "").toLowerCase().includes("meta")).length, color: "bg-purple-600" },
+                          { label: "Calendly Strategy Calls", count: leads.filter(l => (l.source || "").toLowerCase().includes("calendly")).length, color: "bg-emerald-600" },
+                          { label: "Manual Direct Entry", count: leads.filter(l => (l.source || "").toLowerCase().includes("manual")).length, color: "bg-amber-500" },
+                        ].map((src, idx) => {
+                          const pct = leads.length > 0 ? Math.round((src.count / leads.length) * 100) : 0;
+                          return (
+                            <div key={idx} className="space-y-1">
+                              <div className="flex justify-between text-[11px] font-medium text-slate-700">
+                                <span>{src.label}</span>
+                                <span className="font-bold">{src.count} ({pct}%)</span>
+                              </div>
+                              <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                                <div className={`h-full ${src.color} rounded-full`} style={{ width: `${pct}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Production Pipeline Report */}
+                    <div className="rounded-xl border border-slate-200 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-900">2. Video Production Pipeline Velocity</h4>
+                        <span className="text-[11px] font-semibold text-slate-500">Live Stage Distribution</span>
+                      </div>
+                      <div className="space-y-2 text-xs">
+                        {[
+                          { label: "Scripting & Conceptualization", count: leads.filter(l => l.project_status === "Scripting").length, color: "bg-blue-500" },
+                          { label: "Voiceover & Audio Synthesis", count: leads.filter(l => l.project_status === "Voiceover").length, color: "bg-amber-500" },
+                          { label: "AI Video Production & Render", count: leads.filter(l => l.project_status === "Video Production" || l.project_status === "In Progress").length, color: "bg-purple-500" },
+                          { label: "Review & Quality Control", count: leads.filter(l => l.project_status === "Review & QC").length, color: "bg-orange-500" },
+                          { label: "Delivered & Client Finalized", count: leads.filter(l => l.project_status === "Delivered" || l.status === "Delivered" || l.status === "Closed").length, color: "bg-emerald-500" },
+                        ].map((stage, idx) => {
+                          const pct = leads.length > 0 ? Math.round((stage.count / leads.length) * 100) : 0;
+                          return (
+                            <div key={idx} className="space-y-1">
+                              <div className="flex justify-between text-[11px] font-medium text-slate-700">
+                                <span>{stage.label}</span>
+                                <span className="font-bold">{stage.count} ({pct}%)</span>
+                              </div>
+                              <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                                <div className={`h-full ${stage.color} rounded-full`} style={{ width: `${pct}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Funnel Conversion Metrics */}
+                    <div className="rounded-xl border border-slate-200 p-4 space-y-3">
+                      <h4 className="text-xs font-bold text-slate-900">3. Lead Conversion Funnel</h4>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="rounded-lg bg-slate-50 p-2.5">
+                          <div className="text-[10px] text-slate-500 font-bold">TOTAL INBOUND</div>
+                          <div className="text-base font-black text-slate-900 mt-0.5">{leads.length}</div>
+                        </div>
+                        <div className="rounded-lg bg-blue-50 p-2.5">
+                          <div className="text-[10px] text-blue-700 font-bold">CONTACTED</div>
+                          <div className="text-base font-black text-blue-900 mt-0.5">
+                            {leads.filter(l => l.status === "Contacted" || l.status === "In Progress" || l.status === "Meeting Scheduled").length}
+                          </div>
+                        </div>
+                        <div className="rounded-lg bg-emerald-50 p-2.5">
+                          <div className="text-[10px] text-emerald-700 font-bold">WON / CLOSED</div>
+                          <div className="text-base font-black text-emerald-900 mt-0.5">
+                            {leads.filter(l => l.status === "Closed" || l.status === "Delivered").length}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-medium text-center">
+                        Pipeline Conversion Rate:{" "}
+                        <span className="font-bold text-emerald-700">
+                          {leads.length > 0
+                            ? ((leads.filter(l => l.status === "Closed" || l.status === "Delivered").length / leads.length) * 100).toFixed(1)
+                            : "0.0"}%
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Popular Video Formats */}
+                    <div className="rounded-xl border border-slate-200 p-4 space-y-3">
+                      <h4 className="text-xs font-bold text-slate-900">4. Video Format Market Demand</h4>
+                      <div className="space-y-2 text-xs">
+                        {[
+                          { name: "Digital Twin Videos", count: leads.filter(l => (l.video_type || "").toLowerCase().includes("twin")).length },
+                          { name: "UGC Video Ads", count: leads.filter(l => (l.video_type || "").toLowerCase().includes("ugc")).length },
+                          { name: "3D Product Renders", count: leads.filter(l => (l.video_type || "").toLowerCase().includes("3d") || (l.video_type || "").toLowerCase().includes("product")).length },
+                          { name: "Explainer & Spokesperson", count: leads.filter(l => (l.video_type || "").toLowerCase().includes("explainer") || (l.video_type || "").toLowerCase().includes("spokesperson")).length },
+                        ].map((fmt, idx) => (
+                          <div key={idx} className="flex justify-between items-center py-1 border-b border-slate-100 last:border-b-0 text-[11px]">
+                            <span className="font-medium text-slate-700">{fmt.name}</span>
+                            <span className="font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md">{fmt.count} requested</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* MODULE 7: MANAGE SECURITY-RELATED SETTINGS */}
+            {/* ========================================================================= */}
+            {crmSettingsSubTab === "security" && (
+              <div className="space-y-5 animate-in fade-in">
+                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-5">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <Lock className="h-4 w-4 text-slate-800" />
+                      <span>Security, Inactivity Timeout, & Access Control Policies</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Configure automated inactivity session expiration, financial PIN requirements, and system-wide broadcast alerts.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-slate-100 text-xs">
+                    {/* Inactivity Timeout Setting */}
+                    <div className="rounded-xl border border-slate-200 p-4 space-y-2.5">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-slate-700" />
+                        <label className="font-bold text-slate-800">Inactivity Auto-Logout Timeout</label>
+                      </div>
+                      <select
+                        value={crmInactivityTimeout}
+                        onChange={(e) => setCrmInactivityTimeout(Number(e.target.value))}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer"
+                      >
+                        <option value={5}>5 Minutes (Strict Security Mode)</option>
+                        <option value={10}>10 Minutes (Default / Recommended)</option>
+                        <option value={15}>15 Minutes (Extended Workspace Session)</option>
+                        <option value={30}>30 Minutes (Maximum Permitted)</option>
+                      </select>
+                      <p className="text-[11px] text-slate-400">
+                        Automatically terminates the authenticated session if no keyboard, mouse, or touch events are detected within the selected timeframe.
+                      </p>
+                    </div>
+
+                    {/* Maximum Failed Login Lockout */}
+                    <div className="rounded-xl border border-slate-200 p-4 space-y-2.5">
+                      <div className="flex items-center gap-2">
+                        <ShieldAlert className="h-4 w-4 text-slate-700" />
+                        <label className="font-bold text-slate-800">Failed Login Attempt Threshold</label>
+                      </div>
+                      <select
+                        value={crmLoginAttempts}
+                        onChange={(e) => setCrmLoginAttempts(Number(e.target.value))}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer"
+                      >
+                        <option value={3}>3 Failed Attempts (Strict IP Lockout)</option>
+                        <option value={5}>5 Failed Attempts (Standard Recommended)</option>
+                        <option value={10}>10 Failed Attempts (Relaxed)</option>
+                      </select>
+                      <p className="text-[11px] text-slate-400">
+                        Enforces temporary 15-minute IP address authentication lockdown when consecutive invalid login attempts exceed this threshold.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Master Financial PIN Security Information */}
+                  <div className="rounded-xl border border-slate-200 p-4 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Key className="h-4 w-4 text-slate-800" />
+                        <span className="font-bold text-slate-900">Master Orders & Payment PIN Security</span>
+                      </div>
+                      <span className="rounded-md bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 text-[10px] border border-emerald-200">
+                        PIN ENFORCED
+                      </span>
+                    </div>
+                    <p className="text-slate-500 text-[11px]">
+                      Access to Orders & Payments tab requires secondary security verification via the master 4-digit PIN code. Both Super Admin and Admin accounts must enter the verified security PIN to unlock financial records.
+                    </p>
+                  </div>
+
+                  {/* System Broadcast Alert Banner Manager */}
+                  <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 space-y-3 text-xs">
+                    <div className="flex items-center gap-2">
+                      <Megaphone className="h-4 w-4 text-amber-700" />
+                      <span className="font-bold text-amber-950">System-Wide Operational Notice Broadcast</span>
+                    </div>
+                    <p className="text-[11px] text-amber-900/80">
+                      Super Admin can publish a banner notification that instantly displays across the top of all active admin users' screens.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={crmBroadcastDraft}
+                        onChange={(e) => setCrmBroadcastDraft(e.target.value)}
+                        placeholder="e.g. Scheduled server maintenance tonight at 11:00 PM EST..."
+                        className="flex-1 rounded-xl border border-amber-300 bg-white p-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      />
+                      <button
+                        onClick={handlePublishBroadcastBanner}
+                        className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-black transition-colors cursor-pointer shrink-0"
+                      >
+                        Publish Broadcast
+                      </button>
+                      {crmBroadcastBanner && (
+                        <button
+                          onClick={() => {
+                            setCrmBroadcastDraft("");
+                            setCrmBroadcastBanner("");
+                            if (typeof window !== "undefined") {
+                              localStorage.removeItem("crm_broadcast_banner");
+                            }
+                            showToast("Broadcast banner cleared");
+                          }}
+                          className="rounded-xl border border-red-300 bg-white px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+                        >
+                          Clear Banner
+                        </button>
+                      )}
+                    </div>
+                    {crmBroadcastBanner && (
+                      <div className="text-[11px] text-emerald-800 font-semibold flex items-center gap-1.5 pt-1">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>Active Broadcast: &ldquo;{crmBroadcastBanner}&rdquo;</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
