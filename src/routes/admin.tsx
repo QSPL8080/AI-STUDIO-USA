@@ -5903,444 +5903,413 @@ function AdminPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 2: LEAD DETAILS FULL DRAWER / POPUP (DOC REQUIREMENT 8) */}
+      {/* MODAL 2: LEAD DETAILS FULL POPUP (SECTION 8: LEAD DETAILS PAGE) */}
       {/* ========================================================================= */}
-      {viewLeadDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className={`w-full max-w-3xl rounded-2xl border p-6 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto ${
-            isDark ? "border-slate-700 bg-[#151222] text-white" : "border-slate-200 bg-white text-slate-900"
-          }`}>
-            {/* Header */}
-            <div className="flex items-center justify-between border-b pb-4 dark:border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-600 font-extrabold text-base">
-                  {viewLeadDetails.name.slice(0, 2).toUpperCase()}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-black">{viewLeadDetails.name}</h3>
-                    <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold ${getLeadSourceBadgeClass(viewLeadDetails.source)}`}>
-                      {getLeadSourceDisplay(viewLeadDetails.source)}
-                    </span>
+      {viewLeadDetails && (() => {
+        const leadMeeting = calendlyMeetings.find((m) =>
+          (viewLeadDetails.email && m.email && m.email.toLowerCase() === viewLeadDetails.email.toLowerCase()) ||
+          (viewLeadDetails.phone && m.phone && m.phone.replace(/\D/g, "").slice(-10) === viewLeadDetails.phone.replace(/\D/g, "").slice(-10)) ||
+          (viewLeadDetails.name && m.client_name && viewLeadDetails.name.toLowerCase().trim() === m.client_name.toLowerCase().trim())
+        );
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+            <div className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white text-slate-900 p-6 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-white font-extrabold text-base">
+                    {viewLeadDetails.name.slice(0, 2).toUpperCase()}
                   </div>
-                  <p className="text-xs text-slate-500 font-medium">{viewLeadDetails.business}</p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setViewLeadDetails(null)}
-                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Quick Status Bar */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 p-3 text-xs">
-              <div>
-                <span className="text-slate-500 font-semibold block text-[10px] uppercase">Lead Status</span>
-                <span className={`inline-block mt-0.5 rounded-lg border px-2.5 py-0.5 font-bold ${getLeadStatusBadge(viewLeadDetails.status)}`}>
-                  {viewLeadDetails.status}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-slate-500 font-semibold block text-[10px] uppercase">Project Status</span>
-                <span className={`inline-block mt-0.5 rounded-lg border px-2.5 py-0.5 font-bold ${getProjectStatusBadge(viewLeadDetails.project_status)}`}>
-                  {viewLeadDetails.project_status || "In Progress"}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-slate-500 font-semibold block text-[10px] uppercase">Created Date</span>
-                <span className="font-mono text-slate-700 dark:text-slate-300 text-[11px] block mt-0.5">
-                  {new Date(viewLeadDetails.created_at).toLocaleDateString()}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-slate-500 font-semibold block text-[10px] uppercase">Delivery Target</span>
-                <span className="font-semibold text-blue-600 dark:text-blue-400 text-xs block mt-0.5">
-                  {viewLeadDetails.delivery_date || "Not scheduled"}
-                </span>
-              </div>
-            </div>
-
-            {/* 2-Column Sections: Client Info & Lead Info (Doc Section 8) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              {/* Section 1: Client Information */}
-              <div className="rounded-2xl border p-4 space-y-3 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-xs">
-                <div className="flex items-center gap-1.5 border-b pb-2 dark:border-slate-800">
-                  <User className="h-4 w-4 text-blue-500" />
-                  <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-700 dark:text-slate-300">
-                    Client Information
-                  </span>
-                </div>
-
-                <div className="space-y-2.5">
-                  <div className="flex justify-between items-start">
-                    <span className="text-slate-500">Client Name:</span>
-                    <span className="font-bold text-slate-900 dark:text-white text-right">{viewLeadDetails.name}</span>
-                  </div>
-
-                  <div className="flex justify-between items-start">
-                    <span className="text-slate-500">Business Name:</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">{viewLeadDetails.business}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Phone Number:</span>
-                    <a
-                      href={`tel:${viewLeadDetails.phone.replace(/[^0-9+]/g, "")}`}
-                      className="font-mono font-bold text-blue-600 hover:underline flex items-center gap-1"
-                    >
-                      <Phone className="h-3 w-3" />
-                      <span>{viewLeadDetails.phone}</span>
-                    </a>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">WhatsApp:</span>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenWhatsApp(viewLeadDetails)}
-                      className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-700 cursor-pointer transition-colors"
-                    >
-                      <WhatsAppIcon className="h-3.5 w-3.5" />
-                      <span>Chat on WhatsApp</span>
-                    </button>
-                  </div>
-
-                  <div className="flex justify-between items-start">
-                    <span className="text-slate-500">Email Address:</span>
-                    <span className="font-mono text-slate-700 dark:text-slate-300 text-right">
-                      {viewLeadDetails.email || "Not provided"}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-start">
-                    <span className="text-slate-500">Business Location:</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
-                      {viewLeadDetails.location || "USA / Global"}
-                    </span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-black">{viewLeadDetails.name}</h3>
+                      <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold ${getLeadSourceBadgeClass(viewLeadDetails.source)}`}>
+                        {getLeadSourceDisplay(viewLeadDetails.source)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium">{viewLeadDetails.business}</p>
                   </div>
                 </div>
+
+                <button
+                  onClick={() => setViewLeadDetails(null)}
+                  className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
 
-              {/* Section 2: Lead Information */}
-              <div className="rounded-2xl border p-4 space-y-3 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-xs">
-                <div className="flex items-center gap-1.5 border-b pb-2 dark:border-slate-800">
-                  <ShieldCheck className="h-4 w-4 text-purple-500" />
-                  <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-700 dark:text-slate-300">
-                    Lead & Project Information
-                  </span>
+              {/* 2-Column Grid: Section 1 & Section 2 (Section 8) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                {/* 1. Client Information */}
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-xs">
+                  <div className="flex items-center gap-1.5 border-b pb-2">
+                    <User className="h-4 w-4 text-slate-800" />
+                    <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-800">
+                      Client Information
+                    </span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <div className="flex justify-between items-start">
+                      <span className="text-slate-500">Client Name:</span>
+                      <span className="font-bold text-slate-900 text-right">{viewLeadDetails.name}</span>
+                    </div>
+
+                    <div className="flex justify-between items-start">
+                      <span className="text-slate-500">Business Name:</span>
+                      <span className="font-semibold text-slate-800 text-right">{viewLeadDetails.business}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Phone:</span>
+                      <a
+                        href={`tel:${viewLeadDetails.phone.replace(/[^0-9+]/g, "")}`}
+                        className="font-mono font-bold text-slate-900 hover:underline flex items-center gap-1"
+                      >
+                        <Phone className="h-3 w-3 text-slate-500" />
+                        <span>{viewLeadDetails.phone}</span>
+                      </a>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">WhatsApp:</span>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenWhatsApp(viewLeadDetails)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer"
+                      >
+                        <WhatsAppIcon className="h-3.5 w-3.5" />
+                        <span>Chat on WhatsApp</span>
+                      </button>
+                    </div>
+
+                    <div className="flex justify-between items-start">
+                      <span className="text-slate-500">Email:</span>
+                      <span className="font-mono text-slate-700 text-right">
+                        {viewLeadDetails.email || "Not provided"}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-start">
+                      <span className="text-slate-500">Business Location:</span>
+                      <span className="font-semibold text-slate-800 text-right">
+                        {viewLeadDetails.location || "USA / Global"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-2.5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Lead Source:</span>
-                    <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${getLeadSourceBadgeClass(viewLeadDetails.source)}`}>
-                      {getLeadSourceDisplay(viewLeadDetails.source)}
+                {/* 2. Lead Information */}
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-xs">
+                  <div className="flex items-center gap-1.5 border-b pb-2">
+                    <ShieldCheck className="h-4 w-4 text-slate-800" />
+                    <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-800">
+                      Lead Information
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Created Timestamp:</span>
-                    <span className="font-mono text-slate-600 dark:text-slate-400 text-[11px]">
-                      {new Date(viewLeadDetails.created_at).toLocaleString()}
-                    </span>
-                  </div>
+                  <div className="space-y-2.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Lead Source:</span>
+                      <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${getLeadSourceBadgeClass(viewLeadDetails.source)}`}>
+                        {getLeadSourceDisplay(viewLeadDetails.source)}
+                      </span>
+                    </div>
 
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Lead Status:</span>
-                    <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${getLeadStatusBadge(viewLeadDetails.status)}`}>
-                      {viewLeadDetails.status}
-                    </span>
-                  </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Lead Created Date/Time:</span>
+                      <span className="font-mono text-slate-700 text-[11px]">
+                        {new Date(viewLeadDetails.created_at).toLocaleString()}
+                      </span>
+                    </div>
 
-                  {viewLeadDetails.closed_by && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Lead Status:</span>
+                      <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${getLeadStatusBadge(viewLeadDetails.status)}`}>
+                        {viewLeadDetails.status}
+                      </span>
+                    </div>
+
                     <div className="flex justify-between items-center">
                       <span className="text-slate-500">Lead Closed By:</span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                        {viewLeadDetails.closed_by}
+                      <span className="font-bold text-slate-800">
+                        {viewLeadDetails.closed_by || (viewLeadDetails.status === "Closed" ? (viewLeadDetails.assigned_admin || "Admin") : "Not closed")}
                       </span>
                     </div>
-                  )}
 
-                  {viewLeadDetails.closed_at && (
                     <div className="flex justify-between items-center">
                       <span className="text-slate-500">Closed Date:</span>
-                      <span className="font-mono text-[11px] text-slate-600 dark:text-slate-400">
-                        {new Date(viewLeadDetails.closed_at).toLocaleString()}
+                      <span className="font-mono text-[11px] text-slate-700">
+                        {viewLeadDetails.closed_at ? new Date(viewLeadDetails.closed_at).toLocaleString() : "Not closed"}
                       </span>
                     </div>
-                  )}
 
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Delivery Date:</span>
-                    <span className="font-semibold text-blue-600 dark:text-blue-400">
-                      {viewLeadDetails.delivery_date || "Pending schedule"}
-                    </span>
-                  </div>
-
-                  {viewLeadDetails.delivered_at && (
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-500">Delivered Date:</span>
-                      <span className="font-mono text-[11px] text-emerald-600 font-bold">
-                        {new Date(viewLeadDetails.delivered_at).toLocaleString()}
+                      <span className="text-slate-500">Admin/User Handled:</span>
+                      <span className="font-bold text-slate-800">
+                        {viewLeadDetails.assigned_admin || session?.name || "Admin"}
                       </span>
                     </div>
-                  )}
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Assigned / Handled By:</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                      {viewLeadDetails.assigned_admin || session.name || "Admin"}
-                    </span>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Section 3: Scope & Requirements */}
-            <div className="rounded-2xl border p-4 space-y-3 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 text-xs">
-              <div className="flex items-center justify-between border-b pb-2 dark:border-slate-800">
-                <div className="flex items-center gap-1.5">
-                  <Video className="h-4 w-4 text-blue-500" />
-                  <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-700 dark:text-slate-300">
-                    Video Scope & Project Details
-                  </span>
-                </div>
-                <span className="font-bold text-slate-900 dark:text-white">
-                  {viewLeadDetails.video_type} (Quantity: {viewLeadDetails.video_quantity || 1})
-                </span>
-              </div>
-
-              {(viewLeadDetails.requirement || viewLeadDetails.additional) && (
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Requirements / Client Notes</span>
-                  <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed bg-white dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-800">
-                    {viewLeadDetails.requirement || viewLeadDetails.additional}
-                  </p>
-                </div>
-              )}
-
-              {viewLeadDetails.notes && (
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Internal Team Notes</span>
-                  <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap bg-white dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-800">
-                    {viewLeadDetails.notes}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Section 4: Calendly Meeting Information (Section 8) */}
-            {(viewLeadDetails.meeting_date ||
-              calendlyMeetings.some(
-                (m) =>
-                  (viewLeadDetails.email && m.email?.toLowerCase() === viewLeadDetails.email?.toLowerCase()) ||
-                  (viewLeadDetails.phone &&
-                    m.phone &&
-                    m.phone.replace(/\D/g, "").slice(-10) === viewLeadDetails.phone.replace(/\D/g, "").slice(-10))
-              )) && (
-              <div className="rounded-2xl border p-4 space-y-3 dark:border-slate-800 bg-blue-50/40 dark:bg-blue-950/20 text-xs">
-                <div className="flex items-center justify-between border-b pb-2 dark:border-slate-800">
+              {/* 3. Project Information */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-xs text-xs">
+                <div className="flex items-center justify-between border-b pb-2">
                   <div className="flex items-center gap-1.5">
-                    <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    <span className="font-extrabold uppercase tracking-wider text-[11px] text-blue-900 dark:text-blue-300">
-                      Calendly Meeting Information
+                    <Video className="h-4 w-4 text-slate-800" />
+                    <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-800">
+                      Project Information
                     </span>
                   </div>
-                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
-                    {viewLeadDetails.meeting_status || "Scheduled"}
+                  <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${getProjectStatusBadge(viewLeadDetails.project_status)}`}>
+                    {viewLeadDetails.project_status || "In Progress"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-xl">
                   <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Meeting Date & Time</span>
-                    <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
-                      {viewLeadDetails.meeting_date || "Synced Call"}{" "}
-                      {viewLeadDetails.meeting_time ? `at ${viewLeadDetails.meeting_time}` : ""}
+                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Video Type</span>
+                    <p className="font-bold text-slate-900 mt-0.5">{viewLeadDetails.video_type}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Video Quantity</span>
+                    <p className="font-bold text-slate-900 mt-0.5">x{viewLeadDetails.video_quantity || 1}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Project Status</span>
+                    <p className="font-bold text-slate-900 mt-0.5">{viewLeadDetails.project_status || "In Progress"}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Delivery Date</span>
+                    <p className="font-bold text-slate-900 mt-0.5">{viewLeadDetails.delivery_date || "Pending schedule"}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Project Notes</span>
+                  <div className="text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    {viewLeadDetails.notes || viewLeadDetails.requirement || viewLeadDetails.additional || "No specific project notes recorded."}
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Meta Information (For Meta leads) */}
+              {(viewLeadDetails.source?.toLowerCase().includes("meta") ||
+                viewLeadDetails.campaign_name ||
+                viewLeadDetails.meta_lead_id) && (
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-xs text-xs">
+                  <div className="flex items-center justify-between border-b pb-2">
+                    <div className="flex items-center gap-1.5">
+                      <Megaphone className="h-4 w-4 text-slate-800" />
+                      <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-800">
+                        Meta Information
+                      </span>
+                    </div>
+                    {viewLeadDetails.is_duplicate && (
+                      <span className="rounded-full bg-slate-100 border border-slate-300 px-2 py-0.5 text-[10px] font-bold text-slate-800">
+                        Consolidated Duplicate
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Campaign Name</span>
+                      <p className="font-semibold text-slate-900 mt-0.5">
+                        {viewLeadDetails.campaign_name || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Ad Set Name</span>
+                      <p className="font-semibold text-slate-900 mt-0.5">
+                        {viewLeadDetails.adset_name || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Ad Name</span>
+                      <p className="font-semibold text-slate-900 mt-0.5">
+                        {viewLeadDetails.ad_name || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Form Name</span>
+                      <p className="font-semibold text-slate-900 mt-0.5">
+                        {viewLeadDetails.form_name || "N/A"}
+                      </p>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Meta Lead ID</span>
+                      <p className="font-mono text-[11px] text-slate-800 mt-0.5">
+                        {viewLeadDetails.meta_lead_id || "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 5. Meeting Information */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-xs text-xs">
+                <div className="flex items-center justify-between border-b pb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-slate-800" />
+                    <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-800">
+                      Meeting Information
+                    </span>
+                  </div>
+                  <span className="rounded-full bg-slate-100 border border-slate-300 px-2 py-0.5 text-[10px] font-bold text-slate-800">
+                    {leadMeeting?.meeting_status || viewLeadDetails.meeting_status || "Not Scheduled"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Meeting Date</span>
+                    <p className="font-semibold text-slate-900 mt-0.5">
+                      {leadMeeting?.meeting_date || viewLeadDetails.meeting_date || "Not scheduled"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Meeting Time</span>
+                    <p className="font-semibold text-slate-900 mt-0.5">
+                      {leadMeeting?.meeting_time || viewLeadDetails.meeting_time || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Meeting Status</span>
+                    <p className="font-semibold text-slate-900 mt-0.5">
+                      {leadMeeting?.meeting_status || viewLeadDetails.meeting_status || "Pending"}
                     </p>
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase">Meeting Type</span>
-                    <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
-                      {viewLeadDetails.meeting_type || "30 Min Strategy Call"}
+                    <p className="font-semibold text-slate-900 mt-0.5">
+                      {leadMeeting?.meeting_type || viewLeadDetails.meeting_type || "Strategy Call"}
                     </p>
                   </div>
-                  {viewLeadDetails.meeting_link && (
-                    <div className="col-span-2">
+                  <div className="sm:col-span-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Assigned / Handling Admin</span>
+                    <p className="font-semibold text-slate-900 mt-0.5">
+                      {leadMeeting?.assigned_admin || viewLeadDetails.assigned_admin || session?.name || "Admin"}
+                    </p>
+                  </div>
+                  {(leadMeeting?.meeting_link || viewLeadDetails.meeting_link) && (
+                    <div className="col-span-2 sm:col-span-3">
                       <span className="text-[10px] font-bold text-slate-400 uppercase">Meeting Link</span>
                       <a
-                        href={viewLeadDetails.meeting_link}
+                        href={leadMeeting?.meeting_link || viewLeadDetails.meeting_link}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-1 text-blue-600 hover:underline font-medium mt-0.5"
+                        className="flex items-center gap-1 text-slate-900 hover:underline font-medium mt-0.5"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
-                        <span className="truncate">{viewLeadDetails.meeting_link}</span>
+                        <span className="truncate">{leadMeeting?.meeting_link || viewLeadDetails.meeting_link}</span>
                       </a>
                     </div>
                   )}
                 </div>
               </div>
-            )}
 
-            {/* Section 5: Meta Campaign Information (Section 8) */}
-            {(viewLeadDetails.source?.toLowerCase().includes("meta") ||
-              viewLeadDetails.campaign_name ||
-              viewLeadDetails.meta_lead_id) && (
-              <div className="rounded-2xl border p-4 space-y-3 dark:border-slate-800 bg-indigo-50/40 dark:bg-indigo-950/20 text-xs">
-                <div className="flex items-center justify-between border-b pb-2 dark:border-slate-800">
-                  <div className="flex items-center gap-1.5">
-                    <Megaphone className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                    <span className="font-extrabold uppercase tracking-wider text-[11px] text-indigo-900 dark:text-indigo-300">
-                      Meta Ads Campaign Information
-                    </span>
-                  </div>
-                  {viewLeadDetails.is_duplicate && (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
-                      Consolidated Duplicate
-                    </span>
-                  )}
+              {/* 6. Live Activity History & Audit Trail */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-2 shadow-xs text-xs">
+                <div className="flex items-center gap-1.5 border-b pb-2">
+                  <Clock className="h-4 w-4 text-slate-800" />
+                  <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-800">
+                    Lead Activity History & Audit Trail
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Campaign Name</span>
-                    <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
-                      {viewLeadDetails.campaign_name || "Quickupp US Brand Video Lead Gen"}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Ad Set Name</span>
-                    <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
-                      {viewLeadDetails.adset_name || "US E-Commerce Founders"}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Ad Name</span>
-                    <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
-                      {viewLeadDetails.ad_name || "AI UGC Video Showcase Ad #1"}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Instant Form Name</span>
-                    <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
-                      {viewLeadDetails.form_name || "US Lead Capture Form v1"}
-                    </p>
-                  </div>
-                  {viewLeadDetails.meta_lead_id && (
-                    <div className="col-span-2">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Meta Lead ID</span>
-                      <p className="font-mono text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
-                        {viewLeadDetails.meta_lead_id}
-                      </p>
+                <div className="space-y-2 pt-1 max-h-40 overflow-y-auto">
+                  {activityLogs.filter((a) => a.lead_id === viewLeadDetails.id).length === 0 ? (
+                    <div className="text-slate-400 text-xs italic py-2">
+                      Initial lead submission recorded on {new Date(viewLeadDetails.created_at).toLocaleString()}.
                     </div>
+                  ) : (
+                    activityLogs
+                      .filter((a) => a.lead_id === viewLeadDetails.id)
+                      .map((log) => (
+                        <div key={log.id} className="flex items-start justify-between gap-3 p-2 rounded-lg bg-slate-50 border border-slate-100">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-[11px]">{log.action}</span>
+                              <span className="rounded bg-slate-200 text-slate-800 px-1 py-0.2 text-[9px] font-extrabold uppercase">
+                                {log.performed_by}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-600">{log.details}</p>
+                          </div>
+                          <span className="font-mono text-[10px] text-slate-400 shrink-0">
+                            {new Date(log.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
+                      ))
                   )}
                 </div>
               </div>
-            )}
 
-            {/* Section 6: Live Activity History for this Lead */}
-            <div className="rounded-2xl border p-4 space-y-2 dark:border-slate-800 bg-white dark:bg-slate-900/40 text-xs">
-              <div className="flex items-center gap-1.5 border-b pb-2 dark:border-slate-800">
-                <Clock className="h-4 w-4 text-amber-500" />
-                <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-700 dark:text-slate-300">
-                  Lead Activity History & Audit Trail
-                </span>
-              </div>
+              {/* Quick Actions Footer (Section 09: Action Buttons) */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t">
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`tel:${viewLeadDetails.phone.replace(/[^0-9+]/g, "")}`}
+                    className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <Phone className="h-3.5 w-3.5" />
+                    <span>Call</span>
+                  </a>
 
-              <div className="space-y-2 pt-1 max-h-40 overflow-y-auto">
-                {activityLogs.filter((a) => a.lead_id === viewLeadDetails.id).length === 0 ? (
-                  <div className="text-slate-400 text-xs italic py-2">
-                    Initial lead submission recorded on {new Date(viewLeadDetails.created_at).toLocaleString()}.
-                  </div>
-                ) : (
-                  activityLogs
-                    .filter((a) => a.lead_id === viewLeadDetails.id)
-                    .map((log) => (
-                      <div key={log.id} className="flex items-start justify-between gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-[11px]">{log.action}</span>
-                            <span className="rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-1 py-0.2 text-[9px] font-extrabold uppercase">
-                              {log.performed_by}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-slate-600 dark:text-slate-300">{log.details}</p>
-                        </div>
-                        <span className="font-mono text-[10px] text-slate-400 shrink-0">
-                          {new Date(log.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                    ))
-                )}
-              </div>
-            </div>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenWhatsApp(viewLeadDetails)}
+                    className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <WhatsAppIcon className="h-3.5 w-3.5" />
+                    <span>WhatsApp</span>
+                  </button>
+                </div>
 
-            {/* Quick Actions Footer (Section 09: Action Buttons) */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t">
-              <div className="flex items-center gap-2">
-                <a
-                  href={`tel:${viewLeadDetails.phone.replace(/[^0-9+]/g, "")}`}
-                  className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
-                >
-                  <Phone className="h-3.5 w-3.5" />
-                  <span>Call</span>
-                </a>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingLead(viewLeadDetails);
+                      setViewLeadDetails(null);
+                    }}
+                    className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <Edit className="h-3.5 w-3.5" />
+                    <span>Edit Lead</span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleOpenWhatsApp(viewLeadDetails)}
-                  className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
-                >
-                  <WhatsAppIcon className="h-3.5 w-3.5" />
-                  <span>WhatsApp</span>
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const idToDelete = viewLeadDetails.id;
+                      setViewLeadDetails(null);
+                      handleSoftDeleteLead(idToDelete);
+                    }}
+                    className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Delete</span>
+                  </button>
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingLead(viewLeadDetails);
-                    setViewLeadDetails(null);
-                  }}
-                  className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
-                >
-                  <Edit className="h-3.5 w-3.5" />
-                  <span>Edit Lead</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const idToDelete = viewLeadDetails.id;
-                    setViewLeadDetails(null);
-                    handleSoftDeleteLead(idToDelete);
-                  }}
-                  className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span>Delete</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setViewLeadDetails(null)}
-                  className="rounded-xl border border-slate-200 bg-slate-100 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200 cursor-pointer transition-colors"
-                >
-                  Close
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewLeadDetails(null)}
+                    className="rounded-xl border border-slate-200 bg-slate-100 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200 cursor-pointer transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ========================================================================= */}
       {/* MODAL 3: EDIT LEAD */}
