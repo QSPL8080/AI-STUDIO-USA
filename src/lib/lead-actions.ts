@@ -1127,7 +1127,7 @@ export function broadcastLeadEvent(event: {
 // CRM Settings (shared across admins; notification email is used server-side)
 const DEFAULT_CRM_SETTINGS = {
   platform_title: "AI STUDIO USA - Enterprise CRM",
-  notification_email: process.env["LEAD_NOTIFICATION_EMAIL"] || "qsaistudio@gmail.com",
+  notification_email: "info@quickuppaistudio.us",
   sync_interval: "10",
 };
 
@@ -1152,10 +1152,14 @@ export const saveCrmSettingsServerFn = createServerFn({ method: "POST" })
         return { success: false, error: "Please enter a valid notification email address" };
       }
 
+      const savedAt = new Date().toISOString();
+      const savedBy = data.performedBy || "Super Admin";
       const ok = await saveCrmSettingsToDb({
         platform_title: title,
         notification_email: email,
         sync_interval: String(interval),
+        settings_updated_at: savedAt,
+        settings_updated_by: savedBy,
       });
       if (!ok) return { success: false, error: "Could not save settings to the database" };
 
@@ -1168,7 +1172,80 @@ export const saveCrmSettingsServerFn = createServerFn({ method: "POST" })
         });
       } catch {}
 
-      return { success: true, settings: { platform_title: title, notification_email: email, sync_interval: String(interval) } };
+      return {
+        success: true,
+        settings: {
+          platform_title: title,
+          notification_email: email,
+          sync_interval: String(interval),
+          settings_updated_at: savedAt,
+          settings_updated_by: savedBy,
+        },
+      };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+// Access control: role permissions matrix + built-in account status (Super Admin managed)
+const PERMISSION_KEYS = [
+  "dashboard", "meta_leads", "delete_leads", "recycle_bin", "purge", "orders", "activity",
+  "export_data", "export_backup", "manage_users", "security_logs", "crm_settings", "broadcast",
+];
+const BUILT_IN_DEACTIVATABLE = ["admin@aistudio.us", "lm@aistudio.us"];
+
+export const saveAccessControlServerFn = createServerFn({ method: "POST" })
+  .validator(
+    (data: {
+      rolePermissions?: Record<string, Record<string, boolean>>;
+      accountStatus?: Record<string, string>;
+      performedBy?: string;
+    }) => data
+  )
+  .handler(async ({ data }) => {
+    try {
+      const toSave: Record<string, string> = {};
+      const logParts: string[] = [];
+
+      if (data.rolePermissions) {
+        const clean: Record<string, Record<string, boolean>> = {};
+        for (const role of ["admin", "leads_manager"]) {
+          clean[role] = {};
+          for (const key of PERMISSION_KEYS) {
+            clean[role][key] = data.rolePermissions?.[role]?.[key] === true;
+          }
+        }
+        toSave["role_permissions"] = JSON.stringify(clean);
+        logParts.push("role permissions matrix updated");
+      }
+
+      if (data.accountStatus) {
+        const clean: Record<string, string> = {};
+        for (const [email, st] of Object.entries(data.accountStatus)) {
+          const e = email.toLowerCase().trim();
+          if (!BUILT_IN_DEACTIVATABLE.includes(e)) continue; // Super Admin can never be deactivated
+          clean[e] = st === "inactive" ? "inactive" : "active";
+        }
+        toSave["account_status"] = JSON.stringify(clean);
+        logParts.push(
+          "account status: " + Object.entries(clean).map(([e, st]) => `${e}=${st}`).join(", ")
+        );
+      }
+
+      if (Object.keys(toSave).length === 0) return { success: true };
+      const ok = await saveCrmSettingsToDb(toSave);
+      if (!ok) return { success: false, error: "Could not save to the database" };
+
+      try {
+        await addActivityLogInDb({
+          action: "Access Control Updated",
+          details: logParts.join("; "),
+          performed_by: data.performedBy || "Super Admin",
+          user_role: "super_admin",
+        });
+      } catch {}
+
+      return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
     }

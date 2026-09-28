@@ -17,12 +17,13 @@ export interface LeadEmailPayload {
   leadId?: string;
 }
 
-const DEFAULT_NOTIFICATION_EMAIL = process.env.LEAD_NOTIFICATION_EMAIL || "qsaistudio@gmail.com";
+const DEFAULT_NOTIFICATION_EMAIL = "info@quickuppaistudio.us";
+const DEFAULT_PLATFORM_TITLE = "Quickupp AI Studio USA";
 
 /**
  * Recipient for internal lead/payment alerts. Uses the "System Alert
- * Notification Email" saved in Admin → CRM Settings; falls back to the
- * LEAD_NOTIFICATION_EMAIL env var when nothing valid is saved.
+ * Notification Email" saved in Admin → CRM Settings; falls back to
+ * info@quickuppaistudio.us when nothing valid is saved.
  */
 export async function resolveNotificationEmail(): Promise<string> {
   try {
@@ -34,12 +35,23 @@ export async function resolveNotificationEmail(): Promise<string> {
   }
   return DEFAULT_NOTIFICATION_EMAIL;
 }
+
+/** Platform / CRM Title from Admin → CRM Settings, used in internal alert subjects. */
+async function resolvePlatformTitle(): Promise<string> {
+  try {
+    const settings = await getCrmSettings();
+    const t = (settings["platform_title"] || "").trim();
+    if (t) return t;
+  } catch {}
+  return DEFAULT_PLATFORM_TITLE;
+}
 const BACKUP_NOTIFICATION_EMAIL = "quickuppaistudio1@gmail.com";
 
 export async function sendLeadNotificationEmail(lead: LeadEmailPayload): Promise<{ success: boolean; error?: string }> {
   const NOTIFICATION_EMAIL = await resolveNotificationEmail();
+  const PLATFORM_TITLE = await resolvePlatformTitle();
   const timestamp = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
-  const subject = `🇺🇸 [Quickupp AI Studio USA] New Lead: ${lead.name} (${lead.videoType}) - ${lead.source}`;
+  const subject = `🇺🇸 [${PLATFORM_TITLE}] New Lead: ${lead.name} (${lead.videoType}) - ${lead.source}`;
 
   const cleanPhone = lead.phone.replace(/[^0-9+]/g, "");
   const waPhone = cleanPhone.startsWith("+")
@@ -890,7 +902,7 @@ Operated by-Quickupp Softech LLC
           to: NOTIFICATION_EMAIL,
           replyTo: payload.customerEmail,
           messageId: `<admin-order-${orderNumber}-${Date.now()}@quickuppaistudio.us>`,
-          subject: `💳 [New Payment Confirmed] Order #${orderNumber} — $${payload.amount.toFixed(2)} USD`,
+          subject: `💳 [${await resolvePlatformTitle()}] New Payment Confirmed — Order #${orderNumber} — $${payload.amount.toFixed(2)} USD`,
           text: `Payment confirmed for ${payload.customerName} (${payload.customerEmail}): $${payload.amount.toFixed(2)} USD. Order #${orderNumber}. Transaction ID: ${transactionId}`,
           html: htmlContent,
           attachments: emailAttachments,

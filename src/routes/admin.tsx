@@ -81,6 +81,7 @@ import {
   fetchAdminUsersServerFn,
   fetchCrmSettingsServerFn,
   saveCrmSettingsServerFn,
+  saveAccessControlServerFn,
   createAdminUserServerFn,
   toggleAdminUserStatusServerFn,
   deleteAdminUserServerFn,
@@ -166,6 +167,113 @@ interface AuthSession {
   name: string;
   role: "super_admin" | "admin" | "leads_manager";
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Role-Based Access Control (editable by Super Admin in CRM Settings → Permissions)
+// Super Admin always has every permission. "Website Leads" is always available.
+// ─────────────────────────────────────────────────────────────────────────────
+type PermissionKey =
+  | "dashboard"
+  | "meta_leads"
+  | "delete_leads"
+  | "recycle_bin"
+  | "purge"
+  | "orders"
+  | "activity"
+  | "export_data"
+  | "export_backup"
+  | "manage_users"
+  | "security_logs"
+  | "crm_settings"
+  | "broadcast";
+type ConfigurableRole = "admin" | "leads_manager";
+type RolePermissions = Record<ConfigurableRole, Record<PermissionKey, boolean>>;
+
+const PERMISSION_DEFS: { key: PermissionKey; label: string; hint: string }[] = [
+  { key: "dashboard", label: "Dashboard & Real-Time Performance Analytics", hint: "Dashboard tab" },
+  { key: "meta_leads", label: "Meta Ads Leads Management & Notes", hint: "Meta Leads tab" },
+  { key: "delete_leads", label: "Delete Leads (move to Recycle Bin)", hint: "Delete buttons on lead tables" },
+  { key: "recycle_bin", label: "Recycle Bin (view & restore leads)", hint: "Recycle Bin tab" },
+  { key: "purge", label: "Permanent Lead Purge & Empty Recycle Bin", hint: "Irreversible delete" },
+  { key: "orders", label: "Orders & Financial Revenue Access", hint: "Orders tab (still needs the security PIN)" },
+  { key: "activity", label: "Activity History / Audit Log", hint: "Activity History tab" },
+  { key: "export_data", label: "Export Leads & Campaign Data (CSV)", hint: "Export CSV buttons" },
+  { key: "export_backup", label: "Export Master JSON Disaster Backup", hint: "Full database backup download" },
+  { key: "manage_users", label: "Create, Suspend & Delete Users", hint: "User Management tab" },
+  { key: "security_logs", label: "View Live IP Tracking & Login Audit Logs", hint: "Login / IP Tracking tab" },
+  { key: "crm_settings", label: "Modify CRM Settings & Theme Preferences", hint: "CRM Settings tab (not Permissions)" },
+  { key: "broadcast", label: "Broadcast Operational System Notice", hint: "Publish / clear the banner" },
+];
+
+const DEFAULT_ROLE_PERMISSIONS: RolePermissions = {
+  admin: {
+    dashboard: true,
+    meta_leads: true,
+    delete_leads: true,
+    recycle_bin: true,
+    purge: false,
+    orders: true,
+    activity: true,
+    export_data: true,
+    export_backup: false,
+    manage_users: false,
+    security_logs: false,
+    crm_settings: false,
+    broadcast: false,
+  },
+  leads_manager: {
+    dashboard: false,
+    meta_leads: true,
+    delete_leads: true,
+    recycle_bin: false,
+    purge: false,
+    orders: false,
+    activity: false,
+    export_data: false,
+    export_backup: false,
+    manage_users: false,
+    security_logs: false,
+    crm_settings: false,
+    broadcast: false,
+  },
+};
+
+function parseRolePermissions(raw?: string): RolePermissions {
+  const out: RolePermissions = {
+    admin: { ...DEFAULT_ROLE_PERMISSIONS.admin },
+    leads_manager: { ...DEFAULT_ROLE_PERMISSIONS.leads_manager },
+  };
+  if (!raw) return out;
+  try {
+    const parsed = JSON.parse(raw);
+    (["admin", "leads_manager"] as ConfigurableRole[]).forEach((role) => {
+      PERMISSION_DEFS.forEach(({ key }) => {
+        const v = parsed?.[role]?.[key];
+        if (typeof v === "boolean") out[role][key] = v;
+      });
+    });
+  } catch {}
+  return out;
+}
+
+function parseAccountStatus(raw?: string): Record<string, "active" | "inactive"> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    const out: Record<string, "active" | "inactive"> = {};
+    Object.entries(parsed || {}).forEach(([email, st]) => {
+      if (st === "inactive" || st === "active") out[email.toLowerCase()] = st;
+    });
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+// Built-in (code-defined) login accounts
+const BUILT_IN_SUPER_ADMIN_EMAIL = "sa@aistudio.us";
+const BUILT_IN_ACCOUNT_EMAILS = ["sa@aistudio.us", "admin@aistudio.us", "lm@aistudio.us"];
+const LEGACY_ACCOUNT_EMAILS = ["sa@aistudio.com", "admin@aistudio.com", "lm@aistudio.com"];
 
 function AdminPage() {
   // Pure Clean Light Theme (Dark Mode completely removed as per requirements)
@@ -371,6 +479,14 @@ function AdminPage() {
   const [activitySearchTerm, setActivitySearchTerm] = useState<string>("");
 
   // Super Admin CRM Settings State (with persistent local storage)
+  // Title shown in the header / browser tab (updates for every admin on each sync)
+  const [appliedPlatformTitle, setAppliedPlatformTitle] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("crm_platform_title") || "AI STUDIO USA - Enterprise CRM";
+    }
+    return "AI STUDIO USA - Enterprise CRM";
+  });
+  const [settingsLastSaved, setSettingsLastSaved] = useState<{ at: string; by: string } | null>(null);
   const [crmPlatformTitle, setCrmPlatformTitle] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("crm_platform_title") || "AI STUDIO USA - Enterprise CRM";
@@ -562,55 +678,47 @@ function AdminPage() {
   // Admin Users Management State
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
 
+  // Live status of built-in accounts (Super Admin can deactivate/activate them)
+  const [accountStatus, setAccountStatus] = useState<Record<string, "active" | "inactive">>({});
   const uniqueAdminUsers = useMemo(() => {
     const map = new Map<string, AdminUser>();
 
-    // 1. Guaranteed Super Admin entry
-    map.set("sa@aistudio.com", {
+    // 1. Built-in login accounts (defined in code)
+    map.set("sa@aistudio.us", {
       id: "usr_superadmin",
       name: "Super Admin",
-      email: "sa@aistudio.com",
+      email: "sa@aistudio.us",
       role: "super_admin",
       status: "active",
       created_at: "System Protected",
-    });
+    } as AdminUser);
+    map.set("admin@aistudio.us", {
+      id: "usr_builtin_admin",
+      name: "Admin",
+      email: "admin@aistudio.us",
+      role: "admin",
+      status: accountStatus["admin@aistudio.us"] === "inactive" ? "inactive" : "active",
+      created_at: "Built-in Account",
+    } as AdminUser);
+    map.set("lm@aistudio.us", {
+      id: "usr_leads_manager",
+      name: "Leads Manager",
+      email: "lm@aistudio.us",
+      role: "leads_manager",
+      status: accountStatus["lm@aistudio.us"] === "inactive" ? "inactive" : "active",
+      created_at: "Built-in Account",
+    } as AdminUser);
 
-    // 2. Add DB admin accounts
+    // 2. Accounts created from this panel (database). Old @aistudio.com aliases
+    //    can no longer sign in, so they are not listed.
     adminUsers.forEach((u) => {
       const cleanEmail = (u.email || "").toLowerCase().trim();
-      if (!cleanEmail) return;
-      if (cleanEmail === "sa@aistudio.com") return;
-      if (!map.has(cleanEmail)) {
-        map.set(cleanEmail, u);
-      }
+      if (!cleanEmail || map.has(cleanEmail) || LEGACY_ACCOUNT_EMAILS.includes(cleanEmail)) return;
+      map.set(cleanEmail, u);
     });
 
-    // 3. Built-in Leads Manager account (static login, Leads + Meta Leads tabs only)
-    if (!map.has("lm@aistudio.us")) {
-      map.set("lm@aistudio.us", {
-        id: "usr_leads_manager",
-        name: "Leads Manager",
-        email: "lm@aistudio.us",
-        role: "leads_manager",
-        status: "active",
-        created_at: "System Protected",
-      } as AdminUser);
-    }
-
-    // 4. Guaranteed operational Admin entry if not already present
-    if (!map.has("admin@aistudio.com")) {
-      map.set("admin@aistudio.com", {
-        id: "usr_admin_1",
-        name: "Admin",
-        email: "admin@aistudio.com",
-        role: "admin",
-        status: "active",
-        created_at: "System Default",
-      });
-    }
-
     return Array.from(map.values());
-  }, [adminUsers]);
+  }, [adminUsers, accountStatus]);
 
   // Modals State
   const [showAddLeadModal, setShowAddLeadModal] = useState(false);
@@ -646,6 +754,50 @@ function AdminPage() {
 
   const isSuperAdmin = session?.role === "super_admin";
   const isLeadsManager = session?.role === "leads_manager";
+
+  // RBAC state (loaded from server, editable by Super Admin)
+  const [rolePermissions, setRolePermissions] = useState<RolePermissions>(() => parseRolePermissions());
+  const [permissionsDraft, setPermissionsDraft] = useState<RolePermissions>(() => parseRolePermissions());
+  const [permissionsDirty, setPermissionsDirty] = useState(false);
+  const [isSavingPermissions, setIsSavingPermissions] = useState(false);
+
+  const can = (key: PermissionKey): boolean => {
+    if (!session) return false;
+    if (session.role === "super_admin") return true;
+    const perms = rolePermissions[session.role as ConfigurableRole];
+    return Boolean(perms?.[key]);
+  };
+
+  const isTabAllowed = (tab: TabType): boolean => {
+    if (!session) return false;
+    switch (tab) {
+      case "leads":
+        return true;
+      case "meta_leads":
+        return can("meta_leads");
+      case "dashboard":
+        return can("dashboard");
+      case "orders":
+        return can("orders");
+      case "activity":
+        return can("activity");
+      case "recycle_bin":
+        return can("recycle_bin");
+      case "users":
+        return can("manage_users");
+      case "security":
+        return can("security_logs");
+      case "settings":
+        return can("crm_settings");
+      case "calendly":
+        return session.role !== "leads_manager";
+      default:
+        return false;
+    }
+  };
+
+  const getBuiltInStatus = (email: string): "active" | "inactive" =>
+    accountStatus[email.toLowerCase()] === "inactive" ? "inactive" : "active";
 
   // Dynamic accent helpers — consume the CSS vars set by the theme useEffect
   // Usage:  className={isActive ? accentNavActive : accentNavIdle}
@@ -743,7 +895,13 @@ function AdminPage() {
       .then((res) => {
         if (cancelled || !res?.settings) return;
         const st = res.settings as Record<string, string>;
-        if (st["platform_title"]) setCrmPlatformTitle(st["platform_title"]);
+        if (st["platform_title"]) {
+          setCrmPlatformTitle(st["platform_title"]);
+          setAppliedPlatformTitle(st["platform_title"]);
+        }
+        if (st["settings_updated_at"]) {
+          setSettingsLastSaved({ at: st["settings_updated_at"], by: st["settings_updated_by"] || "Super Admin" });
+        }
         if (st["notification_email"]) setCrmNotificationEmail(st["notification_email"]);
         setCrmSyncInterval(Number(st["sync_interval"]) === 20 ? 20 : 10);
       })
@@ -755,21 +913,40 @@ function AdminPage() {
 
   // Show the configured Platform / CRM Title in the browser tab
   useEffect(() => {
-    if (typeof document !== "undefined" && crmPlatformTitle.trim()) {
-      document.title = crmPlatformTitle.trim();
+    if (typeof document !== "undefined" && appliedPlatformTitle.trim()) {
+      document.title = appliedPlatformTitle.trim();
     }
-  }, [crmPlatformTitle]);
+  }, [appliedPlatformTitle]);
 
   // Automatic Tab Guard: Ensure standard Admin is never stranded on a Super Admin-only tab
   useEffect(() => {
-    if (session && session.role !== "super_admin" && (activeTab === "users" || activeTab === "security" || activeTab === "settings")) {
+    // Every role is limited to the tabs its permissions allow (Leads is always allowed)
+    if (session && !isTabAllowed(activeTab)) {
       setActiveTab("leads");
     }
-    // Leads Manager: can ONLY access the Leads and Meta Leads tabs
-    if (session && session.role === "leads_manager" && activeTab !== "leads" && activeTab !== "meta_leads") {
-      setActiveTab("leads");
+  }, [session, activeTab, rolePermissions]);
+
+  // Keep the Permissions editor in sync with the saved matrix unless the Super Admin is editing
+  useEffect(() => {
+    if (!permissionsDirty) setPermissionsDraft(rolePermissions);
+  }, [rolePermissions, permissionsDirty]);
+
+  // Sign out anyone whose account has been deactivated by the Super Admin
+  useEffect(() => {
+    if (!session || session.role === "super_admin") return;
+    const email = session.email.toLowerCase();
+    let deactivated = false;
+    if (BUILT_IN_ACCOUNT_EMAILS.includes(email)) {
+      deactivated = getBuiltInStatus(email) === "inactive";
+    } else {
+      const dbUser = adminUsers.find((u) => (u.email || "").toLowerCase() === email);
+      deactivated = Boolean(dbUser && dbUser.status !== "active");
     }
-  }, [session, activeTab]);
+    if (deactivated) {
+      handleLogout();
+      setAuthError("Your account has been deactivated by the Super Admin.");
+    }
+  }, [session, accountStatus, adminUsers]);
 
   // ── Live Interface Theme Application ──────────────────────────────────────
   // Whenever accent, density, or contrast changes: persist to localStorage and
@@ -1005,6 +1182,7 @@ function AdminPage() {
         fetchNotificationsList(),
         fetchLogsList(),
         fetchAdminUsersList(),
+        fetchAccessControl(),
       ]);
       setLastSyncTime(new Date());
     } finally {
@@ -1123,6 +1301,60 @@ function AdminPage() {
     } catch {}
   };
 
+  // Loads the RBAC matrix + built-in account status (polled with the rest of the data)
+  const fetchAccessControl = async () => {
+    try {
+      const res = await fetchCrmSettingsServerFn();
+      const st = (res?.settings || {}) as Record<string, string>;
+      setRolePermissions(parseRolePermissions(st["role_permissions"]));
+      setAccountStatus(parseAccountStatus(st["account_status"]));
+      if (st["platform_title"]) {
+        setAppliedPlatformTitle(st["platform_title"]);
+        try { localStorage.setItem("crm_platform_title", st["platform_title"]); } catch {}
+      }
+      if (st["settings_updated_at"]) {
+        setSettingsLastSaved({ at: st["settings_updated_at"], by: st["settings_updated_by"] || "Super Admin" });
+      }
+      return st;
+    } catch {
+      return null;
+    }
+  };
+
+  const saveAccountStatus = async (email: string, status: "active" | "inactive") => {
+    const next = { ...accountStatus, [email.toLowerCase()]: status };
+    const res = await saveAccessControlServerFn({
+      data: { accountStatus: next, performedBy: session?.name || "Super Admin" },
+    });
+    if (res.success) {
+      setAccountStatus(next);
+      showToast(`${email} is now ${status}`);
+    } else {
+      showToast(res.error || "Failed to update account status");
+    }
+  };
+
+  const handleSavePermissions = async () => {
+    if (!isSuperAdmin) return;
+    setIsSavingPermissions(true);
+    try {
+      const res = await saveAccessControlServerFn({
+        data: { rolePermissions: permissionsDraft, performedBy: session?.name || "Super Admin" },
+      });
+      if (res.success) {
+        setRolePermissions(permissionsDraft);
+        setPermissionsDirty(false);
+        showToast("Permissions saved. They apply to every Admin / Leads Manager within one sync cycle.");
+      } else {
+        showToast(res.error || "Failed to save permissions");
+      }
+    } catch {
+      showToast("Failed to save permissions");
+    } finally {
+      setIsSavingPermissions(false);
+    }
+  };
+
   const fetchAdminUsersList = async () => {
     try {
       const res = await fetchAdminUsersServerFn();
@@ -1159,6 +1391,15 @@ function AdminPage() {
       if (dynamicUser) {
         authRole = dynamicUser.role;
         authName = dynamicUser.name;
+      }
+    }
+
+    // Built-in accounts can be deactivated by the Super Admin (checked live from the server)
+    if (authRole && BUILT_IN_ACCOUNT_EMAILS.includes(cleanEmail) && cleanEmail !== BUILT_IN_SUPER_ADMIN_EMAIL) {
+      const st = await fetchAccessControl();
+      if (parseAccountStatus(st?.["account_status"])[cleanEmail] === "inactive") {
+        setAuthError("This account has been deactivated. Please contact the Super Admin.");
+        return;
       }
     }
 
@@ -1343,6 +1584,10 @@ function AdminPage() {
   };
 
   const handleSoftDeleteLead = async (id: string) => {
+    if (!can("delete_leads")) {
+      showToast("You don't have permission to delete leads.");
+      return;
+    }
     if (confirm("Are you sure you want to delete this lead?")) {
       const target = leads.find((l) => l.id === id);
       const updated = leads.filter((l) => l.id !== id);
@@ -1392,8 +1637,8 @@ function AdminPage() {
   };
 
   const handlePermanentDeleteLead = async (id: string) => {
-    if (!isSuperAdmin) {
-      alert("Only Super Admin can permanently delete records.");
+    if (!can("purge")) {
+      alert("You don't have permission to permanently delete records.");
       return;
     }
     if (confirm("WARNING: This will permanently delete this lead from the database. This action cannot be undone. Continue?")) {
@@ -1458,8 +1703,8 @@ function AdminPage() {
   };
 
   const handleBulkPermanentDeleteRecycleBin = async () => {
-    if (!isSuperAdmin) {
-      alert("Only Super Admin can permanently delete records.");
+    if (!can("purge")) {
+      alert("You don't have permission to permanently delete records.");
       return;
     }
     if (selectedRecycleBinIds.size === 0) return;
@@ -1484,8 +1729,8 @@ function AdminPage() {
   };
 
   const handleEmptyRecycleBin = async () => {
-    if (!isSuperAdmin) {
-      alert("Only Super Admin can empty the Recycle Bin.");
+    if (!can("purge")) {
+      alert("You don't have permission to empty the Recycle Bin.");
       return;
     }
     if (recycleBinLeads.length === 0) return;
@@ -1540,6 +1785,10 @@ function AdminPage() {
   };
 
   const handleBulkDelete = async () => {
+    if (!can("delete_leads")) {
+      showToast("You don't have permission to delete leads.");
+      return;
+    }
     if (selectedLeadIds.size === 0) return;
     if (confirm(`Move ${selectedLeadIds.size} selected leads to Recycle Bin?`)) {
       for (const id of Array.from(selectedLeadIds)) {
@@ -1582,6 +1831,10 @@ function AdminPage() {
   };
 
   const handleBulkMetaDelete = async () => {
+    if (!can("delete_leads")) {
+      showToast("You don't have permission to delete leads.");
+      return;
+    }
     if (selectedMetaLeadIds.size === 0) return;
     if (confirm(`Move ${selectedMetaLeadIds.size} selected Meta leads to Recycle Bin?`)) {
       for (const id of Array.from(selectedMetaLeadIds)) {
@@ -1643,6 +1896,10 @@ function AdminPage() {
   };
 
   const exportCSV = (selectedOnly = false) => {
+    if (!can("export_data")) {
+      showToast("You don't have permission to export data.");
+      return;
+    }
     const listToExport = selectedOnly
       ? filteredLeads.filter((l) => selectedLeadIds.has(l.id))
       : filteredLeads;
@@ -1699,6 +1956,10 @@ function AdminPage() {
   };
 
   const exportMetaCSV = (selectedOnly = false) => {
+    if (!can("export_data")) {
+      showToast("You don't have permission to export data.");
+      return;
+    }
     const listToExport = selectedOnly
       ? filteredMetaLeads.filter((l) => selectedMetaLeadIds.has(l.id))
       : filteredMetaLeads;
@@ -1755,6 +2016,10 @@ function AdminPage() {
 
   // 1-Click Complete System Export Center Handlers
   const exportOrdersCSV = () => {
+    if (!can("export_data")) {
+      showToast("You don't have permission to export data.");
+      return;
+    }
     if (!orders.length) return alert("No payment orders found to export.");
     const headers = [
       "Order ID",
@@ -1792,6 +2057,10 @@ function AdminPage() {
   };
 
   const exportMeetingsCSV = () => {
+    if (!can("export_data")) {
+      showToast("You don't have permission to export data.");
+      return;
+    }
     if (!meetings.length) return alert("No Calendly meetings found to export.");
     const headers = [
       "Meeting ID",
@@ -1829,6 +2098,10 @@ function AdminPage() {
   };
 
   const exportActivityCSV = () => {
+    if (!can("export_data")) {
+      showToast("You don't have permission to export data.");
+      return;
+    }
     if (!activityLogs.length) return alert("No activity history logs found to export.");
     const headers = [
       "Log ID",
@@ -1858,6 +2131,10 @@ function AdminPage() {
   };
 
   const exportAllLeadsMasterCSV = () => {
+    if (!can("export_data")) {
+      showToast("You don't have permission to export data.");
+      return;
+    }
     if (!leads.length) return alert("No leads found in database to export.");
     const headers = [
       "ID",
@@ -1910,6 +2187,10 @@ function AdminPage() {
   };
 
   const exportFullBackupJSON = () => {
+    if (!can("export_backup")) {
+      showToast("You don't have permission to export the master backup.");
+      return;
+    }
     const backupData = {
       system: "AI STUDIO USA CRM - Enterprise Production Database Snapshot",
       exported_at: new Date().toISOString(),
@@ -1993,6 +2274,13 @@ function AdminPage() {
         showToast(res.error || "Failed to save CRM settings");
         return;
       }
+      const saved = (res.settings || {}) as Record<string, string>;
+      setAppliedPlatformTitle(saved["platform_title"] || crmPlatformTitle);
+      if (saved["notification_email"]) setCrmNotificationEmail(saved["notification_email"]);
+      setSettingsLastSaved({
+        at: saved["settings_updated_at"] || new Date().toISOString(),
+        by: saved["settings_updated_by"] || session?.name || "Super Admin",
+      });
     } catch (err) {
       console.error("Save CRM settings error:", err);
       showToast("Failed to save CRM settings. Please try again.");
@@ -2017,6 +2305,10 @@ function AdminPage() {
   };
 
   const handlePublishBroadcastBanner = () => {
+    if (!can("broadcast")) {
+      showToast("You don't have permission to broadcast notices.");
+      return;
+    }
     setCrmBroadcastBanner(crmBroadcastDraft);
     if (typeof window !== "undefined") {
       localStorage.setItem("crm_broadcast_banner", crmBroadcastDraft);
@@ -2543,7 +2835,7 @@ function AdminPage() {
             </div>
             <h2 className="mt-4 text-2xl font-bold tracking-tight">CRM Admin Portal</h2>
             <p className={`mt-1 text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-              {crmPlatformTitle}
+              {appliedPlatformTitle}
             </p>
           </div>
 
@@ -2663,8 +2955,8 @@ function AdminPage() {
                 />
               </a>
 
-              <span className="hidden md:inline text-sm font-bold text-slate-800 truncate max-w-[260px]" title={crmPlatformTitle}>
-                {crmPlatformTitle}
+              <span className="hidden md:inline text-sm font-bold text-slate-800 truncate max-w-[260px]" title={appliedPlatformTitle}>
+                {appliedPlatformTitle}
               </span>
 
               {isSuperAdmin ? (
@@ -2897,7 +3189,7 @@ function AdminPage() {
         {/* Tab Navigation Bar */}
         <div className="overflow-x-auto border-t border-slate-200 bg-white scrollbar-none">
           <div className="mx-auto flex w-full max-w-[1750px] items-center gap-1 sm:gap-1.5 px-3 sm:px-6 py-1.5 min-w-max">
-            {!isLeadsManager && (
+            {can("dashboard") && (
             <button
               onClick={() => { setActiveTab("dashboard"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
@@ -2930,6 +3222,7 @@ function AdminPage() {
               </span>
             </button>
 
+            {can("meta_leads") && (
             <button
               onClick={() => { setActiveTab("meta_leads"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
@@ -2947,8 +3240,9 @@ function AdminPage() {
                 {metaLeads.length}
               </span>
             </button>
+            )}
 
-            {session?.role !== "leads_manager" && (
+            {can("orders") && (
             <button
               onClick={() => handleSelectOrdersTab()}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
@@ -2987,7 +3281,7 @@ function AdminPage() {
               </span>
             </button> */}
 
-            {!isLeadsManager && (
+            {can("activity") && (
             <button
               onClick={() => { setActiveTab("activity"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
@@ -3002,9 +3296,10 @@ function AdminPage() {
             </button>
             )}
 
-            {/* Super Admin Tabs */}
-            {isSuperAdmin && (
+            {/* Admin-management tabs (Super Admin, or roles granted access in Permissions) */}
+            {(can("manage_users") || can("security_logs") || can("crm_settings")) && (
               <>
+                {can("manage_users") && (
                 <button
                   onClick={() => { setActiveTab("users"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
                   className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
@@ -3016,7 +3311,9 @@ function AdminPage() {
                   <Users className="h-4 w-4" />
                   <span>User Management</span>
                 </button>
+                )}
 
+                {can("security_logs") && (
                 <button
                   onClick={() => { setActiveTab("security"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
                   className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
@@ -3028,7 +3325,9 @@ function AdminPage() {
                   <ShieldAlert className="h-4 w-4" />
                   <span>Login / IP Tracking</span>
                 </button>
+                )}
 
+                {can("crm_settings") && (
                 <button
                   onClick={() => { setActiveTab("settings"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
                   className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
@@ -3040,10 +3339,11 @@ function AdminPage() {
                   <Settings className="h-4 w-4" />
                   <span>CRM Settings</span>
                 </button>
+                )}
               </>
             )}
 
-            {!isLeadsManager && (
+            {can("recycle_bin") && (
             <button
               onClick={() => { setActiveTab("recycle_bin"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
@@ -3075,7 +3375,7 @@ function AdminPage() {
               <span className="font-bold text-amber-900 uppercase tracking-wider text-[10px] bg-amber-200/80 px-2 py-0.5 rounded-md">System Notice</span>
               <span className="font-semibold">{crmBroadcastBanner}</span>
             </div>
-            {isSuperAdmin && (
+            {can("broadcast") && (
               <button
                 onClick={() => {
                   setCrmBroadcastBanner("");
@@ -6084,7 +6384,7 @@ function AdminPage() {
         {/* ========================================================================= */}
         {/* TAB 5: USER MANAGEMENT (SUPER ADMIN ONLY) */}
         {/* ========================================================================= */}
-        {activeTab === "users" && isSuperAdmin && (
+        {activeTab === "users" && can("manage_users") && (
           <div className="space-y-6 animate-in fade-in duration-200">
             <div className="rounded-2xl border border-purple-200 bg-purple-50/50 p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
@@ -6121,9 +6421,13 @@ function AdminPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {uniqueAdminUsers.map((user) => {
-                    const isSuper = user.role === "super_admin" || user.email.toLowerCase() === "sa@aistudio.com";
+                    const isSuper = user.role === "super_admin";
                     const isLM = (user.role as string) === "leads_manager";
-                    const isBuiltIn = isSuper || user.id === "usr_leads_manager";
+                    const isBuiltIn = user.id === "usr_builtin_admin" || user.id === "usr_leads_manager";
+                    const isSelf = user.email.toLowerCase() === (session?.email || "").toLowerCase();
+                    // Built-in Super Admin, your own account, and (for non-Super Admins) any Super Admin are protected
+                    const isProtected =
+                      user.id === "usr_superadmin" || isSelf || (!isSuperAdmin && isSuper);
 
                     return (
                       <tr key={user.email} className="hover:bg-slate-50/75 transition-colors">
@@ -6142,22 +6446,38 @@ function AdminPage() {
                         </td>
                         <td className="px-4 py-3.5">
                           <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
-                            user.status === "active" || isSuper
+                            user.status === "active"
                               ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                               : "bg-red-100 text-red-800 border border-red-200"
                           }`}>
-                            {isSuper ? "Active" : user.status}
+                            {user.status}
                           </span>
                         </td>
                         <td className="px-4 py-3.5 text-slate-400 font-mono text-[11px]">
                           {user.created_at.includes("-") ? new Date(user.created_at).toLocaleDateString() : user.created_at}
                         </td>
                         <td className="px-4 py-3.5 text-right">
-                          {isBuiltIn ? (
+                          {isProtected ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 border border-purple-200 px-2.5 py-1 text-[11px] font-bold text-purple-700 select-none cursor-not-allowed">
                               <Lock className="h-3 w-3 text-purple-500" />
-                              <span>Protected</span>
+                              <span>{isSelf && user.id !== "usr_superadmin" ? "You" : "Protected"}</span>
                             </span>
+                          ) : isBuiltIn ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() =>
+                                  saveAccountStatus(user.email, user.status === "active" ? "inactive" : "active")
+                                }
+                                className={`rounded-lg px-2.5 py-1 text-xs font-bold border cursor-pointer transition-colors ${
+                                  user.status === "active"
+                                    ? "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                                    : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                }`}
+                                title="Built-in account: can be deactivated but not deleted"
+                              >
+                                {user.status === "active" ? "Deactivate" : "Activate"}
+                              </button>
+                            </div>
                           ) : (
                             <div className="flex items-center justify-end gap-2">
                               <button
@@ -6221,7 +6541,7 @@ function AdminPage() {
         {/* ========================================================================= */}
         {/* TAB 6: LOGIN & SECURITY LOGS (SUPER ADMIN ONLY) */}
         {/* ========================================================================= */}
-        {activeTab === "security" && isSuperAdmin && (
+        {activeTab === "security" && can("security_logs") && (
           <div className="space-y-6 animate-in fade-in duration-200">
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <h3 className="text-base font-bold flex items-center gap-2 text-slate-900">
@@ -6312,7 +6632,7 @@ function AdminPage() {
                 </p>
               </div>
 
-              {isSuperAdmin && recycleBinLeads.length > 0 && (
+              {can("purge") && recycleBinLeads.length > 0 && (
                 <button
                   onClick={handleEmptyRecycleBin}
                   className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-red-700 flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
@@ -6343,7 +6663,7 @@ function AdminPage() {
                     <span>Restore Selected ({selectedRecycleBinIds.size})</span>
                   </button>
 
-                  {isSuperAdmin && (
+                  {can("purge") && (
                     <button
                       onClick={handleBulkPermanentDeleteRecycleBin}
                       className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1 text-xs font-bold text-white hover:bg-red-700 shadow-xs cursor-pointer transition-colors"
@@ -6431,7 +6751,7 @@ function AdminPage() {
                                 <span>Restore</span>
                               </button>
 
-                              {isSuperAdmin && (
+                              {can("purge") && (
                                 <button
                                   onClick={() => handlePermanentDeleteLead(lead.id)}
                                   className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
@@ -6456,7 +6776,7 @@ function AdminPage() {
         {/* ========================================================================= */}
         {/* TAB 8: CRM SETTINGS & SUPER ADMIN SYSTEM CONTROLS */}
         {/* ========================================================================= */}
-        {activeTab === "settings" && isSuperAdmin && (
+        {activeTab === "settings" && can("crm_settings") && (
           <div className="space-y-6 animate-in fade-in duration-200">
             {/* Header Hero Card */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
@@ -6469,11 +6789,22 @@ function AdminPage() {
                     <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
                       <span>CRM Settings & Super Admin Control Center</span>
                       <span className="rounded-md bg-purple-100 text-purple-800 text-[10px] font-extrabold px-2 py-0.5 border border-purple-200">
-                        SUPER ADMIN ONLY
+                        {isSuperAdmin ? "SUPER ADMIN" : "GRANTED ACCESS"}
                       </span>
                     </h2>
                     <p className="mt-0.5 text-xs text-slate-500">
                       Configure platform rules, personalize interface colors, export data streams, inspect RBAC permissions, review database counts, view analytics reports, and adjust security policies.
+                    </p>
+                    <p className="mt-1 text-[11px] font-medium text-slate-400">
+                      {settingsLastSaved
+                        ? `Last saved ${new Date(settingsLastSaved.at).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })} by ${settingsLastSaved.by}`
+                        : "Settings not saved yet — defaults are in use"}
                     </p>
                   </div>
                 </div>
@@ -6528,6 +6859,7 @@ function AdminPage() {
                 <span>3. Export CRM Data</span>
               </button>
 
+              {isSuperAdmin && (
               <button
                 onClick={() => setCrmSettingsSubTab("permissions")}
                 className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
@@ -6539,6 +6871,7 @@ function AdminPage() {
                 <ShieldCheck className="h-4 w-4" />
                 <span>4. Permissions Matrix</span>
               </button>
+              )}
 
               <button
                 onClick={() => setCrmSettingsSubTab("records")}
@@ -6906,82 +7239,127 @@ function AdminPage() {
             {/* ========================================================================= */}
             {/* MODULE 4: MANAGE SYSTEM PERMISSIONS */}
             {/* ========================================================================= */}
-            {crmSettingsSubTab === "permissions" && (
+            {crmSettingsSubTab === "permissions" && isSuperAdmin && (
               <div className="space-y-5 animate-in fade-in">
                 <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-5">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                      <ShieldCheck className="h-4 w-4 text-slate-800" />
-                      <span>Role-Based Access Control (RBAC) Matrix</span>
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Operational permissions matrix defining authorization levels between Super Admin and standard Admin accounts.
-                    </p>
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-slate-800" />
+                        <span>Role-Based Access Control (RBAC) Matrix</span>
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Click a permission to allow or restrict it, then save. Changes apply to every Admin and Leads Manager
+                        (including accounts you create) within one auto-sync cycle. Super Admin always keeps full access, and
+                        Website Leads is always available to every role.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPermissionsDraft(parseRolePermissions());
+                          setPermissionsDirty(true);
+                        }}
+                        className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                      >
+                        Reset to Defaults
+                      </button>
+                      {permissionsDirty && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPermissionsDraft(rolePermissions);
+                            setPermissionsDirty(false);
+                          }}
+                          className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                        >
+                          Discard
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        disabled={!permissionsDirty || isSavingPermissions}
+                        onClick={handleSavePermissions}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                        <span>{isSavingPermissions ? "Saving..." : "Save Permissions"}</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div className="overflow-x-auto rounded-xl border border-slate-200">
-                    <table className="w-full text-left text-xs">
+                    <table className="w-full min-w-[720px] text-left text-xs">
                       <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
                         <tr>
                           <th className="px-4 py-3">System Module / Capability</th>
-                          <th className="px-4 py-3">Super Admin (sa@aistudio.com)</th>
-                          <th className="px-4 py-3">Standard Admin (admin@aistudio.com)</th>
-                          <th className="px-4 py-3">Security Level</th>
+                          <th className="px-4 py-3">Super Admin</th>
+                          <th className="px-4 py-3">Admin</th>
+                          <th className="px-4 py-3">Leads Manager</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {[
-                          { cap: "Dashboard & Real-Time Performance Analytics", sa: "Full Access", ad: "Full Access", sec: "Standard" },
-                          { cap: "Website Leads Management & Status Updating", sa: "Full CRUD", ad: "Full CRUD", sec: "Standard" },
-                          { cap: "Meta Ads Leads Management & Notes", sa: "Full CRUD", ad: "Full CRUD", sec: "Standard" },
-                          { cap: "Calendly Strategy Meetings & Rescheduling", sa: "Full Access", ad: "Full Access", sec: "Standard" },
-                          { cap: "Soft-Delete Leads to Recycle Bin", sa: "Full Access", ad: "Full Access", sec: "Standard" },
-                          { cap: "Permanent Lead Purge & Empty Recycle Bin", sa: "Allowed", ad: "Restricted 🔒", sec: "Super Admin Only" },
-                          { cap: "Orders & Financial Revenue Access", sa: "Full + PIN Protected", ad: "PIN Protected", sec: "Elevated PIN" },
-                          { cap: "Change Master Financial Security PIN", sa: "Allowed", ad: "Restricted 🔒", sec: "Super Admin Only" },
-                          { cap: "Export Inbound Leads & Campaign Data", sa: "Allowed", ad: "Allowed", sec: "Standard" },
-                          { cap: "Export Master JSON Disaster Backup", sa: "Allowed", ad: "Restricted 🔒", sec: "Super Admin Only" },
-                          { cap: "Create, Suspend, & Delete Admin Users", sa: "Allowed", ad: "Restricted 🔒", sec: "Super Admin Only" },
-                          { cap: "View Live IP Tracking & Login Audit Logs", sa: "Allowed", ad: "Restricted 🔒", sec: "Super Admin Only" },
-                          { cap: "Modify CRM Settings & Theme Preferences", sa: "Allowed", ad: "Restricted 🔒", sec: "Super Admin Only" },
-                          { cap: "Broadcast Operational System Notice", sa: "Allowed", ad: "Restricted 🔒", sec: "Super Admin Only" },
-                        ].map((row, idx) => (
-                          <tr key={idx} className="hover:bg-slate-50/70 transition-colors">
-                            <td className="px-4 py-3 font-semibold text-slate-800">{row.cap}</td>
-                            <td className="px-4 py-3 font-bold text-purple-700">
-                              <span className="inline-flex items-center gap-1 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
-                                <Check className="h-3 w-3" />
-                                {row.sa}
+                        <tr className="bg-slate-50/40">
+                          <td className="px-4 py-3">
+                            <div className="font-semibold text-slate-800">Website Leads Management & Status Updating</div>
+                            <div className="text-[11px] text-slate-400">Leads Management tab</div>
+                          </td>
+                          {[0, 1, 2].map((i) => (
+                            <td key={i} className="px-4 py-3">
+                              <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200 font-bold">
+                                <Lock className="h-3 w-3" /> Always Allowed
                               </span>
                             </td>
-                            <td className="px-4 py-3 font-medium text-slate-700">
-                              {row.ad.includes("Restricted") ? (
-                                <span className="inline-flex items-center gap-1 bg-red-50 text-red-700 px-2 py-0.5 rounded-md border border-red-200 font-bold">
-                                  {row.ad}
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-200">
-                                  <Check className="h-3 w-3" />
-                                  {row.ad}
-                                </span>
-                              )}
+                          ))}
+                        </tr>
+                        {PERMISSION_DEFS.map((def) => (
+                          <tr key={def.key} className="hover:bg-slate-50/70 transition-colors">
+                            <td className="px-4 py-3">
+                              <div className="font-semibold text-slate-800">{def.label}</div>
+                              <div className="text-[11px] text-slate-400">{def.hint}</div>
                             </td>
                             <td className="px-4 py-3">
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                                row.sec === "Super Admin Only"
-                                  ? "bg-purple-100 text-purple-800 border-purple-200"
-                                  : row.sec === "Elevated PIN"
-                                  ? "bg-amber-100 text-amber-800 border-amber-200"
-                                  : "bg-slate-100 text-slate-700 border-slate-200"
-                              }`}>
-                                {row.sec}
+                              <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 px-2 py-0.5 rounded-md border border-purple-200 font-bold">
+                                <Check className="h-3 w-3" /> Allowed
                               </span>
                             </td>
+                            {(["admin", "leads_manager"] as ConfigurableRole[]).map((role) => {
+                              const allowed = permissionsDraft[role][def.key];
+                              return (
+                                <td key={role} className="px-4 py-3">
+                                  <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={allowed}
+                                    onClick={() => {
+                                      setPermissionsDraft((prev) => ({
+                                        ...prev,
+                                        [role]: { ...prev[role], [def.key]: !prev[role][def.key] },
+                                      }));
+                                      setPermissionsDirty(true);
+                                    }}
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border font-bold cursor-pointer transition-colors ${
+                                      allowed
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                        : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                                    }`}
+                                    title={allowed ? "Click to restrict" : "Click to allow"}
+                                  >
+                                    {allowed ? <Check className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                                    {allowed ? "Allowed" : "Restricted"}
+                                  </button>
+                                </td>
+                              );
+                            })}
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
+                  <p className="text-[11px] text-slate-400">
+                    Orders still require the security PIN even when allowed. Editing this Permissions Matrix is always Super Admin only.
+                  </p>
                 </div>
               </div>
             )}
@@ -8359,7 +8737,7 @@ function AdminPage() {
       {/* ========================================================================= */}
       {/* MODAL 6: CREATE ADMIN ACCOUNT (SUPER ADMIN ONLY) */}
       {/* ========================================================================= */}
-      {showAddAdminModal && isSuperAdmin && (
+      {showAddAdminModal && can("manage_users") && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
           <div className={`w-full max-w-md rounded-2xl border p-6 shadow-2xl space-y-4 ${
             isDark ? "border-purple-900/50 bg-[#151026] text-white" : "border-purple-200 bg-white text-slate-900"
@@ -8459,7 +8837,7 @@ function AdminPage() {
                 >
                   <option value="admin">Admin (Operational CRM Access)</option>
                   <option value="leads_manager">Leads Manager (Leads &amp; Meta Leads tabs only)</option>
-                  <option value="super_admin">Super Admin (Full System & User Control)</option>
+                  {isSuperAdmin && <option value="super_admin">Super Admin (Full System & User Control)</option>}
                 </select>
               </div>
 
