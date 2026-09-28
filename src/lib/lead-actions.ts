@@ -38,7 +38,7 @@ import {
 } from "./db";
 import { sendLeadNotificationEmail } from "./email";
 
-function sanitizeLeadPhone(phone: string, isUsa: boolean): string {
+function sanitizeLeadPhone(phone: string, _isUsa: boolean = true): string {
   const trimmed = phone.trim();
   if (!trimmed) return trimmed;
   const digits = trimmed.replace(/\D/g, "");
@@ -51,10 +51,7 @@ function sanitizeLeadPhone(phone: string, isUsa: boolean): string {
   }
 
   if (digits.length === 10) {
-    if (isUsa) {
-      return `+1 (${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-    }
-    return `+91 ${digits}`;
+    return `+1 (${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
   }
 
   if (digits.length === 11 && digits.startsWith("1")) {

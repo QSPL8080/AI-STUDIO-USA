@@ -20,17 +20,14 @@ const NOTIFICATION_EMAIL = process.env.LEAD_NOTIFICATION_EMAIL || "qsaistudio@gm
 const BACKUP_NOTIFICATION_EMAIL = "quickuppaistudio1@gmail.com";
 
 export async function sendLeadNotificationEmail(lead: LeadEmailPayload): Promise<{ success: boolean; error?: string }> {
-  const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-  const isUsa = lead.source.includes("USA");
-  const subject = isUsa
-    ? `🇺🇸 [USA Website Lead] ${lead.name} (${lead.videoType}) - ${lead.source}`
-    : `🚀 New Lead: ${lead.name} (${lead.videoType}) - ${lead.source}`;
+  const timestamp = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+  const subject = `🇺🇸 [Quickupp AI Studio USA] New Lead: ${lead.name} (${lead.videoType}) - ${lead.source}`;
 
   const cleanPhone = lead.phone.replace(/[^0-9+]/g, "");
   const waPhone = cleanPhone.startsWith("+")
     ? cleanPhone.replace("+", "")
     : cleanPhone.length === 10
-    ? (isUsa ? `1${cleanPhone}` : `91${cleanPhone}`)
+    ? `1${cleanPhone}`
     : cleanPhone;
 
   const htmlContent = `

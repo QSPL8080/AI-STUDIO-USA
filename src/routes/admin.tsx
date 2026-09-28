@@ -907,7 +907,7 @@ function AdminPage() {
       // Record Login Audit Log with Real IP & Geolocation
       try {
         let ipAddress = "127.0.0.1";
-        let location = "India / Web Client";
+        let location = "USA / Web Client";
         try {
           const ipRes = await fetch("https://api.ipify.org?format=json");
           const ipData = await ipRes.json();
@@ -923,10 +923,7 @@ function AdminPage() {
                 }
               }
             } catch {
-              const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-              if (tz.includes("Calcutta") || tz.includes("Kolkata") || tz.includes("Asia")) {
-                location = "India / Web Client";
-              }
+              location = "USA / Web Client";
             }
           }
         } catch {}
@@ -1325,59 +1322,34 @@ function AdminPage() {
   };
 
   // Helper Functions
-  const isLeadUsa = (lead: Lead | null | undefined): boolean => {
-    if (!lead) return false;
-    const src = (lead.source || "").toLowerCase().trim();
-    const loc = (lead.location || "").toLowerCase().trim();
-    return (
-      src.startsWith("usa") ||
-      src.includes("usa -") ||
-      src.includes("united states") ||
-      loc.includes("usa") ||
-      loc.includes("united states") ||
-      (lead.phone && lead.phone.startsWith("+1"))
-    );
+  const isLeadUsa = (_lead: Lead | null | undefined): boolean => {
+    return true;
   };
 
-  const sanitizePhoneNumber = (phone: string, isUsa: boolean = false) => {
+  const sanitizePhoneNumber = (phone: string, _isUsa: boolean = true) => {
     let clean = (phone || "").replace(/[^0-9]/g, "");
     if (clean.length === 10) {
-      clean = isUsa ? `1${clean}` : `91${clean}`;
+      clean = `1${clean}`;
     }
     return clean;
   };
 
   const getAdminWhatsAppPlainText = (lead: Lead) => {
-    const isUsa = isLeadUsa(lead);
-
-    if (isUsa) {
-      let msg = `Hi ${lead.name},\n\nThank you for reaching out to Quickupp AI Studio USA!\n\nWe have received your AI Video Production inquiry with the following details:\n\nClient Name: ${lead.name}`;
-      if (lead.business) msg += `\nBusiness / Brand: ${lead.business}`;
-      if (lead.video_type) msg += `\nVideo Format: ${lead.video_type}`;
-      if (lead.video_quantity) msg += `\nVideo Quantity: ${lead.video_quantity}`;
-      if (lead.location) msg += `\nLocation: ${lead.location}`;
-      if (lead.requirement || lead.additional) msg += `\nProject Scope: ${lead.requirement || lead.additional}`;
-
-      msg += `\n\nOur team is reviewing your requirements and preparing custom sample concepts, video reels, and a tailored quote for your project.\n\nCould you please confirm if you have a target turnaround timeline or any reference video links in mind?\n\nBest regards,\nQuickupp AI Studio Team (USA)`;
-      return msg;
-    }
-
-    let msg = `Hello ${lead.name},\n\nThank you for reaching out to Quickupp AI Studio!\n\nWe have received your AI video inquiry with the following details:\n\nClient Name: ${lead.name}`;
-    if (lead.business) msg += `\nBusiness: ${lead.business}`;
-    if (lead.video_type) msg += `\nVideo Type: ${lead.video_type}`;
+    let msg = `Hi ${lead.name},\n\nThank you for reaching out to Quickupp AI Studio USA!\n\nWe have received your AI Video Production inquiry with the following details:\n\nClient Name: ${lead.name}`;
+    if (lead.business) msg += `\nBusiness / Brand: ${lead.business}`;
+    if (lead.video_type) msg += `\nVideo Format: ${lead.video_type}`;
     if (lead.video_quantity) msg += `\nVideo Quantity: ${lead.video_quantity}`;
     if (lead.location) msg += `\nLocation: ${lead.location}`;
-    if (lead.requirement || lead.additional) msg += `\nRequirement: ${lead.requirement || lead.additional}`;
+    if (lead.requirement || lead.additional) msg += `\nProject Scope: ${lead.requirement || lead.additional}`;
 
-    msg += `\n\nOur team is reviewing your requirements and will share the tailored proposal and sample concepts shortly.\n\nCould you please confirm if you have any specific deadline or reference in mind?\n\nBest regards,\nQuickupp AI Studio Team`;
+    msg += `\n\nOur team is reviewing your requirements and preparing custom sample concepts, video reels, and a tailored quote for your project.\n\nCould you please confirm if you have a target turnaround timeline or any reference video links in mind?\n\nBest regards,\nQuickupp AI Studio Team (USA)`;
     return msg;
   };
 
   const handleOpenWhatsApp = (lead: Lead) => {
     setSelectedLeadForMsg(lead);
     const text = getAdminWhatsAppPlainText(lead);
-    const isUsa = isLeadUsa(lead);
-    const phone = sanitizePhoneNumber(lead.phone, isUsa);
+    const phone = sanitizePhoneNumber(lead.phone, true);
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text).catch(() => {});
     }
@@ -1555,14 +1527,13 @@ function AdminPage() {
     }
   };
 
-  const getLeadSourceDisplay = (source: string): "USA Website" | "India Website" | "Meta" | "Manual" | "Calendly" => {
-    if (!source) return "India Website";
+  const getLeadSourceDisplay = (source: string): "USA Website" | "Meta" | "Manual" | "Calendly" => {
+    if (!source) return "USA Website";
     const s = source.toLowerCase();
-    if (s.includes("usa")) return "USA Website";
     if (s.includes("meta") || s.includes("facebook") || s.includes("instagram")) return "Meta";
     if (s.includes("manual")) return "Manual";
     if (s.includes("calendly")) return "Calendly";
-    return "India Website";
+    return "USA Website";
   };
 
   const getLeadSourceBadgeClass = (source: string) => {
@@ -1572,10 +1543,6 @@ function AdminPage() {
         return isDark
           ? "border-blue-500/40 bg-blue-500/15 text-blue-300"
           : "border-blue-200 bg-blue-50 text-blue-700";
-      case "India Website":
-        return isDark
-          ? "border-orange-500/40 bg-orange-500/15 text-orange-300"
-          : "border-orange-200 bg-orange-50 text-orange-700";
       case "Meta":
         return isDark
           ? "border-sky-500/40 bg-sky-500/15 text-sky-300"
@@ -1616,7 +1583,7 @@ function AdminPage() {
   const filteredLeads = useMemo(() => {
     return websiteLeads
       .filter((lead) => {
-        // 1. Source Filter (USA Website, India Website, Manual)
+        // 1. Source Filter (USA Website, Manual, Calendly)
         let matchesSource = true;
         if (filterSource !== "All" && filterSource.trim() !== "") {
           const rawSrc = (lead.source || "").toLowerCase().trim();
@@ -1626,8 +1593,8 @@ function AdminPage() {
             rawSrc === targetSrc ||
             categorySrc === targetSrc ||
             (targetSrc.includes("usa") && (rawSrc.includes("usa") || categorySrc.includes("usa"))) ||
-            (targetSrc.includes("india") && (rawSrc.includes("india") || categorySrc.includes("india"))) ||
-            (targetSrc.includes("manual") && rawSrc.includes("manual"));
+            (targetSrc.includes("manual") && rawSrc.includes("manual")) ||
+            (targetSrc.includes("calendly") && rawSrc.includes("calendly"));
         }
 
         // 2. Lead Status Filter
@@ -2650,7 +2617,6 @@ function AdminPage() {
                   >
                     <option value="All">All Sources</option>
                     <option value="USA Website">USA Website</option>
-                    <option value="India Website">India Website</option>
                     <option value="Manual">Manual</option>
                     <option value="Calendly">Calendly</option>
                   </select>
@@ -5219,9 +5185,8 @@ function AdminPage() {
                     }`}
                   >
                     <option value="USA Website">USA Website</option>
-                    <option value="India Website">India Website</option>
-                    <option value="Meta">Meta</option>
                     <option value="Manual">Manual</option>
+                    <option value="Meta Ads">Meta Ads</option>
                   </select>
                 </div>
 

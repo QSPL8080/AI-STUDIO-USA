@@ -293,7 +293,7 @@ export function PrivacyPolicyPage() {
             </div>
             <div className="rounded-xl border border-border/70 bg-surface/20 p-5 space-y-2">
               <h3 className="text-sm sm:text-base font-bold text-foreground"><span className="font-mono text-neon">17.</span> International Transfers</h3>
-              <p className="text-xs sm:text-sm">Personal data may be processed in the USA, India, or other countries where our team and technology providers operate.</p>
+              <p className="text-xs sm:text-sm">Personal data is securely processed in the United States and jurisdictions where our cloud infrastructure providers operate under standard data protection terms.</p>
             </div>
           </div>
 
