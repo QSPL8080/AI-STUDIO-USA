@@ -1570,13 +1570,29 @@ function AdminPage() {
     );
   };
 
-  // Distinct Leads Collections: Website Leads (Tab 1) and Meta Leads (Tab 2)
+  // Helper to identify India Leads (never convert, strictly remove from USA CRM)
+  const isIndiaLead = (lead: Lead) => {
+    const s = (lead.source || "").toLowerCase().trim();
+    const loc = (lead.location || "").toLowerCase().trim();
+    const phone = (lead.phone || "").replace(/\D/g, "");
+    return (
+      s.includes("india") ||
+      s.includes("in -") ||
+      s === "contact form" ||
+      s === "popup modal" ||
+      loc.includes("india") ||
+      loc.includes("bharat") ||
+      (phone.startsWith("91") && phone.length === 12 && !lead.phone.startsWith("+1"))
+    );
+  };
+
+  // Distinct Leads Collections: Website Leads (Tab 1) and Meta Leads (Tab 2) - strictly excluding India leads
   const websiteLeads = useMemo(() => {
-    return leads.filter((l) => !isMetaLead(l));
+    return leads.filter((l) => !isMetaLead(l) && !isIndiaLead(l));
   }, [leads]);
 
   const metaLeads = useMemo(() => {
-    return leads.filter((l) => isMetaLead(l));
+    return leads.filter((l) => isMetaLead(l) && !isIndiaLead(l));
   }, [leads]);
 
   // Filtered Website Leads Calculation (Tab 1: Leads Management)
