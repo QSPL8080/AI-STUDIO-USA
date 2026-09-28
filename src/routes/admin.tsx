@@ -4008,6 +4008,32 @@ function AdminPage() {
                                 {lead.location ? ` · ${lead.location}` : ""}
                               </div>
                               {lead.email && <div className="text-[11px] text-slate-400 font-mono">{lead.email}</div>}
+                              {lead.is_duplicate && (
+                                <div className="mt-1">
+                                  <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 border border-amber-200">
+                                    Duplicate Flagged
+                                  </span>
+                                </div>
+                              )}
+                              {(lead.campaign_name || lead.ad_name || lead.form_name) && (
+                                <div className="mt-1 flex flex-wrap gap-1 text-[10px]">
+                                  {lead.campaign_name && (
+                                    <span className="rounded bg-indigo-50 border border-indigo-200/60 px-1.5 py-0.2 text-indigo-700 font-semibold" title={`Campaign: ${lead.campaign_name}`}>
+                                      Camp: {lead.campaign_name}
+                                    </span>
+                                  )}
+                                  {lead.ad_name && (
+                                    <span className="rounded bg-purple-50 border border-purple-200/60 px-1.5 py-0.2 text-purple-700 font-semibold" title={`Ad: ${lead.ad_name}`}>
+                                      Ad: {lead.ad_name}
+                                    </span>
+                                  )}
+                                  {lead.form_name && (
+                                    <span className="rounded bg-slate-100 border border-slate-200 px-1.5 py-0.2 text-slate-600 font-medium" title={`Form: ${lead.form_name}`}>
+                                      Form: {lead.form_name}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </td>
 
                             {/* WhatsApp / Phone */}

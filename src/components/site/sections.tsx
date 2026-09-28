@@ -2779,7 +2779,7 @@ export function DigitalTwin() {
           {/* Digital Twin Image Card */}
           <div className="relative aspect-[9/16] w-full max-w-[200px] shrink-0 overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-lg sm:max-w-[210px] md:max-w-[220px]">
             <img
-              src="/images/digital twin image .png"
+              src="/images/Digital Twin Image.png"
               alt="Digital Twin Sample Reel"
               className="h-full w-full object-cover"
               loading="lazy"
