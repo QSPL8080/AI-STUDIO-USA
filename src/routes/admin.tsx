@@ -655,6 +655,29 @@ function AdminPage() {
     if (savedSession) {
       try {
         const parsed: AuthSession = JSON.parse(savedSession);
+        // ─── Session credential version gate ───────────────────────────────
+        // Only the 3 authorised accounts are valid. Any old/stale session
+        // (e.g. admin@aistudio.com, sa@aistudio.com, etc.) is wiped and the
+        // user is forced back to the login screen immediately.
+        const VALID_EMAILS = ["sa@aistudio.us", "admin@aistudio.us", "lm@aistudio.us"];
+        const sessionEmail = (parsed.email || "").trim().toLowerCase();
+        const isValidStaticEmail = VALID_EMAILS.includes(sessionEmail);
+        // Dynamic DB users are also allowed (they won't be in VALID_EMAILS)
+        // but must have a recognised role set by the server at login time.
+        // Static check: if it looks like an old alias, boot them out.
+        const isOldAlias =
+          sessionEmail.endsWith("@aistudio.com") ||
+          sessionEmail.endsWith("@quickuppaistudio.us") ||
+          sessionEmail === "superadmin" ||
+          sessionEmail === "admin" ||
+          sessionEmail === "qsaistudio@gmail.com" ||
+          sessionEmail === "info@quickuppaistudio.us";
+        if (isOldAlias || (!isValidStaticEmail && !parsed.role)) {
+          // Wipe everything and drop to login
+          localStorage.removeItem("ai_studio_auth_session");
+          localStorage.removeItem("ai_studio_remembered_email");
+          return;
+        }
         setSession(parsed);
         fetchAllData(false);
       } catch {
