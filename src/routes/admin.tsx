@@ -162,7 +162,7 @@ const VIDEO_TYPES = [
 interface AuthSession {
   email: string;
   name: string;
-  role: "super_admin" | "admin";
+  role: "super_admin" | "admin" | "leads_manager";
 }
 
 function AdminPage() {
@@ -693,6 +693,10 @@ function AdminPage() {
     if (session && session.role !== "super_admin" && (activeTab === "users" || activeTab === "security" || activeTab === "settings")) {
       setActiveTab("leads");
     }
+    // Leads Manager: can only access leads, meta_leads, calendly, activity, recycle_bin, dashboard
+    if (session && session.role === "leads_manager" && (activeTab === "orders" || activeTab === "users" || activeTab === "security" || activeTab === "settings")) {
+      setActiveTab("leads");
+    }
   }, [session, activeTab]);
 
   // Inactivity Auto-Logout for Super Admin & Admin (Configurable, defaults to 10 Minutes)
@@ -1030,46 +1034,21 @@ function AdminPage() {
     const cleanEmail = emailInput.trim().toLowerCase();
     const cleanPass = passwordInput.trim();
 
-    // 1. Super Admin Credentials
-    let authRole: "super_admin" | "admin" | null = null;
+    // 1. Static credentials — exactly 3 authorized users
+    let authRole: "super_admin" | "admin" | "leads_manager" | null = null;
     let authName = "Admin";
 
-    const isSuperAdminEmail =
-      cleanEmail === "superadmin@aistudio.com" ||
-      cleanEmail === "sa@aistudio.com" ||
-      cleanEmail === "superadmin@quickuppaistudio.us" ||
-      cleanEmail === "sa@quickuppaistudio.us" ||
-      cleanEmail === "superadmin";
-
-    const isSuperAdminPass =
-      cleanPass === "SA@123" ||
-      cleanPass === "Anay@123" ||
-      cleanPass === "Admin@123";
-
-    const isAdminEmail =
-      cleanEmail === "admin@aistudio.com" ||
-      cleanEmail === "admin@quickuppaistudio.us" ||
-      cleanEmail === "qsaistudio@gmail.com" ||
-      cleanEmail === "info@quickuppaistudio.us" ||
-      cleanEmail === "admin";
-
-    const isAdminPass =
-      cleanPass === "Admin@123" ||
-      cleanPass === "Anay@0079" ||
-      cleanPass === "admin" ||
-      cleanPass === "SA@123" ||
-      cleanPass === "Anay@123";
-
-    if (isSuperAdminEmail && isSuperAdminPass) {
+    if (cleanEmail === "sa@aistudio.us" && cleanPass === "Anay@8080") {
       authRole = "super_admin";
       authName = "Super Admin";
-    }
-    // 2. Operational Admin Credentials
-    else if (isAdminEmail && isAdminPass) {
+    } else if (cleanEmail === "admin@aistudio.us" && cleanPass === "Admin@123") {
       authRole = "admin";
       authName = "Admin";
+    } else if (cleanEmail === "lm@aistudio.us" && cleanPass === "leads@123") {
+      authRole = "leads_manager";
+      authName = "Leads Manager";
     } else {
-      // 3. Check dynamically registered admin users in database/local state
+      // 2. Check dynamically registered admin users in database/local state
       const dynamicUser = adminUsers.find(
         (u) => u.email.toLowerCase() === cleanEmail && u.password === cleanPass && u.status === "active"
       );
@@ -2831,6 +2810,7 @@ function AdminPage() {
               </span>
             </button>
 
+            {session?.role !== "leads_manager" && (
             <button
               onClick={() => handleSelectOrdersTab()}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
@@ -2849,6 +2829,7 @@ function AdminPage() {
                 {orders.length}
               </span>
             </button>
+            )}
 
             <button
               onClick={() => { setActiveTab("calendly"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
@@ -3005,7 +2986,7 @@ function AdminPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={handleExportCSV}
+                  onClick={() => exportCSV(false)}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
                 >
                   <Download className="h-3.5 w-3.5" />
@@ -3372,7 +3353,7 @@ function AdminPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={handleExportCSV}
+                  onClick={() => exportCSV(false)}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
                 >
                   <Download className="h-3.5 w-3.5" />
@@ -4192,7 +4173,7 @@ function AdminPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={handleExportCSV}
+                  onClick={() => exportMetaCSV()}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
                 >
                   <Download className="h-3.5 w-3.5" />
