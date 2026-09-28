@@ -348,123 +348,90 @@ function AdminPage() {
   const [leadsActivitySubTab, setLeadsActivitySubTab] = useState<"website_manual" | "meta" | "all">("website_manual");
   const [activitySearchTerm, setActivitySearchTerm] = useState<string>("");
 
-  // 1. Calendly Category: Strictly Calendly & Strategy Call events ONLY
-  const calendlyActivityLogs = useMemo(() => {
-    return activityLogs.filter((log) => {
+  // Strict Mutually Exclusive Classification for Activity Logs
+  const classifiedLogs = useMemo(() => {
+    return activityLogs.map((log) => {
       const act = (log.action || "").toLowerCase();
       const det = (log.details || "").toLowerCase();
-      return (
-        act.includes("calendly") ||
-        act.includes("meeting") ||
-        act.includes("strategy call") ||
-        det.includes("calendly") ||
-        det.includes("meeting booked") ||
-        det.includes("meeting scheduled") ||
-        det.includes("meeting cancelled") ||
-        det.includes("meeting rescheduled") ||
-        det.includes("meeting updated") ||
-        det.includes("strategy call")
-      );
-    });
-  }, [activityLogs]);
+      const perf = (log.performed_by || "").toLowerCase();
 
-  // 2. User Activity Category: Strictly User/Admin Authentication & Account Management ONLY (Never Leads)
-  const userActivityLogs = useMemo(() => {
-    return activityLogs.filter((log) => {
-      // Must NOT be a lead log
-      if (log.lead_id) return false;
-      const act = (log.action || "").toLowerCase();
-      const det = (log.details || "").toLowerCase();
-
-      // Ignore if it's a calendly action
-      if (act.includes("calendly") || act.includes("meeting") || det.includes("calendly")) return false;
-
-      // Ignore if it's a lead action
-      if (act.includes("lead") || det.includes("lead")) return false;
-
-      return (
-        act.includes("logged in") ||
-        act.includes("login") ||
-        act.includes("logout") ||
-        act.includes("user created") ||
-        act.includes("admin user") ||
-        act.includes("user status") ||
-        act.includes("user deleted") ||
-        act.includes("password") ||
-        act.includes("security") ||
-        det.includes("logged in from ip") ||
-        det.includes("account created") ||
-        det.includes("status changed to active") ||
-        det.includes("status changed to inactive") ||
-        det.includes("admin account deleted")
-      );
-    });
-  }, [activityLogs]);
-
-  // Helper to identify Meta lead logs
-  const isMetaLog = (log: ActivityLog) => {
-    const act = (log.action || "").toLowerCase();
-    const det = (log.details || "").toLowerCase();
-    if (act.includes("meta") || det.includes("meta lead") || det.includes("from meta") || det.includes("meta ads")) {
-      return true;
-    }
-    if (log.lead_id) {
-      const foundLead = leads.find((l) => l.id === log.lead_id);
-      if (foundLead && (foundLead.source?.toLowerCase().includes("meta") || Boolean(foundLead.meta_lead_id))) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  // 3. Leads Category: Strictly Lead & Project Actions ONLY
-  const leadsActivityLogs = useMemo(() => {
-    return activityLogs.filter((log) => {
-      // Ignore if it's a calendly log
-      const act = (log.action || "").toLowerCase();
-      const det = (log.details || "").toLowerCase();
+      // 1. Calendly / Strategy Call Category (STRICT)
       if (
         act.includes("calendly") ||
         act.includes("meeting") ||
         act.includes("strategy call") ||
         det.includes("calendly") ||
-        det.includes("meeting booked") ||
-        det.includes("meeting scheduled")
+        det.includes("strategy call") ||
+        det.includes("meeting") ||
+        perf.includes("calendly")
       ) {
-        return false;
+        return { log, category: "calendly" as const, isMeta: false };
       }
 
-      // Ignore if it's a user auth log without lead_id
+      // 2. User Activity / Authentication Category (STRICT)
       if (
         !log.lead_id &&
         (act.includes("logged in") ||
-          act.includes("admin user created") ||
-          act.includes("admin user status") ||
-          act.includes("admin user deleted") ||
-          det.includes("logged in from ip"))
+          act.includes("login") ||
+          act.includes("logout") ||
+          act.includes("user created") ||
+          act.includes("admin user") ||
+          act.includes("user status") ||
+          act.includes("user deleted") ||
+          act.includes("password") ||
+          act.includes("security") ||
+          det.includes("logged in from ip") ||
+          det.includes("account created") ||
+          det.includes("status changed to active") ||
+          det.includes("status changed to inactive") ||
+          det.includes("admin account deleted"))
       ) {
-        return false;
+        return { log, category: "user_activity" as const, isMeta: false };
       }
 
-      return (
-        Boolean(log.lead_id) ||
-        act.includes("lead") ||
-        act.includes("project") ||
-        act.includes("recycle bin") ||
-        det.includes("lead") ||
-        det.includes("project")
-      );
+      // 3. Leads Category (STRICT - NEVER Calendly, NEVER User Auth)
+      let isMeta = false;
+      if (
+        act.includes("meta") ||
+        det.includes("meta lead") ||
+        det.includes("from meta") ||
+        det.includes("meta ads")
+      ) {
+        isMeta = true;
+      } else if (log.lead_id) {
+        const foundLead = leads.find((l) => l.id === log.lead_id);
+        if (foundLead && (foundLead.source?.toLowerCase().includes("meta") || Boolean(foundLead.meta_lead_id))) {
+          isMeta = true;
+        }
+      }
+
+      return { log, category: "leads" as const, isMeta };
     });
-  }, [activityLogs]);
+  }, [activityLogs, leads]);
+
+  // 1. Calendly Logs
+  const calendlyActivityLogs = useMemo(() => {
+    return classifiedLogs.filter((c) => c.category === "calendly").map((c) => c.log);
+  }, [classifiedLogs]);
+
+  // 2. User Activity Logs
+  const userActivityLogs = useMemo(() => {
+    return classifiedLogs.filter((c) => c.category === "user_activity").map((c) => c.log);
+  }, [classifiedLogs]);
+
+  // 3. Leads Logs
+  const leadsActivityLogs = useMemo(() => {
+    return classifiedLogs.filter((c) => c.category === "leads").map((c) => c.log);
+  }, [classifiedLogs]);
 
   // Sub-segregation: Meta Leads vs Website/Manual Leads
   const metaLeadsActivityLogs = useMemo(() => {
-    return leadsActivityLogs.filter((log) => isMetaLog(log));
-  }, [leadsActivityLogs, leads]);
+    return classifiedLogs.filter((c) => c.category === "leads" && c.isMeta).map((c) => c.log);
+  }, [classifiedLogs]);
 
   const websiteLeadsActivityLogs = useMemo(() => {
-    return leadsActivityLogs.filter((log) => !isMetaLog(log));
-  }, [leadsActivityLogs, leads]);
+    return classifiedLogs.filter((c) => c.category === "leads" && !c.isMeta).map((c) => c.log);
+  }, [classifiedLogs]);
 
   const filteredActivityLogs = useMemo(() => {
     let list = activityLogs;
