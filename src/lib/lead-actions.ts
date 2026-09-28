@@ -201,11 +201,18 @@ export const addManualLeadServerFn = createServerFn({ method: "POST" })
         user_role: data.userRole || "admin",
       });
 
-      // Create CRM Notification
+      // Create CRM Notification (§20: New Meta lead vs New manual lead)
       try {
+        const isMeta =
+          (data.source || "").toLowerCase().includes("meta") ||
+          (data.source || "").toLowerCase().includes("facebook") ||
+          (data.source || "").toLowerCase().includes("instagram");
+        const notifType = isMeta ? "lead_meta" : "lead_manual";
+        const notifTitle = isMeta ? "New Meta Lead Received" : "New Manual Lead Created";
+
         const notif = await saveCRMNotificationInDb({
-          type: "lead_manual",
-          title: "New Manual Lead Created",
+          type: notifType,
+          title: notifTitle,
           message: `${leadSource} lead created for ${saved.name} (${saved.phone}) by ${data.createdBy || "Admin"}`,
           entity_id: saved.id,
           actor: data.createdBy || "Admin",
@@ -217,7 +224,7 @@ export const addManualLeadServerFn = createServerFn({ method: "POST" })
           notification: notif,
         });
       } catch (notifErr) {
-        console.warn("Failed to create manual lead CRM notification:", notifErr);
+        console.warn("Failed to create manual/meta lead CRM notification:", notifErr);
       }
 
       return { success: true, lead: saved };

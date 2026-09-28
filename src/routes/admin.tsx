@@ -21,6 +21,7 @@ import {
   Eye,
   EyeOff,
   Filter,
+  Globe,
   Layers,
   Loader2,
   Lock,
@@ -1953,6 +1954,22 @@ function AdminPage() {
     return Array.from(set).sort();
   }, [leads]);
 
+  // Overall & Source-Wise Summary Counts (§17 & §18)
+  const allCrmLeads = useMemo(() => leads.filter((l) => !isIndiaLead(l)), [leads]);
+  const sourceWebsiteCount = useMemo(() => allCrmLeads.filter((l) => !isMetaLead(l) && (l.source || "").toLowerCase().trim() !== "manual").length, [allCrmLeads]);
+  const sourceManualCount = useMemo(() => allCrmLeads.filter((l) => (l.source || "").toLowerCase().trim() === "manual").length, [allCrmLeads]);
+  const sourceMetaCount = useMemo(() => allCrmLeads.filter((l) => isMetaLead(l)).length, [allCrmLeads]);
+
+  // Overall Lead Summary Counts (§17)
+  const allTotalLeadsCount = allCrmLeads.length;
+  const allNewLeadsCount = allCrmLeads.filter((l) => l.status === "New").length;
+  const allContactedCount = allCrmLeads.filter((l) => l.status === "Contacted").length;
+  const allInProgressCount = allCrmLeads.filter((l) => l.status === "In Progress").length;
+  const allHoldCount = allCrmLeads.filter((l) => l.status === "Hold").length;
+  const allClosedCount = allCrmLeads.filter((l) => l.status === "Closed").length;
+  const allProjectsInProgressCount = allCrmLeads.filter((l) => (l.project_status || "In Progress") === "In Progress" && l.status !== "Closed").length;
+  const allProjectsDeliveredCount = allCrmLeads.filter((l) => l.project_status === "Delivered").length;
+
   // Website Leads KPI Summary Counts (Tab 1)
   const totalLeadsCount = websiteLeads.length;
   const newLeadsCount = websiteLeads.filter((l) => l.status === "New").length;
@@ -1961,7 +1978,7 @@ function AdminPage() {
   const holdCount = websiteLeads.filter((l) => l.status === "Hold").length;
   const closedCount = websiteLeads.filter((l) => l.status === "Closed").length;
   const projectsDeliveredCount = websiteLeads.filter((l) => l.project_status === "Delivered").length;
-  const projectsInProgressCount = websiteLeads.filter((l) => (l.project_status || "In Progress") === "In Progress").length;
+  const projectsInProgressCount = websiteLeads.filter((l) => (l.project_status || "In Progress") === "In Progress" && l.status !== "Closed").length;
 
   // Meta Leads KPI Summary Counts (Tab 2)
   const metaTotalCount = metaLeads.length;
@@ -1971,9 +1988,7 @@ function AdminPage() {
   const metaHoldCount = metaLeads.filter((l) => l.status === "Hold").length;
   const metaClosedCount = metaLeads.filter((l) => l.status === "Closed").length;
   const metaDeliveredCount = metaLeads.filter((l) => l.project_status === "Delivered").length;
-  const usaLeadsCount = leads.filter((l) => isLeadUsa(l)).length;
-  const manualLeadsCount = leads.filter((l) => l.source === "Manual").length;
-  const websiteLeadsCount = leads.filter((l) => l.source !== "Manual" && !isLeadUsa(l)).length;
+  const metaProjectsInProgressCount = metaLeads.filter((l) => (l.project_status || "In Progress") === "In Progress" && l.status !== "Closed").length;
 
   // Filtered Orders
   const filteredOrders = useMemo(() => {
@@ -2514,15 +2529,102 @@ function AdminPage() {
         {/* ========================================================================= */}
         {activeTab === "leads" && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            {/* KPI Summary Cards - Pure White Theme with Interactive Clickable Filters */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7 sm:gap-4">
+            {/* Section 18 & Section 17: Source-Wise Lead Reporting Overview */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs space-y-3">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-blue-600" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Source-Wise Lead Reporting (§18)
+                  </h3>
+                </div>
+                <span className="text-xs font-semibold text-slate-500 font-mono">
+                  {allTotalLeadsCount} Total Leads Across All Sources
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {/* Website Leads */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterSource(filterSource === "USA Website" ? "All" : "USA Website");
+                  }}
+                  className={`flex items-center justify-between rounded-xl border p-3.5 transition-all text-left cursor-pointer ${
+                    filterSource === "USA Website"
+                      ? "border-blue-500 bg-blue-50/40 ring-2 ring-blue-500/20 shadow-xs"
+                      : "border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300"
+                  }`}
+                  title="Click to filter by Website leads"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-600 font-bold">
+                      <Globe className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">Website</p>
+                      <p className="text-[11px] text-slate-500">Inbound Landing Forms</p>
+                    </div>
+                  </div>
+                  <span className="text-2xl font-black text-blue-600 font-mono">{sourceWebsiteCount}</span>
+                </button>
+
+                {/* Manual Leads */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterSource(filterSource === "Manual" ? "All" : "Manual");
+                  }}
+                  className={`flex items-center justify-between rounded-xl border p-3.5 transition-all text-left cursor-pointer ${
+                    filterSource === "Manual"
+                      ? "border-amber-500 bg-amber-50/40 ring-2 ring-amber-500/20 shadow-xs"
+                      : "border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300"
+                  }`}
+                  title="Click to filter by Manual leads"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-600 font-bold">
+                      <UserPlus className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">Manual</p>
+                      <p className="text-[11px] text-slate-500">Admin Direct Entry</p>
+                    </div>
+                  </div>
+                  <span className="text-2xl font-black text-amber-600 font-mono">{sourceManualCount}</span>
+                </button>
+
+                {/* Meta Leads */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("meta_leads")}
+                  className="flex items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 transition-all text-left hover:bg-purple-50/30 hover:border-purple-300 cursor-pointer shadow-xs"
+                  title="Click to open Meta Leads tab"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-100 text-purple-600 font-bold">
+                      <Megaphone className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">Meta</p>
+                      <p className="text-[11px] text-slate-500">Facebook & IG Ads</p>
+                    </div>
+                  </div>
+                  <span className="text-2xl font-black text-purple-600 font-mono">{sourceMetaCount}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Section 17: Lead & Project Real-Time Summary Cards */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8 sm:gap-3.5">
+              {/* Total Leads */}
               <button
                 type="button"
                 onClick={() => {
                   setFilterStatus("All");
                   setFilterProjectStatus("All");
                 }}
-                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
                   filterStatus === "All" && filterProjectStatus === "All"
                     ? "border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/20"
                     : "border-slate-200/90 hover:border-slate-300"
@@ -2538,12 +2640,13 @@ function AdminPage() {
                 <p className="mt-2 text-2xl font-black text-slate-900">{totalLeadsCount}</p>
               </button>
 
+              {/* New */}
               <button
                 type="button"
                 onClick={() => {
                   setFilterStatus(filterStatus === "New" ? "All" : "New");
                 }}
-                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
                   filterStatus === "New"
                     ? "border-blue-500 ring-2 ring-blue-500/30 bg-blue-50/30"
                     : "border-slate-200/90 hover:border-blue-300"
@@ -2551,18 +2654,19 @@ function AdminPage() {
                 title="Click to filter by New status"
               >
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
-                  <span>New Leads</span>
+                  <span>New</span>
                   <span className="h-2.5 w-2.5 rounded-full bg-blue-500 shadow-xs" />
                 </div>
                 <p className="mt-2 text-2xl font-black text-blue-600">{newLeadsCount}</p>
               </button>
 
+              {/* Contacted */}
               <button
                 type="button"
                 onClick={() => {
                   setFilterStatus(filterStatus === "Contacted" ? "All" : "Contacted");
                 }}
-                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
                   filterStatus === "Contacted"
                     ? "border-amber-500 ring-2 ring-amber-500/30 bg-amber-50/30"
                     : "border-slate-200/90 hover:border-amber-300"
@@ -2576,12 +2680,13 @@ function AdminPage() {
                 <p className="mt-2 text-2xl font-black text-amber-600">{contactedCount}</p>
               </button>
 
+              {/* In Progress */}
               <button
                 type="button"
                 onClick={() => {
                   setFilterStatus(filterStatus === "In Progress" ? "All" : "In Progress");
                 }}
-                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
                   filterStatus === "In Progress"
                     ? "border-orange-500 ring-2 ring-orange-500/30 bg-orange-50/30"
                     : "border-slate-200/90 hover:border-orange-300"
@@ -2595,12 +2700,13 @@ function AdminPage() {
                 <p className="mt-2 text-2xl font-black text-orange-600">{inProgressCount}</p>
               </button>
 
+              {/* Hold */}
               <button
                 type="button"
                 onClick={() => {
                   setFilterStatus(filterStatus === "Hold" ? "All" : "Hold");
                 }}
-                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
                   filterStatus === "Hold"
                     ? "border-slate-500 ring-2 ring-slate-500/30 bg-slate-100/50"
                     : "border-slate-200/90 hover:border-slate-300"
@@ -2608,18 +2714,19 @@ function AdminPage() {
                 title="Click to filter by On Hold status"
               >
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
-                  <span>On Hold</span>
+                  <span>Hold</span>
                   <span className="h-2.5 w-2.5 rounded-full bg-gray-400 shadow-xs" />
                 </div>
                 <p className="mt-2 text-2xl font-black text-slate-700">{holdCount}</p>
               </button>
 
+              {/* Closed */}
               <button
                 type="button"
                 onClick={() => {
                   setFilterStatus(filterStatus === "Closed" ? "All" : "Closed");
                 }}
-                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
                   filterStatus === "Closed"
                     ? "border-emerald-500 ring-2 ring-emerald-500/30 bg-emerald-50/30"
                     : "border-slate-200/90 hover:border-emerald-300"
@@ -2633,12 +2740,33 @@ function AdminPage() {
                 <p className="mt-2 text-2xl font-black text-emerald-600">{closedCount}</p>
               </button>
 
+              {/* Projects In Progress */}
+              <button
+                type="button"
+                onClick={() => {
+                  setFilterProjectStatus(filterProjectStatus === "In Progress" ? "All" : "In Progress");
+                }}
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                  filterProjectStatus === "In Progress"
+                    ? "border-cyan-500 ring-2 ring-cyan-500/30 bg-cyan-50/30"
+                    : "border-slate-200/90 hover:border-cyan-300"
+                }`}
+                title="Click to filter by Projects in progress"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                  <span>Proj. Active</span>
+                  <Clock className="h-4 w-4 text-cyan-500" />
+                </div>
+                <p className="mt-2 text-2xl font-black text-cyan-600">{projectsInProgressCount}</p>
+              </button>
+
+              {/* Delivered */}
               <button
                 type="button"
                 onClick={() => {
                   setFilterProjectStatus(filterProjectStatus === "Delivered" ? "All" : "Delivered");
                 }}
-                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer col-span-2 sm:col-span-1 ${
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
                   filterProjectStatus === "Delivered"
                     ? "border-purple-500 ring-2 ring-purple-500/30 bg-purple-50/30"
                     : "border-slate-200/90 hover:border-purple-300"
@@ -3259,19 +3387,103 @@ function AdminPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* TAB: META LEADS MANAGEMENT */}
+        {/* TAB 2: META LEADS MANAGEMENT */}
         {/* ========================================================================= */}
         {activeTab === "meta_leads" && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            {/* Meta KPI Summary Cards - Pure White Theme with Interactive Clickable Filters */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7 sm:gap-4">
+            {/* Section 18 & Section 17: Source-Wise Lead Reporting Overview */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs space-y-3">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <Megaphone className="h-4 w-4 text-purple-600" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Source-Wise Lead Reporting (§18)
+                  </h3>
+                </div>
+                <span className="text-xs font-semibold text-slate-500 font-mono">
+                  {allTotalLeadsCount} Total Leads Across All Sources
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {/* Website Leads */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("leads");
+                    setFilterSource("USA Website");
+                  }}
+                  className="flex items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 transition-all text-left hover:bg-blue-50/30 hover:border-blue-300 cursor-pointer shadow-xs"
+                  title="Click to open Website Leads tab"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-600 font-bold">
+                      <Globe className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">Website</p>
+                      <p className="text-[11px] text-slate-500">Inbound Landing Forms</p>
+                    </div>
+                  </div>
+                  <span className="text-2xl font-black text-blue-600 font-mono">{sourceWebsiteCount}</span>
+                </button>
+
+                {/* Manual Leads */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("leads");
+                    setFilterSource("Manual");
+                  }}
+                  className="flex items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 transition-all text-left hover:bg-amber-50/30 hover:border-amber-300 cursor-pointer shadow-xs"
+                  title="Click to open Manual Leads"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-600 font-bold">
+                      <UserPlus className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">Manual</p>
+                      <p className="text-[11px] text-slate-500">Admin Direct Entry</p>
+                    </div>
+                  </div>
+                  <span className="text-2xl font-black text-amber-600 font-mono">{sourceManualCount}</span>
+                </button>
+
+                {/* Meta Leads */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMetaFilterStatus("All");
+                    setMetaFilterProjectStatus("All");
+                  }}
+                  className="flex items-center justify-between rounded-xl border border-purple-500 bg-purple-50/40 p-3.5 ring-2 ring-purple-500/20 shadow-xs transition-all text-left cursor-pointer"
+                  title="Viewing Meta Leads"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-100 text-purple-600 font-bold">
+                      <Megaphone className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">Meta</p>
+                      <p className="text-[11px] text-slate-500">Facebook & IG Ads</p>
+                    </div>
+                  </div>
+                  <span className="text-2xl font-black text-purple-600 font-mono">{sourceMetaCount}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Section 17: Meta Lead & Project Real-Time Summary Cards */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8 sm:gap-3.5">
+              {/* Total Meta */}
               <button
                 type="button"
                 onClick={() => {
                   setMetaFilterStatus("All");
                   setMetaFilterProjectStatus("All");
                 }}
-                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
                   metaFilterStatus === "All" && metaFilterProjectStatus === "All"
                     ? "border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/20"
                     : "border-slate-200/90 hover:border-slate-300"
@@ -3287,12 +3499,13 @@ function AdminPage() {
                 <p className="mt-2 text-2xl font-black text-slate-900">{metaTotalCount}</p>
               </button>
 
+              {/* New */}
               <button
                 type="button"
                 onClick={() => {
                   setMetaFilterStatus(metaFilterStatus === "New" ? "All" : "New");
                 }}
-                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
                   metaFilterStatus === "New"
                     ? "border-blue-500 ring-2 ring-blue-500/30 bg-blue-50/30"
                     : "border-slate-200/90 hover:border-blue-300"
@@ -3300,18 +3513,19 @@ function AdminPage() {
                 title="Click to filter by New status"
               >
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
-                  <span>New Leads</span>
+                  <span>New</span>
                   <span className="h-2.5 w-2.5 rounded-full bg-blue-500 shadow-xs" />
                 </div>
                 <p className="mt-2 text-2xl font-black text-blue-600">{metaNewCount}</p>
               </button>
 
+              {/* Contacted */}
               <button
                 type="button"
                 onClick={() => {
                   setMetaFilterStatus(metaFilterStatus === "Contacted" ? "All" : "Contacted");
                 }}
-                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
                   metaFilterStatus === "Contacted"
                     ? "border-amber-500 ring-2 ring-amber-500/30 bg-amber-50/30"
                     : "border-slate-200/90 hover:border-amber-300"
@@ -3325,12 +3539,13 @@ function AdminPage() {
                 <p className="mt-2 text-2xl font-black text-amber-600">{metaContactedCount}</p>
               </button>
 
+              {/* In Progress */}
               <button
                 type="button"
                 onClick={() => {
                   setMetaFilterStatus(metaFilterStatus === "In Progress" ? "All" : "In Progress");
                 }}
-                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
                   metaFilterStatus === "In Progress"
                     ? "border-orange-500 ring-2 ring-orange-500/30 bg-orange-50/30"
                     : "border-slate-200/90 hover:border-orange-300"
@@ -3344,12 +3559,13 @@ function AdminPage() {
                 <p className="mt-2 text-2xl font-black text-orange-600">{metaInProgressCount}</p>
               </button>
 
+              {/* Hold */}
               <button
                 type="button"
                 onClick={() => {
                   setMetaFilterStatus(metaFilterStatus === "Hold" ? "All" : "Hold");
                 }}
-                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
                   metaFilterStatus === "Hold"
                     ? "border-slate-500 ring-2 ring-slate-500/30 bg-slate-100/50"
                     : "border-slate-200/90 hover:border-slate-300"
@@ -3357,18 +3573,19 @@ function AdminPage() {
                 title="Click to filter by On Hold status"
               >
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
-                  <span>On Hold</span>
+                  <span>Hold</span>
                   <span className="h-2.5 w-2.5 rounded-full bg-gray-400 shadow-xs" />
                 </div>
                 <p className="mt-2 text-2xl font-black text-slate-700">{metaHoldCount}</p>
               </button>
 
+              {/* Closed */}
               <button
                 type="button"
                 onClick={() => {
                   setMetaFilterStatus(metaFilterStatus === "Closed" ? "All" : "Closed");
                 }}
-                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
                   metaFilterStatus === "Closed"
                     ? "border-emerald-500 ring-2 ring-emerald-500/30 bg-emerald-50/30"
                     : "border-slate-200/90 hover:border-emerald-300"
@@ -3382,12 +3599,33 @@ function AdminPage() {
                 <p className="mt-2 text-2xl font-black text-emerald-600">{metaClosedCount}</p>
               </button>
 
+              {/* Projects In Progress */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMetaFilterProjectStatus(metaFilterProjectStatus === "In Progress" ? "All" : "In Progress");
+                }}
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
+                  metaFilterProjectStatus === "In Progress"
+                    ? "border-cyan-500 ring-2 ring-cyan-500/30 bg-cyan-50/30"
+                    : "border-slate-200/90 hover:border-cyan-300"
+                }`}
+                title="Click to filter by Projects in progress"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                  <span>Proj. Active</span>
+                  <Clock className="h-4 w-4 text-cyan-500" />
+                </div>
+                <p className="mt-2 text-2xl font-black text-cyan-600">{metaProjectsInProgressCount}</p>
+              </button>
+
+              {/* Delivered */}
               <button
                 type="button"
                 onClick={() => {
                   setMetaFilterProjectStatus(metaFilterProjectStatus === "Delivered" ? "All" : "Delivered");
                 }}
-                className={`rounded-2xl border bg-white p-4 shadow-xs transition-all hover:shadow-md text-left cursor-pointer col-span-2 sm:col-span-1 ${
+                className={`rounded-2xl border bg-white p-3.5 shadow-xs transition-all hover:shadow-md text-left cursor-pointer ${
                   metaFilterProjectStatus === "Delivered"
                     ? "border-purple-500 ring-2 ring-purple-500/30 bg-purple-50/30"
                     : "border-slate-200/90 hover:border-purple-300"
