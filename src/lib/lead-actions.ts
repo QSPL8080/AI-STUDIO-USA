@@ -566,7 +566,7 @@ export const fetchAdminUsersServerFn = createServerFn({ method: "GET" }).handler
 });
 
 export const createAdminUserServerFn = createServerFn({ method: "POST" })
-  .validator((data: { name: string; email: string; password: string; role: "super_admin" | "admin"; status?: "active" | "inactive"; performedBy?: string }) => data)
+  .validator((data: { name: string; email: string; password: string; role: "super_admin" | "admin" | "leads_manager"; status?: "active" | "inactive"; performedBy?: string }) => data)
   .handler(async ({ data }) => {
     try {
       const user = await saveAdminUserInDb(data);

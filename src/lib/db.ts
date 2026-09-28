@@ -42,7 +42,7 @@ export interface AdminUser {
   name: string;
   email: string;
   password?: string;
-  role: "super_admin" | "admin";
+  role: "super_admin" | "admin" | "leads_manager";
   status: "active" | "inactive";
   created_at: string;
   last_login_at?: string;
@@ -909,7 +909,7 @@ export async function saveAdminUser(user: {
   name: string;
   email: string;
   password: string;
-  role: "super_admin" | "admin";
+  role: "super_admin" | "admin" | "leads_manager";
   status?: "active" | "inactive";
 }): Promise<AdminUser> {
   const id = `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;

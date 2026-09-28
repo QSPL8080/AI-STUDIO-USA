@@ -589,7 +589,19 @@ function AdminPage() {
       }
     });
 
-    // 3. Guaranteed operational Admin entry if not already present
+    // 3. Built-in Leads Manager account (static login, Leads + Meta Leads tabs only)
+    if (!map.has("lm@aistudio.us")) {
+      map.set("lm@aistudio.us", {
+        id: "usr_leads_manager",
+        name: "Leads Manager",
+        email: "lm@aistudio.us",
+        role: "leads_manager",
+        status: "active",
+        created_at: "System Protected",
+      } as AdminUser);
+    }
+
+    // 4. Guaranteed operational Admin entry if not already present
     if (!map.has("admin@aistudio.com")) {
       map.set("admin@aistudio.com", {
         id: "usr_admin_1",
@@ -637,6 +649,7 @@ function AdminPage() {
   };
 
   const isSuperAdmin = session?.role === "super_admin";
+  const isLeadsManager = session?.role === "leads_manager";
 
   // Dynamic accent helpers — consume the CSS vars set by the theme useEffect
   // Usage:  className={isActive ? accentNavActive : accentNavIdle}
@@ -732,8 +745,8 @@ function AdminPage() {
     if (session && session.role !== "super_admin" && (activeTab === "users" || activeTab === "security" || activeTab === "settings")) {
       setActiveTab("leads");
     }
-    // Leads Manager: can only access leads, meta_leads, calendly, activity, recycle_bin, dashboard
-    if (session && session.role === "leads_manager" && (activeTab === "orders" || activeTab === "users" || activeTab === "security" || activeTab === "settings")) {
+    // Leads Manager: can ONLY access the Leads and Meta Leads tabs
+    if (session && session.role === "leads_manager" && activeTab !== "leads" && activeTab !== "meta_leads") {
       setActiveTab("leads");
     }
   }, [session, activeTab]);
@@ -2835,6 +2848,7 @@ function AdminPage() {
         {/* Tab Navigation Bar */}
         <div className="overflow-x-auto border-t border-slate-200 bg-white scrollbar-none">
           <div className="mx-auto flex w-full max-w-[1750px] items-center gap-1 sm:gap-1.5 px-3 sm:px-6 py-1.5 min-w-max">
+            {!isLeadsManager && (
             <button
               onClick={() => { setActiveTab("dashboard"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
@@ -2847,6 +2861,7 @@ function AdminPage() {
               <LayoutDashboard className="h-4 w-4" />
               <span>Dashboard</span>
             </button>
+            )}
 
             <button
               onClick={() => { setActiveTab("leads"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
@@ -2923,6 +2938,7 @@ function AdminPage() {
               </span>
             </button> */}
 
+            {!isLeadsManager && (
             <button
               onClick={() => { setActiveTab("activity"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
@@ -2935,6 +2951,7 @@ function AdminPage() {
               <Clock className="h-4 w-4" />
               <span>Activity History</span>
             </button>
+            )}
 
             {/* Super Admin Tabs */}
             {isSuperAdmin && (
@@ -2977,6 +2994,7 @@ function AdminPage() {
               </>
             )}
 
+            {!isLeadsManager && (
             <button
               onClick={() => { setActiveTab("recycle_bin"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
@@ -2993,6 +3011,7 @@ function AdminPage() {
                 </span>
               )}
             </button>
+            )}
           </div>
         </div>
       </header>
@@ -6054,6 +6073,8 @@ function AdminPage() {
                 <tbody className="divide-y divide-slate-100">
                   {uniqueAdminUsers.map((user) => {
                     const isSuper = user.role === "super_admin" || user.email.toLowerCase() === "sa@aistudio.com";
+                    const isLM = (user.role as string) === "leads_manager";
+                    const isBuiltIn = isSuper || user.id === "usr_leads_manager";
 
                     return (
                       <tr key={user.email} className="hover:bg-slate-50/75 transition-colors">
@@ -6063,9 +6084,11 @@ function AdminPage() {
                           <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
                             isSuper
                               ? "bg-purple-100 text-purple-800 border border-purple-200"
-                              : "bg-blue-100 text-blue-800 border border-blue-200"
+                              : isLM
+                                ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                : "bg-blue-100 text-blue-800 border border-blue-200"
                           }`}>
-                            {isSuper ? "Super Admin" : "Admin"}
+                            {isSuper ? "Super Admin" : isLM ? "Leads Manager" : "Admin"}
                           </span>
                         </td>
                         <td className="px-4 py-3.5">
@@ -6081,7 +6104,7 @@ function AdminPage() {
                           {user.created_at.includes("-") ? new Date(user.created_at).toLocaleDateString() : user.created_at}
                         </td>
                         <td className="px-4 py-3.5 text-right">
-                          {isSuper ? (
+                          {isBuiltIn ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 border border-purple-200 px-2.5 py-1 text-[11px] font-bold text-purple-700 select-none cursor-not-allowed">
                               <Lock className="h-3 w-3 text-purple-500" />
                               <span>Protected</span>
@@ -8330,7 +8353,7 @@ function AdminPage() {
                 const name = formData.get("name") as string;
                 const email = formData.get("email") as string;
                 const password = formData.get("password") as string;
-                const role = formData.get("role") as "super_admin" | "admin";
+                const role = formData.get("role") as "super_admin" | "admin" | "leads_manager";
 
                 try {
                   const res = await createAdminUserServerFn({
@@ -8404,6 +8427,7 @@ function AdminPage() {
                   }`}
                 >
                   <option value="admin">Admin (Operational CRM Access)</option>
+                  <option value="leads_manager">Leads Manager (Leads &amp; Meta Leads tabs only)</option>
                   <option value="super_admin">Super Admin (Full System & User Control)</option>
                 </select>
               </div>
