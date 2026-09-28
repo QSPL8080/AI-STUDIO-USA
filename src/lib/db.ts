@@ -28,6 +28,12 @@ export interface Lead {
   meeting_link?: string;
   meeting_type?: string;
   assigned_admin?: string;
+  campaign_name?: string;
+  adset_name?: string;
+  ad_name?: string;
+  form_name?: string;
+  meta_lead_id?: string;
+  is_duplicate?: boolean;
   deleted_at?: string | null;
 }
 
@@ -249,6 +255,12 @@ export async function initDb() {
           ALTER TABLE leads ADD COLUMN IF NOT EXISTS meeting_link TEXT;
           ALTER TABLE leads ADD COLUMN IF NOT EXISTS meeting_type VARCHAR(128);
           ALTER TABLE leads ADD COLUMN IF NOT EXISTS assigned_admin VARCHAR(255);
+          ALTER TABLE leads ADD COLUMN IF NOT EXISTS campaign_name VARCHAR(255);
+          ALTER TABLE leads ADD COLUMN IF NOT EXISTS adset_name VARCHAR(255);
+          ALTER TABLE leads ADD COLUMN IF NOT EXISTS ad_name VARCHAR(255);
+          ALTER TABLE leads ADD COLUMN IF NOT EXISTS form_name VARCHAR(255);
+          ALTER TABLE leads ADD COLUMN IF NOT EXISTS meta_lead_id VARCHAR(128);
+          ALTER TABLE leads ADD COLUMN IF NOT EXISTS is_duplicate BOOLEAN DEFAULT FALSE;
           ALTER TABLE leads ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
 
           CREATE TABLE IF NOT EXISTS admin_users (
@@ -359,12 +371,68 @@ export async function saveLead(data: {
   meetingDate?: string;
   meetingTime?: string;
   meetingLink?: string;
+  meetingType?: string;
+  meetingStatus?: string;
   assignedAdmin?: string;
+  campaignName?: string;
+  adsetName?: string;
+  adName?: string;
+  formName?: string;
+  metaLeadId?: string;
+  isDuplicate?: boolean;
 }): Promise<Lead> {
   const id = `lead_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const status: LeadStatus = data.status || "New";
   const projectStatus: ProjectStatus = data.projectStatus || "In Progress";
   const now = new Date().toISOString();
+
+  // 13.1 Duplicate Lead Protection Check
+  try {
+    const existingLeads = await getLeads(false);
+    const cleanDigits = data.phone ? data.phone.replace(/\D/g, "").slice(-10) : "";
+    const cleanEmail = data.email ? data.email.trim().toLowerCase() : "";
+    const metaId = data.metaLeadId?.trim();
+
+    const matchedLead = existingLeads.find((l) => {
+      if (metaId && l.meta_lead_id === metaId) return true;
+      if (cleanEmail && l.email && l.email.trim().toLowerCase() === cleanEmail) return true;
+      if (cleanDigits.length >= 10 && l.phone) {
+        const lDigits = l.phone.replace(/\D/g, "").slice(-10);
+        if (lDigits === cleanDigits) return true;
+      }
+      return false;
+    });
+
+    if (matchedLead) {
+      // Update existing lead instead of duplicate
+      const appendNote = `[Duplicate Import on ${new Date().toLocaleDateString()}]: ${data.source} submission consolidated.`;
+      const updatedNotes = matchedLead.notes ? `${matchedLead.notes}\n${appendNote}` : appendNote;
+      
+      const updates: Partial<Lead> = {
+        is_duplicate: true,
+        notes: updatedNotes,
+        video_type: data.videoType || matchedLead.video_type,
+        campaign_name: data.campaignName || matchedLead.campaign_name,
+        adset_name: data.adsetName || matchedLead.adset_name,
+        ad_name: data.adName || matchedLead.ad_name,
+        form_name: data.formName || matchedLead.form_name,
+        meta_lead_id: data.metaLeadId || matchedLead.meta_lead_id,
+        requirement: data.requirement || matchedLead.requirement,
+      };
+
+      if (data.meetingDate) {
+        updates.meeting_date = data.meetingDate;
+        updates.meeting_time = data.meetingTime;
+        updates.meeting_link = data.meetingLink;
+        updates.meeting_status = data.meetingStatus || "scheduled";
+      }
+
+      await updateLead(matchedLead.id, updates);
+      return { ...matchedLead, ...updates };
+    }
+  } catch (dupErr) {
+    console.warn("Duplicate lead check error (continuing save):", dupErr);
+  }
 
   const record: Lead = {
     id,
@@ -386,7 +454,15 @@ export async function saveLead(data: {
     meeting_date: data.meetingDate || undefined,
     meeting_time: data.meetingTime || undefined,
     meeting_link: data.meetingLink || undefined,
+    meeting_status: data.meetingStatus || undefined,
+    meeting_type: data.meetingType || undefined,
     assigned_admin: data.assignedAdmin || undefined,
+    campaign_name: data.campaignName || undefined,
+    adset_name: data.adsetName || undefined,
+    ad_name: data.adName || undefined,
+    form_name: data.formName || undefined,
+    meta_lead_id: data.metaLeadId || undefined,
+    is_duplicate: data.isDuplicate || false,
     created_at: now,
   };
 
@@ -415,7 +491,15 @@ export async function saveLead(data: {
           meeting_date: record.meeting_date || null,
           meeting_time: record.meeting_time || null,
           meeting_link: record.meeting_link || null,
+          meeting_status: record.meeting_status || null,
+          meeting_type: record.meeting_type || null,
           assigned_admin: record.assigned_admin || null,
+          campaign_name: record.campaign_name || null,
+          adset_name: record.adset_name || null,
+          ad_name: record.ad_name || null,
+          form_name: record.form_name || null,
+          meta_lead_id: record.meta_lead_id || null,
+          is_duplicate: record.is_duplicate || false,
           created_at: record.created_at,
         }),
       });
@@ -433,8 +517,8 @@ export async function saveLead(data: {
   const pool = await getPool();
   if (pool) {
     const res = await pool.query(
-      `INSERT INTO leads (id, source, name, phone, email, video_type, video_quantity, business, location, industry, requirement, additional, status, project_status, notes, delivery_date, meeting_date, meeting_time, meeting_link, assigned_admin, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW())
+      `INSERT INTO leads (id, source, name, phone, email, video_type, video_quantity, business, location, industry, requirement, additional, status, project_status, notes, delivery_date, meeting_date, meeting_time, meeting_link, meeting_status, meeting_type, assigned_admin, campaign_name, adset_name, ad_name, form_name, meta_lead_id, is_duplicate, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, NOW())
        RETURNING *`,
       [
         id,
@@ -456,7 +540,15 @@ export async function saveLead(data: {
         data.meetingDate || null,
         data.meetingTime || null,
         data.meetingLink || null,
+        data.meetingStatus || null,
+        data.meetingType || null,
         data.assignedAdmin || null,
+        data.campaignName || null,
+        data.adsetName || null,
+        data.adName || null,
+        data.formName || null,
+        data.metaLeadId || null,
+        data.isDuplicate || false,
       ]
     );
     return res.rows[0];
@@ -1009,7 +1101,27 @@ export async function saveCalendlyMeeting(data: {
           data.notes || null,
         ]
       );
-      return res.rows[0];
+      const inserted = res.rows[0];
+
+      // Auto-link to matching lead in leads table (Section 14: Match Calendly meetings to existing leads)
+      try {
+        const cleanPhoneDigits = (data.phone || "").replace(/\D/g, "").slice(-10);
+        const leadRows = await pool.query(
+          `SELECT id FROM leads WHERE (email IS NOT NULL AND LOWER(email) = LOWER($1) AND $1 != '') OR (phone IS NOT NULL AND $2 != '' AND RIGHT(regexp_replace(phone, '\\D', '', 'g'), 10) = $2) LIMIT 1`,
+          [(data.email || "").trim(), cleanPhoneDigits]
+        );
+        if (leadRows.rows.length > 0) {
+          const matchedLeadId = leadRows.rows[0].id;
+          await pool.query(
+            `UPDATE leads SET meeting_date = $1, meeting_time = $2, meeting_link = $3, meeting_status = $4, meeting_type = $5 WHERE id = $6`,
+            [data.meeting_date, data.meeting_time, data.meeting_link, data.meeting_status || "scheduled", data.meeting_type || "Video Strategy Call", matchedLeadId]
+          );
+        }
+      } catch (linkErr) {
+        console.warn("Auto-link Calendly meeting to lead warning:", linkErr);
+      }
+
+      return inserted;
     }
   } catch (err) {
     console.error("PostgreSQL saveCalendlyMeeting error:", err);

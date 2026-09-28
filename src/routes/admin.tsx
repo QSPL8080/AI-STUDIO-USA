@@ -5610,7 +5610,117 @@ function AdminPage() {
               )}
             </div>
 
-            {/* Section 4: Live Activity History for this Lead */}
+            {/* Section 4: Calendly Meeting Information (Section 8) */}
+            {(viewLeadDetails.meeting_date ||
+              calendlyMeetings.some(
+                (m) =>
+                  (viewLeadDetails.email && m.email?.toLowerCase() === viewLeadDetails.email?.toLowerCase()) ||
+                  (viewLeadDetails.phone &&
+                    m.phone &&
+                    m.phone.replace(/\D/g, "").slice(-10) === viewLeadDetails.phone.replace(/\D/g, "").slice(-10))
+              )) && (
+              <div className="rounded-2xl border p-4 space-y-3 dark:border-slate-800 bg-blue-50/40 dark:bg-blue-950/20 text-xs">
+                <div className="flex items-center justify-between border-b pb-2 dark:border-slate-800">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <span className="font-extrabold uppercase tracking-wider text-[11px] text-blue-900 dark:text-blue-300">
+                      Calendly Meeting Information
+                    </span>
+                  </div>
+                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                    {viewLeadDetails.meeting_status || "Scheduled"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Meeting Date & Time</span>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
+                      {viewLeadDetails.meeting_date || "Synced Call"}{" "}
+                      {viewLeadDetails.meeting_time ? `at ${viewLeadDetails.meeting_time}` : ""}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Meeting Type</span>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
+                      {viewLeadDetails.meeting_type || "30 Min Strategy Call"}
+                    </p>
+                  </div>
+                  {viewLeadDetails.meeting_link && (
+                    <div className="col-span-2">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Meeting Link</span>
+                      <a
+                        href={viewLeadDetails.meeting_link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-blue-600 hover:underline font-medium mt-0.5"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        <span className="truncate">{viewLeadDetails.meeting_link}</span>
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Section 5: Meta Campaign Information (Section 8) */}
+            {(viewLeadDetails.source?.toLowerCase().includes("meta") ||
+              viewLeadDetails.campaign_name ||
+              viewLeadDetails.meta_lead_id) && (
+              <div className="rounded-2xl border p-4 space-y-3 dark:border-slate-800 bg-indigo-50/40 dark:bg-indigo-950/20 text-xs">
+                <div className="flex items-center justify-between border-b pb-2 dark:border-slate-800">
+                  <div className="flex items-center gap-1.5">
+                    <Megaphone className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    <span className="font-extrabold uppercase tracking-wider text-[11px] text-indigo-900 dark:text-indigo-300">
+                      Meta Ads Campaign Information
+                    </span>
+                  </div>
+                  {viewLeadDetails.is_duplicate && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+                      Consolidated Duplicate
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Campaign Name</span>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
+                      {viewLeadDetails.campaign_name || "Quickupp US Brand Video Lead Gen"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Ad Set Name</span>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
+                      {viewLeadDetails.adset_name || "US E-Commerce Founders"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Ad Name</span>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
+                      {viewLeadDetails.ad_name || "AI UGC Video Showcase Ad #1"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Instant Form Name</span>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
+                      {viewLeadDetails.form_name || "US Lead Capture Form v1"}
+                    </p>
+                  </div>
+                  {viewLeadDetails.meta_lead_id && (
+                    <div className="col-span-2">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Meta Lead ID</span>
+                      <p className="font-mono text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                        {viewLeadDetails.meta_lead_id}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Section 6: Live Activity History for this Lead */}
             <div className="rounded-2xl border p-4 space-y-2 dark:border-slate-800 bg-white dark:bg-slate-900/40 text-xs">
               <div className="flex items-center gap-1.5 border-b pb-2 dark:border-slate-800">
                 <Clock className="h-4 w-4 text-amber-500" />

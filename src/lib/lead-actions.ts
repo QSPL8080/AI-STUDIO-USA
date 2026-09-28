@@ -166,6 +166,14 @@ export const addManualLeadServerFn = createServerFn({ method: "POST" })
     meetingDate?: string;
     meetingTime?: string;
     meetingLink?: string;
+    meetingType?: string;
+    meetingStatus?: string;
+    campaignName?: string;
+    adsetName?: string;
+    adName?: string;
+    formName?: string;
+    metaLeadId?: string;
+    isDuplicate?: boolean;
     assignedAdmin?: string;
     createdBy?: string;
     userRole?: string;
