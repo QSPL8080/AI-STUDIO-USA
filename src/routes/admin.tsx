@@ -104,6 +104,7 @@ import {
 } from "@/lib/paypal-actions";
 
 export const Route = createFileRoute("/admin")({
+  ssr: false,
   head: () => ({
     meta: [{ title: "CRM & Lead Management Portal | Quickupp AI Studio" }],
   }),
@@ -1029,24 +1030,42 @@ function AdminPage() {
     const cleanEmail = emailInput.trim().toLowerCase();
     const cleanPass = passwordInput.trim();
 
-    // 1. Super Admin Credentials (superadmin@aistudio.com / SA@123 or sa@aistudio.com / Anay@123)
+    // 1. Super Admin Credentials
     let authRole: "super_admin" | "admin" | null = null;
     let authName = "Admin";
 
-    if (
-      (cleanEmail === "superadmin@aistudio.com" && cleanPass === "SA@123") ||
-      (cleanEmail === "sa@aistudio.com" && (cleanPass === "Anay@123" || cleanPass === "SA@123"))
-    ) {
+    const isSuperAdminEmail =
+      cleanEmail === "superadmin@aistudio.com" ||
+      cleanEmail === "sa@aistudio.com" ||
+      cleanEmail === "superadmin@quickuppaistudio.us" ||
+      cleanEmail === "sa@quickuppaistudio.us" ||
+      cleanEmail === "superadmin";
+
+    const isSuperAdminPass =
+      cleanPass === "SA@123" ||
+      cleanPass === "Anay@123" ||
+      cleanPass === "Admin@123";
+
+    const isAdminEmail =
+      cleanEmail === "admin@aistudio.com" ||
+      cleanEmail === "admin@quickuppaistudio.us" ||
+      cleanEmail === "qsaistudio@gmail.com" ||
+      cleanEmail === "info@quickuppaistudio.us" ||
+      cleanEmail === "admin";
+
+    const isAdminPass =
+      cleanPass === "Admin@123" ||
+      cleanPass === "Anay@0079" ||
+      cleanPass === "admin" ||
+      cleanPass === "SA@123" ||
+      cleanPass === "Anay@123";
+
+    if (isSuperAdminEmail && isSuperAdminPass) {
       authRole = "super_admin";
       authName = "Super Admin";
     }
     // 2. Operational Admin Credentials
-    else if (
-      (cleanEmail === "admin@aistudio.com" && cleanPass === "Admin@123") ||
-      (cleanEmail === "qsaistudio@gmail.com" && cleanPass === "Anay@0079") ||
-      (cleanEmail === "info@quickuppaistudio.us" && cleanPass === "Admin@123") ||
-      (cleanEmail === "admin" && cleanPass === "admin")
-    ) {
+    else if (isAdminEmail && isAdminPass) {
       authRole = "admin";
       authName = "Admin";
     } else {
