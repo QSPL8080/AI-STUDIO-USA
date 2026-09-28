@@ -40,6 +40,7 @@ export const samples = [
     industry: "Founder Branding",
     description: "Founder-led update reel created from an approved digital twin.",
     videoUrl: "",
+    imageUrl: "/images/Digital%20Twin%20Image.png",
   },
 ];
 
@@ -79,6 +80,7 @@ export const portfolioItems = [
     description:
       "Founder-led brand update reel powered by a hyper-realistic digital twin — no camera, no studio needed.",
     videoUrl: "",
+    imageUrl: "/images/Digital%20Twin%20Image.png",
   },
 ];
 

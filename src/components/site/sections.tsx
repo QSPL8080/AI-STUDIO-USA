@@ -1444,6 +1444,13 @@ export function Samples() {
                         </div>
                       )}
                     </>
+                  ) : item.imageUrl ? (
+                    <img
+                      src={item.imageUrl}
+                      alt={item.format}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
                   ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-950 via-purple-950/60 to-slate-950 p-4 text-center pointer-events-none">
                       <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-purple-400/40 bg-purple-900/40 text-purple-300 shadow-lg">
@@ -1719,8 +1726,18 @@ function PortfolioCard({ sample }: { sample: (typeof portfolioItems)[number] }) 
         <div className="absolute inset-0 bg-gradient-to-br from-[#0e0820] via-[#1a0a2e] to-[#0e0820] animate-pulse pointer-events-none" />
       )}
 
-      {/* Blank / Coming Soon state */}
-      {!sample.videoUrl && (
+      {/* Image display when imageUrl is provided without videoUrl */}
+      {!sample.videoUrl && (sample as any).imageUrl && (
+        <img
+          src={(sample as any).imageUrl}
+          alt={sample.industry}
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+        />
+      )}
+
+      {/* Blank / Coming Soon state when no video and no image */}
+      {!sample.videoUrl && !(sample as any).imageUrl && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-black via-[#1a0a2e] to-black pointer-events-none">
           {/* Pulsing ring */}
           <div className="relative flex items-center justify-center">
@@ -2779,10 +2796,10 @@ export function DigitalTwin() {
           {/* Digital Twin Image Card */}
           <div className="relative aspect-[9/16] w-full max-w-[200px] shrink-0 overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-lg sm:max-w-[210px] md:max-w-[220px]">
             <img
-              src="/images/Digital Twin Image.png"
+              src="/images/Digital%20Twin%20Image.png?v=3"
               alt="Digital Twin Sample Reel"
               className="h-full w-full object-cover"
-              loading="lazy"
+              loading="eager"
             />
           </div>
         </div>
