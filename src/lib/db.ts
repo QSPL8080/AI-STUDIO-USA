@@ -400,6 +400,17 @@ export async function initDb() {
         } catch (seedErr) {
           console.warn("Admin seed warning:", seedErr);
         }
+
+        // Remove the old @aistudio.com alias accounts (duplicates of the @aistudio.us ones)
+        try {
+          await client.query(
+            `DELETE FROM admin_users
+              WHERE LOWER(email) IN ('sa@aistudio.com', 'admin@aistudio.com', 'lm@aistudio.com')
+                AND id <> 'usr_superadmin'`
+          );
+        } catch (cleanupErr) {
+          console.warn("Legacy admin cleanup warning:", cleanupErr);
+        }
       } finally {
         client.release();
       }

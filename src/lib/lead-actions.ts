@@ -606,7 +606,26 @@ export const createAdminUserServerFn = createServerFn({ method: "POST" })
   .validator((data: { name: string; email: string; password: string; role: "super_admin" | "admin" | "leads_manager"; status?: "active" | "inactive"; performedBy?: string }) => data)
   .handler(async ({ data }) => {
     try {
-      const user = await saveAdminUserInDb(data);
+      // The Super Admin can create Admin and Leads Manager accounts only
+      if (data.role !== "admin" && data.role !== "leads_manager") {
+        return { success: false, error: "Only Admin or Leads Manager accounts can be created." };
+      }
+      const cleanEmail = (data.email || "").toLowerCase().trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+        return { success: false, error: "Please enter a valid email address." };
+      }
+      if ((data.password || "").trim().length < 6) {
+        return { success: false, error: "Password must be at least 6 characters." };
+      }
+      if ((data.name || "").trim().length < 2) {
+        return { success: false, error: "Please enter the user's name." };
+      }
+      // Saving an existing email would overwrite that account (even the Super Admin)
+      const existing = await getAdminUserByEmailWithPassword(cleanEmail);
+      if (existing) {
+        return { success: false, error: `An account with ${cleanEmail} already exists.` };
+      }
+      const user = await saveAdminUserInDb({ ...data, email: cleanEmail, status: "active" });
       await addActivityLogInDb({
         action: "Admin Account Created",
         details: `New ${data.role} account created for ${data.name} (${data.email})`,
@@ -1571,7 +1590,10 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
           attemptsLeft: Math.max(threshold - newFailures, 0),
           error: lockedNow
             ? `Too many failed login attempts. This account / IP is locked for ${LOGIN_LOCKOUT_MINUTES} minutes.`
-            : `Invalid email or password. ${Math.max(threshold - newFailures, 0)} attempt(s) left before lockout.`,
+            : !user
+            ? `No account found with this email address. Please check the email or contact the Super Admin. ${Math.max(threshold - newFailures, 0)} attempt(s) left before lockout.`
+            : `Incorrect password. ${Math.max(threshold - newFailures, 0)} attempt(s) left before lockout.`,
+          noAccount: !user,
         };
       }
 

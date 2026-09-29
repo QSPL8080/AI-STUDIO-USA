@@ -480,7 +480,16 @@ function AdminPage() {
   const [calendlyWebhookCopied, setCalendlyWebhookCopied] = useState(false);
 
   // CRM Notifications State
-  const [notifications, setNotifications] = useState<CRMNotification[]>([]);
+  const [allNotifications, setNotifications] = useState<CRMNotification[]>([]);
+  // Leads Manager sees lead notifications only (no orders, meetings, system events)
+  const notifications = useMemo(() => {
+    if (session?.role !== "leads_manager") return allNotifications;
+    return allNotifications.filter((n) => {
+      const t = (n.type || "").toLowerCase();
+      const title = (n.title || "").toLowerCase();
+      return t.includes("lead") || title.includes("lead");
+    });
+  }, [allNotifications, session?.role]);
   const [showNotificationsPopover, setShowNotificationsPopover] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState<"all" | "unread" | "lead" | "meeting" | "order">("all");
 
@@ -751,7 +760,7 @@ function AdminPage() {
     // 2. Database-managed accounts
     adminUsers.forEach((u) => {
       const cleanEmail = (u.email || "").toLowerCase().trim();
-      if (!cleanEmail || cleanEmail === "sa@aistudio.us") return;
+      if (!cleanEmail || cleanEmail === "sa@aistudio.us" || LEGACY_ACCOUNT_EMAILS.includes(cleanEmail)) return;
       map.set(cleanEmail, u);
     });
 
@@ -805,6 +814,8 @@ function AdminPage() {
     if (!session) return false;
     if (session.role === "super_admin") return true;
     if (key === "purge") return false; // Permanent delete strictly exclusive to Super Admin
+    // Leads Manager: fixed access — Leads + Meta Leads tabs; add, edit, update, soft-delete only
+    if (session.role === "leads_manager") return key === "meta_leads" || key === "delete_leads";
     const perms = rolePermissions[session.role as ConfigurableRole];
     return Boolean(perms?.[key]);
   };
@@ -831,7 +842,7 @@ function AdminPage() {
       case "settings":
         return can("crm_settings");
       case "calendly":
-        return session.role !== "leads_manager";
+        return session.role !== "leads_manager" && can("dashboard");
       default:
         return false;
     }
@@ -1128,6 +1139,7 @@ function AdminPage() {
 
   const handleIncomingOrder = (newOrder: Order) => {
     if (!newOrder || !newOrder.id) return;
+    if (session?.role === "leads_manager") return; // no order alerts for Leads Manager
 
     setOrders((prev) => {
       const exists = prev.some((o) => o.id === newOrder.id);
@@ -1248,16 +1260,21 @@ function AdminPage() {
     else setIsSyncing(true);
 
     try {
-      await Promise.all([
-        fetchLeadsList(),
-        fetchRecycleBinList(),
-        fetchOrdersList(),
-        fetchMeetingsList(),
-        fetchNotificationsList(),
-        fetchLogsList(),
-        fetchAdminUsersList(),
-        fetchAccessControl(),
-      ]);
+      if (session?.role === "leads_manager") {
+        // Leads Manager: only lead data (+ own account status / access settings)
+        await Promise.all([fetchLeadsList(), fetchNotificationsList(), fetchAdminUsersList(), fetchAccessControl()]);
+      } else {
+        await Promise.all([
+          fetchLeadsList(),
+          fetchRecycleBinList(),
+          fetchOrdersList(),
+          fetchMeetingsList(),
+          fetchNotificationsList(),
+          fetchLogsList(),
+          fetchAdminUsersList(),
+          fetchAccessControl(),
+        ]);
+      }
       setLastSyncTime(new Date());
     } finally {
       if (!silent) setLoading(false);
@@ -3399,6 +3416,8 @@ function AdminPage() {
                     >
                       Leads ({leadNotifs.length})
                     </button>
+                    {session?.role !== "leads_manager" && (
+                    <>
                     <button
                       onClick={() => setNotificationFilter("meeting")}
                       className={`rounded-full px-2.5 py-1 font-bold cursor-pointer shrink-0 transition-colors ${
@@ -3415,6 +3434,8 @@ function AdminPage() {
                     >
                       Orders ({orderNotifs.length})
                     </button>
+                    </>
+                    )}
                   </div>
 
                   {/* Notification List */}
@@ -3668,7 +3689,7 @@ function AdminPage() {
       {/* Main Content Area */}
       <main className="w-full max-w-[1750px] mx-auto flex-1 p-3 sm:p-5 lg:p-6 space-y-5 sm:space-y-6">
         {/* System-Wide Operational Broadcast Banner (Super Admin Controlled) */}
-        {crmBroadcastBanner && (
+        {crmBroadcastBanner && session?.role !== "leads_manager" && (
           <div className="rounded-xl border border-amber-300 bg-amber-50/90 px-3.5 py-2 text-xs text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs animate-in fade-in">
             <div className="flex items-center gap-2">
               <Megaphone className="h-3.5 w-3.5 text-amber-600 shrink-0" />
@@ -7643,6 +7664,24 @@ function AdminPage() {
                               </span>
                             </td>
                             {(["admin", "leads_manager"] as ConfigurableRole[]).map((role) => {
+                              if (role === "leads_manager") {
+                                const lmAllowed = def.key === "meta_leads" || def.key === "delete_leads";
+                                return (
+                                  <td key={role} className="px-4 py-3">
+                                    <span
+                                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border font-bold ${
+                                        lmAllowed
+                                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                          : "bg-slate-100 text-slate-500 border-slate-200"
+                                      }`}
+                                      title="Leads Manager access is fixed: Leads + Meta Leads only"
+                                    >
+                                      <Lock className="h-3 w-3" />
+                                      {lmAllowed ? (def.key === "delete_leads" ? "Soft-delete only" : "Allowed") : "No access"}
+                                    </span>
+                                  </td>
+                                );
+                              }
                               const allowed = permissionsDraft[role][def.key];
                               return (
                                 <td key={role} className="px-4 py-3">
@@ -9135,7 +9174,6 @@ function AdminPage() {
                 >
                   <option value="admin">Admin (Operational CRM Access)</option>
                   <option value="leads_manager">Leads Manager (Leads &amp; Meta Leads tabs only)</option>
-                  {isSuperAdmin && <option value="super_admin">Super Admin (Full System & User Control)</option>}
                 </select>
               </div>
 
