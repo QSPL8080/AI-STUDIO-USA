@@ -915,6 +915,8 @@ function AdminPage() {
         sessionStorage.setItem("crm_last_active", nowStr);
         localStorage.setItem("crm_last_active", nowStr);
         setSession(parsed);
+        // Landing tab: Leads Manager → Leads, everyone else → Dashboard
+        setActiveTab(parsed.role === "leads_manager" ? "leads" : "dashboard");
         fetchAllData(false);
       } catch {
         sessionStorage.removeItem("ai_studio_auth_session");
@@ -1733,7 +1735,8 @@ function AdminPage() {
         };
 
         setSession(userSession);
-        setActiveTab("leads");
+        // Landing tab: Leads Manager → Leads, everyone else → Dashboard
+        setActiveTab(userSession.role === "leads_manager" ? "leads" : "dashboard");
         // Store in sessionStorage so closing the browser tab/window or powering down the PC immediately terminates the session
         sessionStorage.setItem("ai_studio_auth_session", JSON.stringify(userSession));
         sessionStorage.setItem("crm_last_active", Date.now().toString());
@@ -2874,7 +2877,10 @@ function AdminPage() {
 
   // Distinct Leads Collections: Website Leads (Tab 1) and Meta Leads (Tab 2) - strictly excluding India leads
   const websiteLeads = useMemo(() => {
-    return leads.filter((l) => !isMetaLead(l) && !isIndiaLead(l));
+    // Calendly strategy calls live in the Calendly tab, not in Leads Management
+    return leads.filter(
+      (l) => !isMetaLead(l) && !isIndiaLead(l) && !(l.source || "").toLowerCase().includes("calendly")
+    );
   }, [leads]);
 
   const metaLeads = useMemo(() => {

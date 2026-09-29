@@ -32,6 +32,8 @@ import {
   permanentDeleteCalendlyMeeting as permanentDeleteCalendlyMeetingInDb,
   permanentDeleteCalendlyMeetings as permanentDeleteCalendlyMeetingsInDb,
   restoreCalendlyMeeting as restoreCalendlyMeetingInDb,
+  rememberDeletedCalendlyMeetings,
+  forgetDeletedCalendlyMeeting,
   deleteCalendlyMeeting as deleteCalendlyMeetingInDb,
   deleteCalendlyMeetings as deleteCalendlyMeetingsInDb,
   clearAllCalendlyMeetings as clearAllCalendlyMeetingsInDb,
@@ -1008,6 +1010,9 @@ export const deleteCalendlyMeetingServerFn = createServerFn({ method: "POST" })
       const isSuper = data.userRole === "super_admin";
       const isPermanent = data.permanent === true && isSuper;
 
+      // Remember it first so the Calendly sync / webhook never brings it back
+      await rememberDeletedCalendlyMeetings([data.id]);
+
       let ok = false;
       if (isPermanent) {
         ok = await permanentDeleteCalendlyMeetingInDb(data.id);
@@ -1046,6 +1051,7 @@ export const restoreCalendlyMeetingServerFn = createServerFn({ method: "POST" })
   .validator((data: { id: string; client_name?: string; performedBy?: string; userRole?: string }) => data)
   .handler(async ({ data }) => {
     try {
+      await forgetDeletedCalendlyMeeting(data.id);
       const ok = await restoreCalendlyMeetingInDb(data.id);
       if (ok) {
         await addActivityLogInDb({
@@ -1068,6 +1074,9 @@ export const deleteCalendlyMeetingsBulkServerFn = createServerFn({ method: "POST
     try {
       const isSuper = data.userRole === "super_admin";
       const isPermanent = data.permanent === true && isSuper;
+
+      // Remember them first so the Calendly sync / webhook never brings them back
+      await rememberDeletedCalendlyMeetings(data.ids || []);
 
       let ok = false;
       if (isPermanent) {
@@ -1141,30 +1150,15 @@ export const recordCalendlyBookingServerFn = createServerFn({ method: "POST" })
             : `Booked in Calendly for ${slot.date} at ${slot.time}`,
       });
 
-      // Linked lead (saveLead merges duplicates by email / phone)
-      const lead = await saveLeadToDb({
-        source: "USA Website - Calendly",
-        name: invitee.name || "Calendly Client",
-        email: invitee.email,
-        phone: invitee.text_reminder_number || "N/A",
-        videoType: ev.name || "AI Video Strategy Call (30 min)",
-        business: "Inbound Calendly Strategy Call",
-        status: "New",
-        notes: `Calendly booking on ${slot.date} at ${slot.time}. Meeting Link: ${ev.location?.join_url || ev.uri}`,
-        meetingDate: slot.date,
-        meetingTime: slot.time,
-        meetingLink: ev.location?.join_url || ev.uri,
-      });
-
+      // Calendly calls are kept in the Calendly tab only (no lead row is created)
       await addActivityLogInDb({
-        lead_id: lead.id,
         action: decision.status === "rescheduled" ? "Calendly Meeting Rescheduled" : "Calendly Meeting Booked",
         details: `Strategy call for ${invitee.name} (${invitee.email}) on ${slot.date} at ${slot.time}`,
         performed_by: "Calendly Integration",
         user_role: "system",
       });
 
-      return { success: true, meeting, lead };
+      return { success: true, meeting };
     } catch (error: any) {
       console.error("recordCalendlyBookingServerFn error:", error);
       return { success: false, error: error.message };

@@ -247,6 +247,14 @@ export default {
                 : `Booked via Calendly for ${meetingDate} at ${meetingTime}`,
             });
 
+            // Deleted in the CRM: acknowledge Calendly but keep it out of the CRM
+            if ((meeting as any)?.suppressed) {
+              return new Response(
+                JSON.stringify({ success: true, ignored: true, reason: "deleted_in_crm" }),
+                { status: 200, headers: { "Content-Type": "application/json" } }
+              );
+            }
+
             await saveCRMNotification({
               type: isRescheduled
                 ? "meeting_rescheduled"

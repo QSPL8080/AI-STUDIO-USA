@@ -1248,6 +1248,71 @@ export async function deleteAdminUser(idOrEmail: string): Promise<boolean> {
 // ==========================================
 // CALENDLY MEETINGS
 // ==========================================
+// ── Deleted Calendly meetings: remembered so the Calendly sync / webhook never brings them back ──
+// Key = client email + meeting date + time (normalised), stored in crm_settings.
+const DELETED_SLOTS_KEY = "calendly_deleted_slots";
+
+export function calendlySlotKey(email?: string, date?: string, time?: string): string {
+  const e = (email || "").toLowerCase().trim();
+  const cleanTime = String(time || "").replace(/\s*E[SD]T$/i, "").trim();
+  let d = String(date || "").trim();
+  const parsedDate = new Date(d);
+  if (!isNaN(parsedDate.getTime())) {
+    d = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
+  }
+  let t = cleanTime.toUpperCase();
+  const m = cleanTime.match(/^(\d{1,2}):(\d{2})\s*([AP]M)?$/i);
+  if (m) {
+    let h = Number(m[1]) % 12;
+    if ((m[3] || "").toUpperCase() === "PM") h += 12;
+    if (!m[3]) h = Number(m[1]);
+    t = `${String(h).padStart(2, "0")}:${m[2]}`;
+  }
+  return `${e}|${d}|${t}`;
+}
+
+async function getDeletedSlotKeys(): Promise<Set<string>> {
+  try {
+    const settings = await getCrmSettings();
+    const arr = JSON.parse(settings[DELETED_SLOTS_KEY] || "[]");
+    return new Set(Array.isArray(arr) ? arr.map(String) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+async function updateDeletedSlotKeys(add: string[], remove: string[] = []): Promise<void> {
+  const keys = await getDeletedSlotKeys();
+  add.forEach((k) => k && keys.add(k));
+  remove.forEach((k) => keys.delete(k));
+  // Keep the list bounded (most recent 1000)
+  const list = Array.from(keys).slice(-1000);
+  await saveCrmSettings({ [DELETED_SLOTS_KEY]: JSON.stringify(list) });
+}
+
+/** Remember meetings deleted in the CRM (soft or permanent) so Calendly sync never re-creates them */
+export async function rememberDeletedCalendlyMeetings(ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  try {
+    const all = await getCalendlyMeetings(true);
+    const keys = all.filter((m) => ids.includes(m.id)).map((m) => calendlySlotKey(m.email, m.meeting_date, m.meeting_time));
+    if (keys.length) await updateDeletedSlotKeys(keys);
+  } catch (e) {
+    console.warn("rememberDeletedCalendlyMeetings warning:", e);
+  }
+}
+
+/** Restored from the Recycle Bin: Calendly updates apply to it again */
+export async function forgetDeletedCalendlyMeeting(id: string): Promise<void> {
+  try {
+    const all = await getCalendlyMeetings(true);
+    const m = all.find((x) => x.id === id);
+    if (m) await updateDeletedSlotKeys([], [calendlySlotKey(m.email, m.meeting_date, m.meeting_time)]);
+  } catch (e) {
+    console.warn("forgetDeletedCalendlyMeeting warning:", e);
+  }
+}
+
 export async function saveCalendlyMeeting(data: {
   lead_id?: string;
   client_name: string;
@@ -1275,6 +1340,7 @@ export async function saveCalendlyMeeting(data: {
   const replacesEarlier = Boolean(data.is_rescheduled) || Boolean(data.previous_meeting_date);
   const finalStatus = isCancelled ? "cancelled" : isRescheduled ? "rescheduled" : ((data.meeting_status as any) || "scheduled");
   const hasPreviousSlot = Boolean(data.previous_meeting_date && data.previous_meeting_time);
+
 
   // Keep a readable history (Booked → Rescheduled → Cancelled) instead of overwriting notes.
   // Only append when something actually changed, since the sync re-processes events.
@@ -1306,6 +1372,24 @@ export async function saveCalendlyMeeting(data: {
     notes: data.notes || undefined,
     created_at: now,
   };
+
+  // Deleted in the CRM (Recycle Bin or permanently)? Never re-create or update it.
+  // A reschedule of a deleted meeting stays deleted too.
+  {
+    const deletedKeys = await getDeletedSlotKeys();
+    const curKey = calendlySlotKey(data.email, data.meeting_date, data.meeting_time);
+    const prevKey = hasPreviousSlot
+      ? calendlySlotKey(data.email, data.previous_meeting_date, data.previous_meeting_time)
+      : "";
+    if (deletedKeys.has(curKey) || (prevKey && deletedKeys.has(prevKey))) {
+      if (!deletedKeys.has(curKey)) {
+        try {
+          await updateDeletedSlotKeys([curKey]);
+        } catch {}
+      }
+      return { ...record, suppressed: true } as CalendlyMeeting & { suppressed: boolean };
+    }
+  }
 
   if (getSupabaseConfig()) {
     try {
@@ -1339,12 +1423,26 @@ export async function saveCalendlyMeeting(data: {
             meeting_link: data.meeting_link || existingMeeting.meeting_link,
             meeting_type: data.meeting_type || existingMeeting.meeting_type,
             notes: mergeNotes(existingMeeting),
-            ...(isCancelled ? { cancelled_at: existingMeeting.cancelled_at || now } : {}),
-            // A real reschedule / cancellation starts a new outcome cycle
-            ...(!isCompleted && existingMeeting.outcome_locked ? { outcome_locked: false } : {}),
           }),
         });
-        if (Array.isArray(updated) && updated[0]) return updated[0];
+        // Newer columns separately, so a database API that doesn't know them yet can never
+        // block the status change itself (e.g. a cancellation)
+        const extra: Record<string, any> = {
+          ...(isCancelled ? { cancelled_at: existingMeeting.cancelled_at || now } : {}),
+          // A real reschedule / cancellation starts a new outcome cycle
+          ...(!isCompleted && existingMeeting.outcome_locked ? { outcome_locked: false } : {}),
+        };
+        if (Object.keys(extra).length > 0) {
+          try {
+            await supabaseRest(`calendly_meetings?id=eq.${existingMeeting.id}`, {
+              method: "PATCH",
+              body: JSON.stringify(extra),
+            });
+          } catch (extraErr) {
+            console.warn("Calendly meeting extra fields update skipped:", extraErr);
+          }
+        }
+        if (Array.isArray(updated) && updated[0]) return { ...updated[0], ...extra };
         return {
           ...existingMeeting,
           meeting_date: data.meeting_date,
