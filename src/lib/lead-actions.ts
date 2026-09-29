@@ -648,12 +648,13 @@ export async function syncCalendlyEventsFromApi(): Promise<{ count: number; erro
       process.env.VITE_CALENDLY_API_TOKEN ||
       settings?.["calendly_api_token"] ||
       settings?.["calendly_personal_access_token"] ||
-      settings?.["CALENDLY_API_TOKEN"];
+      settings?.["CALENDLY_API_TOKEN"] ||
+      "eyJraWQiOiIxY2UxZTEzNjE3ZGNmNzY2YjNjZWJjY2Y4ZGM1YmFmYThhNjVlNjg0MDIzZjdjMzJiZTgzNDliMjM4MDEzNWI0IiwidHlwIjoiUEFUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJodHRwczovL2F1dGguY2FsZW5kbHkuY29tIiwiaWF0IjoxNzkwNjcyODY3LCJqdGkiOiI4ZThmMzc5YS1mNWNkLTQzYTItYjAyMi03ZTdkMmUwMjRmMTQiLCJ1c2VyX3V1aWQiOiJlYjcxODgwNS05YzA3LTQ5MTYtOTBhZC0zNTE1ODQ1MTA3YTciLCJzY29wZSI6ImF2YWlsYWJpbGl0eTpyZWFkIGF2YWlsYWJpbGl0eTp3cml0ZSBldmVudF90eXBlczpyZWFkIGV2ZW50X3R5cGVzOndyaXRlIGxvY2F0aW9uczpyZWFkIHJvdXRpbmdfZm9ybXM6cmVhZCBzaGFyZXM6d3JpdGUgc2NoZWR1bGVkX2V2ZW50czpyZWFkIHNjaGVkdWxlZF9ldmVudHM6d3JpdGUgc2NoZWR1bGluZ19saW5rczp3cml0ZSBncm91cHM6cmVhZCBvcmdhbml6YXRpb25zOnJlYWQgb3JnYW5pemF0aW9uczp3cml0ZSB1c2VyczpyZWFkIG1lZXRpbmdfcmVjYXBzOnJlYWQgbWVldGluZ19yZWNhcHM6d3JpdGUgYWN0aXZpdHlfbG9nOnJlYWQgZGF0YV9jb21wbGlhbmNlOndyaXRlIG91dGdvaW5nX2NvbW11bmljYXRpb25zOnJlYWQgd2ViaG9va3M6cmVhZCB3ZWJob29rczp3cml0ZSBjb250YWN0czpyZWFkIGNvbnRhY3RzOndyaXRlIn0.5dFQT3HoJos1F1_hR5RAldfPFO1J1JfAaxXoKRp7FCLvneq1dBQpuO-f2MRr_i7AjkStqBOvnsO2aBdRpU1j0A";
 
     if (!token) {
       return {
         count: 0,
-        error: "Calendly API token not configured. Please add CALENDLY_API_TOKEN in Hostinger Environment Variables.",
+        error: "Calendly API token not configured.",
       };
     }
 
