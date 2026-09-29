@@ -331,6 +331,7 @@ export async function initDb() {
           );
 
           ALTER TABLE calendly_meetings ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
+          ALTER TABLE calendly_meetings ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMP WITH TIME ZONE;
 
           CREATE TABLE IF NOT EXISTS crm_notifications (
             id VARCHAR(64) PRIMARY KEY,
@@ -1162,8 +1163,10 @@ export async function saveCalendlyMeeting(data: {
 }): Promise<CalendlyMeeting> {
   const id = `meet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const now = new Date().toISOString();
-  const isRescheduled = data.is_rescheduled || data.meeting_status === "rescheduled";
-  const finalStatus = isRescheduled ? "rescheduled" : ((data.meeting_status as any) || "scheduled");
+  const isCancelled = data.meeting_status === "cancelled";
+  // A cancellation always wins; "rescheduled" only applies to active bookings
+  const isRescheduled = !isCancelled && (data.is_rescheduled || data.meeting_status === "rescheduled");
+  const finalStatus = isCancelled ? "cancelled" : isRescheduled ? "rescheduled" : ((data.meeting_status as any) || "scheduled");
 
   const record: CalendlyMeeting = {
     id,
@@ -1187,14 +1190,19 @@ export async function saveCalendlyMeeting(data: {
       let existing: any[] = [];
       if (isRescheduled) {
         existing = await supabaseRest(
-          `calendly_meetings?email=eq.${encodeURIComponent(data.email)}&order=created_at.desc&limit=1&select=*`
+          `calendly_meetings?email=eq.${encodeURIComponent(data.email)}&deleted_at=is.null&order=created_at.desc&limit=1&select=*`
         );
       } else {
         existing = await supabaseRest(
           `calendly_meetings?email=eq.${encodeURIComponent(data.email)}&meeting_date=eq.${encodeURIComponent(
             data.meeting_date
-          )}&meeting_time=eq.${encodeURIComponent(data.meeting_time)}&select=*`
+          )}&meeting_time=eq.${encodeURIComponent(data.meeting_time)}&deleted_at=is.null&select=*`
         );
+        if (isCancelled && (!Array.isArray(existing) || existing.length === 0)) {
+          existing = await supabaseRest(
+            `calendly_meetings?email=eq.${encodeURIComponent(data.email)}&deleted_at=is.null&order=created_at.desc&limit=1&select=*`
+          );
+        }
       }
 
       if (Array.isArray(existing) && existing.length > 0) {
@@ -1210,6 +1218,7 @@ export async function saveCalendlyMeeting(data: {
             meeting_link: data.meeting_link || existingMeeting.meeting_link,
             meeting_type: data.meeting_type || existingMeeting.meeting_type,
             notes: data.notes || existingMeeting.notes,
+            ...(isCancelled ? { cancelled_at: existingMeeting.cancelled_at || now } : {}),
           }),
         });
         if (Array.isArray(updated) && updated[0]) return updated[0];
@@ -1269,7 +1278,8 @@ export async function saveCalendlyMeeting(data: {
                meeting_link = COALESCE($4, meeting_link), 
                notes = COALESCE($5, notes),
                client_name = COALESCE($6, client_name),
-               phone = COALESCE($7, phone)
+               phone = COALESCE($7, phone),
+               cancelled_at = CASE WHEN $3 = 'cancelled' THEN COALESCE(cancelled_at, NOW()) ELSE NULL END
            WHERE id = $8 RETURNING *`,
           [
             data.meeting_date || null,

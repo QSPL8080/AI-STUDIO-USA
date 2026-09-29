@@ -200,22 +200,40 @@ export default {
               ? parsedDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/New_York" }) + " EST"
               : "3:00 PM EST";
 
-            const isRescheduled =
-              payload.rescheduled === true ||
-              invitee.rescheduled === true ||
-              Boolean(payload.old_invitee) ||
-              Boolean(payload.new_invitee) ||
-              Boolean(invitee.old_invitee) ||
-              Boolean(invitee.new_invitee) ||
-              eventType.includes("rescheduled") ||
-              (payload.cancellation?.reason && payload.cancellation.reason.toLowerCase().includes("reschedul"));
+            const isCancelEvent =
+              eventType.includes("canceled") ||
+              eventType.includes("cancelled") ||
+              invitee.status === "canceled" ||
+              payload.status === "canceled";
 
-            let status = "scheduled";
-            if (isRescheduled) {
-              status = "rescheduled";
-            } else if (eventType.includes("canceled") || eventType.includes("cancelled")) {
-              status = "cancelled";
+            // Calendly marks the OLD booking of a reschedule with rescheduled=true / new_invitee.
+            // That cancel is not a real cancellation; the invitee.created event for the new time
+            // updates the meeting, so ignore it (processing it could overwrite the new date).
+            const cancelledForReschedule =
+              isCancelEvent &&
+              (payload.rescheduled === true ||
+                invitee.rescheduled === true ||
+                Boolean(payload.new_invitee) ||
+                Boolean(invitee.new_invitee));
+            if (cancelledForReschedule) {
+              return new Response(
+                JSON.stringify({ success: true, ignored: true, reason: "old_slot_of_reschedule" }),
+                { status: 200, headers: { "Content-Type": "application/json" } }
+              );
             }
+
+            // A new booking that replaced an earlier one (old_invitee set). A later real
+            // cancellation of that booking still counts as cancelled.
+            const isRescheduled =
+              !isCancelEvent && (Boolean(payload.old_invitee) || Boolean(invitee.old_invitee) || eventType.includes("rescheduled"));
+
+            const status = isCancelEvent ? "cancelled" : isRescheduled ? "rescheduled" : "scheduled";
+            const cancellation = payload.cancellation || invitee.cancellation || {};
+            const cancelNote = isCancelEvent
+              ? `Cancelled in Calendly${cancellation.canceled_by ? ` by ${cancellation.canceled_by}` : ""}${
+                  cancellation.reason ? ` (Reason: ${cancellation.reason})` : ""
+                }`
+              : "";
 
             const meeting = await saveCalendlyMeeting({
               client_name: clientName,
@@ -227,7 +245,9 @@ export default {
               meeting_link: joinUrl,
               meeting_type: eventTitle,
               is_rescheduled: isRescheduled,
-              notes: isRescheduled
+              notes: isCancelEvent
+                ? cancelNote
+                : isRescheduled
                 ? `Rescheduled via Calendly (${meetingDate} at ${meetingTime})`
                 : `Received via Calendly Webhook (${eventType})`,
             });
@@ -246,7 +266,9 @@ export default {
               message: isRescheduled
                 ? `${clientName} (${clientEmail}) rescheduled call to ${meetingDate} at ${meetingTime}`
                 : status === "cancelled"
-                ? `${clientName} (${clientEmail}) cancelled their strategy call`
+                ? `${clientName} (${clientEmail}) cancelled their ${meetingDate} ${meetingTime} strategy call${
+                    cancellation.reason ? ` — ${cancellation.reason}` : ""
+                  }`
                 : `${clientName} (${clientEmail}) scheduled strategy call for ${meetingDate} at ${meetingTime}`,
               entity_id: meeting.id,
               actor: "Calendly",

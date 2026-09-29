@@ -702,7 +702,16 @@ export const sendAccountActivationRequestServerFn = createServerFn({ method: "PO
 
 
 // Helper to fetch live scheduled events from Calendly API and upsert into DB
-export async function syncCalendlyEventsFromApi(): Promise<{ count: number; error?: string }> {
+// Server-side throttle: every open admin tab polls, but Calendly only needs checking
+// about once a minute (the manual "Sync" button bypasses this).
+let lastCalendlySyncAt = 0;
+const CALENDLY_SYNC_MIN_INTERVAL_MS = 60 * 1000;
+
+export async function syncCalendlyEventsFromApi(opts?: { force?: boolean }): Promise<{ count: number; error?: string; skipped?: boolean }> {
+  if (!opts?.force && Date.now() - lastCalendlySyncAt < CALENDLY_SYNC_MIN_INTERVAL_MS) {
+    return { count: 0, skipped: true };
+  }
+  lastCalendlySyncAt = Date.now();
   try {
     const settings = await getCrmSettingsFromDb();
     const token =
@@ -737,15 +746,15 @@ export async function syncCalendlyEventsFromApi(): Promise<{ count: number; erro
       return { count: 0, error: "Calendly user URI not found" };
     }
 
+    // Newest first, and only meetings from the last 30 days onward: Calendly's default
+    // (20 oldest events) never returned recent cancellations.
+    const minStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const listUrl = (status: string) =>
+      `https://api.calendly.com/scheduled_events?user=${encodeURIComponent(userUri)}&status=${status}` +
+      `&count=100&sort=start_time:desc&min_start_time=${encodeURIComponent(minStart)}`;
     const [activeEventsRes, canceledEventsRes] = await Promise.all([
-      fetch(
-        `https://api.calendly.com/scheduled_events?user=${encodeURIComponent(userUri)}&status=active`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      ),
-      fetch(
-        `https://api.calendly.com/scheduled_events?user=${encodeURIComponent(userUri)}&status=canceled`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      ),
+      fetch(listUrl("active"), { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(listUrl("canceled"), { headers: { Authorization: `Bearer ${token}` } }),
     ]);
 
     const activeCollection = activeEventsRes.ok ? ((await activeEventsRes.json()) as any)?.collection || [] : [];
@@ -788,15 +797,15 @@ export async function syncCalendlyEventsFromApi(): Promise<{ count: number; erro
           }) + " EST";
 
         const isCanceled = ev.status === "canceled" || invitee.status === "canceled";
-        const isRescheduled =
-          invitee.rescheduled === true ||
-          Boolean(invitee.old_invitee) ||
-          Boolean(invitee.new_invitee) ||
-          (invitee.cancellation?.reason && invitee.cancellation.reason.toLowerCase().includes("reschedul"));
+        // Calendly sets rescheduled=true / new_invitee only on the OLD booking that was
+        // replaced by a reschedule. old_invitee is set on the NEW booking, which can itself
+        // be cancelled later, so it must not hide a real cancellation.
+        const cancelledForReschedule =
+          isCanceled && (invitee.rescheduled === true || Boolean(invitee.new_invitee));
+        const isRescheduled = !isCanceled && Boolean(invitee.old_invitee);
 
-        // If this invitee was cancelled specifically because it was rescheduled to another time,
-        // skip inserting a separate cancelled row so it doesn't clutter the CRM.
-        if (isCanceled && isRescheduled) {
+        // The old slot of a reschedule: the new booking carries the meeting forward
+        if (cancelledForReschedule) {
           continue;
         }
 
@@ -857,7 +866,7 @@ export const fetchCalendlyMeetingsServerFn = createServerFn({ method: "GET" }).h
 });
 
 export const syncCalendlyEventsServerFn = createServerFn({ method: "POST" }).handler(async () => {
-  const result = await syncCalendlyEventsFromApi();
+  const result = await syncCalendlyEventsFromApi({ force: true });
   const meetings = await getCalendlyMeetingsFromDb();
   return { success: !result.error, count: result.count, meetings, error: result.error };
 });
