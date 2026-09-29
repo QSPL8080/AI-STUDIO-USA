@@ -1782,7 +1782,7 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
         data.accuracy
       );
 
-      // Blocked if Admin / Lead Manager is outside 200m or coordinates missing / poor
+      // Blocked if Admin / Lead Manager is outside the permitted radius (100m) or coordinates missing / poor
       if (!locationEvaluation.authorized) {
         const dist = isFinite(locationEvaluation.distanceMeters) ? locationEvaluation.distanceMeters : null;
 
@@ -1802,7 +1802,7 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
 
         await addActivityLogInDb({
           action: "Login Blocked: Location Restriction",
-          details: `${authName} (${cleanEmail}) attempted login from outside permitted 200m office area (${dist !== null ? dist + "m from office" : "no GPS"}).`,
+          details: `${authName} (${cleanEmail}) attempted login from outside permitted ${getOfficeGeoConfig().allowedRadiusMeters}m office area (${dist !== null ? dist + "m from office" : "no GPS"}).`,
           performed_by: cleanEmail,
           user_role: authRole,
         });
@@ -1905,7 +1905,7 @@ export const verifyLocationSessionServerFn = createServerFn({ method: "POST" })
 
           await addActivityLogInDb({
             action: "Session Terminated: Left Office Area",
-            details: `User ${verification.payload.email} (${verification.payload.role}) moved outside 200m office radius (${dist}m). Active session terminated automatically.`,
+            details: `User ${verification.payload.email} (${verification.payload.role}) moved outside ${getOfficeGeoConfig().allowedRadiusMeters}m office radius (${dist}m). Active session terminated automatically.`,
             performed_by: "System / Location Watchdog",
             user_role: "system",
           });

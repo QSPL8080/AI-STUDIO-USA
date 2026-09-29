@@ -6987,7 +6987,7 @@ function AdminPage() {
                     <th className="px-4 py-3.5">Role</th>
                     <th className="px-4 py-3.5">IP Address</th>
                     <th className="px-4 py-3.5">GPS Coordinates</th>
-                    <th className="px-4 py-3.5">Office Proximity (200m)</th>
+                    <th className="px-4 py-3.5">Office Proximity ({DEFAULT_OFFICE_CONFIG.allowedRadiusMeters}m)</th>
                     <th className="px-4 py-3.5">Browser & Device</th>
                     <th className="px-4 py-3.5">Access Status</th>
                   </tr>
@@ -7048,10 +7048,10 @@ function AdminPage() {
                               Global (Exempt)
                             </span>
                           ) : typeof log.distance_meters === "number" ? (
-                            log.distance_meters <= 200 ? (
+                            log.distance_meters <= DEFAULT_OFFICE_CONFIG.allowedRadiusMeters ? (
                               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
                                 <MapPin className="h-3 w-3 text-emerald-600" />
-                                {Math.round(log.distance_meters)}m (Inside 200m)
+                                {Math.round(log.distance_meters)}m (Inside {DEFAULT_OFFICE_CONFIG.allowedRadiusMeters}m)
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-800">

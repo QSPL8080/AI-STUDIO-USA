@@ -5,7 +5,7 @@
  * Office 411, Suratwala Mark Plazzo, Hinjawadi Rd, Phase 1, Hinjawadi, Maharashtra 411057
  *
  * Coordinates: 18.590441° N, 73.748332° E
- * Permitted Boundary: 200 Meters Radius
+ * Permitted Boundary: 100 Meters Radius
  */
 
 export interface OfficeGeoConfig {
@@ -20,7 +20,7 @@ export const DEFAULT_OFFICE_CONFIG: OfficeGeoConfig = {
   name: "Office 411, Suratwala Mark Plazzo, Hinjawadi Phase 1, Pune, MH 411057",
   latitude: 18.590441,
   longitude: 73.748332,
-  allowedRadiusMeters: 200,
+  allowedRadiusMeters: 100,
   maxAllowedAccuracyMeters: 500, // Maximum acceptable GPS accuracy in meters
 };
 
@@ -160,7 +160,7 @@ export function evaluateLocationAccess(
     };
   }
 
-  // Check 200m radius
+  // Check permitted radius (100m by default)
   const isWithinRadius = distanceMeters <= config.allowedRadiusMeters;
 
   if (isWithinRadius) {
