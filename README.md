@@ -6,6 +6,7 @@
 [![TanStack Start](https://img.shields.io/badge/TanStack-Start-FF4154?style=for-the-badge&logo=tanstack)](https://tanstack.com/start)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind-CSS%20v4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com)
 [![Supabase](https://img.shields.io/badge/Database-Supabase%20%2F%20Postgres-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com)
+[![PayPal](https://img.shields.io/badge/Payments-PayPal-003087?style=for-the-badge&logo=paypal)](https://paypal.com)
 [![Calendly](https://img.shields.io/badge/Scheduler-Calendly-006BFF?style=for-the-badge&logo=calendly)](https://calendly.com/qsaistudio/strategy-call)
 
 A premier, high-conversion marketing platform and built-in CRM Admin Lead Management Portal for **Quickupp AI Studio (USA & Global)** — an agency producing AI UGC videos, AI avatars, cartoon animations, hyper-realistic cinematic reels, and digital twin clones for high-growth businesses, brands, and creators.
@@ -19,15 +20,17 @@ A premier, high-conversion marketing platform and built-in CRM Admin Lead Manage
 3. [Key Website Features & Conversion Funnel](#-key-website-features--conversion-funnel)
 4. [Calendly Integration & Strategy Call Booking](#-calendly-integration--strategy-call-booking)
 5. [Lead Capture & Instant Email Notification Engine](#-lead-capture--instant-email-notification-engine)
-6. [Dual Database Architecture (Supabase & PostgreSQL)](#-dual-database-architecture-supabase--postgresql)
-7. [Admin CRM Portal (`/admin`)](#-admin-crm-portal-admin)
-7. [Project Directory Tree](#-project-directory-tree)
-8. [Environment Variables Setup](#-environment-variables-setup)
-9. [Database Schema](#-database-schema)
-10. [Local Development Guide](#-local-development-guide)
-11. [Deployment on Hostinger & Auto-Deploy CI/CD](#-deployment-on-hostinger--auto-deploy-cicd)
-12. [Security, Performance & SEO Optimizations](#-security-performance--seo-optimizations)
-13. [Authors & Credits](#-authors--credits)
+6. [PayPal Payment Gateway & Checkout](#-paypal-payment-gateway--checkout)
+7. [PDF Receipt Generation](#-pdf-receipt-generation)
+8. [Dual Database Architecture (Supabase & PostgreSQL)](#-dual-database-architecture-supabase--postgresql)
+9. [Admin CRM Portal (`/admin`)](#-admin-crm-portal-admin)
+10. [Project Directory Tree](#-project-directory-tree)
+11. [Environment Variables Setup](#-environment-variables-setup)
+12. [Database Schema](#-database-schema)
+13. [Local Development Guide](#-local-development-guide)
+14. [Deployment on Hostinger & Auto-Deploy CI/CD](#-deployment-on-hostinger--auto-deploy-cicd)
+15. [Security, Performance & SEO Optimizations](#-security-performance--seo-optimizations)
+16. [Authors & Credits](#-authors--credits)
 
 ---
 
@@ -39,6 +42,8 @@ A premier, high-conversion marketing platform and built-in CRM Admin Lead Manage
 | **Routing**              | TanStack Router                                         | File-based, 100% type-safe routing with automatic route tree generation and caching.               |
 | **Styling & CSS Engine** | Tailwind CSS v4                                         | OKLCH modern color tokens, neon glow drops, backdrop blurs, and mobile-first responsive utilities. |
 | **Email Notification**   | Direct SMTP (Nodemailer) + Fallbacks                    | Real-time lead email dispatch directly to agency inbox via Google App Password.                   |
+| **Payment Gateway**      | [PayPal](https://paypal.com) (`@paypal/react-paypal-js`) | Secure PayPal Checkout integration for direct service package purchases with PDF receipts.       |
+| **PDF Generation**       | PDFKit                                                  | Server-side branded PDF receipt generation delivered to clients on order confirmation.             |
 | **Production Database**  | [Supabase](https://supabase.com) (PostgreSQL)           | Managed cloud PostgreSQL accessed via reliable HTTPS REST API to bypass cloud firewall/TCP blocks. |
 | **Local Database**       | PostgreSQL (`pg` pool)                                  | Direct connection pool for offline local development and quick testing.                            |
 | **Hosting & Web Server** | Hostinger Cloud Hosting + Nitro                         | High-performance `node-server` engine managed automatically.                                       |
@@ -78,11 +83,12 @@ The landing page features a custom-engineered, GPU-accelerated **Cinema Scroll S
 
 - **Hero & Value Proposition:** High-impact dark mode aesthetics with animated neon borders, sample badges, and clear call-to-actions.
 - **Service Showcase:** Detailed cards for AI UGC Reels, Avatar Videos, Cartoon Animations, Hyper-Realistic Videos, and Digital Twin Clones.
-- **Portfolio Video Showcase:** Interactive, faststart-optimized video showcases (`/videos/UGC Porfolio.mp4?v=3`, `/videos/Avtar Portfolio.mp4?v=3`) with a direct link to the [Official YouTube Channel](https://youtube.com/@quickuppaistudio1@gmail.com?si=QnC53RJK3YyMFtth).
+- **Portfolio Video Showcase:** Interactive, faststart-optimized video showcases (`/videos/UGC Porfolio.mp4?v=3`, `/videos/Avtar Portfolio.mp4?v=3`) with a direct link to the [Official YouTube Channel](https://youtube.com/@quickuppaistudio1).
 - **Workflow & Process:** 4-step client delivery pipeline (Scripting → AI Generation → Voice & Audio → 48-Hour Delivery).
-- **Transparent Pricing Tiers:** Flexible starter, growth, and agency bulk packages with feature comparisons.
+- **Transparent Pricing Tiers:** Flexible starter, growth, and agency bulk packages with feature comparisons and direct **PayPal checkout** on every plan.
 - **FAQ Accordion:** Interactive, searchable questions answering delivery times, revisions, commercial licensing, and script ownership.
 - **Floating WhatsApp Action:** Direct instant WhatsApp contact button present on all mobile and desktop screens.
+- **Legal Pages:** Full [Cookie Policy](/cookie-policy), [Privacy Policy](/privacy-policy), and [Terms & Conditions](/terms) pages.
 
 ---
 
@@ -114,6 +120,29 @@ Whenever a lead is submitted:
   - 🟢 **💬 WhatsApp Chat:** Opens WhatsApp chat directly with the client's phone number.
   - 🔵 **📞 Call Client:** Dials the client's phone number directly with 1 tap.
 - **Zero Spam Risk:** Sent securely via Gmail SMTP SSL port 465 using Google App Passwords with multi-tier fallback delivery.
+
+---
+
+## 💳 PayPal Payment Gateway & Checkout
+
+The platform includes a fully integrated **PayPal Checkout** system for direct service package purchases:
+
+- **Component:** `src/components/site/checkout-modal.tsx` — A sleek glassmorphic checkout modal launched directly from pricing cards.
+- **Server Actions:** `src/lib/paypal-actions.ts` — TanStack Start server functions for creating, capturing, and verifying PayPal orders via the PayPal Orders v2 REST API.
+- **PayPal Client:** `src/lib/paypal.ts` — Configures the PayPal SDK with environment-aware credentials (sandbox / production).
+- **Pricing Engine:** `src/lib/pricing.ts` — Centralized pricing definitions and package configurations used across the checkout and pricing sections.
+- **Supported Environments:** Configurable between `sandbox` (for testing) and `live` (production) via `PAYPAL_ENVIRONMENT` env variable.
+- **Order Confirmation Page:** `src/routes/order-confirmation.tsx` — Post-payment confirmation page displaying order details, summary, and a downloadable PDF receipt.
+
+---
+
+## 🧾 PDF Receipt Generation
+
+Upon successful payment, the platform auto-generates a **branded PDF receipt** server-side:
+
+- **Generator:** `src/lib/pdf-receipt.ts` — Uses PDFKit to produce a professional PDF with Quickupp AI Studio branding, order details, package summary, and payment confirmation.
+- **Brand Assets:** `src/lib/receipt-assets.ts` — Inlines brand logos and assets as base64 for zero-dependency PDF embedding.
+- **Delivery:** Receipt is downloadable directly from the Order Confirmation page (`/order-confirmation`).
 
 ---
 
@@ -163,65 +192,82 @@ AI STUDIO/
 │   │   ├── LOGO 1.png              # Header brand logo (optimized for light header background)
 │   │   ├── logo.png                # Footer brand logo (vibrant gradient + crisp white typography)
 │   │   ├── footer logo.png         # Large footer brand showcase emblem
-│   │   └── ai studio logo hero.png # High-resolution hero title logo
-│   ├── favicon.png                 # Browser favicon
-│   └── robots.txt                  # Search engine crawl rules
+│   │   └── ai studio logo hero.png      # High-resolution hero title logo
+│   ├── favicon.png                      # Browser favicon
+│   └── robots.txt                       # Search engine crawl rules
 ├── src/
 │   ├── routes/
-│   │   ├── __root.tsx              # Root HTML shell, fonts, meta tags & providers
-│   │   ├── index.tsx               # Main landing page assembling all sections
-│   │   ├── admin.tsx               # CRM Admin Portal with auth & auto-logout
-│   │   ├── privacy-policy.tsx      # Privacy Policy page
-│   │   └── terms.tsx               # Terms and conditions
+│   │   ├── __root.tsx                   # Root HTML shell, fonts, meta tags & providers
+│   │   ├── index.tsx                    # Main landing page assembling all sections
+│   │   ├── admin.tsx                    # CRM Admin Portal with auth & auto-logout
+│   │   ├── order-confirmation.tsx       # Post-payment order confirmation & PDF receipt download
+│   │   ├── cookie-policy.tsx            # Cookie Policy page
+│   │   ├── privacy-policy.tsx           # Privacy Policy page
+│   │   └── terms.tsx                    # Terms and Conditions page
 │   ├── components/
 │   │   └── site/
-│   │       ├── data.ts             # Static content (pricing, services, FAQs, reviews)
-│   │       ├── sections.tsx        # UI components (Hero, Portfolio, Pricing, Form, Modal, FAQ)
-│   │       ├── custom-cursor.tsx   # Atmospheric glow cursor follower
-│   │       └── ui.tsx              # Base design components (NeonButton, Section, Cards)
+│   │       ├── data.ts                  # Static content (pricing, services, FAQs, reviews)
+│   │       ├── sections.tsx             # UI components (Hero, Portfolio, Pricing, Form, Modal, FAQ)
+│   │       ├── checkout-modal.tsx       # PayPal checkout modal for direct package purchases
+│   │       ├── custom-cursor.tsx        # Atmospheric glow cursor follower
+│   │       └── ui.tsx                   # Base design components (NeonButton, Section, Cards)
 │   ├── lib/
-│   │   ├── db.ts                   # Supabase REST + PostgreSQL dual database engine
-│   │   ├── email.ts                # Direct Gmail SMTP lead notification engine
-│   │   ├── lead-actions.ts         # TanStack Start server functions (create, fetch, update, delete)
-│   │   ├── error-capture.ts        # SSR error capture utility
-│   │   ├── error-page.ts           # Fallback error diagnostics page
-│   │   └── utils.ts                # Tailwind class utility (clsx + twMerge)
-│   ├── styles.css                  # Global Tailwind CSS tokens, glows, and animations
-│   ├── routeTree.gen.ts            # Auto-generated TanStack route tree
-│   ├── router.tsx                  # QueryClient and TanStack router configuration
-│   ├── server.ts                   # Nitro / Node SSR server entry wrapper
-│   └── start.ts                    # Client hydration entrypoint
-├── .env.example                    # Environment variable template
-├── package.json                    # Dependencies and scripts
-├── tsconfig.json                   # TypeScript configuration
-└── vite.config.ts                  # Vite + Nitro node-server configuration
+│   │   ├── db.ts                        # Supabase REST + PostgreSQL dual database engine
+│   │   ├── email.ts                     # Direct Gmail SMTP lead notification engine
+│   │   ├── lead-actions.ts              # TanStack Start server functions (create, fetch, update, delete)
+│   │   ├── paypal.ts                    # PayPal SDK client configuration (sandbox/live)
+│   │   ├── paypal-actions.ts            # PayPal Orders v2 server functions (create, capture, verify)
+│   │   ├── pdf-receipt.ts               # PDFKit branded PDF receipt generator
+│   │   ├── receipt-assets.ts            # Base64 brand assets for PDF embedding
+│   │   ├── pricing.ts                   # Centralized pricing & package definitions
+│   │   ├── error-capture.ts             # SSR error capture utility
+│   │   ├── error-page.ts                # Fallback error diagnostics page
+│   │   ├── lovable-error-reporting.ts   # Lovable platform error reporting integration
+│   │   └── utils.ts                     # Tailwind class utility (clsx + twMerge)
+│   ├── styles.css                       # Global Tailwind CSS tokens, glows, and animations
+│   ├── routeTree.gen.ts                 # Auto-generated TanStack route tree
+│   ├── router.tsx                       # QueryClient and TanStack router configuration
+│   ├── server.ts                        # Nitro / Node SSR server entry wrapper
+│   └── start.ts                         # Client hydration entrypoint
+├── .env.example                         # Environment variable template
+├── package.json                         # Dependencies and scripts
+├── tsconfig.json                        # TypeScript configuration
+└── vite.config.ts                       # Vite + Nitro node-server configuration
 ```
 
 ---
 
 ## 🔑 Environment Variables Setup
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root (use `.env.example` as a template):
 
 ```env
 # Local PostgreSQL Connection
 DATABASE_URL=postgres://postgres:8080@localhost:5432/ai_studio
 
 # Production Supabase Credentials (Configured in Hostinger)
-SUPABASE_URL=https://oxydwcusxvlsvjkwexsz.supabase.co
-SUPABASE_API_KEY=sb_secret_YourSecretApiKeyHere
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_API_KEY=your-supabase-service-role-key
 
 # Gmail SMTP Email Dispatch (Direct Google Delivery)
 SMTP_USER=quickuppaistudio1@gmail.com
-SMTP_PASS=ggtodbgiucfdypcj
+SMTP_PASS=your-google-app-password
 LEAD_NOTIFICATION_EMAIL=quickuppaistudio1@gmail.com
+
+# PayPal Payment Gateway Integration
+PAYPAL_CLIENT_ID=your_paypal_client_id_here
+PAYPAL_CLIENT_SECRET=your_paypal_client_secret_here
+PAYPAL_ENVIRONMENT=sandbox   # Change to 'live' for production
 
 # Application Server Port
 PORT=3000
 ```
 
 > [!NOTE]
-> `.env` is listed in `.gitignore` and is never committed to GitHub.
+> `.env` is listed in `.gitignore` and is never committed to GitHub. Never commit real credentials.
+
+> [!IMPORTANT]
+> Change `PAYPAL_ENVIRONMENT` from `sandbox` to `live` and update PayPal credentials before going live.
 
 ---
 
@@ -270,6 +316,10 @@ npm run build
 
 # 4. Run production build locally
 npm start
+
+# 5. Lint & format
+npm run lint
+npm run format
 ```
 
 ---
@@ -277,31 +327,36 @@ npm start
 ## 🚀 Deployment on Hostinger & Auto-Deploy CI/CD
 
 1. **Connect GitHub Repository:**
-   - Link `https://github.com/QSPL8080/AI-STUDIO.git` to your Hostinger Cloud/Web Hosting project.
+   - Link `https://github.com/QSPL8080/AI-STUDIO-USA.git` to your Hostinger Cloud/Web Hosting project.
    - Branch: `main`
 2. **Configure Environment Variables in Hostinger Dashboard:**
-   - `SUPABASE_URL`: `https://oxydwcusxvlsvjkwexsz.supabase.co`
+   - `SUPABASE_URL`: Your Supabase project URL
    - `SUPABASE_API_KEY`: Your Supabase service role / API key
    - `SMTP_USER`: `quickuppaistudio1@gmail.com`
-   - `SMTP_PASS`: `ggtodbgiucfdypcj`
+   - `SMTP_PASS`: Your Google App Password
    - `LEAD_NOTIFICATION_EMAIL`: `quickuppaistudio1@gmail.com`
+   - `PAYPAL_CLIENT_ID`: Your live PayPal client ID
+   - `PAYPAL_CLIENT_SECRET`: Your live PayPal client secret
+   - `PAYPAL_ENVIRONMENT`: `live`
    - `PORT`: `3000`
 3. **Build & Start Settings:**
    - Build Command: `npm run build`
    - Start Command: `npm start`
 4. **Auto-Deployment:**
-   Every time you push code to GitHub (`git push origin main`), Hostinger automatically rebuilds and deploys the latest version to **`https://quickuppaistudio.com`**.
+   Every time you push code to GitHub (`git push origin main`), Hostinger automatically rebuilds and deploys the latest version to **`https://quickuppaistudio.us`**.
 
 ---
 
 ## 🛡 Security, Performance & SEO Optimizations
 
-- **Zero Hardcoded Secrets:** All database credentials, tokens, and keys are isolated in environment variables.
+- **Zero Hardcoded Secrets:** All database credentials, tokens, API keys, and payment credentials are isolated in environment variables.
 - **Session Auto-Timeout:** Inactivity listener logs out admin sessions automatically after 10 minutes.
 - **Faststart Media Streaming:** All hero and showcase MP4 videos have their `moov` atom located at the beginning of the file for instant buffering.
 - **Semantic SEO Structure:** Complete semantic `<h1>`, descriptive `alt` tags, and OpenGraph/Twitter card metadata.
 - **Core Web Vitals Optimized:** Hero brand assets use `fetchPriority="high"` and `loading="eager"` for sub-second Largest Contentful Paint (LCP).
 - **Firewall Bypass:** Supabase HTTPS REST interface guarantees zero connection drops from cloud TCP port blocks.
+- **PayPal Order Verification:** All PayPal order captures are verified server-side before fulfillment to prevent payment spoofing.
+- **Legal Compliance:** Cookie Policy, Privacy Policy, and Terms & Conditions pages fully implemented.
 
 ---
 
@@ -310,6 +365,7 @@ npm start
 - **Quickupp AI Studio** — Enterprise AI UGC & Avatar Video Production Platform
 - **Lead Architect & Developer:** Quickupp Development Team
 - **Official Links:**
-  - Website: [quickuppaistudio.us](https://quickuppaistudio.us)  
-  - YouTube: [Quickupp AI Studio YouTube Channel](https://youtube.com/@quickuppaistudio1@gmail.com?si=QnC53RJK3YyMFtth)  
-Support / Inquiries: [quickuppsoftech1@gmail.com](mailto:quickuppsoftech1@gmail.com)
+  - Website: [quickuppaistudio.us](https://quickuppaistudio.us)
+  - YouTube: [Quickupp AI Studio YouTube Channel](https://youtube.com/@quickuppaistudio1)
+  - Support / Inquiries: [quickuppsoftech1@gmail.com](mailto:quickuppsoftech1@gmail.com)
+
