@@ -90,7 +90,15 @@ export interface CalendlyMeeting {
   created_at: string;
   cancelled_at?: string;
   deleted_at?: string | null;
+  /** Result recorded by a CRM user (completed / not_conducted / no_show): Calendly sync won't overwrite it */
+  outcome_locked?: boolean | null;
+  outcome_set_by?: string | null;
+  outcome_set_at?: string | null;
 }
+
+/** Statuses that describe what happened after the meeting time (a CRM user can set these) */
+export const MEETING_OUTCOME_STATUSES = ["completed", "not_conducted", "no_show"] as const;
+export type MeetingOutcome = (typeof MEETING_OUTCOME_STATUSES)[number];
 
 export interface CRMNotification {
   id: string;
@@ -332,6 +340,9 @@ export async function initDb() {
 
           ALTER TABLE calendly_meetings ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
           ALTER TABLE calendly_meetings ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMP WITH TIME ZONE;
+          ALTER TABLE calendly_meetings ADD COLUMN IF NOT EXISTS outcome_locked BOOLEAN DEFAULT FALSE;
+          ALTER TABLE calendly_meetings ADD COLUMN IF NOT EXISTS outcome_set_by VARCHAR(255);
+          ALTER TABLE calendly_meetings ADD COLUMN IF NOT EXISTS outcome_set_at TIMESTAMP WITH TIME ZONE;
 
           CREATE TABLE IF NOT EXISTS crm_notifications (
             id VARCHAR(64) PRIMARY KEY,
@@ -1167,7 +1178,7 @@ export async function saveCalendlyMeeting(data: {
   const id = `meet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const now = new Date().toISOString();
   const isCancelled = data.meeting_status === "cancelled";
-  const isCompleted = data.meeting_status === "completed";
+  const isCompleted = (MEETING_OUTCOME_STATUSES as readonly string[]).includes(data.meeting_status || "");
   // Cancelled / completed always win; "rescheduled" only applies to upcoming bookings
   const isRescheduled = !isCancelled && !isCompleted && (data.is_rescheduled || data.meeting_status === "rescheduled");
   // This booking replaced an earlier one (status may now be rescheduled, completed or cancelled)
@@ -1225,6 +1236,8 @@ export async function saveCalendlyMeeting(data: {
 
       if (Array.isArray(existing) && existing.length > 0) {
         const existingMeeting = existing[0];
+        // A result recorded in the CRM wins over Calendly's automatic result
+        if (existingMeeting.outcome_locked && isCompleted) return existingMeeting;
         const updated = await supabaseRest(`calendly_meetings?id=eq.${existingMeeting.id}`, {
           method: "PATCH",
           body: JSON.stringify({
@@ -1237,6 +1250,8 @@ export async function saveCalendlyMeeting(data: {
             meeting_type: data.meeting_type || existingMeeting.meeting_type,
             notes: mergeNotes(existingMeeting),
             ...(isCancelled ? { cancelled_at: existingMeeting.cancelled_at || now } : {}),
+            // A real reschedule / cancellation starts a new outcome cycle
+            ...(!isCompleted && existingMeeting.outcome_locked ? { outcome_locked: false } : {}),
           }),
         });
         if (Array.isArray(updated) && updated[0]) return updated[0];
@@ -1287,6 +1302,11 @@ export async function saveCalendlyMeeting(data: {
         existingMeeting = latest.rows[0] || null;
       }
 
+      // A result recorded in the CRM wins over Calendly's automatic result
+      if (existingMeeting && existingMeeting.outcome_locked && isCompleted) {
+        return existingMeeting;
+      }
+
       if (existingMeeting) {
         const updateRes = await pool.query(
           `UPDATE calendly_meetings 
@@ -1297,7 +1317,8 @@ export async function saveCalendlyMeeting(data: {
                notes = COALESCE($5, notes),
                client_name = COALESCE($6, client_name),
                phone = COALESCE($7, phone),
-               cancelled_at = CASE WHEN $3 = 'cancelled' THEN COALESCE(cancelled_at, NOW()) ELSE NULL END
+               cancelled_at = CASE WHEN $3 = 'cancelled' THEN COALESCE(cancelled_at, NOW()) ELSE NULL END,
+               outcome_locked = CASE WHEN $3 IN ('completed', 'not_conducted', 'no_show') THEN COALESCE(outcome_locked, FALSE) ELSE FALSE END
            WHERE id = $8 RETURNING *`,
           [
             data.meeting_date || null,
@@ -1630,6 +1651,77 @@ export async function deleteCalendlyMeeting(id: string): Promise<boolean> {
 
 export async function deleteCalendlyMeetings(ids: string[]): Promise<boolean> {
   return softDeleteCalendlyMeetings(ids);
+}
+
+/** CRM user records what happened (completed / not conducted / no show) with a note. */
+export async function setCalendlyMeetingOutcome(
+  id: string,
+  outcome: MeetingOutcome,
+  note: string,
+  setBy: string
+): Promise<CalendlyMeeting | null> {
+  const label = outcome === "completed" ? "Completed" : outcome === "no_show" ? "No Show" : "Not Conducted";
+  const stamp = new Date().toLocaleString("en-US", { timeZone: "America/New_York", dateStyle: "medium", timeStyle: "short" });
+  const line = `[${stamp} ET] Result set to ${label} by ${setBy}: ${note}`;
+  const nowIso = new Date().toISOString();
+
+  if (getSupabaseConfig()) {
+    try {
+      const cur = await supabaseRest(`calendly_meetings?id=eq.${encodeURIComponent(id)}&select=notes`);
+      const prevNotes = Array.isArray(cur) && cur[0]?.notes ? String(cur[0].notes) : "";
+      const rows = await supabaseRest(`calendly_meetings?id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          meeting_status: outcome,
+          outcome_locked: true,
+          outcome_set_by: setBy,
+          outcome_set_at: nowIso,
+          notes: prevNotes ? `${prevNotes}\n${line}` : line,
+        }),
+      });
+      if (Array.isArray(rows) && rows[0]) return rows[0];
+    } catch (e) {
+      console.warn("Supabase setCalendlyMeetingOutcome fallback:", e);
+    }
+  }
+
+  await initDb();
+  try {
+    const pool = await getPool();
+    if (pool) {
+      const res = await pool.query(
+        `UPDATE calendly_meetings
+            SET meeting_status = $1, outcome_locked = TRUE, outcome_set_by = $2, outcome_set_at = NOW(),
+                notes = CASE WHEN COALESCE(notes, '') = '' THEN $3 ELSE notes || E'\n' || $3 END
+          WHERE id = $4 RETURNING *`,
+        [outcome, setBy, line, id]
+      );
+      return res.rows[0] || null;
+    }
+  } catch (err) {
+    console.error("PostgreSQL setCalendlyMeetingOutcome error:", err);
+  }
+  return null;
+}
+
+/**
+ * Meetings older than the Calendly sync window: once their time has passed without a
+ * recorded result, mark them "not_conducted" (never touches CRM-recorded results).
+ */
+export async function markPastMeetingsNotConducted(): Promise<number> {
+  const meetings = await getCalendlyMeetings(false);
+  const cutoff = Date.now() - 2 * 60 * 60 * 1000; // 2h buffer after the start time
+  let count = 0;
+  for (const m of meetings) {
+    if (m.outcome_locked) continue;
+    if (m.meeting_status !== "scheduled" && m.meeting_status !== "rescheduled" && m.meeting_status !== "upcoming") continue;
+    const time = String(m.meeting_time || "").replace(/\s*E[SD]T$/i, "");
+    const start = new Date(`${m.meeting_date} ${time} GMT-0400`).getTime();
+    if (isNaN(start) || start > cutoff) continue;
+    const ok = await updateCalendlyMeetingStatus(m.id, "not_conducted" as any);
+    if (ok) count++;
+  }
+  return count;
 }
 
 /** Soft-delete meetings saved with placeholder data (old website-widget bug). */

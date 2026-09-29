@@ -35,6 +35,10 @@ import {
   deleteCalendlyMeetings as deleteCalendlyMeetingsInDb,
   clearAllCalendlyMeetings as clearAllCalendlyMeetingsInDb,
   removePlaceholderCalendlyMeetings as removePlaceholderCalendlyMeetingsInDb,
+  setCalendlyMeetingOutcome as setCalendlyMeetingOutcomeInDb,
+  markPastMeetingsNotConducted as markPastMeetingsNotConductedInDb,
+  MEETING_OUTCOME_STATUSES,
+  type MeetingOutcome,
   saveCRMNotification as saveCRMNotificationInDb,
   getCRMNotifications as getCRMNotificationsFromDb,
   markNotificationRead as markNotificationReadInDb,
@@ -839,10 +843,10 @@ export async function syncCalendlyEventsFromApi(opts?: { force?: boolean }): Pro
           previous_meeting_time: previousSlot?.time,
           notes: isCanceled
             ? `Cancelled in Calendly${cancelReason}`
-            : status === "completed"
-            ? decision.action === "save" && decision.noShow
-              ? `Meeting time passed — client marked as NO-SHOW in Calendly (${dateStr} at ${timeStr})`
-              : `Meeting completed (${dateStr} at ${timeStr})`
+            : status === "no_show"
+            ? `Client marked as No-Show in Calendly (${dateStr} at ${timeStr})`
+            : status === "not_conducted"
+            ? `Meeting time passed (${dateStr} at ${timeStr}) — not conducted / no result recorded yet`
             : isRescheduled
             ? `Rescheduled in Calendly to ${dateStr} at ${timeStr}`
             : `Booked in Calendly for ${dateStr} at ${timeStr}`,
@@ -853,6 +857,11 @@ export async function syncCalendlyEventsFromApi(opts?: { force?: boolean }): Pro
         console.warn("Error syncing single Calendly event:", evErr);
       }
     }
+
+    // Meetings older than the sync window whose time passed without a result
+    try {
+      await markPastMeetingsNotConductedInDb();
+    } catch {}
 
     return { count: syncedCount };
   } catch (err: any) {
@@ -931,6 +940,41 @@ export const cancelCalendlyMeetingServerFn = createServerFn({ method: "POST" })
       success: false,
       error: "CRM is strictly read-only for Calendly. Meetings can only be cancelled directly inside Calendly.",
     };
+  });
+
+// CRM user records the meeting result (Completed / Not Conducted / No Show) with a note.
+// Once recorded, the automatic Calendly result no longer overwrites it; a real
+// reschedule or cancellation in Calendly still updates the meeting.
+export const setMeetingOutcomeServerFn = createServerFn({ method: "POST" })
+  .validator(
+    (data: { id: string; outcome: string; note: string; performedBy?: string; userRole?: string }) => data
+  )
+  .handler(async ({ data }) => {
+    try {
+      const outcome = String(data.outcome || "") as MeetingOutcome;
+      if (!(MEETING_OUTCOME_STATUSES as readonly string[]).includes(outcome)) {
+        return { success: false, error: "Choose Completed, Not Conducted or No Show" };
+      }
+      const note = (data.note || "").trim();
+      if (note.length < 3) return { success: false, error: "Please add a short note explaining the result" };
+      const by = (data.performedBy || "CRM User").trim();
+
+      const meeting = await setCalendlyMeetingOutcomeInDb(data.id, outcome, note.slice(0, 1000), by);
+      if (!meeting) return { success: false, error: "Meeting not found or could not be updated" };
+
+      const label = outcome === "completed" ? "Completed" : outcome === "no_show" ? "No Show" : "Not Conducted";
+      try {
+        await addActivityLogInDb({
+          action: `Meeting Result: ${label}`,
+          details: `${meeting.client_name} (${meeting.email}) ${meeting.meeting_date} ${meeting.meeting_time} marked ${label} by ${by}. Note: ${note}`,
+          performed_by: by,
+          user_role: data.userRole || "admin",
+        });
+      } catch {}
+      return { success: true, meeting };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   });
 
 export const deleteCalendlyMeetingServerFn = createServerFn({ method: "POST" })

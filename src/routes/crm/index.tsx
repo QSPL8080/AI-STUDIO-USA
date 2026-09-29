@@ -97,6 +97,7 @@ import {
   resetCalendlyDataServerFn,
   saveCalendlyMeetingServerFn,
   updateCalendlyMeetingServerFn,
+  setMeetingOutcomeServerFn,
   cancelCalendlyMeetingServerFn,
   deleteCalendlyMeetingServerFn,
   deleteCalendlyMeetingsBulkServerFn,
@@ -288,6 +289,18 @@ const BUILT_IN_SUPER_ADMIN_EMAIL = "sa@aistudio.us";
 // Only the Super Admin is built in; every other account is a normal database user
 const BUILT_IN_ACCOUNT_EMAILS = ["sa@aistudio.us"];
 const LEGACY_ACCOUNT_EMAILS = ["sa@aistudio.com", "admin@aistudio.com", "lm@aistudio.com"];
+
+// Human-readable meeting status labels (DB values stay snake_case)
+const MEETING_STATUS_LABELS: Record<string, string> = {
+  scheduled: "Scheduled",
+  upcoming: "Upcoming",
+  rescheduled: "Rescheduled",
+  cancelled: "Cancelled",
+  completed: "Completed",
+  not_conducted: "Not Conducted",
+  no_show: "No Show",
+};
+const meetingStatusLabel = (s?: string) => (s ? MEETING_STATUS_LABELS[s] || s : "Scheduled");
 
 function AdminPage() {
   // Pure Clean Light Theme (Dark Mode completely removed as per requirements)
@@ -754,6 +767,10 @@ function AdminPage() {
   const [deliveringLead, setDeliveringLead] = useState<Lead | null>(null);
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
   const [viewMeetingDetails, setViewMeetingDetails] = useState<CalendlyMeeting | null>(null);
+  // "Set Meeting Result" form in the meeting details popup
+  const [outcomeChoice, setOutcomeChoice] = useState<"" | "completed" | "not_conducted" | "no_show">("");
+  const [outcomeNote, setOutcomeNote] = useState("");
+  const [isSavingOutcome, setIsSavingOutcome] = useState(false);
   const [selectedLeadForMsg, setSelectedLeadForMsg] = useState<Lead | null>(null);
 
   // Real-time Sync & Notification State
@@ -5889,7 +5906,7 @@ function AdminPage() {
             </div>
 
             {/* KPI Summary Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-3">
               <button
                 type="button"
                 onClick={() => setMeetingStatusFilter("all")}
@@ -5950,6 +5967,36 @@ function AdminPage() {
 
               <button
                 type="button"
+                onClick={() => setMeetingStatusFilter(meetingStatusFilter === "not_conducted" ? "all" : "not_conducted")}
+                className={`rounded-xl border p-3.5 text-left cursor-pointer transition-all ${
+                  meetingStatusFilter === "not_conducted"
+                    ? "border-slate-500 ring-2 ring-slate-500/20 bg-slate-50/20"
+                    : "border-slate-200 bg-white hover:border-slate-300"
+                }`}
+              >
+                <p className="text-[11px] font-bold text-slate-500 uppercase">Not Conducted</p>
+                <p className="text-xl font-extrabold text-slate-600 mt-1">
+                  {meetings.filter((m) => m.meeting_status === "not_conducted").length}
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMeetingStatusFilter(meetingStatusFilter === "no_show" ? "all" : "no_show")}
+                className={`rounded-xl border p-3.5 text-left cursor-pointer transition-all ${
+                  meetingStatusFilter === "no_show"
+                    ? "border-orange-500 ring-2 ring-orange-500/20 bg-orange-50/20"
+                    : "border-slate-200 bg-white hover:border-orange-300"
+                }`}
+              >
+                <p className="text-[11px] font-bold text-slate-500 uppercase">No Show</p>
+                <p className="text-xl font-extrabold text-orange-600 mt-1">
+                  {meetings.filter((m) => m.meeting_status === "no_show").length}
+                </p>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setMeetingStatusFilter(meetingStatusFilter === "cancelled" ? "all" : "cancelled")}
                 className={`rounded-xl border p-3.5 text-left cursor-pointer transition-all ${
                   meetingStatusFilter === "cancelled"
@@ -5979,7 +6026,7 @@ function AdminPage() {
 
               {/* Status Filter Tabs */}
               <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto text-xs">
-                {["all", "scheduled", "upcoming", "completed", "rescheduled", "cancelled"].map((st) => (
+                {["all", "scheduled", "rescheduled", "completed", "not_conducted", "no_show", "cancelled"].map((st) => (
                   <button
                     key={st}
                     onClick={() => setMeetingStatusFilter(st)}
@@ -5989,7 +6036,7 @@ function AdminPage() {
                         : "text-slate-600 hover:bg-slate-100"
                     }`}
                   >
-                    {st === "all" ? "All Statuses" : st}
+                    {st === "all" ? "All Statuses" : meetingStatusLabel(st)}
                   </button>
                 ))}
               </div>
@@ -6150,10 +6197,16 @@ function AdminPage() {
                                     ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
                                     : m.meeting_status === "rescheduled"
                                     ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                                    : m.meeting_status === "no_show"
+                                    ? "bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800"
+                                    : m.meeting_status === "not_conducted"
+                                    ? "bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700"
                                     : "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
                                 }`}
+                                title={m.outcome_locked ? `Result recorded by ${m.outcome_set_by || "CRM user"}` : undefined}
                               >
-                                {m.meeting_status || "Scheduled"}
+                                {meetingStatusLabel(m.meeting_status)}
+                                {m.outcome_locked ? " ✎" : ""}
                               </span>
                             )}
                           </td>
@@ -9130,7 +9183,7 @@ function AdminPage() {
               <div className="rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/70 dark:bg-blue-950/40 p-3 text-blue-800 dark:text-blue-200 flex items-start gap-2.5">
                 <Lock className="h-4 w-4 shrink-0 mt-0.5 text-blue-600 dark:text-blue-400" />
                 <p className="text-[11px] leading-relaxed">
-                  <strong>Source of Truth:</strong> This meeting is synchronized directly from Calendly. To reschedule, cancel, or modify client booking details, please manage it directly in your connected Calendly account.
+                  <strong>Source of Truth:</strong> Booking changes (reschedule, cancel, client details) come from Calendly. After the meeting time you can record the result below; a result set here is kept even when Calendly syncs.
                 </p>
               </div>
 
@@ -9148,10 +9201,24 @@ function AdminPage() {
                         ? "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300"
                         : viewMeetingDetails.meeting_status === "completed"
                         ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                        : viewMeetingDetails.meeting_status === "no_show"
+                        ? "bg-orange-100 text-orange-800 dark:bg-orange-950/60 dark:text-orange-300"
+                        : viewMeetingDetails.meeting_status === "not_conducted"
+                        ? "bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200"
+                        : viewMeetingDetails.meeting_status === "rescheduled"
+                        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
                         : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300"
                     }`}>
-                      {viewMeetingDetails.meeting_status}
+                      {meetingStatusLabel(viewMeetingDetails.meeting_status)}
                     </span>
+                    {viewMeetingDetails.outcome_locked && (
+                      <div className="text-[10px] text-slate-500 mt-1">
+                        Set by {viewMeetingDetails.outcome_set_by || "CRM user"}
+                        {viewMeetingDetails.outcome_set_at
+                          ? ` · ${new Date(viewMeetingDetails.outcome_set_at).toLocaleString()}`
+                          : ""}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div>
@@ -9195,6 +9262,94 @@ function AdminPage() {
                     </a>
                   </div>
                 )}
+
+                {/* Record the meeting result (after the meeting time) */}
+                {viewMeetingDetails.meeting_status !== "cancelled" &&
+                  (() => {
+                    const time = String(viewMeetingDetails.meeting_time || "").replace(/\s*E[SD]T$/i, "");
+                    const start = new Date(`${viewMeetingDetails.meeting_date} ${time} GMT-0400`).getTime();
+                    const started =
+                      isNaN(start) ||
+                      start <= Date.now() ||
+                      ["completed", "not_conducted", "no_show"].includes(viewMeetingDetails.meeting_status);
+                    if (!started) {
+                      return (
+                        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-3 text-[11px] text-slate-500">
+                          You can record the meeting result (Completed / Not Conducted / No Show) once the meeting time has passed.
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3 space-y-2.5">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Set Meeting Result</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {([
+                            ["completed", "Completed", "bg-emerald-600 border-emerald-600 text-white"],
+                            ["not_conducted", "Not Conducted", "bg-slate-700 border-slate-700 text-white"],
+                            ["no_show", "No Show", "bg-orange-600 border-orange-600 text-white"],
+                          ] as const).map(([val, label, activeCls]) => (
+                            <button
+                              key={val}
+                              type="button"
+                              onClick={() => setOutcomeChoice(val)}
+                              className={`rounded-lg border px-3 py-1.5 text-[11px] font-bold cursor-pointer transition-colors ${
+                                outcomeChoice === val
+                                  ? activeCls
+                                  : "border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                        <textarea
+                          value={outcomeNote}
+                          onChange={(e) => setOutcomeNote(e.target.value)}
+                          rows={2}
+                          placeholder="Note (required) — e.g. Call done, client wants 5 UGC reels / Client did not join"
+                          className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 text-xs outline-none focus:ring-2 focus:ring-blue-500/30"
+                        />
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            disabled={!outcomeChoice || outcomeNote.trim().length < 3 || isSavingOutcome}
+                            onClick={async () => {
+                              if (!viewMeetingDetails || !outcomeChoice) return;
+                              setIsSavingOutcome(true);
+                              try {
+                                const res = await setMeetingOutcomeServerFn({
+                                  data: {
+                                    id: viewMeetingDetails.id,
+                                    outcome: outcomeChoice,
+                                    note: outcomeNote.trim(),
+                                    performedBy: session?.name || "CRM User",
+                                    userRole: session?.role || "admin",
+                                  },
+                                });
+                                if (res.success && res.meeting) {
+                                  const updated = res.meeting as CalendlyMeeting;
+                                  setMeetings((prev) => prev.map((x) => (x.id === updated.id ? { ...x, ...updated } : x)));
+                                  setViewMeetingDetails((prev) => (prev ? { ...prev, ...updated } : prev));
+                                  setOutcomeChoice("");
+                                  setOutcomeNote("");
+                                  showToast(`Meeting marked ${meetingStatusLabel(updated.meeting_status)}`);
+                                } else {
+                                  showToast(res.error || "Could not save the meeting result");
+                                }
+                              } catch {
+                                showToast("Could not save the meeting result");
+                              } finally {
+                                setIsSavingOutcome(false);
+                              }
+                            }}
+                            className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                          >
+                            {isSavingOutcome ? "Saving..." : "Save Result"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                 {viewMeetingDetails.notes && (
                   <div>

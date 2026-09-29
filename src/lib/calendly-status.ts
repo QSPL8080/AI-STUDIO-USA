@@ -12,7 +12,7 @@ export type CalendlyAction =
   | { action: "ignore"; reason: "old_slot_of_reschedule" }
   | {
       action: "save";
-      status: "scheduled" | "rescheduled" | "cancelled" | "completed";
+      status: "scheduled" | "rescheduled" | "cancelled" | "not_conducted" | "no_show";
       isRescheduled: boolean;
       /** Set when this booking replaced an earlier one (used to find the CRM meeting). */
       oldInviteeUri?: string;
@@ -23,7 +23,7 @@ export type CalendlyAction =
 export function classifyCalendlyInvitee(input: {
   eventType?: string | undefined; // webhook event, e.g. "invitee.canceled"
   eventStatus?: string | undefined; // scheduled_event.status: "active" | "canceled"
-  endTime?: string | undefined; // scheduled_event.end_time (for "completed")
+  endTime?: string | undefined; // scheduled_event.end_time (meeting time passed?)
   now?: number;
   invitee: any;
   payload?: any;
@@ -52,14 +52,16 @@ export function classifyCalendlyInvitee(input: {
       ? { action: "save", status: "cancelled", isRescheduled: false, oldInviteeUri: String(oldInvitee) }
       : { action: "save", status: "cancelled", isRescheduled: false };
   }
-  // Calendly has no "completed" state: an active meeting whose end time has passed happened
+  // Meeting time has passed: Calendly only tells us about a no-show (marked by the host).
+  // Otherwise it is "not_conducted" until a CRM user records the real result.
   const endMs = input.endTime ? new Date(input.endTime).getTime() : NaN;
   const isPast = !isNaN(endMs) && endMs < (input.now ?? Date.now());
   const noShow = Boolean(invitee.no_show);
   if (isPast) {
+    const status = noShow ? "no_show" : "not_conducted";
     return oldInvitee
-      ? { action: "save", status: "completed", isRescheduled: true, oldInviteeUri: String(oldInvitee), noShow }
-      : { action: "save", status: "completed", isRescheduled: false, noShow };
+      ? { action: "save", status, isRescheduled: true, oldInviteeUri: String(oldInvitee), noShow }
+      : { action: "save", status, isRescheduled: false, noShow };
   }
   if (oldInvitee) {
     return { action: "save", status: "rescheduled", isRescheduled: true, oldInviteeUri: String(oldInvitee) };
