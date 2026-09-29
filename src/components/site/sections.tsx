@@ -2881,7 +2881,24 @@ export function StrategyCall() {
             parentElement: calendlyContainerRef.current,
           });
         } catch {
-          // Keep fallback iframe intact
+          // Fallback to iframe recreation
+          if (calendlyContainerRef.current) {
+            calendlyContainerRef.current.innerHTML = `
+              <iframe
+                src="${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed"
+                width="100%"
+                height="760"
+                frameborder="0"
+                title="Select a Date & Time - Strategy Call"
+                style="width: 100%; height: 760px; border: 0;"
+              ></iframe>
+            `;
+          }
+        }
+      } else if (calendlyContainerRef.current) {
+        const iframe = calendlyContainerRef.current.querySelector("iframe");
+        if (iframe) {
+          iframe.src = `${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`;
         }
       }
     };
@@ -2924,6 +2941,11 @@ export function StrategyCall() {
           } catch (err) {
             console.error("Failed to auto-record Calendly booking:", err);
           }
+
+          // Reset and regain fresh Calendly calendar view after 5 seconds
+          setTimeout(() => {
+            initWidget();
+          }, 5000);
         }
       }
     };
