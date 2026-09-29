@@ -1468,7 +1468,121 @@ export const saveBroadcastServerFn = createServerFn({ method: "POST" })
   });
 
 // ── Failed-login lockout + email alert ───────────────────────────────────────
-const LOGIN_LOCKOUT_MINUTES = 15;
+const LOGIN_LOCKOUT_MINUTES = 15; // legacy value (kept for older callers)
+
+// Progressive lockout (per account email): every N failed attempts locks the account,
+// each lockout longer than the last. A successful login resets it. Super Admin is never locked.
+const LOCKOUT_STEPS_MINUTES = [5, 10, 20, 45, 60, 120, 240, 480, 960, 1440];
+const LOCKOUT_SETTINGS_KEY = "login_lockouts";
+type LockState = { fails: number; level: number; lockedUntil: number };
+
+function formatLockDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+  const h = Math.round((minutes / 60) * 10) / 10;
+  return `${h} hour${h === 1 ? "" : "s"}`;
+}
+
+function isSuperAdminLogin(email: string, role?: string | null): boolean {
+  return role === "super_admin" || (email || "").toLowerCase().trim() === "sa@aistudio.us";
+}
+
+async function readLockStates(): Promise<Record<string, LockState>> {
+  try {
+    const st = await getCrmSettingsFromDb();
+    const parsed = JSON.parse(st[LOCKOUT_SETTINGS_KEY] || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+async function writeLockStates(states: Record<string, LockState>): Promise<void> {
+  // Drop entries that are fully cleared to keep the value small
+  const clean: Record<string, LockState> = {};
+  for (const [k, v] of Object.entries(states)) {
+    if (v && (v.fails > 0 || v.level > 0 || v.lockedUntil > Date.now())) clean[k] = v;
+  }
+  await saveCrmSettingsToDb({ [LOCKOUT_SETTINGS_KEY]: JSON.stringify(clean) });
+}
+
+/** Is this account locked right now? (never for the Super Admin) */
+async function getActiveLock(email: string): Promise<{ locked: boolean; remainingMinutes: number; level: number }> {
+  const key = (email || "").toLowerCase().trim();
+  if (!key || isSuperAdminLogin(key)) return { locked: false, remainingMinutes: 0, level: 0 };
+  const st = (await readLockStates())[key];
+  if (st && st.lockedUntil > Date.now()) {
+    return { locked: true, remainingMinutes: Math.max(1, Math.ceil((st.lockedUntil - Date.now()) / 60000)), level: st.level };
+  }
+  return { locked: false, remainingMinutes: 0, level: st?.level || 0 };
+}
+
+/** Count a failed attempt; returns whether it just locked the account and for how long */
+async function registerFailedLogin(
+  email: string,
+  role: string | null | undefined,
+  threshold: number
+): Promise<{ lockedNow: boolean; lockMinutes: number; attemptsLeft: number; level: number }> {
+  const key = (email || "").toLowerCase().trim();
+  if (!key || isSuperAdminLogin(key, role)) {
+    return { lockedNow: false, lockMinutes: 0, attemptsLeft: threshold, level: 0 };
+  }
+  const states = await readLockStates();
+  const st: LockState = states[key] || { fails: 0, level: 0, lockedUntil: 0 };
+  st.fails += 1;
+  let lockedNow = false;
+  let lockMinutes = 0;
+  if (st.fails >= threshold) {
+    lockMinutes = LOCKOUT_STEPS_MINUTES[Math.min(st.level, LOCKOUT_STEPS_MINUTES.length - 1)] as number;
+    st.level += 1;
+    st.fails = 0;
+    st.lockedUntil = Date.now() + lockMinutes * 60 * 1000;
+    lockedNow = true;
+  }
+  states[key] = st;
+  await writeLockStates(states);
+  return { lockedNow, lockMinutes, attemptsLeft: lockedNow ? 0 : Math.max(threshold - st.fails, 0), level: st.level };
+}
+
+/** Successful login: back to a clean slate */
+async function clearLoginLock(email: string): Promise<void> {
+  const key = (email || "").toLowerCase().trim();
+  const states = await readLockStates();
+  if (states[key]) {
+    delete states[key];
+    await writeLockStates(states);
+  }
+}
+
+async function alertLockout(opts: {
+  email: string; ip: string; location?: string | undefined; userAgent?: string | undefined;
+  threshold: number; lockMinutes: number; level: number;
+}) {
+  let mailOk = false;
+  let mailErr = "";
+  try {
+    const mail = await sendFailedLoginAlertEmail({
+      email: opts.email,
+      ipAddress: opts.ip,
+      location: opts.location,
+      userAgent: opts.userAgent,
+      attempts: opts.threshold,
+      threshold: opts.threshold,
+      lockoutMinutes: opts.lockMinutes,
+    });
+    mailOk = mail.success;
+    mailErr = mail.error || "";
+  } catch (e: any) {
+    mailErr = e?.message || "";
+  }
+  try {
+    await addActivityLogInDb({
+      action: "Account Locked (Failed Logins)",
+      details: `${opts.threshold} failed logins for ${opts.email || "unknown"} from ${opts.ip}; lockout #${opts.level}: ${formatLockDuration(opts.lockMinutes)}; alert email ${mailOk ? "sent" : "FAILED" + (mailErr ? ": " + mailErr : "")}`,
+      performed_by: "System / Security",
+      user_role: "system",
+    });
+  } catch {}
+}
 
 async function getLoginThreshold(): Promise<number> {
   try {
@@ -1484,9 +1598,8 @@ export const checkLoginLockoutServerFn = createServerFn({ method: "POST" })
   .validator((data: { email: string; ip?: string }) => data)
   .handler(async ({ data }) => {
     try {
-      const threshold = await getLoginThreshold();
-      const failures = await countRecentFailedLogins(data.email, data.ip, LOGIN_LOCKOUT_MINUTES);
-      return { success: true, locked: failures >= threshold, lockoutMinutes: LOGIN_LOCKOUT_MINUTES };
+      const lock = await getActiveLock(data.email);
+      return { success: true, locked: lock.locked, lockoutMinutes: lock.remainingMinutes };
     } catch (error: any) {
       return { success: false, locked: false, error: error.message };
     }
@@ -1506,35 +1619,18 @@ export const recordFailedLoginServerFn = createServerFn({ method: "POST" })
       });
 
       const threshold = await getLoginThreshold();
-      const failures = await countRecentFailedLogins(data.email, data.ip, LOGIN_LOCKOUT_MINUTES);
-      const locked = failures >= threshold;
-
-      // Alert exactly once, when the threshold is first reached
-      if (failures === threshold) {
-        const mail = await sendFailedLoginAlertEmail({
-          email: data.email,
-          ipAddress: data.ip || "Unknown",
-          location: data.location,
-          userAgent: data.userAgent,
-          attempts: failures,
-          threshold,
-          lockoutMinutes: LOGIN_LOCKOUT_MINUTES,
+      const res = await registerFailedLogin(data.email, null, threshold);
+      if (res.lockedNow) {
+        await alertLockout({
+          email: data.email, ip: data.ip || "Unknown", location: data.location, userAgent: data.userAgent,
+          threshold, lockMinutes: res.lockMinutes, level: res.level,
         });
-        try {
-          await addActivityLogInDb({
-            action: "Failed Login Threshold Reached",
-            details: `${failures} failed logins for ${data.email || "unknown"} from ${data.ip || "unknown IP"}; locked ${LOGIN_LOCKOUT_MINUTES} min; alert email ${mail.success ? "sent" : "FAILED: " + (mail.error || "")}`,
-            performed_by: "System / Security",
-            user_role: "system",
-          });
-        } catch {}
       }
-
       return {
         success: true,
-        locked,
-        attemptsLeft: Math.max(threshold - failures, 0),
-        lockoutMinutes: LOGIN_LOCKOUT_MINUTES,
+        locked: res.lockedNow,
+        attemptsLeft: res.attemptsLeft,
+        lockoutMinutes: res.lockMinutes,
       };
     } catch (error: any) {
       return { success: false, locked: false, attemptsLeft: undefined, error: error.message };
@@ -1563,14 +1659,14 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
       const locationName = data.locationName || "Unknown Location";
       const userAgent = data.userAgent || "Web Browser";
 
-      // 1. Check lockout threshold
+      // 1. Progressive lockout (never applies to the Super Admin)
       const threshold = await getLoginThreshold();
-      const failures = await countRecentFailedLogins(cleanEmail, ipAddress, LOGIN_LOCKOUT_MINUTES);
-      if (failures >= threshold) {
+      const activeLock = await getActiveLock(cleanEmail);
+      if (activeLock.locked) {
         return {
           success: false,
           locked: true,
-          error: `Too many failed login attempts. This account / IP is locked for ${LOGIN_LOCKOUT_MINUTES} minutes. The Super Admin has been notified.`,
+          error: `This account is locked after too many failed login attempts. Try again in ${formatLockDuration(activeLock.remainingMinutes)}.`,
         };
       }
 
@@ -1591,40 +1687,32 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
           status: "failed",
         });
 
-        const newFailures = await countRecentFailedLogins(cleanEmail, ipAddress, LOGIN_LOCKOUT_MINUTES);
-        if (newFailures === threshold) {
-          await sendFailedLoginAlertEmail({
-            email: cleanEmail,
-            ipAddress,
-            location: locationName,
-            userAgent,
-            attempts: newFailures,
-            threshold,
-            lockoutMinutes: LOGIN_LOCKOUT_MINUTES,
+        const superAdmin = isSuperAdminLogin(cleanEmail, user?.role);
+        const fail = await registerFailedLogin(cleanEmail, user?.role, threshold);
+        if (fail.lockedNow) {
+          await alertLockout({
+            email: cleanEmail, ip: ipAddress, location: locationName, userAgent,
+            threshold, lockMinutes: fail.lockMinutes, level: fail.level,
           });
-          try {
-            await addActivityLogInDb({
-              action: "Failed Login Threshold Reached",
-              details: `${newFailures} failed logins for ${cleanEmail} from ${ipAddress}; locked ${LOGIN_LOCKOUT_MINUTES} min`,
-              performed_by: "System / Security",
-              user_role: "system",
-            });
-          } catch {}
         }
-
-        const lockedNow = newFailures >= threshold;
+        const leftText = superAdmin ? "" : ` ${fail.attemptsLeft} attempt(s) left before lockout.`;
         return {
           success: false,
-          locked: lockedNow,
-          attemptsLeft: Math.max(threshold - newFailures, 0),
-          error: lockedNow
-            ? `Too many failed login attempts. This account / IP is locked for ${LOGIN_LOCKOUT_MINUTES} minutes.`
+          locked: fail.lockedNow,
+          attemptsLeft: superAdmin ? undefined : fail.attemptsLeft,
+          error: fail.lockedNow
+            ? `Too many failed login attempts. This account is locked for ${formatLockDuration(fail.lockMinutes)}.`
             : !user
-            ? `No account found with this email address. Please check the email or contact the Super Admin. ${Math.max(threshold - newFailures, 0)} attempt(s) left before lockout.`
-            : `Incorrect password. ${Math.max(threshold - newFailures, 0)} attempt(s) left before lockout.`,
+            ? `No account found with this email address. Please check the email or contact the Super Admin.${leftText}`
+            : `Incorrect password.${leftText}`,
           noAccount: !user,
         };
       }
+
+      // Correct password: failed-attempt count and lockout level start again
+      try {
+        await clearLoginLock(cleanEmail);
+      } catch {}
 
       // 3. Check account deactivation (Super Admin can never be deactivated)
       if (user.role !== "super_admin" && cleanEmail !== "sa@aistudio.us") {

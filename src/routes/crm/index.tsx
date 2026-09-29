@@ -8121,7 +8121,7 @@ function AdminPage() {
                         <option value={10}>10 Failed Attempts (Relaxed)</option>
                       </select>
                       <p className="text-[11px] text-slate-400">
-                        After this many consecutive failed logins, that email / IP is locked out for 15 minutes and a security alert is emailed to the System Alert Notification Email ({crmNotificationEmail}).
+                        After this many failed logins the account is locked, and each new lockout is longer: 5, 10, 20, 45 min, then 1, 2, 4, 8, 16 and 24 hours. A successful login resets it. The Super Admin is never locked. Every lockout emails a security alert to {crmNotificationEmail}.
                       </p>
                     </div>
                   </div>
