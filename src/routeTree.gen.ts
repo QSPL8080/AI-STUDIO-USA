@@ -12,11 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
+import { Route as CrmRouteImport } from './routes/crm'
 import { Route as OrderConfirmationRouteImport } from './routes/order-confirmation'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as TermsRouteImport } from './routes/terms'
-import { Route as CrmIndexRouteImport } from './routes/crm.index'
-import { Route as CrmLoginRouteImport } from './routes/crm.login'
+import { Route as CrmIndexRouteImport } from './routes/crm/index'
+import { Route as CrmLoginRouteImport } from './routes/crm/login'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -31,6 +32,11 @@ const AdminRoute = AdminRouteImport.update({
 const CookiePolicyRoute = CookiePolicyRouteImport.update({
   id: '/cookie-policy',
   path: '/cookie-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmRoute = CrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrderConfirmationRoute = OrderConfirmationRouteImport.update({
@@ -49,9 +55,9 @@ const TermsRoute = TermsRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const CrmIndexRoute = CrmIndexRouteImport.update({
-  id: '/crm/',
-  path: '/crm/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => CrmRoute,
 } as any)
 const CrmLoginRoute = CrmLoginRouteImport.update({
   id: '/login',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/cookie-policy': typeof CookiePolicyRoute
+  '/crm': typeof CrmRouteWithChildren
   '/order-confirmation': typeof OrderConfirmationRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms': typeof TermsRoute
@@ -84,6 +91,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/cookie-policy': typeof CookiePolicyRoute
+  '/crm': typeof CrmRouteWithChildren
   '/order-confirmation': typeof OrderConfirmationRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms': typeof TermsRoute
@@ -96,6 +104,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/cookie-policy'
+    | '/crm'
     | '/order-confirmation'
     | '/privacy-policy'
     | '/terms'
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/cookie-policy'
+    | '/crm'
     | '/order-confirmation'
     | '/privacy-policy'
     | '/terms'
@@ -127,10 +137,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   CookiePolicyRoute: typeof CookiePolicyRoute
+  CrmRoute: typeof CrmRouteWithChildren
   OrderConfirmationRoute: typeof OrderConfirmationRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   TermsRoute: typeof TermsRoute
-  CrmIndexRoute: typeof CrmIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -156,6 +166,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CookiePolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/crm': {
+      id: '/crm'
+      path: '/crm'
+      fullPath: '/crm'
+      preLoaderRoute: typeof CrmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/order-confirmation': {
       id: '/order-confirmation'
       path: '/order-confirmation'
@@ -179,10 +196,10 @@ declare module '@tanstack/react-router' {
     }
     '/crm/': {
       id: '/crm/'
-      path: '/crm'
+      path: '/'
       fullPath: '/crm/'
       preLoaderRoute: typeof CrmIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CrmRoute
     }
     '/crm/login': {
       id: '/crm/login'
@@ -194,14 +211,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface CrmRouteChildren {
+  CrmLoginRoute: typeof CrmLoginRoute
+  CrmIndexRoute: typeof CrmIndexRoute
+}
+
+const CrmRouteChildren: CrmRouteChildren = {
+  CrmLoginRoute: CrmLoginRoute,
+  CrmIndexRoute: CrmIndexRoute,
+}
+
+const CrmRouteWithChildren = CrmRoute._addFileChildren(CrmRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   CookiePolicyRoute: CookiePolicyRoute,
+  CrmRoute: CrmRouteWithChildren,
   OrderConfirmationRoute: OrderConfirmationRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   TermsRoute: TermsRoute,
-  CrmIndexRoute: CrmIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
