@@ -370,6 +370,24 @@ export async function initDb() {
           );
         `);
         isInitialized = true;
+
+        // One-time seed: create admin@aistudio.us as a normal (non built-in) database
+        // user. Guarded by a flag so it never re-appears after the Super Admin edits,
+        // deactivates or deletes it.
+        try {
+          await client.query(`
+            INSERT INTO admin_users (id, name, email, password, role, status, created_at)
+            SELECT 'usr_admin_aistudio', 'Admin', 'admin@aistudio.us', 'Admin@123', 'admin', 'active', NOW()
+            WHERE NOT EXISTS (SELECT 1 FROM crm_settings WHERE key = 'seed_admin_aistudio_us_v1')
+            ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = 'admin', status = 'active';
+
+            INSERT INTO crm_settings (key, value, updated_at)
+            VALUES ('seed_admin_aistudio_us_v1', 'done', NOW())
+            ON CONFLICT (key) DO NOTHING;
+          `);
+        } catch (seedErr) {
+          console.warn("Admin seed warning:", seedErr);
+        }
       } finally {
         client.release();
       }
@@ -933,6 +951,17 @@ export async function getLoginLogs(limit = 100): Promise<LoginLog[]> {
 // ==========================================
 // ADMIN USER MANAGEMENT (SUPER ADMIN)
 // ==========================================
+// Postgres returns TIMESTAMP columns as Date objects; the admin UI expects strings.
+function normalizeAdminRow<T extends Record<string, any>>(row: T): T {
+  if (!row) return row;
+  const toIso = (v: any) => (v instanceof Date ? v.toISOString() : v == null ? v : String(v));
+  return {
+    ...row,
+    created_at: toIso(row["created_at"]) ?? "",
+    last_login_at: toIso(row["last_login_at"]),
+  };
+}
+
 export async function getAdminUsers(): Promise<AdminUser[]> {
   await initDb();
   let dbUsers: AdminUser[] = [];
@@ -943,7 +972,7 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
       const res = await pool.query(
         "SELECT id, name, email, role, status, created_at, last_login_at FROM admin_users ORDER BY created_at DESC"
       );
-      dbUsers = res.rows;
+      dbUsers = res.rows.map(normalizeAdminRow);
     }
   } catch (err) {
     console.error("PostgreSQL getAdminUsers error:", err);
@@ -983,7 +1012,7 @@ export async function getAdminUserByEmailWithPassword(email: string): Promise<Ad
         "SELECT id, name, email, password, role, status, created_at, last_login_at FROM admin_users WHERE LOWER(email) = LOWER($1) LIMIT 1",
         [cleanEmail]
       );
-      if (res.rows[0]) return res.rows[0];
+      if (res.rows[0]) return normalizeAdminRow(res.rows[0]);
     }
   } catch (err) {
     console.error("PostgreSQL getAdminUserByEmailWithPassword error:", err);
@@ -1043,7 +1072,7 @@ export async function saveAdminUser(user: {
            RETURNING id, name, email, role, status, created_at, last_login_at`,
           [record.name, record.password, record.role, record.status, cleanEmail]
         );
-        if (updateRes.rows[0]) return updateRes.rows[0];
+        if (updateRes.rows[0]) return normalizeAdminRow(updateRes.rows[0]);
       } else {
         const insertRes = await pool.query(
           `INSERT INTO admin_users (id, name, email, password, role, status, created_at)
@@ -1051,7 +1080,7 @@ export async function saveAdminUser(user: {
            RETURNING id, name, email, role, status, created_at, last_login_at`,
           [id, record.name, cleanEmail, record.password, record.role, record.status]
         );
-        if (insertRes.rows[0]) return insertRes.rows[0];
+        if (insertRes.rows[0]) return normalizeAdminRow(insertRes.rows[0]);
       }
     }
   } catch (err: any) {

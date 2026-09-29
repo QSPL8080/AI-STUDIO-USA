@@ -1493,20 +1493,8 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
 
       // 3. Check account deactivation (Super Admin can never be deactivated)
       if (user.role !== "super_admin" && cleanEmail !== "sa@aistudio.us") {
-        let isDeactivated = user.status === "inactive" || user.status === "disabled" || user.status === "deactivated";
-        
-        if (!isDeactivated) {
-          try {
-            const settings = await getCrmSettingsFromDb();
-            const accountStatusVal = settings?.["account_status"] || settings?.["access_control_account_status"];
-            if (accountStatusVal) {
-              const parsed = JSON.parse(accountStatusVal);
-              if (parsed[cleanEmail] === "inactive") {
-                isDeactivated = true;
-              }
-            }
-          } catch {}
-        }
+        // Status comes only from the user's database row (User Management → Activate / Deactivate)
+        const isDeactivated = user.status !== "active";
 
         if (isDeactivated) {
           return {

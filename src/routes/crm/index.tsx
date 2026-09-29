@@ -285,7 +285,8 @@ function parseAccountStatus(raw?: string): Record<string, "active" | "inactive">
 
 // Built-in (code-defined) login accounts
 const BUILT_IN_SUPER_ADMIN_EMAIL = "sa@aistudio.us";
-const BUILT_IN_ACCOUNT_EMAILS = ["sa@aistudio.us", "admin@aistudio.us", "lm@aistudio.us"];
+// Only the Super Admin is built in; every other account is a normal database user
+const BUILT_IN_ACCOUNT_EMAILS = ["sa@aistudio.us"];
 const LEGACY_ACCOUNT_EMAILS = ["sa@aistudio.com", "admin@aistudio.com", "lm@aistudio.com"];
 
 function AdminPage() {
@@ -6634,12 +6635,13 @@ function AdminPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {uniqueAdminUsers.map((user) => {
-                    const isSuper = user.role === "super_admin" || user.email.toLowerCase() === "sa@aistudio.us";
+                    const userEmail = String(user.email || "").toLowerCase();
+                    const isSuper = user.role === "super_admin" || userEmail === "sa@aistudio.us";
                     const isLM = (user.role as string) === "leads_manager";
-                    const isSelf = user.email.toLowerCase() === (session?.email || "").toLowerCase();
+                    const isSelf = userEmail === (session?.email || "").toLowerCase();
                     // System Protected Super Admin and own account are protected
                     const isProtected =
-                      user.id === "usr_superadmin" || user.email.toLowerCase() === "sa@aistudio.us" || isSelf || (!isSuperAdmin && isSuper);
+                      user.id === "usr_superadmin" || userEmail === "sa@aistudio.us" || isSelf || (!isSuperAdmin && isSuper);
 
                     return (
                       <tr key={user.email} className="hover:bg-slate-50/75 transition-colors">
@@ -6666,7 +6668,12 @@ function AdminPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3.5 text-slate-400 font-mono text-[11px]">
-                          {user.created_at.includes("-") ? new Date(user.created_at).toLocaleDateString() : user.created_at}
+                          {(() => {
+                            const raw = user.created_at as unknown;
+                            if (!raw) return "—";
+                            const d = raw instanceof Date ? raw : new Date(String(raw));
+                            return isNaN(d.getTime()) ? String(raw) : d.toLocaleDateString();
+                          })()}
                         </td>
                         <td className="px-4 py-3.5 text-right">
                           {isProtected ? (
