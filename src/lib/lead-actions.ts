@@ -642,13 +642,22 @@ export const deleteAdminUserServerFn = createServerFn({ method: "POST" })
 // Helper to fetch live scheduled events from Calendly API and upsert into DB
 export async function syncCalendlyEventsFromApi(): Promise<{ count: number; error?: string }> {
   try {
-    const token = process.env.CALENDLY_API_TOKEN || process.env.VITE_CALENDLY_API_TOKEN;
+    const settings = await getCrmSettingsFromDb();
+    const token =
+      process.env.CALENDLY_API_TOKEN ||
+      process.env.VITE_CALENDLY_API_TOKEN ||
+      settings?.["calendly_api_token"] ||
+      settings?.["calendly_personal_access_token"] ||
+      settings?.["CALENDLY_API_TOKEN"];
+
     if (!token) {
-      return { count: 0, error: "Calendly API token not configured" };
+      return {
+        count: 0,
+        error: "Calendly API token not configured. Please add CALENDLY_API_TOKEN in Hostinger Environment Variables.",
+      };
     }
 
     // Retrieve cutoff timestamp to prevent importing historical/pre-reset meetings
-    const settings = await getCrmSettingsFromDb();
     const cutoffStr = settings?.["calendly_reset_cutoff_time"];
     const cutoffTime = cutoffStr ? new Date(cutoffStr).getTime() : 0;
 
