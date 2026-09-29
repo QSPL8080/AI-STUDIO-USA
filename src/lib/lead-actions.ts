@@ -25,6 +25,7 @@ import {
   updateCalendlyMeetingStatus as updateCalendlyMeetingStatusInDb,
   updateCalendlyMeetingDetails as updateCalendlyMeetingDetailsInDb,
   deleteCalendlyMeeting as deleteCalendlyMeetingInDb,
+  deleteCalendlyMeetings as deleteCalendlyMeetingsInDb,
   clearAllCalendlyMeetings as clearAllCalendlyMeetingsInDb,
   saveCRMNotification as saveCRMNotificationInDb,
   getCRMNotifications as getCRMNotificationsFromDb,
@@ -842,12 +843,43 @@ export const cancelCalendlyMeetingServerFn = createServerFn({ method: "POST" })
   });
 
 export const deleteCalendlyMeetingServerFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
-  .handler(async () => {
-    return {
-      success: false,
-      error: "CRM is strictly read-only for Calendly. Meeting deletion is disabled in CRM.",
-    };
+  .validator((data: { id: string; client_name?: string; performedBy?: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const ok = await deleteCalendlyMeetingInDb(data.id);
+      if (ok) {
+        await addActivityLogInDb({
+          action: "Calendly Meeting Deleted",
+          details: `Deleted meeting record for ${data.client_name || data.id}`,
+          performed_by: data.performedBy || "Admin",
+          user_role: "admin",
+        });
+        broadcastLeadEvent({ type: "REFRESH_ALL" });
+      }
+      return { success: ok };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+export const deleteCalendlyMeetingsBulkServerFn = createServerFn({ method: "POST" })
+  .validator((data: { ids: string[]; performedBy?: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const ok = await deleteCalendlyMeetingsInDb(data.ids);
+      if (ok) {
+        await addActivityLogInDb({
+          action: "Calendly Meetings Bulk Deleted",
+          details: `Deleted ${data.ids.length} meeting records in bulk`,
+          performed_by: data.performedBy || "Admin",
+          user_role: "admin",
+        });
+        broadcastLeadEvent({ type: "REFRESH_ALL" });
+      }
+      return { success: ok, count: data.ids.length };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   });
 
 // 14. Record Calendly Booking (from widget listener or webhook)

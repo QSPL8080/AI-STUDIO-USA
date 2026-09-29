@@ -1376,6 +1376,32 @@ export async function deleteCalendlyMeeting(id: string): Promise<boolean> {
   return ok;
 }
 
+export async function deleteCalendlyMeetings(ids: string[]): Promise<boolean> {
+  if (!ids || ids.length === 0) return true;
+  let ok = false;
+  if (getSupabaseConfig()) {
+    try {
+      const inList = ids.map((id) => `"${id}"`).join(",");
+      await supabaseRest(`calendly_meetings?id=in.(${inList})`, { method: "DELETE" });
+      ok = true;
+    } catch (e) {
+      console.warn("Supabase deleteCalendlyMeetings fallback:", e);
+    }
+  }
+
+  await initDb();
+  try {
+    const pool = await getPool();
+    if (pool) {
+      const res = await pool.query("DELETE FROM calendly_meetings WHERE id = ANY($1::text[])", [ids]);
+      if ((res.rowCount ?? 0) > 0) ok = true;
+    }
+  } catch (err) {
+    console.error("PostgreSQL deleteCalendlyMeetings error:", err);
+  }
+  return ok;
+}
+
 export async function clearAllCalendlyMeetings(): Promise<boolean> {
   let ok = false;
   if (getSupabaseConfig()) {

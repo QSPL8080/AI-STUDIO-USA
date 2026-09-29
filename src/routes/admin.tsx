@@ -99,6 +99,7 @@ import {
   updateCalendlyMeetingServerFn,
   cancelCalendlyMeetingServerFn,
   deleteCalendlyMeetingServerFn,
+  deleteCalendlyMeetingsBulkServerFn,
   sendTestCalendlyBookingServerFn,
   fetchNotificationsServerFn,
   markNotificationReadServerFn,
@@ -450,6 +451,7 @@ function AdminPage() {
   const [meetings, setMeetings] = useState<CalendlyMeeting[]>([]);
   const [meetingSearchTerm, setMeetingSearchTerm] = useState("");
   const [meetingStatusFilter, setMeetingStatusFilter] = useState<string>("all");
+  const [selectedMeetingIds, setSelectedMeetingIds] = useState<Set<string>>(new Set());
   const [isSendingTestMeeting, setIsSendingTestMeeting] = useState(false);
   const [calendlyWebhookCopied, setCalendlyWebhookCopied] = useState(false);
 
@@ -1363,6 +1365,79 @@ function AdminPage() {
     } catch (err: any) {
       showToast(err.message || "Failed to reset meetings", "error");
     }
+  };
+
+  const handleToggleMeetingSelection = (id: string) => {
+    setSelectedMeetingIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDeleteMeetings = async () => {
+    if (selectedMeetingIds.size === 0) return;
+    const count = selectedMeetingIds.size;
+    if (
+      !confirm(
+        `Are you sure you want to permanently delete ${count} selected Calendly meeting record(s) from the CRM?`
+      )
+    ) {
+      return;
+    }
+    const idsToDelete = Array.from(selectedMeetingIds);
+    setMeetings((prev) => prev.filter((m) => !selectedMeetingIds.has(m.id)));
+    setSelectedMeetingIds(new Set());
+    try {
+      const res = await deleteCalendlyMeetingsBulkServerFn({
+        data: {
+          ids: idsToDelete,
+          performedBy: session?.name || "Admin",
+        },
+      });
+      if (res.success) {
+        showToast(`Deleted ${count} Calendly meeting(s) from CRM`);
+      } else {
+        showToast("Removed selected meetings from list");
+      }
+    } catch (err: any) {
+      showToast(err.message || "Failed to delete selected meetings", "error");
+    }
+    await fetchMeetingsList();
+    await fetchNotificationsList();
+    await fetchLogsList();
+  };
+
+  const handleDeleteSingleMeeting = async (m: CalendlyMeeting) => {
+    if (!confirm(`Are you sure you want to permanently delete meeting record for ${m.client_name}?`)) {
+      return;
+    }
+    setMeetings((prev) => prev.filter((item) => item.id !== m.id));
+    setSelectedMeetingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(m.id);
+      return next;
+    });
+    try {
+      const res = await deleteCalendlyMeetingServerFn({
+        data: {
+          id: m.id,
+          client_name: m.client_name,
+          performedBy: session?.name || "Admin",
+        },
+      });
+      if (res.success) {
+        showToast(`Meeting record for ${m.client_name} deleted`);
+      } else {
+        showToast("Meeting removed from list");
+      }
+    } catch (err: any) {
+      showToast("Meeting removed");
+    }
+    await fetchMeetingsList();
+    await fetchNotificationsList();
+    await fetchLogsList();
   };
 
   const fetchNotificationsList = async () => {
@@ -2967,6 +3042,19 @@ function AdminPage() {
     });
     return Array.from(set).sort();
   }, [leads]);
+
+  // Filtered Calendly Meetings Calculation (Tab: Calendly)
+  const filteredCalendlyMeetings = useMemo(() => {
+    return meetings.filter((m) => {
+      const matchSearch =
+        m.client_name.toLowerCase().includes(meetingSearchTerm.toLowerCase()) ||
+        m.email.toLowerCase().includes(meetingSearchTerm.toLowerCase()) ||
+        (m.phone && m.phone.includes(meetingSearchTerm));
+      const matchStatus =
+        meetingStatusFilter === "all" ? true : m.meeting_status === meetingStatusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [meetings, meetingSearchTerm, meetingStatusFilter]);
 
   // Overall & Source-Wise Summary Counts (§17 & §18)
   const allCrmLeads = useMemo(() => leads.filter((l) => !isIndiaLead(l)), [leads]);
@@ -5949,11 +6037,53 @@ function AdminPage() {
               </div>
             </div>
 
+            {/* Bulk Action Floating / Sticky Bar */}
+            {selectedMeetingIds.size > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-500/40 bg-red-50 dark:bg-red-950/40 p-3 shadow-md animate-in fade-in">
+                <div className="flex items-center gap-2 text-xs font-bold text-red-900 dark:text-red-200">
+                  <CheckCircle2 className="h-4 w-4 text-red-600" />
+                  <span>{selectedMeetingIds.size} meeting(s) selected</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMeetingIds(new Set())}
+                    className="rounded-lg border px-3 py-1 font-semibold text-slate-700 bg-white hover:bg-slate-100 cursor-pointer"
+                  >
+                    Deselect All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkDeleteMeetings}
+                    className="rounded-lg bg-red-600 px-3 py-1 font-bold text-white hover:bg-red-700 cursor-pointer flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Delete Selected ({selectedMeetingIds.size})</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Meetings Table (Matching Section 14 in Document) */}
             <div className="overflow-x-auto w-full rounded-2xl border border-slate-200 bg-white shadow-xs">
               <table className="w-full min-w-[950px] text-left text-xs">
                 <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-600">
                   <tr>
+                    <th className="w-10 px-3 py-3.5 text-center">
+                      <input
+                        type="checkbox"
+                        checked={filteredCalendlyMeetings.length > 0 && selectedMeetingIds.size === filteredCalendlyMeetings.length}
+                        onChange={() => {
+                          if (selectedMeetingIds.size === filteredCalendlyMeetings.length) {
+                            setSelectedMeetingIds(new Set());
+                          } else {
+                            setSelectedMeetingIds(new Set(filteredCalendlyMeetings.map((m) => m.id)));
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        title="Select All"
+                      />
+                    </th>
                     <th className="px-4 py-3.5">Meeting Date & Time</th>
                     <th className="px-4 py-3.5">Client Name & Contact</th>
                     <th className="px-4 py-3.5">Meeting Type</th>
@@ -5965,196 +6095,198 @@ function AdminPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {meetings
-                    .filter((m) => {
-                      const matchSearch =
-                        m.client_name.toLowerCase().includes(meetingSearchTerm.toLowerCase()) ||
-                        m.email.toLowerCase().includes(meetingSearchTerm.toLowerCase()) ||
-                        (m.phone && m.phone.includes(meetingSearchTerm));
-                      const matchStatus =
-                        meetingStatusFilter === "all" ? true : m.meeting_status === meetingStatusFilter;
-                      return matchSearch && matchStatus;
-                    })
-                    .length === 0 ? (
+                  {filteredCalendlyMeetings.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-xs text-slate-500">
+                      <td colSpan={9} className="py-12 text-center text-xs text-slate-500">
                         <Calendar className="mx-auto h-8 w-8 text-slate-400 mb-2" />
                         <p className="font-bold">No Calendly meetings match your search or filter.</p>
                         <p className="text-[11px] text-slate-400 mt-1">New strategy calls booked via Calendly will appear here automatically.</p>
                       </td>
                     </tr>
                   ) : (
-                      meetings
-                        .filter((m) => {
-                          const matchSearch =
-                            m.client_name.toLowerCase().includes(meetingSearchTerm.toLowerCase()) ||
-                            m.email.toLowerCase().includes(meetingSearchTerm.toLowerCase()) ||
-                            (m.phone && m.phone.includes(meetingSearchTerm));
-                          const matchStatus =
-                            meetingStatusFilter === "all" ? true : m.meeting_status === meetingStatusFilter;
-                          return matchSearch && matchStatus;
-                        })
-                        .map((m) => {
-                          const matchedLead = findMatchingLeadForMeeting(m);
-                          return (
-                          <tr key={m.id} className="hover:bg-slate-50/75 transition-colors border-b border-slate-100 dark:border-slate-800">
-                            {/* 1. Meeting Date & Time */}
-                            <td className="px-4 py-3.5">
-                              <div className="font-bold text-blue-600 dark:text-blue-400">{m.meeting_date}</div>
-                              <div className="text-[11px] text-slate-500 font-mono mt-0.5">{m.meeting_time}</div>
-                            </td>
+                    filteredCalendlyMeetings.map((m) => {
+                      const matchedLead = findMatchingLeadForMeeting(m);
+                      return (
+                        <tr key={m.id} className="hover:bg-slate-50/75 transition-colors border-b border-slate-100 dark:border-slate-800">
+                          {/* 0. Selection Checkbox */}
+                          <td className="w-10 px-3 py-3.5 text-center">
+                            <input
+                              type="checkbox"
+                              checked={selectedMeetingIds.has(m.id)}
+                              onChange={() => handleToggleMeetingSelection(m.id)}
+                              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            />
+                          </td>
 
-                            {/* 2. Client Name & Contact & Matching Lead */}
-                            <td className="px-4 py-3.5">
-                              <div className="font-bold text-sm text-slate-900 dark:text-slate-100">{m.client_name}</div>
-                              <div className="text-[11px] text-slate-500 font-mono">{m.email}</div>
-                              {m.phone && <div className="text-[10px] text-slate-400 font-mono">{m.phone}</div>}
+                          {/* 1. Meeting Date & Time */}
+                          <td className="px-4 py-3.5">
+                            <div className="font-bold text-blue-600 dark:text-blue-400">{m.meeting_date}</div>
+                            <div className="text-[11px] text-slate-500 font-mono mt-0.5">{m.meeting_time}</div>
+                          </td>
 
-                              {/* Lead Matching Badge */}
-                              <div className="mt-1.5 flex items-center gap-1.5">
-                                {matchedLead ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => setViewLeadDetails(matchedLead)}
-                                    className="inline-flex items-center gap-1 rounded-md bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition-colors cursor-pointer"
-                                    title="Matching lead found! Click to view lead details & update status"
-                                  >
-                                    <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                                    <span>CRM Lead: {matchedLead.status}</span>
-                                  </button>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setPrefillLeadFromMeeting({
-                                        name: m.client_name,
-                                        email: m.email,
-                                        phone: m.phone || "",
-                                        business: `Inbound Call - ${m.client_name}`,
-                                        source: "USA Website - Calendly",
-                                        notes: `Calendly meeting on ${m.meeting_date} at ${m.meeting_time}.\nMeeting Link: ${m.meeting_link || "N/A"}`,
-                                      });
-                                      setShowAddLeadModal(true);
-                                    }}
-                                    className="inline-flex items-center gap-1 rounded-md bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 transition-colors cursor-pointer"
-                                    title="No existing lead matched by email/phone/name. Click to create a new lead."
-                                  >
-                                    <Plus className="h-3 w-3 text-blue-600" />
-                                    <span>+ Create Lead</span>
-                                  </button>
-                                )}
-                              </div>
-                            </td>
+                          {/* 2. Client Name & Contact & Matching Lead */}
+                          <td className="px-4 py-3.5">
+                            <div className="font-bold text-sm text-slate-900 dark:text-slate-100">{m.client_name}</div>
+                            <div className="text-[11px] text-slate-500 font-mono">{m.email}</div>
+                            {m.phone && <div className="text-[10px] text-slate-400 font-mono">{m.phone}</div>}
 
-                            {/* 3. Meeting Type */}
-                            <td className="px-4 py-3.5 font-medium text-slate-800 dark:text-slate-200 text-xs">
-                              <span>{m.meeting_type || "Quickupp AI Studio - 30 Min Strategy Call"}</span>
-                            </td>
-
-                            {/* 4. Meeting Status (Read-Only Badge) */}
-                            <td className="px-4 py-3.5">
-                              {m.meeting_status === "cancelled" ? (
-                                <div className="space-y-1 inline-block">
-                                  <div className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold tracking-wide uppercase bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 select-none shadow-xs">
-                                    <Lock className="h-3 w-3 text-red-500 shrink-0" />
-                                    <span>CANCELLED</span>
-                                  </div>
-                                  {m.cancelled_at && (
-                                    <div className="text-[10px] text-red-600 dark:text-red-400 font-mono">
-                                      {new Date(m.cancelled_at).toLocaleDateString()}
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <span
-                                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${
-                                    m.meeting_status === "completed"
-                                      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-                                      : m.meeting_status === "rescheduled"
-                                      ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
-                                      : "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
-                                  }`}
-                                >
-                                  {m.meeting_status || "Scheduled"}
-                                </span>
-                              )}
-                            </td>
-
-                            {/* 5. Meeting Link */}
-                            <td className="px-4 py-3.5">
-                              {m.meeting_status === "cancelled" ? (
-                                <span className="inline-flex items-center gap-1 rounded-md bg-red-50 dark:bg-red-950/40 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800">
-                                  Link Removed
-                                </span>
-                              ) : m.meeting_link ? (
-                                <a
-                                  href={m.meeting_link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline font-mono text-xs font-semibold"
-                                >
-                                  <span>Join Call</span>
-                                  <ExternalLink className="h-3 w-3" />
-                                </a>
-                              ) : (
-                                <span className="text-slate-400 italic">No link</span>
-                              )}
-                            </td>
-
-                            {/* 6. Admin / Handling User (Read-Only) */}
-                            <td className="px-4 py-3.5 text-xs text-slate-700 dark:text-slate-300">
-                              {m.assigned_admin || <span className="text-slate-400 italic">Unassigned</span>}
-                            </td>
-
-                            {/* 7. Meeting Created Date */}
-                            <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px]">
-                              {new Date(m.created_at).toLocaleDateString()}
-                            </td>
-
-                            {/* 8. Workflow Actions */}
-                            <td className="px-4 py-3.5 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                {matchedLead ? (
-                                  <button
-                                    onClick={() => setViewLeadDetails(matchedLead)}
-                                    className="rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 text-[11px] font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-900 hover:text-white dark:hover:bg-slate-700 cursor-pointer transition-colors"
-                                    title="View & Update Matching CRM Lead"
-                                  >
-                                    View Lead
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => {
-                                      setPrefillLeadFromMeeting({
-                                        name: m.client_name,
-                                        email: m.email,
-                                        phone: m.phone || "",
-                                        business: `Inbound Call - ${m.client_name}`,
-                                        source: "USA Website - Calendly",
-                                        notes: `Calendly meeting on ${m.meeting_date} at ${m.meeting_time}.\nMeeting Link: ${m.meeting_link || "N/A"}`,
-                                      });
-                                      setShowAddLeadModal(true);
-                                    }}
-                                    className="rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 text-[11px] font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-900 hover:text-white dark:hover:bg-slate-700 cursor-pointer transition-colors"
-                                    title="Create CRM Lead from this meeting"
-                                  >
-                                    + Lead
-                                  </button>
-                                )}
-
+                            {/* Lead Matching Badge */}
+                            <div className="mt-1.5 flex items-center gap-1.5">
+                              {matchedLead ? (
                                 <button
-                                  onClick={() => setViewMeetingDetails(m)}
-                                  className="rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer transition-colors inline-flex items-center gap-1"
-                                  title="View Meeting Details (Read-Only)"
+                                  type="button"
+                                  onClick={() => setViewLeadDetails(matchedLead)}
+                                  className="inline-flex items-center gap-1 rounded-md bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition-colors cursor-pointer"
+                                  title="Matching lead found! Click to view lead details & update status"
                                 >
-                                  <Eye className="h-3.5 w-3.5" />
-                                  <span>Details</span>
+                                  <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                  <span>CRM Lead: {matchedLead.status}</span>
                                 </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPrefillLeadFromMeeting({
+                                      name: m.client_name,
+                                      email: m.email,
+                                      phone: m.phone || "",
+                                      business: `Inbound Call - ${m.client_name}`,
+                                      source: "USA Website - Calendly",
+                                      notes: `Calendly meeting on ${m.meeting_date} at ${m.meeting_time}.\nMeeting Link: ${m.meeting_link || "N/A"}`,
+                                    });
+                                    setShowAddLeadModal(true);
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded-md bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 transition-colors cursor-pointer"
+                                  title="No existing lead matched by email/phone/name. Click to create a new lead."
+                                >
+                                  <Plus className="h-3 w-3 text-blue-600" />
+                                  <span>+ Create Lead</span>
+                                </button>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* 3. Meeting Type */}
+                          <td className="px-4 py-3.5 font-medium text-slate-800 dark:text-slate-200 text-xs">
+                            <span>{m.meeting_type || "Quickupp AI Studio - 30 Min Strategy Call"}</span>
+                          </td>
+
+                          {/* 4. Meeting Status (Read-Only Badge) */}
+                          <td className="px-4 py-3.5">
+                            {m.meeting_status === "cancelled" ? (
+                              <div className="space-y-1 inline-block">
+                                <div className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold tracking-wide uppercase bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 select-none shadow-xs">
+                                  <Lock className="h-3 w-3 text-red-500 shrink-0" />
+                                  <span>CANCELLED</span>
+                                </div>
+                                {m.cancelled_at && (
+                                  <div className="text-[10px] text-red-600 dark:text-red-400 font-mono">
+                                    {new Date(m.cancelled_at).toLocaleDateString()}
+                                  </div>
+                                )}
                               </div>
-                            </td>
-                          </tr>
-                          );
-                        })
+                            ) : (
+                              <span
+                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${
+                                  m.meeting_status === "completed"
+                                    ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                                    : m.meeting_status === "rescheduled"
+                                    ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                                    : "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                                }`}
+                              >
+                                {m.meeting_status || "Scheduled"}
+                              </span>
+                            )}
+                          </td>
+
+                          {/* 5. Meeting Link */}
+                          <td className="px-4 py-3.5">
+                            {m.meeting_status === "cancelled" ? (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-red-50 dark:bg-red-950/40 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800">
+                                Link Removed
+                              </span>
+                            ) : m.meeting_link ? (
+                              <a
+                                href={m.meeting_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline font-mono text-xs font-semibold"
+                              >
+                                <span>Join Call</span>
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            ) : (
+                              <span className="text-slate-400 italic">No link</span>
+                            )}
+                          </td>
+
+                          {/* 6. Admin / Handling User (Read-Only) */}
+                          <td className="px-4 py-3.5 text-xs text-slate-700 dark:text-slate-300">
+                            {m.assigned_admin || <span className="text-slate-400 italic">Unassigned</span>}
+                          </td>
+
+                          {/* 7. Meeting Created Date */}
+                          <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px]">
+                            {new Date(m.created_at).toLocaleDateString()}
+                          </td>
+
+                          {/* 8. Workflow Actions */}
+                          <td className="px-4 py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {matchedLead ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setViewLeadDetails(matchedLead)}
+                                  className="rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 text-[11px] font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-900 hover:text-white dark:hover:bg-slate-700 cursor-pointer transition-colors"
+                                  title="View & Update Matching CRM Lead"
+                                >
+                                  View Lead
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPrefillLeadFromMeeting({
+                                      name: m.client_name,
+                                      email: m.email,
+                                      phone: m.phone || "",
+                                      business: `Inbound Call - ${m.client_name}`,
+                                      source: "USA Website - Calendly",
+                                      notes: `Calendly meeting on ${m.meeting_date} at ${m.meeting_time}.\nMeeting Link: ${m.meeting_link || "N/A"}`,
+                                    });
+                                    setShowAddLeadModal(true);
+                                  }}
+                                  className="rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 text-[11px] font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-900 hover:text-white dark:hover:bg-slate-700 cursor-pointer transition-colors"
+                                  title="Create CRM Lead from this meeting"
+                                >
+                                  + Lead
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => setViewMeetingDetails(m)}
+                                className="rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-700 px-2.5 py-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer transition-colors inline-flex items-center gap-1"
+                                title="View Meeting Details (Read-Only)"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                <span>Details</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteSingleMeeting(m)}
+                                className="rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-700 p-1 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400 cursor-pointer transition-colors inline-flex items-center justify-center"
+                                title="Delete meeting record"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
