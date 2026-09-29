@@ -2022,6 +2022,108 @@ function AdminPage() {
     }
   };
 
+
+  // ── Unified Recycle Bin: every soft-deleted item (leads, Meta leads, Calendly meetings) ──
+  type BinItem = {
+    key: string;
+    kind: "lead" | "meeting";
+    id: string;
+    typeLabel: string;
+    name: string;
+    contact: string;
+    detail: string;
+    deletedAt: string;
+  };
+  const [selectedBinKeys, setSelectedBinKeys] = useState<Set<string>>(new Set());
+  const [isBinBusy, setIsBinBusy] = useState(false);
+
+  const recycleBinItems = useMemo<BinItem[]>(() => {
+    const leadItems: BinItem[] = recycleBinLeads.map((l) => {
+      const src = (l.source || "").toLowerCase();
+      const isMeta = /meta|facebook|instagram|fb_|ig_/.test(src);
+      return {
+        key: `lead:${l.id}`,
+        kind: "lead",
+        id: l.id,
+        typeLabel: isMeta ? "Meta Lead" : "Lead",
+        name: l.name || "—",
+        contact: [l.phone, l.email].filter(Boolean).join(" · ") || "—",
+        detail: `${l.source || "Website"}${l.business ? ` · ${l.business}` : ""}`,
+        deletedAt: String(l.deleted_at || ""),
+      };
+    });
+    const meetingItems: BinItem[] = deletedMeetings.map((m) => ({
+      key: `meeting:${m.id}`,
+      kind: "meeting",
+      id: m.id,
+      typeLabel: "Calendly Meeting",
+      name: m.client_name || "—",
+      contact: [m.phone, m.email].filter(Boolean).join(" · ") || "—",
+      detail: `${m.meeting_date} · ${m.meeting_time} · ${meetingStatusLabel(m.meeting_status)}`,
+      deletedAt: String(m.deleted_at || ""),
+    }));
+    return [...leadItems, ...meetingItems].sort(
+      (a, b) => new Date(b.deletedAt).getTime() - new Date(a.deletedAt).getTime()
+    );
+  }, [recycleBinLeads, deletedMeetings]);
+
+  const restoreBinItems = async (items: BinItem[]) => {
+    if (items.length === 0) return;
+    setIsBinBusy(true);
+    try {
+      const leadIds = items.filter((i) => i.kind === "lead").map((i) => i.id);
+      const meetingItems = items.filter((i) => i.kind === "meeting");
+      if (leadIds.length > 0) {
+        await bulkRestoreLeadsServerFn({
+          data: { ids: leadIds, performedBy: session?.name || "Admin", userRole: session?.role || "admin" },
+        });
+      }
+      for (const m of meetingItems) {
+        await restoreCalendlyMeetingServerFn({
+          data: { id: m.id, client_name: m.name, performedBy: session?.name || "Admin", userRole: session?.role || "admin" },
+        });
+      }
+      showToast(`Restored ${items.length} item${items.length === 1 ? "" : "s"}`);
+    } catch {
+      showToast("Some items could not be restored");
+    } finally {
+      setSelectedBinKeys(new Set());
+      setIsBinBusy(false);
+      await Promise.all([fetchRecycleBinList(), fetchLeadsList(), fetchMeetingsList()]);
+    }
+  };
+
+  const purgeBinItems = async (items: BinItem[], confirmText: string) => {
+    if (!isSuperAdmin) {
+      alert("Only the Super Admin can permanently delete records.");
+      return;
+    }
+    if (items.length === 0 || !confirm(confirmText)) return;
+    setIsBinBusy(true);
+    try {
+      const leadIds = items.filter((i) => i.kind === "lead").map((i) => i.id);
+      const meetingIds = items.filter((i) => i.kind === "meeting").map((i) => i.id);
+      if (leadIds.length > 0) {
+        await bulkPermanentDeleteLeadsServerFn({
+          data: { ids: leadIds, performedBy: session?.name || "Super Admin", userRole: "super_admin" },
+        });
+      }
+      if (meetingIds.length > 0) {
+        await deleteCalendlyMeetingsBulkServerFn({
+          data: { ids: meetingIds, performedBy: session?.name || "Super Admin", userRole: "super_admin", permanent: true },
+        });
+      }
+      showToast(`Permanently deleted ${items.length} item${items.length === 1 ? "" : "s"}`);
+    } catch {
+      showToast("Some items could not be deleted");
+    } finally {
+      setSelectedBinKeys(new Set());
+      setIsBinBusy(false);
+      await fetchRecycleBinList();
+      fetchLogsList();
+    }
+  };
+
   const handleEmptyRecycleBin = async () => {
     if (!isSuperAdmin) {
       alert("Access Denied: Only Super Admin can empty the Recycle Bin.");
@@ -3697,9 +3799,9 @@ function AdminPage() {
             >
               <Trash2 className="h-4 w-4" />
               <span>Recycle Bin</span>
-              {recycleBinLeads.length > 0 && (
+              {recycleBinItems.length > 0 && (
                 <span className="rounded-full bg-red-100 px-1.5 py-0.2 text-[10px] font-extrabold text-red-700">
-                  {recycleBinLeads.length}
+                  {recycleBinItems.length}
                 </span>
               )}
             </button>
@@ -6964,252 +7066,168 @@ function AdminPage() {
         {/* TAB 7: RECYCLE BIN (SOFT-DELETED LEADS WITH BULK ACTIONS) */}
         {/* ========================================================================= */}
         {activeTab === "recycle_bin" && (
-          <div className="space-y-5 animate-in fade-in duration-200">
-            {/* Header Card with Empty Recycle Bin Action */}
-            <div className="rounded-2xl border border-red-200 bg-red-50/50 p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base sm:text-lg font-bold flex items-center gap-2 text-red-900">
-                  <Trash2 className="h-5 w-5 text-red-600" />
-                  <span>Recycle Bin (Soft-Deleted Leads)</span>
-                  <span className="rounded-full bg-red-100 border border-red-200 px-2 py-0.5 text-[10px] font-extrabold text-red-700">
-                    {recycleBinLeads.length} Total
-                  </span>
-                </h3>
-                <p className="text-xs text-red-700/80 mt-0.5">
-                  Soft-deleted leads remain recoverable here. Super Admin can perform bulk restoration, bulk permanent deletion, or empty the entire bin.
-                </p>
-              </div>
-
-              {isSuperAdmin && recycleBinLeads.length > 0 && (
-                <button
-                  onClick={handleEmptyRecycleBin}
-                  className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-red-700 flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
-                  title="Permanently erase all items in Recycle Bin"
-                >
-                  <Trash className="h-4 w-4" />
-                  <span>⚠️ Empty Recycle Bin</span>
-                </button>
-              )}
-            </div>
-
-            {/* Bulk Actions Floating/Top Toolbar */}
-            {selectedRecycleBinIds.size > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs text-red-900 animate-in fade-in shadow-sm">
-                <div className="flex items-center gap-2 font-bold">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] text-white">
-                    {selectedRecycleBinIds.size}
-                  </span>
-                  <span>{selectedRecycleBinIds.size} lead(s) selected</span>
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    onClick={handleBulkRestoreRecycleBin}
-                    className="flex items-center gap-1.5 rounded-lg border border-blue-300 bg-white px-3 py-1 text-xs font-bold text-blue-700 hover:bg-blue-50 shadow-xs cursor-pointer transition-colors"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5 text-blue-600" />
-                    <span>Restore Selected ({selectedRecycleBinIds.size})</span>
-                  </button>
-
-                  {isSuperAdmin && (
-                    <button
-                      onClick={handleBulkPermanentDeleteRecycleBin}
-                      className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1 text-xs font-bold text-white hover:bg-red-700 shadow-xs cursor-pointer transition-colors"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      <span>Permanently Delete Selected ({selectedRecycleBinIds.size})</span>
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => setSelectedRecycleBinIds(new Set())}
-                    className="rounded-lg px-2 py-1 text-xs text-slate-500 hover:text-slate-800 cursor-pointer"
-                  >
-                    Clear selection
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Recycle Bin Table */}
-            <div className="overflow-x-auto w-full rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <table className="w-full min-w-[850px] text-left text-xs">
-                <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                  <tr>
-                    <th className="px-4 py-3.5 w-10">
-                      <input
-                        type="checkbox"
-                        checked={recycleBinLeads.length > 0 && selectedRecycleBinIds.size === recycleBinLeads.length}
-                        onChange={(e) => handleSelectAllRecycleBin(e.target.checked)}
-                        className="rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer"
-                      />
-                    </th>
-                    <th className="px-4 py-3.5">Client Name</th>
-                    <th className="px-4 py-3.5">Phone / Email</th>
-                    <th className="px-4 py-3.5">Original Source</th>
-                    <th className="px-4 py-3.5">Deleted Date</th>
-                    <th className="px-4 py-3.5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {recycleBinLeads.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-14 text-center text-xs text-slate-500">
-                        <Trash className="mx-auto h-8 w-8 text-slate-400 mb-2" />
-                        <p className="font-bold text-sm text-slate-700">Recycle Bin is empty</p>
-                        <p className="text-slate-400 mt-1">Soft-deleted leads will appear here for recovery or permanent erase.</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    recycleBinLeads.map((lead) => {
-                      const isSelected = selectedRecycleBinIds.has(lead.id);
-
-                      return (
-                        <tr
-                          key={lead.id}
-                          className={`transition-colors ${
-                            isSelected ? "bg-red-50/60" : "hover:bg-slate-50/75"
-                          }`}
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {(() => {
+              const selectedItems = recycleBinItems.filter((i) => selectedBinKeys.has(i.key));
+              const allSelected = recycleBinItems.length > 0 && selectedItems.length === recycleBinItems.length;
+              return (
+                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 py-3 border-b border-slate-200">
+                    <h3 className="text-sm font-bold flex items-center gap-2 text-slate-900">
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                      <span>Recycle Bin</span>
+                      <span className="rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10px] font-extrabold text-slate-700">
+                        {recycleBinItems.length}
+                      </span>
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {selectedItems.length > 0 && (
+                        <>
+                          <button
+                            type="button"
+                            disabled={isBinBusy}
+                            onClick={() => restoreBinItems(selectedItems)}
+                            className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 cursor-pointer"
+                          >
+                            Restore Selected ({selectedItems.length})
+                          </button>
+                          {isSuperAdmin && (
+                            <button
+                              type="button"
+                              disabled={isBinBusy}
+                              onClick={() =>
+                                purgeBinItems(
+                                  selectedItems,
+                                  `Permanently delete ${selectedItems.length} selected item(s)? This cannot be undone.`
+                                )
+                              }
+                              className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50 cursor-pointer"
+                            >
+                              Permanently Delete ({selectedItems.length})
+                            </button>
+                          )}
+                        </>
+                      )}
+                      {isSuperAdmin && recycleBinItems.length > 0 && selectedItems.length === 0 && (
+                        <button
+                          type="button"
+                          disabled={isBinBusy}
+                          onClick={() =>
+                            purgeBinItems(
+                              recycleBinItems,
+                              `Empty the Recycle Bin? All ${recycleBinItems.length} item(s) will be permanently deleted. This cannot be undone.`
+                            )
+                          }
+                          className="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50 disabled:opacity-50 cursor-pointer"
                         >
-                          <td className="px-4 py-3.5">
+                          Empty Recycle Bin
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[860px] text-left text-xs">
+                      <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                        <tr>
+                          <th className="px-4 py-3 w-10">
                             <input
                               type="checkbox"
-                              checked={isSelected}
-                              onChange={() => handleToggleSelectRecycleBin(lead.id)}
-                              className="rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                              checked={allSelected}
+                              disabled={recycleBinItems.length === 0}
+                              onChange={() =>
+                                setSelectedBinKeys(allSelected ? new Set() : new Set(recycleBinItems.map((i) => i.key)))
+                              }
+                              className="cursor-pointer"
                             />
-                          </td>
-                          <td className="px-4 py-3.5 font-bold text-slate-900">{lead.name}</td>
-                          <td className="px-4 py-3.5">
-                            <div className="font-mono text-slate-800">{lead.phone || "N/A"}</div>
-                            <div className="text-slate-400 text-[11px] font-mono">{lead.email}</div>
-                          </td>
-                          <td className="px-4 py-3.5 text-slate-600">{lead.source}</td>
-                          <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px]">
-                            {lead.deleted_at ? new Date(lead.deleted_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "Recently"}
-                          </td>
-                          <td className="px-4 py-3.5 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => handleRestoreLead(lead.id)}
-                                className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
-                                title="Restore Lead to Active Leads"
-                              >
-                                <RotateCcw className="h-3.5 w-3.5" />
-                                <span>Restore</span>
-                              </button>
-
-                              {isSuperAdmin && (
-                                <button
-                                  onClick={() => handlePermanentDeleteLead(lead.id)}
-                                  className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
-                                  title="Permanently Erase from Database"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                  <span>Permanent Erase</span>
-                                </button>
-                              )}
-                            </div>
-                          </td>
+                          </th>
+                          <th className="px-4 py-3">Type</th>
+                          <th className="px-4 py-3">Name</th>
+                          <th className="px-4 py-3">Phone / Email</th>
+                          <th className="px-4 py-3">Details</th>
+                          <th className="px-4 py-3">Deleted On</th>
+                          <th className="px-4 py-3 text-right">Actions</th>
                         </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Soft-deleted Calendly meetings */}
-            {deletedMeetings.length > 0 && (
-              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
-                  <h4 className="text-sm font-bold flex items-center gap-2 text-slate-800">
-                    <Calendar className="h-4 w-4 text-slate-600" />
-                    <span>Deleted Calendly Meetings</span>
-                    <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-extrabold text-slate-700">
-                      {deletedMeetings.length}
-                    </span>
-                  </h4>
-                  <span className="text-[11px] text-slate-500">
-                    {isSuperAdmin ? "Restore or permanently delete" : "Restore only — permanent delete is Super Admin only"}
-                  </span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[720px] text-left text-xs">
-                    <thead className="border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                      <tr>
-                        <th className="px-4 py-2.5">Client</th>
-                        <th className="px-4 py-2.5">Meeting</th>
-                        <th className="px-4 py-2.5">Status</th>
-                        <th className="px-4 py-2.5">Deleted</th>
-                        <th className="px-4 py-2.5 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {deletedMeetings.map((m) => (
-                        <tr key={m.id} className="hover:bg-slate-50/70">
-                          <td className="px-4 py-2.5">
-                            <div className="font-bold text-slate-900">{m.client_name}</div>
-                            <div className="font-mono text-[11px] text-slate-500">{m.email}</div>
-                          </td>
-                          <td className="px-4 py-2.5 text-slate-700">
-                            {m.meeting_date} · {m.meeting_time}
-                          </td>
-                          <td className="px-4 py-2.5 text-slate-700">{meetingStatusLabel(m.meeting_status)}</td>
-                          <td className="px-4 py-2.5 font-mono text-[11px] text-slate-500">
-                            {m.deleted_at ? new Date(m.deleted_at as unknown as string).toLocaleString() : "—"}
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  const res = await restoreCalendlyMeetingServerFn({
-                                    data: {
-                                      id: m.id,
-                                      client_name: m.client_name,
-                                      performedBy: session?.name || "Admin",
-                                      userRole: session?.role || "admin",
-                                    },
-                                  });
-                                  showToast(res.success ? `Meeting for ${m.client_name} restored` : "Could not restore meeting");
-                                  await Promise.all([fetchRecycleBinList(), fetchMeetingsList()]);
-                                }}
-                                className="rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-100 cursor-pointer"
-                              >
-                                Restore
-                              </button>
-                              {isSuperAdmin && (
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    if (!confirm(`Permanently delete the meeting record for ${m.client_name}? This cannot be undone.`)) return;
-                                    const res = await deleteCalendlyMeetingServerFn({
-                                      data: {
-                                        id: m.id,
-                                        client_name: m.client_name,
-                                        performedBy: session?.name || "Super Admin",
-                                        userRole: session?.role || "super_admin",
-                                        permanent: true,
-                                      },
-                                    });
-                                    showToast(res.success ? `Meeting for ${m.client_name} permanently deleted` : "Could not delete meeting");
-                                    await fetchRecycleBinList();
-                                  }}
-                                  className="rounded-lg border border-red-300 bg-white px-2.5 py-1 text-xs font-bold text-red-700 hover:bg-red-50 cursor-pointer"
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {recycleBinItems.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
+                              Recycle Bin is empty. Deleted leads and meetings appear here.
+                            </td>
+                          </tr>
+                        ) : (
+                          recycleBinItems.map((item) => (
+                            <tr key={item.key} className="hover:bg-slate-50/70 transition-colors">
+                              <td className="px-4 py-3">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedBinKeys.has(item.key)}
+                                  onChange={() =>
+                                    setSelectedBinKeys((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(item.key)) next.delete(item.key);
+                                      else next.add(item.key);
+                                      return next;
+                                    })
+                                  }
+                                  className="cursor-pointer"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <span
+                                  className={`rounded-md border px-2 py-0.5 text-[10px] font-bold ${
+                                    item.kind === "meeting"
+                                      ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                                      : item.typeLabel === "Meta Lead"
+                                      ? "bg-sky-50 text-sky-700 border-sky-200"
+                                      : "bg-blue-50 text-blue-700 border-blue-200"
+                                  }`}
                                 >
-                                  Permanently Delete
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                                  {item.typeLabel}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 font-bold text-slate-900">{item.name}</td>
+                              <td className="px-4 py-3 font-mono text-[11px] text-slate-600">{item.contact}</td>
+                              <td className="px-4 py-3 text-slate-600">{item.detail}</td>
+                              <td className="px-4 py-3 font-mono text-[11px] text-slate-500">
+                                {item.deletedAt && !isNaN(new Date(item.deletedAt).getTime())
+                                  ? new Date(item.deletedAt).toLocaleString()
+                                  : "—"}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    disabled={isBinBusy}
+                                    onClick={() => restoreBinItems([item])}
+                                    className="rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 cursor-pointer"
+                                  >
+                                    Restore
+                                  </button>
+                                  {isSuperAdmin && (
+                                    <button
+                                      type="button"
+                                      disabled={isBinBusy}
+                                      onClick={() =>
+                                        purgeBinItems([item], `Permanently delete "${item.name}" (${item.typeLabel})? This cannot be undone.`)
+                                      }
+                                      className="rounded-lg border border-red-300 bg-white px-2.5 py-1 text-xs font-bold text-red-700 hover:bg-red-50 disabled:opacity-50 cursor-pointer"
+                                    >
+                                      Delete Forever
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         )}
 
