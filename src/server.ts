@@ -200,11 +200,21 @@ export default {
               ? parsedDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/New_York" }) + " EST"
               : "3:00 PM EST";
 
+            const isRescheduled =
+              payload.rescheduled === true ||
+              invitee.rescheduled === true ||
+              Boolean(payload.old_invitee) ||
+              Boolean(payload.new_invitee) ||
+              Boolean(invitee.old_invitee) ||
+              Boolean(invitee.new_invitee) ||
+              eventType.includes("rescheduled") ||
+              (payload.cancellation?.reason && payload.cancellation.reason.toLowerCase().includes("reschedul"));
+
             let status = "scheduled";
-            if (eventType.includes("canceled") || eventType.includes("cancelled")) {
-              status = "cancelled";
-            } else if (eventType.includes("rescheduled")) {
+            if (isRescheduled) {
               status = "rescheduled";
+            } else if (eventType.includes("canceled") || eventType.includes("cancelled")) {
+              status = "cancelled";
             }
 
             const meeting = await saveCalendlyMeeting({
@@ -216,13 +226,28 @@ export default {
               meeting_status: status,
               meeting_link: joinUrl,
               meeting_type: eventTitle,
-              notes: `Received via Calendly Webhook (${eventType})`,
+              is_rescheduled: isRescheduled,
+              notes: isRescheduled
+                ? `Rescheduled via Calendly (${meetingDate} at ${meetingTime})`
+                : `Received via Calendly Webhook (${eventType})`,
             });
 
             await saveCRMNotification({
-              type: status === "cancelled" ? "meeting_cancelled" : "meeting_new",
-              title: status === "cancelled" ? "Meeting Cancelled" : "New Calendly Meeting Booked",
-              message: `${clientName} (${clientEmail}) scheduled strategy call for ${meetingDate} at ${meetingTime}`,
+              type: isRescheduled
+                ? "meeting_rescheduled"
+                : status === "cancelled"
+                ? "meeting_cancelled"
+                : "meeting_new",
+              title: isRescheduled
+                ? "Meeting Rescheduled"
+                : status === "cancelled"
+                ? "Meeting Cancelled"
+                : "New Calendly Meeting Booked",
+              message: isRescheduled
+                ? `${clientName} (${clientEmail}) rescheduled call to ${meetingDate} at ${meetingTime}`
+                : status === "cancelled"
+                ? `${clientName} (${clientEmail}) cancelled their strategy call`
+                : `${clientName} (${clientEmail}) scheduled strategy call for ${meetingDate} at ${meetingTime}`,
               entity_id: meeting.id,
               actor: "Calendly",
             });
@@ -230,7 +255,7 @@ export default {
             broadcastLeadEvent({ type: "NEW_MEETING", meeting });
 
             return new Response(
-              JSON.stringify({ success: true, meeting_id: meeting.id, status }),
+              JSON.stringify({ success: true, meeting_id: meeting.id, status, isRescheduled }),
               {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },

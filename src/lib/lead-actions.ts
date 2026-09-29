@@ -720,8 +720,25 @@ export async function syncCalendlyEventsFromApi(): Promise<{ count: number; erro
             timeZone: "America/New_York",
           }) + " EST";
 
-        const status =
-          ev.status === "active" && invitee.status === "active" ? "scheduled" : "cancelled";
+        const isRescheduled =
+          invitee.rescheduled === true ||
+          Boolean(invitee.old_invitee) ||
+          Boolean(invitee.new_invitee) ||
+          (invitee.cancellation?.reason && invitee.cancellation.reason.toLowerCase().includes("reschedul"));
+
+        // If this invitee was cancelled specifically because it was rescheduled to another time,
+        // skip inserting a separate cancelled row so it doesn't clutter the CRM.
+        if (invitee.status === "canceled" && isRescheduled) {
+          continue;
+        }
+
+        let status = "scheduled";
+        if (ev.status === "active" && invitee.status === "active") {
+          status = isRescheduled ? "rescheduled" : "scheduled";
+        } else if (invitee.status === "canceled" || ev.status === "canceled") {
+          status = isRescheduled ? "rescheduled" : "cancelled";
+        }
+
         const link = ev.location?.join_url || ev.uri;
 
         await saveCalendlyMeetingInDb({
@@ -733,7 +750,10 @@ export async function syncCalendlyEventsFromApi(): Promise<{ count: number; erro
           meeting_status: status,
           meeting_link: link,
           meeting_type: ev.name || "Quickupp AI Studio - 30 Min Strategy Call",
-          notes: `Synced from live Calendly API (${ev.status})`,
+          is_rescheduled: isRescheduled,
+          notes: isRescheduled
+            ? `Rescheduled in Calendly to ${dateStr} at ${timeStr}`
+            : `Synced from live Calendly API (${ev.status})`,
         });
 
         syncedCount++;

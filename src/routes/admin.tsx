@@ -5843,7 +5843,7 @@ function AdminPage() {
             </div>
 
             {/* KPI Summary Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <button
                 type="button"
                 onClick={() => setMeetingStatusFilter("all")}
@@ -5874,6 +5874,21 @@ function AdminPage() {
 
               <button
                 type="button"
+                onClick={() => setMeetingStatusFilter(meetingStatusFilter === "rescheduled" ? "all" : "rescheduled")}
+                className={`rounded-xl border p-3.5 text-left cursor-pointer transition-all ${
+                  meetingStatusFilter === "rescheduled"
+                    ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/20"
+                    : "border-slate-200 bg-white hover:border-amber-300"
+                }`}
+              >
+                <p className="text-[11px] font-bold text-slate-500 uppercase">Rescheduled</p>
+                <p className="text-xl font-extrabold text-amber-600 mt-1">
+                  {meetings.filter((m) => m.meeting_status === "rescheduled").length}
+                </p>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setMeetingStatusFilter(meetingStatusFilter === "completed" ? "all" : "completed")}
                 className={`rounded-xl border p-3.5 text-left cursor-pointer transition-all ${
                   meetingStatusFilter === "completed"
@@ -5892,13 +5907,13 @@ function AdminPage() {
                 onClick={() => setMeetingStatusFilter(meetingStatusFilter === "cancelled" ? "all" : "cancelled")}
                 className={`rounded-xl border p-3.5 text-left cursor-pointer transition-all ${
                   meetingStatusFilter === "cancelled"
-                    ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/20"
-                    : "border-slate-200 bg-white hover:border-amber-300"
+                    ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20"
+                    : "border-slate-200 bg-white hover:border-red-300"
                 }`}
               >
-                <p className="text-[11px] font-bold text-slate-500 uppercase">Rescheduled / Cancelled</p>
-                <p className="text-xl font-extrabold text-amber-600 mt-1">
-                  {meetings.filter((m) => m.meeting_status === "rescheduled" || m.meeting_status === "cancelled").length}
+                <p className="text-[11px] font-bold text-slate-500 uppercase">Cancelled</p>
+                <p className="text-xl font-extrabold text-red-600 mt-1">
+                  {meetings.filter((m) => m.meeting_status === "cancelled").length}
                 </p>
               </button>
             </div>

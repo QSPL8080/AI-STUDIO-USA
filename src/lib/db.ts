@@ -1062,9 +1062,13 @@ export async function saveCalendlyMeeting(data: {
   meeting_type?: string;
   assigned_admin?: string;
   notes?: string;
+  is_rescheduled?: boolean;
 }): Promise<CalendlyMeeting> {
   const id = `meet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const now = new Date().toISOString();
+  const isRescheduled = data.is_rescheduled || data.meeting_status === "rescheduled";
+  const finalStatus = isRescheduled ? "rescheduled" : ((data.meeting_status as any) || "scheduled");
+
   const record: CalendlyMeeting = {
     id,
     lead_id: data.lead_id || undefined,
@@ -1073,7 +1077,7 @@ export async function saveCalendlyMeeting(data: {
     phone: data.phone || undefined,
     meeting_date: data.meeting_date,
     meeting_time: data.meeting_time,
-    meeting_status: (data.meeting_status as any) || "scheduled",
+    meeting_status: finalStatus as any,
     meeting_link: data.meeting_link,
     meeting_type: data.meeting_type || "Video Strategy Call",
     assigned_admin: data.assigned_admin || undefined,
@@ -1083,24 +1087,43 @@ export async function saveCalendlyMeeting(data: {
 
   if (getSupabaseConfig()) {
     try {
-      // Check for duplicate meeting by email, date, and time
-      const existing = await supabaseRest(
-        `calendly_meetings?email=eq.${encodeURIComponent(data.email)}&meeting_date=eq.${encodeURIComponent(
-          data.meeting_date
-        )}&meeting_time=eq.${encodeURIComponent(data.meeting_time)}&select=*`
-      );
+      // If rescheduled, lookup existing meeting for this client email to update in place
+      let existing: any[] = [];
+      if (isRescheduled) {
+        existing = await supabaseRest(
+          `calendly_meetings?email=eq.${encodeURIComponent(data.email)}&order=created_at.desc&limit=1&select=*`
+        );
+      } else {
+        existing = await supabaseRest(
+          `calendly_meetings?email=eq.${encodeURIComponent(data.email)}&meeting_date=eq.${encodeURIComponent(
+            data.meeting_date
+          )}&meeting_time=eq.${encodeURIComponent(data.meeting_time)}&select=*`
+        );
+      }
+
       if (Array.isArray(existing) && existing.length > 0) {
         const existingMeeting = existing[0];
         const updated = await supabaseRest(`calendly_meetings?id=eq.${existingMeeting.id}`, {
           method: "PATCH",
           body: JSON.stringify({
-            meeting_status: data.meeting_status || existingMeeting.meeting_status,
+            client_name: data.client_name || existingMeeting.client_name,
+            phone: data.phone || existingMeeting.phone,
+            meeting_date: data.meeting_date || existingMeeting.meeting_date,
+            meeting_time: data.meeting_time || existingMeeting.meeting_time,
+            meeting_status: finalStatus,
             meeting_link: data.meeting_link || existingMeeting.meeting_link,
+            meeting_type: data.meeting_type || existingMeeting.meeting_type,
             notes: data.notes || existingMeeting.notes,
           }),
         });
         if (Array.isArray(updated) && updated[0]) return updated[0];
-        return existingMeeting;
+        return {
+          ...existingMeeting,
+          meeting_date: data.meeting_date,
+          meeting_time: data.meeting_time,
+          meeting_status: finalStatus as any,
+          meeting_link: data.meeting_link,
+        };
       }
 
       const rows = await supabaseRest("calendly_meetings", {
@@ -1118,30 +1141,55 @@ export async function saveCalendlyMeeting(data: {
   try {
     const pool = await getPool();
     if (pool) {
-      const existingRes = await pool.query(
-        `SELECT * FROM calendly_meetings WHERE email = $1 AND meeting_date = $2 LIMIT 1`,
-        [data.email, data.meeting_date]
-      );
-      if (existingRes.rows.length > 0) {
-        const existingMeeting = existingRes.rows[0];
+      let existingMeeting: any = null;
+      if (isRescheduled) {
+        const existingRes = await pool.query(
+          `SELECT * FROM calendly_meetings WHERE email = $1 ORDER BY created_at DESC LIMIT 1`,
+          [data.email]
+        );
+        if (existingRes.rows.length > 0) existingMeeting = existingRes.rows[0];
+      } else {
+        const existingRes = await pool.query(
+          `SELECT * FROM calendly_meetings WHERE email = $1 AND meeting_date = $2 LIMIT 1`,
+          [data.email, data.meeting_date]
+        );
+        if (existingRes.rows.length > 0) existingMeeting = existingRes.rows[0];
+      }
+
+      if (existingMeeting) {
         const updateRes = await pool.query(
           `UPDATE calendly_meetings 
-           SET meeting_status = COALESCE($1, meeting_status), 
-               meeting_link = COALESCE($2, meeting_link), 
-               meeting_time = COALESCE($3, meeting_time), 
-               notes = COALESCE($4, notes),
-               client_name = COALESCE($5, client_name)
-           WHERE id = $6 RETURNING *`,
+           SET meeting_date = COALESCE($1, meeting_date),
+               meeting_time = COALESCE($2, meeting_time),
+               meeting_status = COALESCE($3, meeting_status), 
+               meeting_link = COALESCE($4, meeting_link), 
+               notes = COALESCE($5, notes),
+               client_name = COALESCE($6, client_name),
+               phone = COALESCE($7, phone)
+           WHERE id = $8 RETURNING *`,
           [
-            data.meeting_status || null,
-            data.meeting_link || null,
+            data.meeting_date || null,
             data.meeting_time || null,
+            finalStatus,
+            data.meeting_link || null,
             data.notes || null,
             data.client_name || null,
+            data.phone || null,
             existingMeeting.id,
           ]
         );
-        return updateRes.rows[0] || existingMeeting;
+        const updated = updateRes.rows[0] || existingMeeting;
+
+        try {
+          await pool.query(
+            `UPDATE leads 
+             SET meeting_date = $1, meeting_time = $2, meeting_link = $3, meeting_status = $4, meeting_type = $5 
+             WHERE email = $6`,
+            [data.meeting_date, data.meeting_time, data.meeting_link, finalStatus, data.meeting_type || "Video Strategy Call", data.email]
+          );
+        } catch (_) {}
+
+        return updated;
       }
 
       const res = await pool.query(
@@ -1156,7 +1204,7 @@ export async function saveCalendlyMeeting(data: {
           data.phone || null,
           data.meeting_date,
           data.meeting_time,
-          data.meeting_status || "scheduled",
+          finalStatus,
           data.meeting_link,
           data.meeting_type || "Video Strategy Call",
           data.assigned_admin || null,
@@ -1176,7 +1224,7 @@ export async function saveCalendlyMeeting(data: {
           const matchedLeadId = leadRows.rows[0].id;
           await pool.query(
             `UPDATE leads SET meeting_date = $1, meeting_time = $2, meeting_link = $3, meeting_status = $4, meeting_type = $5 WHERE id = $6`,
-            [data.meeting_date, data.meeting_time, data.meeting_link, data.meeting_status || "scheduled", data.meeting_type || "Video Strategy Call", matchedLeadId]
+            [data.meeting_date, data.meeting_time, data.meeting_link, finalStatus, data.meeting_type || "Video Strategy Call", matchedLeadId]
           );
         }
       } catch (linkErr) {
