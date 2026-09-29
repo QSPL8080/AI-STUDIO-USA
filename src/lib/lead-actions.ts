@@ -1521,12 +1521,21 @@ async function registerFailedLogin(
   email: string,
   role: string | null | undefined,
   threshold: number
-): Promise<{ lockedNow: boolean; lockMinutes: number; attemptsLeft: number; level: number }> {
+): Promise<{ lockedNow: boolean; alertNow: boolean; lockMinutes: number; attemptsLeft: number; level: number }> {
   const key = (email || "").toLowerCase().trim();
-  if (!key || isSuperAdminLogin(key, role)) {
-    return { lockedNow: false, lockMinutes: 0, attemptsLeft: threshold, level: 0 };
-  }
+  if (!key) return { lockedNow: false, alertNow: false, lockMinutes: 0, attemptsLeft: threshold, level: 0 };
   const states = await readLockStates();
+  if (isSuperAdminLogin(key, role)) {
+    // Super Admin is never locked, but every N failed attempts still sends an alert
+    const sa: LockState = states[key] || { fails: 0, level: 0, lockedUntil: 0 };
+    sa.fails += 1;
+    const alertNow = sa.fails >= threshold;
+    if (alertNow) sa.fails = 0;
+    sa.lockedUntil = 0;
+    states[key] = sa;
+    await writeLockStates(states);
+    return { lockedNow: false, alertNow, lockMinutes: 0, attemptsLeft: threshold, level: 0 };
+  }
   const st: LockState = states[key] || { fails: 0, level: 0, lockedUntil: 0 };
   st.fails += 1;
   let lockedNow = false;
@@ -1540,7 +1549,7 @@ async function registerFailedLogin(
   }
   states[key] = st;
   await writeLockStates(states);
-  return { lockedNow, lockMinutes, attemptsLeft: lockedNow ? 0 : Math.max(threshold - st.fails, 0), level: st.level };
+  return { lockedNow, alertNow: lockedNow, lockMinutes, attemptsLeft: lockedNow ? 0 : Math.max(threshold - st.fails, 0), level: st.level };
 }
 
 /** Successful login: back to a clean slate */
@@ -1576,8 +1585,10 @@ async function alertLockout(opts: {
   }
   try {
     await addActivityLogInDb({
-      action: "Account Locked (Failed Logins)",
-      details: `${opts.threshold} failed logins for ${opts.email || "unknown"} from ${opts.ip}; lockout #${opts.level}: ${formatLockDuration(opts.lockMinutes)}; alert email ${mailOk ? "sent" : "FAILED" + (mailErr ? ": " + mailErr : "")}`,
+      action: opts.lockMinutes > 0 ? "Account Locked (Failed Logins)" : "Super Admin Failed Logins Alert",
+      details: `${opts.threshold} failed logins for ${opts.email || "unknown"} from ${opts.ip}; ${
+        opts.lockMinutes > 0 ? `lockout #${opts.level}: ${formatLockDuration(opts.lockMinutes)}` : "Super Admin is never locked"
+      }; alert email ${mailOk ? "sent" : "FAILED" + (mailErr ? ": " + mailErr : "")}`,
       performed_by: "System / Security",
       user_role: "system",
     });
@@ -1620,7 +1631,7 @@ export const recordFailedLoginServerFn = createServerFn({ method: "POST" })
 
       const threshold = await getLoginThreshold();
       const res = await registerFailedLogin(data.email, null, threshold);
-      if (res.lockedNow) {
+      if (res.alertNow) {
         await alertLockout({
           email: data.email, ip: data.ip || "Unknown", location: data.location, userAgent: data.userAgent,
           threshold, lockMinutes: res.lockMinutes, level: res.level,
@@ -1689,7 +1700,7 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
 
         const superAdmin = isSuperAdminLogin(cleanEmail, user?.role);
         const fail = await registerFailedLogin(cleanEmail, user?.role, threshold);
-        if (fail.lockedNow) {
+        if (fail.alertNow) {
           await alertLockout({
             email: cleanEmail, ip: ipAddress, location: locationName, userAgent,
             threshold, lockMinutes: fail.lockMinutes, level: fail.level,

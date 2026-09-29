@@ -977,7 +977,7 @@ export async function sendFailedLoginAlertEmail(info: {
   const text = `Security alert from the ${title} admin panel.
 
 ${info.attempts} consecutive failed login attempts reached the configured threshold of ${info.threshold}.
-Further logins for this account / IP are locked for ${info.lockoutMinutes >= 60 ? `${Math.round((info.lockoutMinutes / 60) * 10) / 10} hours` : `${info.lockoutMinutes} minutes`}.
+${info.lockoutMinutes > 0 ? `Further logins for this account are locked for ${info.lockoutMinutes >= 60 ? `${Math.round((info.lockoutMinutes / 60) * 10) / 10} hours` : `${info.lockoutMinutes} minutes`}.` : "This is the Super Admin account, which is never locked. Please check that these attempts were you."}
 
 Email tried: ${info.email || "N/A"}
 IP address: ${info.ipAddress || "Unknown"}
@@ -990,7 +990,7 @@ If this wasn't you or your team, review Login / IP Tracking in the admin panel.`
   const html = `<div style="font-family:Arial,sans-serif;font-size:14px;color:#0f172a">
   <h2 style="color:#b91c1c;margin:0 0 8px">🚨 Failed login threshold reached</h2>
   <p>${info.attempts} consecutive failed login attempts reached the threshold of <b>${info.threshold}</b>.
-  Logins for this account / IP are locked for <b>${info.lockoutMinutes >= 60 ? `${Math.round((info.lockoutMinutes / 60) * 10) / 10} hours` : `${info.lockoutMinutes} minutes`}</b>.</p>
+  ${info.lockoutMinutes > 0 ? `Logins for this account are locked for <b>${info.lockoutMinutes >= 60 ? `${Math.round((info.lockoutMinutes / 60) * 10) / 10} hours` : `${info.lockoutMinutes} minutes`}</b>.` : "This is the <b>Super Admin</b> account, which is never locked. Please check that these attempts were you."}</p>
   <table style="border-collapse:collapse">
     <tr><td style="padding:4px 12px 4px 0;color:#64748b">Email tried</td><td><b>${esc(info.email || "N/A")}</b></td></tr>
     <tr><td style="padding:4px 12px 4px 0;color:#64748b">IP address</td><td>${esc(info.ipAddress || "Unknown")}</td></tr>
