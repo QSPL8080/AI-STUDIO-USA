@@ -778,6 +778,12 @@ function AdminPage() {
   const [closingLead, setClosingLead] = useState<Lead | null>(null);
   const [deliveringLead, setDeliveringLead] = useState<Lead | null>(null);
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  // Confirm popup for Deactivate / Activate / Delete account (User Management)
+  const [accountAction, setAccountAction] = useState<{
+    kind: "deactivate" | "activate" | "delete";
+    user: { id: string; name: string; email: string };
+  } | null>(null);
+  const [isAccountActionBusy, setIsAccountActionBusy] = useState(false);
   const [viewMeetingDetails, setViewMeetingDetails] = useState<CalendlyMeeting | null>(null);
   // "Set Meeting Result" form in the meeting details popup
   const [outcomeChoice, setOutcomeChoice] = useState<"" | "completed" | "not_conducted" | "no_show">("");
@@ -993,8 +999,12 @@ function AdminPage() {
     const dbUser = adminUsers.find((u) => (u.email || "").toLowerCase() === email);
     const deactivated = Boolean(dbUser && dbUser.status !== "active");
     if (deactivated) {
-      sessionStorage.removeItem("ai_studio_auth_session");
-      sessionStorage.removeItem("crm_last_active");
+      try {
+        sessionStorage.removeItem("ai_studio_auth_session");
+        sessionStorage.removeItem("crm_last_active");
+        localStorage.removeItem("ai_studio_auth_session");
+        localStorage.removeItem("crm_last_active");
+      } catch {}
       window.location.replace("/crm/login?deactivated=1");
     }
   }, [session, adminUsers]);
@@ -6764,23 +6774,12 @@ function AdminPage() {
                           ) : (
                             <div className="flex items-center justify-end gap-2">
                               <button
-                                onClick={async () => {
-                                  const nextStatus = user.status === "active" ? "inactive" : "active";
-                                  const res = await toggleAdminUserStatusServerFn({
-                                    data: {
-                                      id: user.id,
-                                      status: nextStatus,
-                                      email: user.email,
-                                      performedBy: session?.name || "Super Admin",
-                                    },
-                                  });
-                                  if (res.success) {
-                                    fetchAdminUsersList();
-                                    showToast(`Admin ${user.email} status updated to ${nextStatus}`);
-                                  } else {
-                                    showToast(res.error || "Failed to update admin status");
-                                  }
-                                }}
+                                onClick={() =>
+                                  setAccountAction({
+                                    kind: user.status === "active" ? "deactivate" : "activate",
+                                    user: { id: user.id, name: user.name, email: user.email },
+                                  })
+                                }
                                 className={`rounded-lg px-2.5 py-1 text-xs font-bold border cursor-pointer transition-colors ${
                                   user.status === "active"
                                     ? "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
@@ -6791,19 +6790,9 @@ function AdminPage() {
                               </button>
 
                               <button
-                                onClick={async () => {
-                                  if (confirm(`Delete admin account for ${user.email}?`)) {
-                                    const res = await deleteAdminUserServerFn({
-                                      data: { id: user.id, email: user.email, performedBy: session?.name || "Super Admin" },
-                                    });
-                                    if (res.success) {
-                                      fetchAdminUsersList();
-                                      showToast(`Admin ${user.email} deleted`);
-                                    } else {
-                                      showToast(res.error || "Failed to delete admin account");
-                                    }
-                                  }
-                                }}
+                                onClick={() =>
+                                  setAccountAction({ kind: "delete", user: { id: user.id, name: user.name, email: user.email } })
+                                }
                                 className="rounded-lg border border-red-200 p-1.5 text-red-500 hover:bg-red-50 cursor-pointer transition-colors"
                                 title="Delete Admin Account"
                               >
@@ -9169,6 +9158,106 @@ function AdminPage() {
       {/* ========================================================================= */}
       {/* MODAL 6: CREATE ADMIN ACCOUNT (SUPER ADMIN ONLY) */}
       {/* ========================================================================= */}
+      {/* Confirm activate / deactivate / delete account */}
+      {accountAction && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className={`w-full max-w-md rounded-2xl border p-6 shadow-2xl space-y-4 ${
+            isDark ? "border-slate-700 bg-[#151222] text-white" : "border-slate-200 bg-white text-slate-900"
+          }`}>
+            <div className="flex items-start gap-3">
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                accountAction.kind === "activate" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+              }`}>
+                {accountAction.kind === "delete" ? <Trash2 className="h-5 w-5" /> : <Users className="h-5 w-5" />}
+              </div>
+              <div>
+                <h3 className="text-base font-bold">
+                  {accountAction.kind === "deactivate"
+                    ? "Deactivate this account?"
+                    : accountAction.kind === "activate"
+                    ? "Activate this account?"
+                    : "Delete this account?"}
+                </h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">{accountAction.user.name}</span>{" "}
+                  ({accountAction.user.email})
+                </p>
+              </div>
+            </div>
+            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+              {accountAction.kind === "deactivate"
+                ? "They will be signed out within a few seconds and can't log in until you activate the account again. Their leads and data are not changed."
+                : accountAction.kind === "activate"
+                ? "They can log in again straight away with the same email, password and access as before."
+                : "The account is removed permanently and can't log in. Leads and records they worked on are kept."}
+            </p>
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                disabled={isAccountActionBusy}
+                onClick={() => setAccountAction(null)}
+                className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isAccountActionBusy}
+                onClick={async () => {
+                  const { kind, user } = accountAction;
+                  setIsAccountActionBusy(true);
+                  try {
+                    if (kind === "delete") {
+                      const res = await deleteAdminUserServerFn({
+                        data: { id: user.id, email: user.email, performedBy: session?.name || "Super Admin" },
+                      });
+                      showToast(res.success ? `Account ${user.email} deleted` : res.error || "Failed to delete account");
+                    } else {
+                      const nextStatus = kind === "deactivate" ? "inactive" : "active";
+                      const res = await toggleAdminUserStatusServerFn({
+                        data: { id: user.id, status: nextStatus, email: user.email, performedBy: session?.name || "Super Admin" },
+                      });
+                      if (res.success) {
+                        // Update the row immediately, then confirm from the server
+                        setAdminUsers((prev) =>
+                          prev.map((u) =>
+                            (u.email || "").toLowerCase() === user.email.toLowerCase() ? { ...u, status: nextStatus } : u
+                          )
+                        );
+                        showToast(
+                          kind === "deactivate"
+                            ? `${user.email} deactivated — signed out and blocked from logging in`
+                            : `${user.email} activated — can log in again`
+                        );
+                      } else {
+                        showToast(res.error || "Failed to update account status");
+                      }
+                    }
+                    await fetchAdminUsersList();
+                  } catch {
+                    showToast("Something went wrong. Please try again.");
+                  } finally {
+                    setIsAccountActionBusy(false);
+                    setAccountAction(null);
+                  }
+                }}
+                className={`rounded-xl px-4 py-2 text-xs font-bold text-white cursor-pointer disabled:opacity-50 ${
+                  accountAction.kind === "activate" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-600 hover:bg-red-700"
+                }`}
+              >
+                {isAccountActionBusy
+                  ? "Please wait..."
+                  : accountAction.kind === "deactivate"
+                  ? "Yes, Deactivate"
+                  : accountAction.kind === "activate"
+                  ? "Yes, Activate"
+                  : "Yes, Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showAddAdminModal && can("manage_users") && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
           <div className={`w-full max-w-md rounded-2xl border p-6 shadow-2xl space-y-4 ${

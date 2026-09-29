@@ -46,11 +46,20 @@ export function CrmLoginPage() {
 
     // Check if redirected because of session deactivation
     const params = new URLSearchParams(window.location.search);
-    if (params.get("deactivated") === "1") {
+    const wasDeactivated = params.get("deactivated") === "1";
+    if (wasDeactivated) {
       setAuthError("Your session was terminated because this account was deactivated by the Super Admin.");
+      // Make sure no saved login sends them straight back into the CRM
+      try {
+        sessionStorage.removeItem("ai_studio_auth_session");
+        sessionStorage.removeItem("crm_last_active");
+        localStorage.removeItem("ai_studio_auth_session");
+        localStorage.removeItem("crm_last_active");
+      } catch {}
     }
 
     try {
+      if (wasDeactivated) throw new Error("skip auto-login");
       const savedSession = sessionStorage.getItem("ai_studio_auth_session") || localStorage.getItem("ai_studio_auth_session");
       const lastActiveStr = sessionStorage.getItem("crm_last_active") || localStorage.getItem("crm_last_active");
       const lastActive = lastActiveStr ? Number(lastActiveStr) : 0;
