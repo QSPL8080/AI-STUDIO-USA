@@ -737,7 +737,7 @@ function AdminPage() {
     // 2. Database-managed accounts
     adminUsers.forEach((u) => {
       const cleanEmail = (u.email || "").toLowerCase().trim();
-      if (!cleanEmail || cleanEmail === "sa@aistudio.us" || LEGACY_ACCOUNT_EMAILS.includes(cleanEmail)) return;
+      if (!cleanEmail || cleanEmail === "sa@aistudio.us") return;
       map.set(cleanEmail, u);
     });
 

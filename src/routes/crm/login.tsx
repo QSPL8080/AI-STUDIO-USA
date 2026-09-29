@@ -6,6 +6,7 @@ import {
   Mail,
   Eye,
   EyeOff,
+  AlertCircle,
   AlertTriangle,
   MapPin,
   CheckCircle2,
@@ -17,7 +18,7 @@ import { authenticateAdminServerFn, sendAccountActivationRequestServerFn } from 
 export const Route = createFileRoute("/crm/login")({
   ssr: false,
   head: () => ({
-    meta: [{ title: "CRM Portal Login | Quickupp AI Studio" }],
+    meta: [{ title: "CRM Admin Portal | Quickupp AI Studio" }],
   }),
   component: CrmLoginPage,
 });
@@ -50,10 +51,10 @@ export function CrmLoginPage() {
     }
 
     try {
-      const savedSession = sessionStorage.getItem("ai_studio_auth_session");
-      const lastActiveStr = sessionStorage.getItem("crm_last_active");
+      const savedSession = sessionStorage.getItem("ai_studio_auth_session") || localStorage.getItem("ai_studio_auth_session");
+      const lastActiveStr = sessionStorage.getItem("crm_last_active") || localStorage.getItem("crm_last_active");
       const lastActive = lastActiveStr ? Number(lastActiveStr) : 0;
-      const timeoutMs = 15 * 60 * 1000;
+      const timeoutMs = 30 * 60 * 1000;
 
       if (savedSession && lastActive && Date.now() - lastActive < timeoutMs) {
         const parsed = JSON.parse(savedSession);
@@ -73,7 +74,7 @@ export function CrmLoginPage() {
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || isCheckingLocation) return;
 
     const cleanEmail = emailInput.trim().toLowerCase();
     const cleanPass = passwordInput.trim();
@@ -140,7 +141,7 @@ export function CrmLoginPage() {
           localStorage.removeItem("ai_studio_remembered_email");
         }
 
-        // Navigate to CRM
+        // Navigate to CRM portal
         window.location.replace("/crm");
       } else if (res.deactivated) {
         setIsDeactivated(true);
@@ -187,185 +188,167 @@ export function CrmLoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 py-12 selection:bg-red-500 selection:text-white">
-      {/* Background Subtle Gradient */}
-      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-slate-900/80 via-slate-950 to-slate-950 z-0" />
-
-      <div className="relative z-10 w-full max-w-md animate-in fade-in zoom-in-95 duration-300">
-        {/* Brand Header */}
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-900 border border-slate-700/60 shadow-xl shadow-black/40">
-            <ShieldCheck className="h-7 w-7 text-red-500" />
+    <div className="flex min-h-screen items-center justify-center p-4 bg-slate-50 text-slate-900 transition-colors">
+      <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-2xl transition-all">
+        {/* Logo & Header */}
+        <div className="text-center">
+          <div className="mx-auto flex items-center justify-center">
+            <img
+              src="/images/LOGO 1.png"
+              alt="Quickupp AI Studio logo"
+              className="h-10 w-auto object-contain"
+              width={140}
+              height={44}
+            />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
-            Quickupp AI Studio
-          </h1>
-          <p className="mt-1 text-xs font-semibold tracking-wider text-slate-400 uppercase">
-            CRM & Lead Management Portal
+          <h2 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">CRM Admin Portal</h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Quickupp AI Studio Leads Management & CRM
           </p>
         </div>
 
-        {/* Login Card */}
-        <div className="rounded-3xl border border-slate-800/80 bg-slate-900/90 p-7 shadow-2xl backdrop-blur-xl sm:p-8">
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-white">Sign In to CRM</h2>
-            <p className="mt-1 text-xs text-slate-400">
-              Enter your authorized staff or administrator credentials
-            </p>
-          </div>
-
-          {/* Deactivated Notice Box */}
-          {isDeactivated && (
-            <div className="mb-5 rounded-2xl border border-red-500/30 bg-red-950/40 p-4 text-xs text-red-200 animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
-                <div className="space-y-2 flex-1">
-                  <p className="font-bold text-red-300 text-sm">Account Deactivated</p>
-                  <p className="text-slate-300 leading-relaxed text-[12px]">
-                    This account is currently deactivated. Please contact the Super Admin for activation.
+        <form onSubmit={handleLoginSubmit} className="mt-6 space-y-4">
+          {authError ? (
+            <div
+              className={`rounded-xl border p-3.5 text-xs ${
+                locationErrorType !== "none"
+                  ? "border-amber-300 bg-amber-50 text-amber-900"
+                  : isDeactivated
+                  ? "border-red-300 bg-red-50 text-red-800"
+                  : "border-red-500/40 bg-red-50 text-red-700"
+              }`}
+            >
+              <div className="flex items-start gap-2.5">
+                {locationErrorType !== "none" ? (
+                  <MapPin className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                ) : isDeactivated ? (
+                  <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1">
+                  <p className="font-bold">
+                    {locationErrorType !== "none"
+                      ? "Location Restriction Alert"
+                      : isDeactivated
+                      ? "Account Deactivated"
+                      : "Authentication Notice"}
                   </p>
+                  <p className="mt-0.5 leading-relaxed">{authError}</p>
 
-                  {activationRequested ? (
-                    <div className="mt-3 flex items-center gap-2 rounded-xl bg-emerald-950/60 border border-emerald-500/40 p-2.5 text-[11px] font-semibold text-emerald-300">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                      <span>
-                        Activation request sent to <b>info@quickuppaistudio.us</b>. The Super Admin will review your account.
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={handleSendActivationRequest}
-                        disabled={isSendingRequest}
-                        className="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-500 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-red-900/30 transition-all cursor-pointer disabled:opacity-50"
-                      >
-                        {isSendingRequest ? (
-                          <>
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            <span>Sending Request...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Send className="h-3.5 w-3.5" />
-                            <span>Request Account Activation</span>
-                          </>
-                        )}
-                      </button>
+                  {/* Location guidance */}
+                  {locationErrorType === "denied" && (
+                    <p className="mt-1.5 text-[11px] font-semibold text-amber-800">
+                      💡 Please click the lock/settings icon in your browser URL address bar to enable Location Permission, then retry.
+                    </p>
+                  )}
+
+                  {/* Deactivated activation button */}
+                  {isDeactivated && (
+                    <div className="mt-2.5">
+                      {activationRequested ? (
+                        <p className="text-[11px] font-bold text-emerald-700 flex items-center gap-1.5">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                          <span>Activation request sent to info@quickuppaistudio.us. Super Admin will review.</span>
+                        </p>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleSendActivationRequest}
+                          disabled={isSendingRequest}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition-all cursor-pointer disabled:opacity-60"
+                        >
+                          {isSendingRequest ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <span>Sending Request...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Send className="h-3 w-3" />
+                              <span>Request Account Activation</span>
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
               </div>
             </div>
-          )}
+          ) : null}
 
-          {/* General Error Banner */}
-          {authError && !isDeactivated && (
-            <div className="mb-5 flex items-start gap-2.5 rounded-2xl border border-red-500/30 bg-red-950/30 p-3.5 text-xs text-red-300 animate-in fade-in">
-              <AlertTriangle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
-              <div className="flex-1 font-medium">{authError}</div>
+          {/* Email Input */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700">Admin Email</label>
+            <div className="relative mt-1">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <input
+                type="email"
+                required
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="sa@aistudio.us"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
-          )}
-
-          <form onSubmit={handleLoginSubmit} className="space-y-4">
-            {/* Email Field */}
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                Authorized Email
-              </label>
-              <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
-                  <Mail className="h-4 w-4" />
-                </div>
-                <input
-                  type="email"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="name@aistudio.us"
-                  required
-                  autoComplete="email"
-                  className="w-full rounded-xl border border-slate-700/80 bg-slate-950/60 py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 outline-none transition focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                />
-              </div>
-            </div>
-
-            {/* Password Field */}
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
-                  <Lock className="h-4 w-4" />
-                </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
-                  placeholder="••••••••••••"
-                  required
-                  autoComplete="current-password"
-                  className="w-full rounded-xl border border-slate-700/80 bg-slate-950/60 py-2.5 pl-10 pr-10 text-sm text-white placeholder-slate-500 outline-none transition focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-500 hover:text-slate-300 transition cursor-pointer"
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Remember Me */}
-            <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-slate-700 bg-slate-950 text-red-600 focus:ring-red-500 cursor-pointer"
-                />
-                <span>Remember email</span>
-              </label>
-
-              <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                <MapPin className="h-3 w-3 text-slate-400" />
-                <span>Geofence Protected</span>
-              </span>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="mt-2 w-full rounded-xl bg-gradient-to-r from-red-600 to-rose-600 py-3 text-sm font-bold text-white shadow-lg shadow-red-900/40 hover:from-red-500 hover:to-rose-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Verifying Credentials & Location...</span>
-                </>
-              ) : (
-                <span>Sign In to CRM</span>
-              )}
-            </button>
-          </form>
-
-          {/* Security Notice */}
-          <div className="mt-6 border-t border-slate-800/80 pt-4 text-center">
-            <p className="text-[11px] text-slate-500 flex items-center justify-center gap-1.5">
-              <Lock className="h-3 w-3 text-slate-400" />
-              <span>256-Bit Encrypted CRM Portal • Authorized Personnel Only</span>
-            </p>
           </div>
-        </div>
 
-        {/* Footer Support Info */}
-        <div className="mt-6 text-center text-xs text-slate-500">
-          <p>Need access or forgot password? Contact <a href="mailto:info@quickuppaistudio.us" className="text-slate-400 hover:text-white underline">info@quickuppaistudio.us</a></p>
-        </div>
+          {/* Password Input */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700">Password</label>
+            <div className="relative mt-1">
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-10 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Remember Email Checkbox */}
+          <div className="flex items-center justify-between text-xs">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-slate-600">Remember email</span>
+            </label>
+          </div>
+
+          {/* Sign In Button */}
+          <button
+            type="submit"
+            disabled={isCheckingLocation || isSubmitting}
+            className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white shadow-lg hover:bg-blue-700 disabled:opacity-75 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            {isCheckingLocation || isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Verifying Location &amp; Credentials...</span>
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="h-4 w-4" />
+                <span>Sign In to CRM Portal</span>
+              </>
+            )}
+          </button>
+        </form>
       </div>
     </div>
   );

@@ -1013,12 +1013,13 @@ export async function saveAdminUser(user: {
   status?: "active" | "inactive";
 }): Promise<AdminUser> {
   const id = `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const cleanEmail = user.email.toLowerCase().trim();
   const now = new Date().toISOString();
   const record: AdminUser = {
     id,
-    name: user.name,
-    email: user.email.toLowerCase().trim(),
-    password: user.password,
+    name: user.name.trim(),
+    email: cleanEmail,
+    password: user.password.trim(),
     role: user.role,
     status: user.status || "active",
     created_at: now,
@@ -1028,17 +1029,34 @@ export async function saveAdminUser(user: {
   try {
     const pool = await getPool();
     if (pool) {
-      const res = await pool.query(
-        `INSERT INTO admin_users (id, name, email, password, role, status, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, NOW())
-         ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password, role = EXCLUDED.role, status = EXCLUDED.status
-         RETURNING *`,
-        [id, record.name, record.email, record.password, record.role, record.status]
+      // 1. Check if user already exists
+      const existing = await pool.query(
+        "SELECT id FROM admin_users WHERE LOWER(email) = LOWER($1) LIMIT 1",
+        [cleanEmail]
       );
-      if (res.rows[0]) return res.rows[0];
+
+      if (existing.rows.length > 0) {
+        const updateRes = await pool.query(
+          `UPDATE admin_users 
+           SET name = $1, password = $2, role = $3, status = $4
+           WHERE LOWER(email) = LOWER($5)
+           RETURNING id, name, email, role, status, created_at, last_login_at`,
+          [record.name, record.password, record.role, record.status, cleanEmail]
+        );
+        if (updateRes.rows[0]) return updateRes.rows[0];
+      } else {
+        const insertRes = await pool.query(
+          `INSERT INTO admin_users (id, name, email, password, role, status, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, NOW())
+           RETURNING id, name, email, role, status, created_at, last_login_at`,
+          [id, record.name, cleanEmail, record.password, record.role, record.status]
+        );
+        if (insertRes.rows[0]) return insertRes.rows[0];
+      }
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error("PostgreSQL saveAdminUser error:", err);
+    throw new Error(err?.message || "Failed to save user in PostgreSQL database.");
   }
   return record;
 }
