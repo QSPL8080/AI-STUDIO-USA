@@ -299,7 +299,17 @@ function AdminPage() {
   }, []);
 
   // Authentication & Role State
-  const [session, setSession] = useState<AuthSession | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = sessionStorage.getItem("ai_studio_auth_session") || localStorage.getItem("ai_studio_auth_session");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.role && parsed?.email) return parsed;
+      }
+    } catch {}
+    return null;
+  });
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -835,21 +845,19 @@ function AdminPage() {
 
   // Session Restore on initial mount
   useEffect(() => {
-    try {
-      localStorage.removeItem("ai_studio_auth_session");
-    } catch {}
-
-    const savedSession = sessionStorage.getItem("ai_studio_auth_session");
-    const lastActiveStr = sessionStorage.getItem("crm_last_active");
-    const lastActive = lastActiveStr ? Number(lastActiveStr) : 0;
-    const timeoutMs = (appliedInactivityTimeout || 15) * 60 * 1000;
+    const savedSession = sessionStorage.getItem("ai_studio_auth_session") || localStorage.getItem("ai_studio_auth_session");
+    const lastActiveStr = sessionStorage.getItem("crm_last_active") || localStorage.getItem("crm_last_active");
+    const lastActive = lastActiveStr ? Number(lastActiveStr) : Date.now();
+    const timeoutMs = (appliedInactivityTimeout || 30) * 60 * 1000;
 
     if (savedSession) {
       try {
         // Inactivity check on reload/restore
-        if (!lastActive || Date.now() - lastActive > timeoutMs) {
+        if (lastActive && Date.now() - lastActive > timeoutMs) {
           sessionStorage.removeItem("ai_studio_auth_session");
+          localStorage.removeItem("ai_studio_auth_session");
           sessionStorage.removeItem("crm_last_active");
+          localStorage.removeItem("crm_last_active");
           window.location.replace("/crm/login");
           return;
         }
@@ -857,18 +865,20 @@ function AdminPage() {
         const parsed: AuthSession = JSON.parse(savedSession);
         if (!parsed?.role || !parsed?.email) {
           sessionStorage.removeItem("ai_studio_auth_session");
-          sessionStorage.removeItem("crm_last_active");
+          localStorage.removeItem("ai_studio_auth_session");
           window.location.replace("/crm/login");
           return;
         }
 
         // Refresh activity timestamp
-        sessionStorage.setItem("crm_last_active", Date.now().toString());
+        const nowStr = Date.now().toString();
+        sessionStorage.setItem("crm_last_active", nowStr);
+        localStorage.setItem("crm_last_active", nowStr);
         setSession(parsed);
         fetchAllData(false);
       } catch {
         sessionStorage.removeItem("ai_studio_auth_session");
-        sessionStorage.removeItem("crm_last_active");
+        localStorage.removeItem("ai_studio_auth_session");
         window.location.replace("/crm/login");
       }
     } else {
@@ -7995,8 +8005,8 @@ function AdminPage() {
                       projectStatus: projectStatus || "In Progress",
                       deliveryDate: deliveryDate || undefined,
                       notes: notes || undefined,
-                      createdBy: session.name,
-                      userRole: session.role,
+                      createdBy: session?.name || "Admin",
+                      userRole: session?.role || "admin",
                     },
                   });
 
@@ -8664,9 +8674,9 @@ function AdminPage() {
                     data: {
                       id: editingLead.id,
                       updates,
-                      updatedBy: session.name,
-                      userRole: session.role,
-                      changeSummary: `Lead ${editingLead.name} details updated by ${session.name}`,
+                      updatedBy: session?.name || "Admin",
+                      userRole: session?.role || "admin",
+                      changeSummary: `Lead ${editingLead.name} details updated by ${session?.name || "Admin"}`,
                     },
                   });
                   showToast("Lead updated successfully");
@@ -8992,12 +9002,12 @@ function AdminPage() {
                 try {
                   const res = await createAdminUserServerFn({
                     data: {
-                      name,
-                      email,
-                      password,
+                      name: (name || "").trim(),
+                      email: (email || "").trim().toLowerCase(),
+                      password: (password || "").trim(),
                       role: role || "admin",
                       status: "active",
-                      performedBy: session.name,
+                      performedBy: session?.name || "Super Admin",
                     },
                   });
 
@@ -9005,10 +9015,13 @@ function AdminPage() {
                     setAdminUsers((prev) => [res.user, ...prev]);
                     showToast(`Admin account for ${email} created successfully`);
                     setShowAddAdminModal(false);
+                    fetchAdminUsersList();
                     fetchLogsList();
+                  } else {
+                    alert(res.error || "Failed to create admin user. Please verify user details.");
                   }
-                } catch (err) {
-                  alert("Failed to create admin user.");
+                } catch (err: any) {
+                  alert(err?.message || "Failed to create admin user.");
                 }
               }}
               className="space-y-3 text-xs"

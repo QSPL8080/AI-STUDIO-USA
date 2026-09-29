@@ -128,8 +128,11 @@ export function CrmLoginPage() {
 
       if (res.success && res.session) {
         // Successful login
+        const nowStr = Date.now().toString();
         sessionStorage.setItem("ai_studio_auth_session", JSON.stringify(res.session));
-        sessionStorage.setItem("crm_last_active", Date.now().toString());
+        localStorage.setItem("ai_studio_auth_session", JSON.stringify(res.session));
+        sessionStorage.setItem("crm_last_active", nowStr);
+        localStorage.setItem("crm_last_active", nowStr);
 
         if (rememberMe) {
           localStorage.setItem("ai_studio_remembered_email", cleanEmail);
