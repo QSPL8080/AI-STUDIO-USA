@@ -1693,7 +1693,6 @@ function AdminPage() {
     setSession(null);
     setActiveTab("leads");
     setSelectedLeadIds(new Set());
-    setMetaSelectedLeadIds(new Set());
     setViewLeadDetails(null);
     setEditLeadModal(null);
     setShowAddLeadModal(null);
@@ -3166,17 +3165,6 @@ function AdminPage() {
               )}
             </button>
           </form>
-
-          <div className="mt-6 border-t border-slate-200 pt-4 space-y-2 text-center">
-            <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
-              <MapPin className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-              <span>Location Restriction: 200m Office Radius (Admin & Lead Manager)</span>
-            </div>
-            <div className="flex items-center justify-center gap-1.5 text-[11px] text-purple-700">
-              <Shield className="h-3.5 w-3.5 shrink-0" />
-              <span>Super Admin: Global Access Enabled</span>
-            </div>
-          </div>
         </div>
       </div>
     );
