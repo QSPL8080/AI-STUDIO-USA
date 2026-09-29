@@ -781,6 +781,10 @@ function AdminPage() {
   const [closingLead, setClosingLead] = useState<Lead | null>(null);
   const [deliveringLead, setDeliveringLead] = useState<Lead | null>(null);
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  // Create-account form: live duplicate check + server error shown in the form
+  const [newAccountEmail, setNewAccountEmail] = useState("");
+  const [createAccountError, setCreateAccountError] = useState<string | null>(null);
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   // Confirm popup for Deactivate / Activate / Delete account (User Management)
   const [accountAction, setAccountAction] = useState<{
     kind: "deactivate" | "activate" | "delete";
@@ -9354,6 +9358,21 @@ function AdminPage() {
                 const password = formData.get("password") as string;
                 const role = formData.get("role") as "super_admin" | "admin" | "leads_manager";
 
+                const cleanNewEmail = (email || "").trim().toLowerCase();
+                const existingAccount = [...uniqueAdminUsers, ...adminUsers].find(
+                  (u) => String(u.email || "").toLowerCase() === cleanNewEmail
+                );
+                if (existingAccount) {
+                  const msg = `An account with ${cleanNewEmail} already exists (${existingAccount.name}, ${
+                    existingAccount.status === "active" ? "active" : "deactivated"
+                  }). Use a different email${existingAccount.status === "active" ? "" : ", or activate the existing account in User Management"}.`;
+                  setCreateAccountError(msg);
+                  showToast(`Account already exists: ${cleanNewEmail}`);
+                  return;
+                }
+
+                setIsCreatingAccount(true);
+                setCreateAccountError(null);
                 try {
                   const res = await createAdminUserServerFn({
                     data: {
@@ -9370,13 +9389,21 @@ function AdminPage() {
                     setAdminUsers((prev) => [res.user, ...prev]);
                     showToast(`Admin account for ${email} created successfully`);
                     setShowAddAdminModal(false);
+                    setNewAccountEmail("");
+                    setCreateAccountError(null);
                     fetchAdminUsersList();
                     fetchLogsList();
                   } else {
-                    alert(res.error || "Failed to create admin user. Please verify user details.");
+                    const msg = res.error || "Failed to create the account. Please check the details.";
+                    setCreateAccountError(msg);
+                    showToast(msg);
                   }
                 } catch (err: any) {
-                  alert(err?.message || "Failed to create admin user.");
+                  const msg = err?.message || "Failed to create the account.";
+                  setCreateAccountError(msg);
+                  showToast(msg);
+                } finally {
+                  setIsCreatingAccount(false);
                 }
               }}
               className="space-y-3 text-xs"
@@ -9400,10 +9427,25 @@ function AdminPage() {
                   name="email"
                   required
                   placeholder="sarah@aistudio.com"
+                  value={newAccountEmail}
+                  onChange={(e) => {
+                    setNewAccountEmail(e.target.value);
+                    setCreateAccountError(null);
+                  }}
                   className={`w-full rounded-xl border p-2.5 focus:outline-none ${
                     isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
                   }`}
                 />
+                {(() => {
+                  const typed = newAccountEmail.trim().toLowerCase();
+                  if (!typed) return null;
+                  const dup = [...uniqueAdminUsers, ...adminUsers].find((u) => String(u.email || "").toLowerCase() === typed);
+                  return dup ? (
+                    <p className="mt-1 text-[11px] font-semibold text-red-600">
+                      This email already has an account ({dup.name}, {dup.status === "active" ? "active" : "deactivated"}).
+                    </p>
+                  ) : null;
+                })()}
               </div>
 
               <div>
@@ -9433,19 +9475,35 @@ function AdminPage() {
                 </select>
               </div>
 
+              {createAccountError && (
+                <div className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-[11px] font-semibold text-red-700">
+                  {createAccountError}
+                </div>
+              )}
+
               <div className="flex items-center justify-end gap-2 pt-2 border-t dark:border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setShowAddAdminModal(false)}
+                  onClick={() => {
+                    setShowAddAdminModal(false);
+                    setNewAccountEmail("");
+                    setCreateAccountError(null);
+                  }}
                   className="rounded-xl border px-4 py-2 font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-purple-600 px-5 py-2 font-bold text-white shadow-md hover:bg-purple-700 cursor-pointer"
+                  disabled={
+                    isCreatingAccount ||
+                    [...uniqueAdminUsers, ...adminUsers].some(
+                      (u) => String(u.email || "").toLowerCase() === newAccountEmail.trim().toLowerCase()
+                    )
+                  }
+                  className="rounded-xl bg-purple-600 px-5 py-2 font-bold text-white shadow-md hover:bg-purple-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Create Account
+                  {isCreatingAccount ? "Creating..." : "Create Account"}
                 </button>
               </div>
             </form>
