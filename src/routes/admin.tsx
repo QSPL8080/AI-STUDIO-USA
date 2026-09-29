@@ -851,9 +851,26 @@ function AdminPage() {
 
   // Session Restore on initial mount
   useEffect(() => {
-    const savedSession = localStorage.getItem("ai_studio_auth_session");
+    // Purge legacy persistent localStorage session so browser reboot or next-day logins never persist
+    try {
+      localStorage.removeItem("ai_studio_auth_session");
+    } catch {}
+
+    const savedSession = sessionStorage.getItem("ai_studio_auth_session");
+    const lastActiveStr = sessionStorage.getItem("crm_last_active");
+    const lastActive = lastActiveStr ? Number(lastActiveStr) : 0;
+    const timeoutMs = (appliedInactivityTimeout || 10) * 60 * 1000;
+
     if (savedSession) {
       try {
+        // Inactivity check on reload/restore
+        if (!lastActive || Date.now() - lastActive > timeoutMs) {
+          sessionStorage.removeItem("ai_studio_auth_session");
+          sessionStorage.removeItem("crm_last_active");
+          setAuthError(`Session expired due to ${appliedInactivityTimeout || 10} minutes of inactivity.`);
+          return;
+        }
+
         const parsed: AuthSession = JSON.parse(savedSession);
         // ─── Session credential version gate ───────────────────────────────
         // Only the 3 authorised accounts are valid. Any old/stale session
@@ -875,7 +892,8 @@ function AdminPage() {
           sessionEmail === "qsaistudio@gmail.com";
         if (isOldAlias || (!isValidStaticEmail && !parsed.role)) {
           // Wipe everything and drop to login
-          localStorage.removeItem("ai_studio_auth_session");
+          sessionStorage.removeItem("ai_studio_auth_session");
+          sessionStorage.removeItem("crm_last_active");
           localStorage.removeItem("ai_studio_remembered_email");
           return;
         }
@@ -884,10 +902,14 @@ function AdminPage() {
         if (cachedEmail === "admin@quickuppaistudio.us") {
           localStorage.removeItem("crm_notification_email");
         }
+
+        // Refresh activity timestamp
+        sessionStorage.setItem("crm_last_active", Date.now().toString());
         setSession(parsed);
         fetchAllData(false);
       } catch {
-        localStorage.removeItem("ai_studio_auth_session");
+        sessionStorage.removeItem("ai_studio_auth_session");
+        sessionStorage.removeItem("crm_last_active");
       }
     } else {
       const savedEmail = localStorage.getItem("ai_studio_remembered_email");
@@ -1015,32 +1037,69 @@ function AdminPage() {
     localStorage.setItem("crm_high_contrast", String(crmHighContrast));
   }, [crmAccentTheme, crmDensity, crmHighContrast]);
 
-  // Inactivity Auto-Logout for Super Admin & Admin (Configurable, defaults to 10 Minutes)
+  // Inactivity Auto-Logout for Super Admin, Admin, & Lead Manager
   useEffect(() => {
     if (!session) return;
-    let timeoutId: NodeJS.Timeout;
     const timeoutMs = (appliedInactivityTimeout || 10) * 60 * 1000;
+    let lastActivityTime = Date.now();
 
-    const resetInactivityTimer = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        handleLogout();
-        setAuthError(`You were automatically logged out due to ${appliedInactivityTimeout || 10} minutes of inactivity.`);
-      }, timeoutMs);
+    const recordActivity = () => {
+      const now = Date.now();
+      lastActivityTime = now;
+      try {
+        sessionStorage.setItem("crm_last_active", now.toString());
+      } catch {}
     };
 
+    const checkInactivity = () => {
+      try {
+        const lastActiveStr = sessionStorage.getItem("crm_last_active");
+        const lastActive = lastActiveStr ? Number(lastActiveStr) : lastActivityTime;
+        const now = Date.now();
+        if (now - lastActive >= timeoutMs) {
+          handleLogout();
+          setAuthError(`You were automatically logged out due to ${appliedInactivityTimeout || 10} minutes of inactivity.`);
+        }
+      } catch {}
+    };
+
+    // User activity listeners
     const activityEvents = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click", "wheel"];
+    let throttleTimeout: NodeJS.Timeout | null = null;
+    const throttledRecordActivity = () => {
+      if (!throttleTimeout) {
+        recordActivity();
+        throttleTimeout = setTimeout(() => {
+          throttleTimeout = null;
+        }, 3000);
+      }
+    };
+
     activityEvents.forEach((event) => {
-      window.addEventListener(event, resetInactivityTimer, { passive: true });
+      window.addEventListener(event, throttledRecordActivity, { passive: true });
     });
 
-    resetInactivityTimer();
+    // Check every 5 seconds (catches system sleep / hibernation / background throttling)
+    const intervalId = setInterval(checkInactivity, 5000);
+
+    // Immediate check when waking up or switching back to the browser tab
+    const handleVisibilityOrFocus = () => {
+      checkInactivity();
+    };
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+
+    // Initial record
+    recordActivity();
 
     return () => {
-      clearTimeout(timeoutId);
+      if (throttleTimeout) clearTimeout(throttleTimeout);
+      clearInterval(intervalId);
       activityEvents.forEach((event) => {
-        window.removeEventListener(event, resetInactivityTimer);
+        window.removeEventListener(event, throttledRecordActivity);
       });
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
     };
   }, [session, appliedInactivityTimeout]);
 
@@ -1591,7 +1650,13 @@ function AdminPage() {
 
         setSession(userSession);
         setActiveTab("leads");
-        localStorage.setItem("ai_studio_auth_session", JSON.stringify(userSession));
+        // Store in sessionStorage so closing the browser tab/window or powering down the PC immediately terminates the session
+        sessionStorage.setItem("ai_studio_auth_session", JSON.stringify(userSession));
+        sessionStorage.setItem("crm_last_active", Date.now().toString());
+        // Clean any persistent legacy session from localStorage
+        try {
+          localStorage.removeItem("ai_studio_auth_session");
+        } catch {}
 
         if (rememberMe) {
           localStorage.setItem("ai_studio_remembered_email", cleanEmail);
@@ -1634,7 +1699,12 @@ function AdminPage() {
     setShowAddLeadModal(null);
     setShowAddAdminModal(false);
     setShowSecurityModal(false);
-    localStorage.removeItem("ai_studio_auth_session");
+    try {
+      sessionStorage.removeItem("ai_studio_auth_session");
+      sessionStorage.removeItem("crm_last_active");
+      localStorage.removeItem("ai_studio_auth_session");
+      localStorage.removeItem("crm_last_active");
+    } catch {}
     const savedEmail = localStorage.getItem("ai_studio_remembered_email");
     if (savedEmail) {
       setEmailInput(savedEmail);
