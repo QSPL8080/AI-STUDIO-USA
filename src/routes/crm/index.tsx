@@ -81,6 +81,7 @@ import {
   recordLoginLogServerFn,
   fetchLoginLogsServerFn,
   fetchAdminUsersServerFn,
+  fetchDataVersionServerFn,
   fetchCrmSettingsServerFn,
   saveCrmSettingsServerFn,
   saveAccessControlServerFn,
@@ -995,6 +996,31 @@ function AdminPage() {
   useEffect(() => {
     if (!permissionsDirty) setPermissionsDraft(rolePermissions);
   }, [rolePermissions, permissionsDirty]);
+
+  // Near-instant sync: every 5s check whether anyone deleted / restored something
+  // (e.g. the Super Admin deleted a meeting) and reload so it disappears for everyone.
+  const dataVersionRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!session) return;
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const res = await fetchDataVersionServerFn();
+        if (cancelled || !res?.success) return;
+        const v = String(res.version || "0");
+        if (dataVersionRef.current !== null && dataVersionRef.current !== v) {
+          fetchAllData(true);
+        }
+        dataVersionRef.current = v;
+      } catch {}
+    };
+    check();
+    const id = setInterval(check, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [session]);
 
   // Sign out anyone whose account has been deactivated by the Super Admin
   useEffect(() => {

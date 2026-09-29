@@ -87,6 +87,25 @@ function sanitizeLeadPhone(phone: string, _isUsa: boolean = true): string {
   return digits.length > 10 ? `+${digits}` : trimmed;
 }
 
+// ── Data change signal: bumped on every delete / restore so every open CRM screen reloads
+//    within a few seconds (e.g. something the Super Admin deletes disappears for all users) ──
+export async function bumpDataVersion(): Promise<void> {
+  try {
+    await saveCrmSettingsToDb({ crm_data_version: String(Date.now()) });
+  } catch (e) {
+    console.warn("bumpDataVersion warning:", e);
+  }
+}
+
+export const fetchDataVersionServerFn = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const st = await getCrmSettingsFromDb();
+    return { success: true, version: st["crm_data_version"] || "0" };
+  } catch {
+    return { success: false, version: "0" };
+  }
+});
+
 // 1. Submit Lead from Website Forms
 export const submitLeadServerFn = createServerFn({ method: "POST" })
   .validator((data: {
@@ -409,6 +428,7 @@ export const softDeleteLeadServerFn = createServerFn({ method: "POST" })
           user_role: data.userRole || "admin",
         });
       }
+      await bumpDataVersion();
       return { success: ok };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -433,6 +453,7 @@ export const restoreLeadServerFn = createServerFn({ method: "POST" })
           user_role: data.userRole || "admin",
         });
       }
+      await bumpDataVersion();
       return { success: ok };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -457,6 +478,7 @@ export const permanentDeleteLeadServerFn = createServerFn({ method: "POST" })
           user_role: "super_admin",
         });
       }
+      await bumpDataVersion();
       return { success: ok };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -485,6 +507,7 @@ export const bulkPermanentDeleteLeadsServerFn = createServerFn({ method: "POST" 
           user_role: "super_admin",
         });
       }
+      await bumpDataVersion();
       return { success: true, count };
     } catch (error: any) {
       return { success: false, count: 0, error: error.message };
@@ -510,6 +533,7 @@ export const bulkRestoreLeadsServerFn = createServerFn({ method: "POST" })
           user_role: data.userRole || "admin",
         });
       }
+      await bumpDataVersion();
       return { success: true, count };
     } catch (error: any) {
       return { success: false, count: 0, error: error.message };
@@ -531,6 +555,7 @@ export const emptyRecycleBinServerFn = createServerFn({ method: "POST" })
         performed_by: data.performedBy || "Super Admin",
         user_role: "super_admin",
       });
+      await bumpDataVersion();
       return { success: true, count };
     } catch (error: any) {
       return { success: false, count: 0, error: error.message };
@@ -691,6 +716,7 @@ export const deleteAdminUserServerFn = createServerFn({ method: "POST" })
           user_role: "super_admin",
         });
       }
+      await bumpDataVersion();
       return { success: ok };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -1031,6 +1057,7 @@ export const deleteCalendlyMeetingServerFn = createServerFn({ method: "POST" })
         });
         broadcastLeadEvent({ type: "REFRESH_ALL" });
       }
+      await bumpDataVersion();
       return { success: ok };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -1062,6 +1089,7 @@ export const restoreCalendlyMeetingServerFn = createServerFn({ method: "POST" })
         });
         broadcastLeadEvent({ type: "REFRESH_ALL" });
       }
+      await bumpDataVersion();
       return { success: ok };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -1096,6 +1124,7 @@ export const deleteCalendlyMeetingsBulkServerFn = createServerFn({ method: "POST
         });
         broadcastLeadEvent({ type: "REFRESH_ALL" });
       }
+      await bumpDataVersion();
       return { success: ok, count: data.ids.length };
     } catch (error: any) {
       return { success: false, error: error.message };

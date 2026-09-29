@@ -19,6 +19,7 @@ import {
   type PaymentStatus,
 } from "./db";
 import { sendPaymentReceiptEmail } from "./email";
+import { bumpDataVersion } from "./lead-actions";
 import { generateInvoicePdfBuffer } from "./pdf-receipt";
 
 /**
@@ -322,6 +323,7 @@ export const deleteOrderServerFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const ok = await deleteOrderFromDb(data.id);
+      await bumpDataVersion();
       return { success: ok };
     } catch (error: any) {
       return { success: false, error: error.message };
