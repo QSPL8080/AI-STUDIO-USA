@@ -40,6 +40,8 @@ import {
   type CRMNotification,
 } from "./db";
 import { sendLeadNotificationEmail, sendFailedLoginAlertEmail } from "./email";
+import { evaluateLocationAccess, getOfficeGeoConfig, DEFAULT_OFFICE_CONFIG } from "./geo-config";
+import { createCrmSessionToken, verifySessionWithLocation, decodeAndVerifySessionToken } from "./crm-session";
 
 function sanitizeLeadPhone(phone: string, _isUsa: boolean = true): string {
   const trimmed = phone.trim();
@@ -535,8 +537,13 @@ export const recordLoginLogServerFn = createServerFn({ method: "POST" })
     role: string;
     ip_address: string;
     location?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    accuracy?: number | null;
+    distance_meters?: number | null;
+    is_within_geofence?: boolean | null;
     user_agent: string;
-    status?: "success" | "failed";
+    status?: "success" | "failed" | "blocked_location" | "session_terminated" | string;
   }) => data)
   .handler(async ({ data }) => {
     try {
@@ -1361,5 +1368,296 @@ export const recordFailedLoginServerFn = createServerFn({ method: "POST" })
       };
     } catch (error: any) {
       return { success: false, locked: false, attemptsLeft: undefined, error: error.message };
+    }
+  });
+
+// 22. Strict Location-Based Admin Authentication & Session Management
+export const authenticateAdminServerFn = createServerFn({ method: "POST" })
+  .validator(
+    (data: {
+      email: string;
+      password: string;
+      latitude?: number | null;
+      longitude?: number | null;
+      accuracy?: number | null;
+      ip?: string;
+      locationName?: string;
+      userAgent?: string;
+    }) => data
+  )
+  .handler(async ({ data }) => {
+    try {
+      const cleanEmail = (data.email || "").trim().toLowerCase();
+      const cleanPass = (data.password || "").trim();
+      const ipAddress = data.ip || "Unknown IP";
+      const locationName = data.locationName || "Unknown Location";
+      const userAgent = data.userAgent || "Web Browser";
+
+      // 1. Check lockout threshold
+      const threshold = await getLoginThreshold();
+      const failures = await countRecentFailedLogins(cleanEmail, ipAddress, LOGIN_LOCKOUT_MINUTES);
+      if (failures >= threshold) {
+        return {
+          success: false,
+          locked: true,
+          error: `Too many failed login attempts. This account / IP is locked for ${LOGIN_LOCKOUT_MINUTES} minutes. The Super Admin has been notified.`,
+        };
+      }
+
+      // 2. Validate credentials
+      let authRole: "super_admin" | "admin" | "leads_manager" | null = null;
+      let authName = "Admin";
+
+      if (cleanEmail === "sa@aistudio.us" && cleanPass === "Anay@8080") {
+        authRole = "super_admin";
+        authName = "Super Admin";
+      } else if (cleanEmail === "admin@aistudio.us" && cleanPass === "Admin@123") {
+        authRole = "admin";
+        authName = "Admin";
+      } else if (cleanEmail === "lm@aistudio.us" && cleanPass === "leads@123") {
+        authRole = "leads_manager";
+        authName = "Leads Manager";
+      } else {
+        const dynamicUsers = await getAdminUsersFromDb();
+        const dynamicUser = dynamicUsers.find(
+          (u) => u.email.toLowerCase() === cleanEmail && u.password === cleanPass && u.status === "active"
+        );
+        if (dynamicUser) {
+          authRole = dynamicUser.role;
+          authName = dynamicUser.name;
+        }
+      }
+
+      // 3. Check account deactivation for built-in accounts
+      if (authRole && ["admin@aistudio.us", "lm@aistudio.us"].includes(cleanEmail)) {
+        const settings = await getCrmSettingsFromDb();
+        const accountStatusSetting = settings.find((s) => s.key === "access_control_account_status");
+        if (accountStatusSetting?.value) {
+          try {
+            const parsed = JSON.parse(accountStatusSetting.value);
+            if (parsed[cleanEmail] === "inactive") {
+              return {
+                success: false,
+                error: "This account has been deactivated. Please contact the Super Admin.",
+              };
+            }
+          } catch {}
+        }
+      }
+
+      if (!authRole) {
+        // Record failed attempt in security audit
+        await addLoginLogInDb({
+          email: cleanEmail || "unknown",
+          role: "unknown",
+          ip_address: ipAddress,
+          location: locationName,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          accuracy: data.accuracy,
+          user_agent: userAgent,
+          status: "failed",
+        });
+
+        const newFailures = await countRecentFailedLogins(cleanEmail, ipAddress, LOGIN_LOCKOUT_MINUTES);
+        if (newFailures === threshold) {
+          await sendFailedLoginAlertEmail({
+            email: cleanEmail,
+            ipAddress,
+            location: locationName,
+            userAgent,
+            attempts: newFailures,
+            threshold,
+            lockoutMinutes: LOGIN_LOCKOUT_MINUTES,
+          });
+          try {
+            await addActivityLogInDb({
+              action: "Failed Login Threshold Reached",
+              details: `${newFailures} failed logins for ${cleanEmail} from ${ipAddress}; locked ${LOGIN_LOCKOUT_MINUTES} min`,
+              performed_by: "System / Security",
+              user_role: "system",
+            });
+          } catch {}
+        }
+
+        const lockedNow = newFailures >= threshold;
+        return {
+          success: false,
+          locked: lockedNow,
+          attemptsLeft: Math.max(threshold - newFailures, 0),
+          error: lockedNow
+            ? `Too many failed login attempts. This account / IP is locked for ${LOGIN_LOCKOUT_MINUTES} minutes.`
+            : `Invalid credentials. ${Math.max(threshold - newFailures, 0)} attempt(s) left before lockout.`,
+        };
+      }
+
+      // 4. Server-Side Location & Geofence Verification
+      const locationEvaluation = evaluateLocationAccess(
+        authRole,
+        data.latitude,
+        data.longitude,
+        data.accuracy
+      );
+
+      // Blocked if Admin / Lead Manager is outside 200m or coordinates missing / poor
+      if (!locationEvaluation.authorized) {
+        const dist = isFinite(locationEvaluation.distanceMeters) ? locationEvaluation.distanceMeters : null;
+
+        await addLoginLogInDb({
+          email: cleanEmail,
+          role: authRole,
+          ip_address: ipAddress,
+          location: locationName,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          accuracy: data.accuracy,
+          distance_meters: dist,
+          is_within_geofence: false,
+          user_agent: userAgent,
+          status: "blocked_location",
+        });
+
+        await addActivityLogInDb({
+          action: "Login Blocked: Location Restriction",
+          details: `${authName} (${cleanEmail}) attempted login from outside permitted 200m office area (${dist !== null ? dist + "m from office" : "no GPS"}).`,
+          performed_by: cleanEmail,
+          user_role: authRole,
+        });
+
+        return {
+          success: false,
+          locationBlocked: true,
+          status: locationEvaluation.status,
+          distanceMeters: dist,
+          error: locationEvaluation.userMessage || "CRM access is not available at your current location. Please move within the permitted office location to continue.",
+        };
+      }
+
+      // 5. Successful login -> Create cryptographic session token
+      const dist = isFinite(locationEvaluation.distanceMeters) ? locationEvaluation.distanceMeters : null;
+      const sessionToken = createCrmSessionToken(
+        { email: cleanEmail, name: authName, role: authRole },
+        {
+          latitude: data.latitude,
+          longitude: data.longitude,
+          accuracy: data.accuracy,
+          distanceMeters: dist,
+        }
+      );
+
+      // Record successful login in DB
+      await addLoginLogInDb({
+        email: cleanEmail,
+        role: authRole,
+        ip_address: ipAddress,
+        location: locationName,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        accuracy: data.accuracy,
+        distance_meters: dist,
+        is_within_geofence: authRole === "super_admin" ? true : locationEvaluation.authorized,
+        user_agent: userAgent,
+        status: "success",
+      });
+
+      await addActivityLogInDb({
+        action: "Admin Logged In",
+        details: `${authName} (${cleanEmail}) logged in successfully${authRole === "super_admin" ? " (Super Admin global access)" : ` (within ${dist}m of office)`}`,
+        performed_by: cleanEmail,
+        user_role: authRole,
+      });
+
+      return {
+        success: true,
+        session: {
+          email: cleanEmail,
+          name: authName,
+          role: authRole,
+          token: sessionToken,
+          distanceMeters: dist,
+        },
+      };
+    } catch (error: any) {
+      return { success: false, error: error.message || "Authentication failed" };
+    }
+  });
+
+export const verifyLocationSessionServerFn = createServerFn({ method: "POST" })
+  .validator(
+    (data: {
+      token: string;
+      latitude?: number | null;
+      longitude?: number | null;
+      accuracy?: number | null;
+      ip?: string;
+      userAgent?: string;
+    }) => data
+  )
+  .handler(async ({ data }) => {
+    try {
+      const verification = verifySessionWithLocation(data.token, {
+        latitude: data.latitude,
+        longitude: data.longitude,
+        accuracy: data.accuracy,
+      });
+
+      if (!verification.valid || !verification.payload) {
+        const dist = verification.locationResult?.distanceMeters ?? null;
+
+        // Log session termination if an active Admin / LM moved outside
+        if (verification.payload && verification.errorCode === "OUT_OF_BOUNDS") {
+          await addLoginLogInDb({
+            email: verification.payload.email,
+            role: verification.payload.role,
+            ip_address: data.ip || "Unknown IP",
+            location: "Office Out-of-Bounds Watchdog",
+            latitude: data.latitude,
+            longitude: data.longitude,
+            accuracy: data.accuracy,
+            distance_meters: isFinite(dist ?? Infinity) ? dist : null,
+            is_within_geofence: false,
+            user_agent: data.userAgent || "Web Browser",
+            status: "session_terminated",
+          });
+
+          await addActivityLogInDb({
+            action: "Session Terminated: Left Office Area",
+            details: `User ${verification.payload.email} (${verification.payload.role}) moved outside 200m office radius (${dist}m). Active session terminated automatically.`,
+            performed_by: "System / Location Watchdog",
+            user_role: "system",
+          });
+        }
+
+        return {
+          authorized: false,
+          error: verification.error || "Session authorization expired or invalid.",
+          errorCode: verification.errorCode || "OUT_OF_BOUNDS",
+          distanceMeters: isFinite(dist ?? Infinity) ? dist : null,
+        };
+      }
+
+      // Re-issue refreshed token
+      const dist = verification.locationResult?.distanceMeters ?? verification.payload.distanceMeters ?? null;
+      const refreshedToken = createCrmSessionToken(
+        {
+          email: verification.payload.email,
+          name: verification.payload.name,
+          role: verification.payload.role,
+        },
+        {
+          latitude: data.latitude ?? verification.payload.latitude,
+          longitude: data.longitude ?? verification.payload.longitude,
+          accuracy: data.accuracy ?? verification.payload.accuracy,
+          distanceMeters: isFinite(dist ?? Infinity) ? dist : null,
+        }
+      );
+
+      return {
+        authorized: true,
+        refreshedToken,
+        distanceMeters: isFinite(dist ?? Infinity) ? dist : null,
+      };
+    } catch (error: any) {
+      return { authorized: false, error: error.message || "Failed to verify location session" };
     }
   });

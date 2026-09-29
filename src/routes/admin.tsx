@@ -33,8 +33,10 @@ import {
   Lock,
   LogOut,
   Mail,
+  MapPin,
   Megaphone,
   MessageSquare,
+  Navigation,
   Package,
   Palette,
   Phone,
@@ -85,6 +87,8 @@ import {
   saveBroadcastServerFn,
   checkLoginLockoutServerFn,
   recordFailedLoginServerFn,
+  authenticateAdminServerFn,
+  verifyLocationSessionServerFn,
   createAdminUserServerFn,
   toggleAdminUserStatusServerFn,
   deleteAdminUserServerFn,
@@ -101,6 +105,7 @@ import {
   clearNotificationsServerFn,
   broadcastLeadEvent,
 } from "@/lib/lead-actions";
+import { getOfficeGeoConfig, DEFAULT_OFFICE_CONFIG } from "@/lib/geo-config";
 import {
   fetchOrdersServerFn,
   updateOrderStatusServerFn,
@@ -170,6 +175,8 @@ interface AuthSession {
   email: string;
   name: string;
   role: "super_admin" | "admin" | "leads_manager";
+  token?: string;
+  distanceMeters?: number | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -296,6 +303,8 @@ function AdminPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [isCheckingLocation, setIsCheckingLocation] = useState(false);
+  const [locationErrorType, setLocationErrorType] = useState<"none" | "denied" | "out_of_bounds" | "poor_accuracy">("none");
 
   // Tabs Navigation
   type TabType = "dashboard" | "leads" | "meta_leads" | "orders" | "calendly" | "activity" | "users" | "security" | "recycle_bin" | "settings";
@@ -1439,110 +1448,179 @@ function AdminPage() {
     return { ip, location };
   };
 
-  // Authentication Handler with IP/Security Tracking + failed-login lockout
+  // High-accuracy browser geolocation retrieval
+  const getBrowserGeolocation = async (): Promise<{
+    latitude: number;
+    longitude: number;
+    accuracy: number;
+  } | null> => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      return null;
+    }
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          resolve({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+          });
+        },
+        (err) => {
+          if (err.code === err.PERMISSION_DENIED) {
+            setLocationErrorType("denied");
+          }
+          resolve(null);
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      );
+    });
+  };
+
+  // Continuous Location Verification Watchdog for Admin & Lead Manager
+  useEffect(() => {
+    if (!session || session.role === "super_admin" || !session.token) {
+      return;
+    }
+
+    let isVerifying = false;
+
+    const runLocationHeartbeat = async () => {
+      if (isVerifying) return;
+      isVerifying = true;
+
+      try {
+        const coords = await getBrowserGeolocation();
+        const ipInfo = await getClientIpInfo();
+
+        const res = await verifyLocationSessionServerFn({
+          data: {
+            token: session.token!,
+            latitude: coords?.latitude ?? null,
+            longitude: coords?.longitude ?? null,
+            accuracy: coords?.accuracy ?? null,
+            ip: ipInfo.ip,
+            userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "Web Browser",
+          },
+        });
+
+        if (!res.authorized) {
+          // Terminate session immediately & force logout
+          handleLogout();
+          setLocationErrorType(res.errorCode === "OUT_OF_BOUNDS" ? "out_of_bounds" : "denied");
+          setAuthError(
+            res.error ||
+              "CRM access is not available at your current location. Please move within the permitted office location to continue."
+          );
+        } else if (res.refreshedToken) {
+          setSession((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  token: res.refreshedToken,
+                  distanceMeters: res.distanceMeters ?? prev.distanceMeters,
+                }
+              : null
+          );
+        }
+      } catch (err) {
+        console.warn("Location heartbeat warning:", err);
+      } finally {
+        isVerifying = false;
+      }
+    };
+
+    // Periodic heartbeat every 60 seconds
+    const interval = setInterval(runLocationHeartbeat, 60000);
+
+    // Immediate check on window focus
+    const handleFocus = () => {
+      runLocationHeartbeat();
+    };
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
+  }, [session?.token, session?.role]);
+
+  // Authentication Handler with Strict Server-Side Location Geofence + IP Tracking + Lockout
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanEmail = emailInput.trim().toLowerCase();
     const cleanPass = passwordInput.trim();
     const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "Web Browser";
 
-    const ipInfo = await getClientIpInfo();
+    setIsCheckingLocation(true);
+    setLocationErrorType("none");
+    setAuthError("");
 
-    // 0. Refuse while this email / IP is locked out after too many failed attempts
+    // 1. Obtain browser location
+    let coords: { latitude: number; longitude: number; accuracy: number } | null = null;
     try {
-      const lock = await checkLoginLockoutServerFn({ data: { email: cleanEmail, ip: ipInfo.ip } });
-      if (lock?.locked) {
-        setAuthError(
-          `Too many failed login attempts. This account / IP is locked for ${lock.lockoutMinutes || 15} minutes. The Super Admin has been notified.`
-        );
-        return;
-      }
+      coords = await getBrowserGeolocation();
     } catch {}
 
-    // 1. Static credentials — exactly 3 authorized users
-    let authRole: "super_admin" | "admin" | "leads_manager" | null = null;
-    let authName = "Admin";
+    const ipInfo = await getClientIpInfo();
 
-    if (cleanEmail === "sa@aistudio.us" && cleanPass === "Anay@8080") {
-      authRole = "super_admin";
-      authName = "Super Admin";
-    } else if (cleanEmail === "admin@aistudio.us" && cleanPass === "Admin@123") {
-      authRole = "admin";
-      authName = "Admin";
-    } else if (cleanEmail === "lm@aistudio.us" && cleanPass === "leads@123") {
-      authRole = "leads_manager";
-      authName = "Leads Manager";
-    } else {
-      // 2. Check dynamically registered admin users in database/local state
-      const dynamicUser = adminUsers.find(
-        (u) => u.email.toLowerCase() === cleanEmail && u.password === cleanPass && u.status === "active"
-      );
-      if (dynamicUser) {
-        authRole = dynamicUser.role;
-        authName = dynamicUser.name;
-      }
-    }
+    try {
+      const res = await authenticateAdminServerFn({
+        data: {
+          email: cleanEmail,
+          password: cleanPass,
+          latitude: coords?.latitude ?? null,
+          longitude: coords?.longitude ?? null,
+          accuracy: coords?.accuracy ?? null,
+          ip: ipInfo.ip,
+          locationName: ipInfo.location,
+          userAgent,
+        },
+      });
 
-    // Built-in accounts can be deactivated by the Super Admin (checked live from the server)
-    if (authRole && BUILT_IN_ACCOUNT_EMAILS.includes(cleanEmail) && cleanEmail !== BUILT_IN_SUPER_ADMIN_EMAIL) {
-      const st = await fetchAccessControl();
-      if (parseAccountStatus(st?.["account_status"])[cleanEmail] === "inactive") {
-        setAuthError("This account has been deactivated. Please contact the Super Admin.");
-        return;
-      }
-    }
+      if (res.success && res.session) {
+        const userSession: AuthSession = {
+          email: res.session.email,
+          name: res.session.name,
+          role: res.session.role as any,
+          token: res.session.token,
+          distanceMeters: res.session.distanceMeters,
+        };
 
-    if (authRole) {
-      const userSession: AuthSession = {
-        email: cleanEmail,
-        name: authName,
-        role: authRole,
-      };
+        setSession(userSession);
+        setActiveTab("leads");
+        localStorage.setItem("ai_studio_auth_session", JSON.stringify(userSession));
 
-      setSession(userSession);
-      setActiveTab("leads");
-      localStorage.setItem("ai_studio_auth_session", JSON.stringify(userSession));
-
-      if (rememberMe) {
-        localStorage.setItem("ai_studio_remembered_email", cleanEmail);
-      } else {
-        localStorage.removeItem("ai_studio_remembered_email");
-      }
-
-      setAuthError("");
-      fetchAllData(false);
-
-      // Record Login Audit Log with Real IP & Geolocation
-      try {
-        const ipAddress = ipInfo.ip || "Unknown IP";
-        const location = ipInfo.location;
-        await recordLoginLogServerFn({
-          data: {
-            email: cleanEmail,
-            role: authRole,
-            ip_address: ipAddress,
-            location,
-            user_agent: userAgent,
-            status: "success",
-          },
-        });
-      } catch {}
-    } else {
-      setAuthError("Invalid credentials. Please verify your email and password.");
-      try {
-        const res = await recordFailedLoginServerFn({
-          data: { email: cleanEmail, ip: ipInfo.ip, location: ipInfo.location, userAgent },
-        });
-        if (res?.locked) {
-          setAuthError(
-            `Too many failed login attempts. This account / IP is locked for ${res.lockoutMinutes || 15} minutes. The Super Admin has been notified.`
-          );
-        } else if (typeof res?.attemptsLeft === "number") {
-          setAuthError(
-            `Invalid credentials. ${res.attemptsLeft} attempt${res.attemptsLeft === 1 ? "" : "s"} left before a 15-minute lockout.`
-          );
+        if (rememberMe) {
+          localStorage.setItem("ai_studio_remembered_email", cleanEmail);
+        } else {
+          localStorage.removeItem("ai_studio_remembered_email");
         }
-      } catch {}
+
+        setAuthError("");
+        setLocationErrorType("none");
+        fetchAllData(false);
+      } else {
+        if (res.locationBlocked) {
+          setLocationErrorType(res.status === "missing_coordinates" ? "denied" : "out_of_bounds");
+          setAuthError(
+            res.error ||
+              "CRM access is not available at your current location. Please move within the permitted office location to continue."
+          );
+        } else if (res.locked) {
+          setAuthError(res.error || `Too many failed login attempts. This account is locked.`);
+        } else if (typeof res.attemptsLeft === "number") {
+          setAuthError(res.error || `Invalid credentials. ${res.attemptsLeft} attempt(s) left.`);
+        } else {
+          setAuthError(res.error || "Authentication failed. Please verify your email and password.");
+        }
+      }
+    } catch (err: any) {
+      setAuthError(err?.message || "Failed to communicate with authentication server.");
+    } finally {
+      setIsCheckingLocation(false);
     }
   };
 
@@ -2927,14 +3005,32 @@ function AdminPage() {
 
           <form onSubmit={handleLogin} className="mt-6 space-y-4">
             {authError ? (
-              <div className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-600 dark:text-red-400">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{authError}</span>
+              <div className={`rounded-xl border p-3.5 text-xs ${
+                locationErrorType !== "none"
+                  ? "border-amber-300 bg-amber-50 text-amber-900"
+                  : "border-red-500/40 bg-red-50 text-red-700"
+              }`}>
+                <div className="flex items-start gap-2.5">
+                  {locationErrorType !== "none" ? (
+                    <MapPin className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+                  )}
+                  <div className="flex-1">
+                    <p className="font-bold">{locationErrorType !== "none" ? "Location Restriction Alert" : "Authentication Notice"}</p>
+                    <p className="mt-0.5 leading-relaxed">{authError}</p>
+                    {locationErrorType === "denied" && (
+                      <p className="mt-1.5 text-[11px] font-semibold text-amber-800">
+                        💡 Please click the lock/settings icon in your browser URL address bar to enable Location Permission, then retry.
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             ) : null}
 
             <div>
-              <label className="block text-xs font-semibold">Admin Email</label>
+              <label className="block text-xs font-semibold text-slate-700">Admin Email</label>
               <div className="relative mt-1">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                 <input
@@ -2942,18 +3038,14 @@ function AdminPage() {
                   required
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="sa@aistudio.com"
-                  className={`w-full rounded-xl border py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    isDark
-                      ? "border-slate-700 bg-slate-900 text-white placeholder-slate-500"
-                      : "border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400"
-                  }`}
+                  placeholder="sa@aistudio.us"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold">Password</label>
+              <label className="block text-xs font-semibold text-slate-700">Password</label>
               <div className="relative mt-1">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                 <input
@@ -2962,16 +3054,12 @@ function AdminPage() {
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   placeholder="••••••••"
-                  className={`w-full rounded-xl border py-2.5 pl-9 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    isDark
-                      ? "border-slate-700 bg-slate-900 text-white placeholder-slate-500"
-                      : "border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400"
-                  }`}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-10 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -2986,23 +3074,37 @@ function AdminPage() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                 />
-                <span className={isDark ? "text-slate-300" : "text-slate-600"}>Remember email</span>
+                <span className="text-slate-600">Remember email</span>
               </label>
             </div>
 
             <button
               type="submit"
-              className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              disabled={isCheckingLocation}
+              className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white shadow-lg hover:bg-blue-700 disabled:opacity-75 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <ShieldCheck className="h-4 w-4" />
-              <span>Sign In to CRM Portal</span>
+              {isCheckingLocation ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Verifying Location & Credentials...</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>Sign In to CRM Portal</span>
+                </>
+              )}
             </button>
           </form>
 
-          <div className="mt-6 border-t border-slate-200 dark:border-slate-800 pt-4 text-center">
-            <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
-              <Shield className="h-3.5 w-3.5" />
-              <span>Super Admin & Admin Role Protected</span>
+          <div className="mt-6 border-t border-slate-200 pt-4 space-y-2 text-center">
+            <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
+              <MapPin className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+              <span>Location Restriction: 200m Office Radius (Admin & Lead Manager)</span>
+            </div>
+            <div className="flex items-center justify-center gap-1.5 text-[11px] text-purple-700">
+              <Shield className="h-3.5 w-3.5 shrink-0" />
+              <span>Super Admin: Global Access Enabled</span>
             </div>
           </div>
         </div>
@@ -6621,22 +6723,23 @@ function AdminPage() {
             </div>
 
             <div className="overflow-x-auto w-full rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <table className="w-full min-w-[900px] text-left text-xs">
+              <table className="w-full min-w-[1050px] text-left text-xs">
                 <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-600">
                   <tr>
                     <th className="px-4 py-3.5">Timestamp</th>
                     <th className="px-4 py-3.5">User Email</th>
                     <th className="px-4 py-3.5">Role</th>
                     <th className="px-4 py-3.5">IP Address</th>
-                    <th className="px-4 py-3.5">Approx Location</th>
+                    <th className="px-4 py-3.5">GPS Coordinates</th>
+                    <th className="px-4 py-3.5">Office Proximity (200m)</th>
                     <th className="px-4 py-3.5">Browser & Device</th>
-                    <th className="px-4 py-3.5">Status</th>
+                    <th className="px-4 py-3.5">Access Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loginLogs.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-xs text-slate-500">
+                      <td colSpan={8} className="py-12 text-center text-xs text-slate-500">
                         No login attempts recorded yet.
                       </td>
                     </tr>
@@ -6644,30 +6747,91 @@ function AdminPage() {
                     loginLogs.map((log) => (
                       <tr key={log.id} className="hover:bg-slate-50/75 transition-colors">
                         <td className="px-4 py-3.5 text-slate-500 font-mono">
-                          {new Date(log.created_at).toLocaleString()}
+                          {new Date(log.created_at).toLocaleString([], {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit"
+                          })}
                         </td>
                         <td className="px-4 py-3.5 font-bold text-slate-900">{log.email}</td>
                         <td className="px-4 py-3.5">
-                          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-700">
+                          <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
+                            log.role === "super_admin" 
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-slate-100 text-slate-700"
+                          }`}>
                             {log.role}
                           </span>
                         </td>
                         <td className="px-4 py-3.5 font-mono text-blue-600 font-semibold select-all">
-                          {log.ip_address}
+                          {log.ip_address || "127.0.0.1"}
                         </td>
-                        <td className="px-4 py-3.5 text-slate-600">
-                          {log.location || "USA / Web Client"}
-                        </td>
-                        <td className="px-4 py-3.5 text-slate-400 max-w-xs truncate" title={log.user_agent}>
-                          {log.user_agent}
+                        <td className="px-4 py-3.5 font-mono text-slate-700">
+                          {log.latitude && log.longitude ? (
+                            <div>
+                              <span className="font-semibold text-slate-900">
+                                {log.latitude.toFixed(5)}°, {log.longitude.toFixed(5)}°
+                              </span>
+                              {typeof log.accuracy === "number" && (
+                                <div className="text-[10px] text-slate-400">
+                                  ±{Math.round(log.accuracy)}m accuracy
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic text-[11px]">No GPS recorded</span>
+                          )}
                         </td>
                         <td className="px-4 py-3.5">
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                          {log.role === "super_admin" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700">
+                              <ShieldCheck className="h-3 w-3 text-purple-600" />
+                              Global (Exempt)
+                            </span>
+                          ) : typeof log.distance_meters === "number" ? (
+                            log.distance_meters <= 200 ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                                <MapPin className="h-3 w-3 text-emerald-600" />
+                                {Math.round(log.distance_meters)}m (Inside 200m)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-800">
+                                <AlertTriangle className="h-3 w-3 text-red-600" />
+                                {log.distance_meters >= 1000
+                                  ? `${(log.distance_meters / 1000).toFixed(1)} km`
+                                  : `${Math.round(log.distance_meters)}m`}{" "}
+                                (Outside)
+                              </span>
+                            )
+                          ) : (
+                            <span className="text-slate-400 text-[11px]">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5 text-slate-400 max-w-xs truncate" title={log.user_agent}>
+                          {log.user_agent || "Web Browser"}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
                             log.status === "success"
                               ? "bg-emerald-100 text-emerald-700"
-                              : "bg-red-100 text-red-700"
+                              : log.status === "blocked_location"
+                              ? "bg-red-100 text-red-700"
+                              : log.status === "session_terminated"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-rose-100 text-rose-700"
                           }`}>
-                            {log.status}
+                            {log.status === "success"
+                              ? "Authorized"
+                              : log.status === "blocked_location"
+                              ? "Blocked (Location)"
+                              : log.status === "session_terminated"
+                              ? "Terminated"
+                              : log.status === "failed"
+                              ? "Auth Failed"
+                              : log.status}
                           </span>
                         </td>
                       </tr>

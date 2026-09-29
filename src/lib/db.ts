@@ -64,9 +64,14 @@ export interface LoginLog {
   role: string;
   ip_address: string;
   location?: string;
+  latitude?: number;
+  longitude?: number;
+  accuracy?: number;
+  distance_meters?: number;
+  is_within_geofence?: boolean;
   user_agent: string;
   created_at: string;
-  status: "success" | "failed";
+  status: "success" | "failed" | "blocked_location" | "session_terminated" | string;
 }
 
 export interface CalendlyMeeting {
@@ -294,6 +299,12 @@ export async function initDb() {
             status VARCHAR(32) DEFAULT 'success',
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
           );
+
+          ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
+          ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
+          ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS accuracy DOUBLE PRECISION;
+          ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS distance_meters DOUBLE PRECISION;
+          ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS is_within_geofence BOOLEAN;
 
           CREATE TABLE IF NOT EXISTS calendly_meetings (
             id VARCHAR(64) PRIMARY KEY,
@@ -819,8 +830,13 @@ export async function addLoginLog(data: {
   role: string;
   ip_address: string;
   location?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  accuracy?: number | null;
+  distance_meters?: number | null;
+  is_within_geofence?: boolean | null;
   user_agent: string;
-  status?: "success" | "failed";
+  status?: "success" | "failed" | "blocked_location" | "session_terminated" | string;
 }): Promise<LoginLog> {
   const id = `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const now = new Date().toISOString();
@@ -830,6 +846,11 @@ export async function addLoginLog(data: {
     role: data.role,
     ip_address: data.ip_address,
     location: data.location || "Unknown",
+    latitude: typeof data.latitude === "number" ? data.latitude : undefined,
+    longitude: typeof data.longitude === "number" ? data.longitude : undefined,
+    accuracy: typeof data.accuracy === "number" ? data.accuracy : undefined,
+    distance_meters: typeof data.distance_meters === "number" ? data.distance_meters : undefined,
+    is_within_geofence: typeof data.is_within_geofence === "boolean" ? data.is_within_geofence : undefined,
     user_agent: data.user_agent,
     status: data.status || "success",
     created_at: now,
@@ -852,8 +873,21 @@ export async function addLoginLog(data: {
     const pool = await getPool();
     if (pool) {
       await pool.query(
-        "INSERT INTO login_logs (id, email, role, ip_address, location, user_agent, status, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
-        [id, data.email, data.role, data.ip_address, data.location || null, data.user_agent, data.status || "success"]
+        "INSERT INTO login_logs (id, email, role, ip_address, location, latitude, longitude, accuracy, distance_meters, is_within_geofence, user_agent, status, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())",
+        [
+          id,
+          data.email,
+          data.role,
+          data.ip_address,
+          data.location || null,
+          data.latitude ?? null,
+          data.longitude ?? null,
+          data.accuracy ?? null,
+          data.distance_meters ?? null,
+          data.is_within_geofence ?? null,
+          data.user_agent,
+          data.status || "success",
+        ]
       );
     }
   } catch (err) {
