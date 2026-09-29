@@ -1347,39 +1347,8 @@ function AdminPage() {
   const fetchNotificationsList = async () => {
     try {
       const res = await fetchNotificationsServerFn({ data: { limit: 100 } });
-      if (res.success && res.notifications && res.notifications.length > 0) {
+      if (res.success && Array.isArray(res.notifications)) {
         setNotifications(res.notifications);
-      } else {
-        // Fallback: Populate notifications from existing leads and meetings if DB table was empty
-        const fallbackList: CRMNotification[] = [];
-        leads.slice(0, 15).forEach((l) => {
-          fallbackList.push({
-            id: `notif_lead_${l.id}`,
-            type: "lead_new",
-            title: "Website Lead Recorded",
-            message: `${l.name} (${l.phone || "No phone"}) from ${l.source} - ${l.video_type || "AI Video"}`,
-            entity_id: l.id,
-            actor: l.name,
-            is_read: false,
-            created_at: l.created_at || new Date().toISOString(),
-          });
-        });
-        meetings.slice(0, 10).forEach((m) => {
-          fallbackList.push({
-            id: `notif_meet_${m.id}`,
-            type: m.meeting_status === "cancelled" ? "meeting_cancelled" : "meeting_new",
-            title: m.meeting_status === "cancelled" ? "Calendly Meeting Cancelled" : "Calendly Strategy Call",
-            message: `${m.client_name} · ${m.meeting_date} at ${m.meeting_time} (${m.meeting_status})`,
-            entity_id: m.id,
-            actor: m.client_name,
-            is_read: false,
-            created_at: m.created_at || new Date().toISOString(),
-          });
-        });
-        fallbackList.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        if (fallbackList.length > 0) {
-          setNotifications((curr) => (curr.length > 0 ? curr : fallbackList));
-        }
       }
     } catch {}
   };
