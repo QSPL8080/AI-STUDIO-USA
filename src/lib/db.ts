@@ -1328,6 +1328,30 @@ export async function deleteCalendlyMeeting(id: string): Promise<boolean> {
   return ok;
 }
 
+export async function clearAllCalendlyMeetings(): Promise<boolean> {
+  let ok = false;
+  if (getSupabaseConfig()) {
+    try {
+      await supabaseRest("calendly_meetings?id=neq.placeholder", { method: "DELETE" });
+      ok = true;
+    } catch (e) {
+      console.warn("Supabase clearAllCalendlyMeetings fallback:", e);
+    }
+  }
+
+  await initDb();
+  try {
+    const pool = await getPool();
+    if (pool) {
+      await pool.query("DELETE FROM calendly_meetings");
+      ok = true;
+    }
+  } catch (err) {
+    console.error("PostgreSQL clearAllCalendlyMeetings error:", err);
+  }
+  return ok;
+}
+
 // ==========================================
 // CRM NOTIFICATIONS PERSISTENCE
 // ==========================================

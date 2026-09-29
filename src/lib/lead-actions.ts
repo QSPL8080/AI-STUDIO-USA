@@ -25,6 +25,7 @@ import {
   updateCalendlyMeetingStatus as updateCalendlyMeetingStatusInDb,
   updateCalendlyMeetingDetails as updateCalendlyMeetingDetailsInDb,
   deleteCalendlyMeeting as deleteCalendlyMeetingInDb,
+  clearAllCalendlyMeetings as clearAllCalendlyMeetingsInDb,
   saveCRMNotification as saveCRMNotificationInDb,
   getCRMNotifications as getCRMNotificationsFromDb,
   markNotificationRead as markNotificationReadInDb,
@@ -646,6 +647,11 @@ export async function syncCalendlyEventsFromApi(): Promise<{ count: number; erro
       return { count: 0, error: "Calendly API token not configured" };
     }
 
+    // Retrieve cutoff timestamp to prevent importing historical/pre-reset meetings
+    const settings = await getCrmSettingsFromDb();
+    const cutoffStr = settings?.["calendly_reset_cutoff_time"];
+    const cutoffTime = cutoffStr ? new Date(cutoffStr).getTime() : 0;
+
     const userRes = await fetch("https://api.calendly.com/users/me", {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -674,6 +680,12 @@ export async function syncCalendlyEventsFromApi(): Promise<{ count: number; erro
 
     for (const ev of eventsData.collection || []) {
       try {
+        const evCreatedAt = new Date(ev.created_at || ev.start_time).getTime();
+        // Skip historical / pre-reset meetings
+        if (cutoffTime > 0 && evCreatedAt < cutoffTime) {
+          continue;
+        }
+
         const invRes = await fetch(`${ev.uri}/invitees`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -727,10 +739,10 @@ export async function syncCalendlyEventsFromApi(): Promise<{ count: number; erro
   }
 }
 
-// 13. Calendly Meetings
+// 13. Calendly Meetings (Strictly Read-Only from CRM)
 export const fetchCalendlyMeetingsServerFn = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    // 1. Live Sync from Calendly API in background/inline so CRM always has fresh scheduled events
+    // 1. Live Sync from Calendly API in background/inline (respecting cutoff)
     await syncCalendlyEventsFromApi();
 
     // 2. Fetch all meetings from DB
@@ -747,184 +759,65 @@ export const syncCalendlyEventsServerFn = createServerFn({ method: "POST" }).han
   return { success: !result.error, count: result.count, meetings, error: result.error };
 });
 
-export const saveCalendlyMeetingServerFn = createServerFn({ method: "POST" })
-  .validator((data: {
-    lead_id?: string;
-    client_name: string;
-    email: string;
-    phone?: string;
-    meeting_date: string;
-    meeting_time: string;
-    meeting_status?: string;
-    meeting_link: string;
-    meeting_type?: string;
-    assigned_admin?: string;
-    notes?: string;
-    performedBy?: string;
-  }) => data)
+// Programmatic Reset Action for Calendly meetings in CRM
+export const resetCalendlyDataServerFn = createServerFn({ method: "POST" })
+  .validator((data?: { resetBy?: string }) => data || {})
   .handler(async ({ data }) => {
     try {
-      const meeting = await saveCalendlyMeetingInDb(data);
+      const ok = await clearAllCalendlyMeetingsInDb();
+      const resetTime = new Date().toISOString();
+      const settings = await getCrmSettingsFromDb();
+      await saveCrmSettingsToDb({ ...settings, calendly_reset_cutoff_time: resetTime });
+
       await addActivityLogInDb({
-        lead_id: data.lead_id,
-        action: "Calendly Meeting Scheduled",
-        details: `Meeting with ${data.client_name} on ${data.meeting_date} at ${data.meeting_time}`,
-        performed_by: data.performedBy || "System / Calendly",
-        user_role: "system",
+        action: "Calendly Meetings Reset",
+        details: `All CRM Calendly meeting records cleared and reset cutoff timestamp set to ${resetTime}`,
+        performed_by: data?.resetBy || "Super Admin",
+        user_role: "super_admin",
       });
-      return { success: true, meeting };
+
+      broadcastLeadEvent({ type: "REFRESH_ALL" });
+      return { success: ok, resetTime };
     } catch (error: any) {
       return { success: false, error: error.message };
     }
+  });
+
+// Read-Only Enforcement: Block CRM-originated mutations
+export const saveCalendlyMeetingServerFn = createServerFn({ method: "POST" })
+  .validator((data: any) => data)
+  .handler(async () => {
+    return {
+      success: false,
+      error: "CRM is strictly read-only for Calendly. Meetings must be created directly in Calendly.",
+    };
   });
 
 export const updateCalendlyMeetingServerFn = createServerFn({ method: "POST" })
-  .validator((data: {
-    id: string;
-    meeting_status?: string;
-    notes?: string;
-    client_name?: string;
-    email?: string;
-    phone?: string;
-    meeting_date?: string;
-    meeting_time?: string;
-    meeting_link?: string;
-    meeting_type?: string;
-    assigned_admin?: string;
-    cancelled_at?: string;
-    performedBy?: string;
-  }) => data)
-  .handler(async ({ data }) => {
-    try {
-      const { id, performedBy, ...updates } = data;
-      const ok = await updateCalendlyMeetingDetailsInDb(id, updates);
-      if (ok) {
-        await addActivityLogInDb({
-          action: "Calendly Meeting Updated",
-          details: `Meeting #${id.slice(-6)} updated (${updates.meeting_status || "details updated"}) by ${performedBy || "Admin"}`,
-          performed_by: performedBy || "Admin",
-          user_role: "admin",
-        });
-
-        if (updates.meeting_status) {
-          const notifType = updates.meeting_status === "cancelled" ? "meeting_cancelled" : updates.meeting_status === "rescheduled" ? "meeting_rescheduled" : updates.meeting_status === "completed" ? "meeting_completed" : "meeting_upcoming";
-          await saveCRMNotificationInDb({
-            type: notifType,
-            title: `Meeting ${updates.meeting_status.charAt(0).toUpperCase() + updates.meeting_status.slice(1)}`,
-            message: `Calendly meeting #${id.slice(-6)} marked as ${updates.meeting_status} by ${performedBy || "Admin"}`,
-            entity_id: id,
-            actor: performedBy || "Admin",
-          });
-        }
-      }
-      return { success: ok };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
+  .validator((data: any) => data)
+  .handler(async () => {
+    return {
+      success: false,
+      error: "CRM is strictly read-only for Calendly. Meetings can only be rescheduled or modified in Calendly.",
+    };
   });
 
 export const cancelCalendlyMeetingServerFn = createServerFn({ method: "POST" })
-  .validator((data: { id: string; email?: string; reason: string; performedBy?: string }) => data)
-  .handler(async ({ data }) => {
-    try {
-      const { id, email, reason, performedBy } = data;
-      const token = process.env.CALENDLY_API_TOKEN || process.env.VITE_CALENDLY_API_TOKEN;
-
-      // 1. Sync cancellation to Calendly API if token & email exist
-      if (token && email) {
-        try {
-          const userRes = await fetch("https://api.calendly.com/users/me", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (userRes.ok) {
-            const userData = (await userRes.json()) as any;
-            const org = userData.resource?.current_organization;
-            if (org) {
-              const eventsRes = await fetch(
-                `https://api.calendly.com/scheduled_events?organization=${encodeURIComponent(org)}&status=active`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              if (eventsRes.ok) {
-                const eventsData = (await eventsRes.json()) as any;
-                for (const evt of eventsData.collection || []) {
-                  const evtUuid = evt.uri.split("/").pop();
-                  const invRes = await fetch(`https://api.calendly.com/scheduled_events/${evtUuid}/invitees`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                  });
-                  if (invRes.ok) {
-                    const invData = (await invRes.json()) as any;
-                    const matched = (invData.collection || []).some(
-                      (inv: any) => inv.email?.toLowerCase() === email.toLowerCase()
-                    );
-                    if (matched) {
-                      await fetch(`https://api.calendly.com/scheduled_events/${evtUuid}/cancellation`, {
-                        method: "POST",
-                        headers: {
-                          Authorization: `Bearer ${token}`,
-                          "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ reason: reason || "Cancelled from AI Studio CRM" }),
-                      });
-                      break;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        } catch (apiErr) {
-          console.warn("Calendly API cancellation sync error:", apiErr);
-        }
-      }
-
-      // 2. Update status in CRM DB
-      const cancelled_at = new Date().toISOString();
-      const ok = await updateCalendlyMeetingDetailsInDb(id, {
-        meeting_status: "cancelled",
-        cancelled_at,
-        notes: reason ? `Cancellation Reason: ${reason}` : undefined,
-      });
-
-      if (ok) {
-        await addActivityLogInDb({
-          action: "Calendly Meeting Cancelled",
-          details: `Meeting #${id.slice(-6)} cancelled (${reason || "No reason provided"})`,
-          performed_by: performedBy || "Admin",
-          user_role: "admin",
-        });
-
-        await saveCRMNotificationInDb({
-          type: "meeting_cancelled",
-          title: "Meeting Cancelled",
-          message: `Meeting #${id.slice(-6)} cancelled: ${reason || "by Admin"}. Status locked.`,
-          entity_id: id,
-          actor: performedBy || "Admin",
-        });
-      }
-
-      return { success: ok, cancelled_at };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
+  .validator((data: any) => data)
+  .handler(async () => {
+    return {
+      success: false,
+      error: "CRM is strictly read-only for Calendly. Meetings can only be cancelled directly inside Calendly.",
+    };
   });
 
 export const deleteCalendlyMeetingServerFn = createServerFn({ method: "POST" })
-  .validator((data: { id: string; client_name?: string; performedBy?: string }) => data)
-  .handler(async ({ data }) => {
-    try {
-      const ok = await deleteCalendlyMeetingInDb(data.id);
-      if (ok) {
-        await addActivityLogInDb({
-          action: "Calendly Meeting Deleted",
-          details: `Meeting record for ${data.client_name || data.id} removed`,
-          performed_by: data.performedBy || "Admin",
-          user_role: "admin",
-        });
-      }
-      return { success: ok };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
+  .validator((data: any) => data)
+  .handler(async () => {
+    return {
+      success: false,
+      error: "CRM is strictly read-only for Calendly. Meeting deletion is disabled in CRM.",
+    };
   });
 
 // 14. Record Calendly Booking (from widget listener or webhook)

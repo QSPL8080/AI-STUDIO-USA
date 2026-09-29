@@ -158,18 +158,34 @@ export default {
         if (request.method === "POST") {
           try {
             const body = await request.json();
-            const { saveCalendlyMeeting, saveLead, addActivityLog, saveCRMNotification } = await import("./lib/db");
+            const { saveCalendlyMeeting, updateCalendlyMeetingStatus, getCrmSettings, saveCRMNotification } = await import("./lib/db");
+            const { broadcastLeadEvent } = await import("./lib/lead-actions");
+
+            const settings = await getCrmSettings();
+            const cutoffStr = settings?.["calendly_reset_cutoff_time"];
+            const cutoffTime = cutoffStr ? new Date(cutoffStr).getTime() : 0;
 
             const eventType = body.event || "invitee.created";
             const payload = body.payload || body;
             const invitee = payload.invitee || payload;
             const scheduledEvent = payload.scheduled_event || payload.event || {};
 
+            const createdAtStr = invitee.created_at || scheduledEvent.created_at || payload.created_at;
+            if (createdAtStr && cutoffTime > 0) {
+              const eventCreatedAt = new Date(createdAtStr).getTime();
+              if (eventCreatedAt < cutoffTime) {
+                return new Response(
+                  JSON.stringify({ success: true, ignored: true, reason: "pre_reset_event" }),
+                  { status: 200, headers: { "Content-Type": "application/json" } }
+                );
+              }
+            }
+
             const clientName = invitee.name || payload.name || payload.client_name || "Calendly Client";
             const clientEmail = invitee.email || payload.email || "client@calendly.com";
             const clientPhone = invitee.text_reminder_number || payload.phone || "";
             const startTime = scheduledEvent.start_time || payload.start_time || new Date().toISOString();
-            const eventTitle = scheduledEvent.name || payload.meeting_type || "AI Video Strategy Call (30 min)";
+            const eventTitle = scheduledEvent.name || payload.meeting_type || "Quickupp AI Studio - 30 Min Strategy Call";
             const joinUrl =
               scheduledEvent.location?.join_url ||
               payload.meeting_link ||
@@ -178,10 +194,10 @@ export default {
 
             const parsedDate = new Date(startTime);
             const meetingDate = !isNaN(parsedDate.getTime())
-              ? parsedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+              ? parsedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" })
               : new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
             const meetingTime = !isNaN(parsedDate.getTime())
-              ? parsedDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) + " EST"
+              ? parsedDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/New_York" }) + " EST"
               : "3:00 PM EST";
 
             let status = "scheduled";
@@ -206,13 +222,15 @@ export default {
             await saveCRMNotification({
               type: status === "cancelled" ? "meeting_cancelled" : "meeting_new",
               title: status === "cancelled" ? "Meeting Cancelled" : "New Calendly Meeting Booked",
-              message: `${clientName} scheduled a strategy call for ${meetingDate} at ${meetingTime}`,
+              message: `${clientName} (${clientEmail}) scheduled strategy call for ${meetingDate} at ${meetingTime}`,
               entity_id: meeting.id,
               actor: "Calendly",
             });
 
+            broadcastLeadEvent({ type: "NEW_MEETING", meeting });
+
             return new Response(
-              JSON.stringify({ success: true, meeting_id: meeting.id }),
+              JSON.stringify({ success: true, meeting_id: meeting.id, status }),
               {
                 status: 200,
                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
