@@ -3476,9 +3476,9 @@ function AdminPage() {
         {/* TAB 0: EXECUTIVE DASHBOARD & CRM OVERVIEW */}
         {/* ========================================================================= */}
         {activeTab === "dashboard" && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-4 animate-in fade-in duration-200">
             {/* Dashboard Header with Quick Actions */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-xs">
               <div>
                 <div className="flex items-center gap-2">
                   <LayoutDashboard className="h-5 w-5 text-blue-600" />
@@ -3517,8 +3517,145 @@ function AdminPage() {
               </div>
             </div>
 
-            {/* KPI Metrics Cards (6 Metrics) */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 sm:gap-4">
+            {/* 1. TOP PRIORITY: Latest Inbound Leads & Recent CRM Activity (Side-by-Side) */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {/* Latest Inbound Leads */}
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                        <Layers className="h-4 w-4" />
+                      </div>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Latest Inbound Leads</h3>
+                      <span className="rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[10px] font-bold text-blue-700 font-mono">
+                        {leads.length}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("leads")}
+                      className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                    >
+                      View All →
+                    </button>
+                  </div>
+
+                  <div className="mt-2 divide-y divide-slate-100 max-h-[260px] overflow-y-auto pr-1">
+                    {leads.slice(0, 6).map((l) => (
+                      <div
+                        key={l.id}
+                        onClick={() => setViewLeadDetails(l)}
+                        className="py-2.5 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl transition-colors cursor-pointer"
+                      >
+                        <div className="min-w-0 flex-1 pr-3">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-bold text-slate-900 truncate">{l.name}</p>
+                            <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold shrink-0 ${
+                              l.source?.includes("Meta")
+                                ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                : l.source === "Manual"
+                                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                : "bg-blue-50 text-blue-700 border border-blue-200"
+                            }`}>
+                              {l.source || "Website"}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                            {l.business_name || l.email || l.phone || "Direct Lead"} • {l.video_type || "AI Video"}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                            l.status === "Closed"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : l.status === "In Progress"
+                              ? "bg-purple-50 text-purple-700 border border-purple-200"
+                              : l.status === "Contacted"
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : "bg-blue-50 text-blue-700 border border-blue-200"
+                          }`}>
+                            {l.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    {leads.length === 0 && (
+                      <div className="py-8 text-center text-xs text-slate-400">
+                        <Layers className="h-6 w-6 text-slate-300 mx-auto mb-1.5" />
+                        No leads received yet.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-3 mt-1 border-t border-slate-100 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("leads")}
+                    className="text-xs font-bold text-slate-600 hover:text-blue-600 cursor-pointer"
+                  >
+                    Open Complete Leads Management Table →
+                  </button>
+                </div>
+              </div>
+
+              {/* Recent CRM Activity */}
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+                        <Clock className="h-4 w-4" />
+                      </div>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Recent CRM Activity</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("activity")}
+                      className="text-xs font-bold text-purple-600 hover:underline cursor-pointer"
+                    >
+                      View All Logs →
+                    </button>
+                  </div>
+
+                  <div className="mt-2 divide-y divide-slate-100 max-h-[260px] overflow-y-auto pr-1">
+                    {activityLogs.slice(0, 6).map((log) => (
+                      <div key={log.id} className="py-2.5 px-1 flex items-start justify-between gap-3 text-xs">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-slate-800 truncate">{log.action}</p>
+                          <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                            {log.details} • by <span className="font-medium text-slate-700">{log.performed_by}</span>
+                          </p>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-mono shrink-0 whitespace-nowrap pt-0.5">
+                          {new Date(log.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    ))}
+                    {activityLogs.length === 0 && (
+                      <div className="py-8 text-center text-xs text-slate-400">
+                        <Clock className="h-6 w-6 text-slate-300 mx-auto mb-1.5" />
+                        No activity recorded yet.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-3 mt-1 border-t border-slate-100 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("activity")}
+                    className="text-xs font-bold text-slate-600 hover:text-purple-600 cursor-pointer"
+                  >
+                    Open Full Activity Audit Trail →
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. KPI Metrics Cards (5 Cards) */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 sm:gap-3.5">
               {/* Total Leads */}
               <div
                 onClick={() => { setActiveTab("leads"); setFilterSource("All"); }}
@@ -3581,26 +3718,10 @@ function AdminPage() {
                 <p className="mt-1 text-[11px] text-slate-500">Completed Orders</p>
               </div>
 
-              {/* Calendly Meetings */}
-              {/* Calendly tab temporarily disabled
-              <div
-                onClick={() => setActiveTab("calendly")}
-                className="rounded-2xl border border-indigo-200/90 bg-white p-4 shadow-xs hover:border-indigo-400 hover:shadow-md transition-all cursor-pointer"
-              >
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-                  <span>Calls / Meets</span>
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                    <Calendar className="h-4 w-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-2xl font-black text-indigo-600">{meetings.length}</p>
-                <p className="mt-1 text-[11px] text-slate-500">USA Calendly</p>
-              </div> */}
-
               {/* Closed Conversion Rate */}
               <div
                 onClick={() => { setActiveTab("leads"); setFilterStatus("Closed"); }}
-                className="rounded-2xl border border-teal-200/90 bg-white p-4 shadow-xs hover:border-teal-400 hover:shadow-md transition-all cursor-pointer"
+                className="rounded-2xl border border-teal-200/90 bg-white p-4 shadow-xs hover:border-teal-400 hover:shadow-md transition-all cursor-pointer col-span-2 sm:col-span-1"
               >
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
                   <span>Closed Leads</span>
@@ -3615,9 +3736,9 @@ function AdminPage() {
               </div>
             </div>
 
-            {/* Source-Wise Lead Attribution Cards (§18) */}
-            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4">
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3">
+            {/* 3. Source-Wise Lead Attribution Cards */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-xs space-y-3">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-2.5">
                 <div className="flex items-center gap-2">
                   <Globe className="h-4 w-4 text-blue-600" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -3629,7 +3750,7 @@ function AdminPage() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
                 {/* Website Leads */}
                 <div className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-slate-50/50 p-4 transition-all hover:bg-blue-50/20 hover:border-blue-300">
                   <div className="flex items-center justify-between">
@@ -3644,7 +3765,7 @@ function AdminPage() {
                     </div>
                     <span className="text-3xl font-black text-blue-600 font-mono">{sourceWebsiteCount}</span>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+                  <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between">
                     <span className="text-xs text-slate-500 font-medium">
                       {allTotalLeadsCount > 0 ? `${Math.round((sourceWebsiteCount / allTotalLeadsCount) * 100)}% of total` : "0%"}
                     </span>
@@ -3673,7 +3794,7 @@ function AdminPage() {
                     </div>
                     <span className="text-3xl font-black text-amber-600 font-mono">{sourceManualCount}</span>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+                  <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between">
                     <span className="text-xs text-slate-500 font-medium">
                       {allTotalLeadsCount > 0 ? `${Math.round((sourceManualCount / allTotalLeadsCount) * 100)}% of total` : "0%"}
                     </span>
@@ -3702,7 +3823,7 @@ function AdminPage() {
                     </div>
                     <span className="text-3xl font-black text-purple-600 font-mono">{sourceMetaCount}</span>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+                  <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between">
                     <span className="text-xs text-slate-500 font-medium">
                       {allTotalLeadsCount > 0 ? `${Math.round((sourceMetaCount / allTotalLeadsCount) * 100)}% of total` : "0%"}
                     </span>
@@ -3715,130 +3836,6 @@ function AdminPage() {
                       <span>→</span>
                     </button>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Split Grid: Recent Leads & Recent Activity */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              {/* Recent Inbound Leads */}
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-3 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div className="flex items-center gap-2">
-                      <Layers className="h-4 w-4 text-blue-600" />
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Latest Inbound Leads</h3>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("leads")}
-                      className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
-                    >
-                      View All →
-                    </button>
-                  </div>
-
-                  <div className="mt-3 divide-y divide-slate-100">
-                    {leads.slice(0, 5).map((l) => (
-                      <div
-                        key={l.id}
-                        onClick={() => setViewLeadDetails(l)}
-                        className="py-3 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl transition-colors cursor-pointer"
-                      >
-                        <div className="min-w-0 flex-1 pr-3">
-                          <div className="flex items-center gap-2">
-                            <p className="text-xs font-bold text-slate-900 truncate">{l.name}</p>
-                            <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${
-                              l.source?.includes("Meta")
-                                ? "bg-purple-50 text-purple-700 border border-purple-200"
-                                : l.source === "Manual"
-                                ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                : "bg-blue-50 text-blue-700 border border-blue-200"
-                            }`}>
-                              {l.source || "Website"}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                            {l.business_name || l.email || l.phone || "Direct Lead"} • {l.video_type || "AI Video"}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                            l.status === "Closed"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : l.status === "In Progress"
-                              ? "bg-purple-50 text-purple-700 border border-purple-200"
-                              : l.status === "Contacted"
-                              ? "bg-amber-50 text-amber-700 border border-amber-200"
-                              : "bg-blue-50 text-blue-700 border border-blue-200"
-                          }`}>
-                            {l.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                    {leads.length === 0 && (
-                      <p className="py-6 text-center text-xs text-slate-400">No leads received yet.</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-slate-100 text-center">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("leads")}
-                    className="text-xs font-bold text-slate-600 hover:text-blue-600 cursor-pointer"
-                  >
-                    Open Complete Leads Management Table →
-                  </button>
-                </div>
-              </div>
-
-              {/* Recent CRM Activity Logs */}
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-3 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-purple-600" />
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Recent CRM Activity</h3>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("activity")}
-                      className="text-xs font-bold text-purple-600 hover:underline cursor-pointer"
-                    >
-                      View All Logs →
-                    </button>
-                  </div>
-
-                  <div className="mt-3 divide-y divide-slate-100">
-                    {activityLogs.slice(0, 5).map((log) => (
-                      <div key={log.id} className="py-2.5 flex items-start justify-between gap-3 text-xs">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-slate-800 truncate">{log.action}</p>
-                          <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                            {log.details} • by <span className="font-medium text-slate-700">{log.performed_by}</span>
-                          </p>
-                        </div>
-                        <span className="text-[10px] text-slate-400 font-mono shrink-0 whitespace-nowrap">
-                          {new Date(log.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                    ))}
-                    {activityLogs.length === 0 && (
-                      <p className="py-6 text-center text-xs text-slate-400">No activity recorded yet.</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-slate-100 text-center">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("activity")}
-                    className="text-xs font-bold text-slate-600 hover:text-purple-600 cursor-pointer"
-                  >
-                    Open Full Activity Audit Trail →
-                  </button>
                 </div>
               </div>
             </div>
