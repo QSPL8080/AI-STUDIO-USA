@@ -17,6 +17,7 @@ import {
   addLoginLog as addLoginLogInDb,
   getLoginLogs as getLoginLogsFromDb,
   getAdminUsers as getAdminUsersFromDb,
+  getAdminUserByEmailWithPassword,
   saveAdminUser as saveAdminUserInDb,
   updateAdminUserStatus as updateAdminUserStatusInDb,
   deleteAdminUser as deleteAdminUserInDb,
@@ -46,7 +47,11 @@ import {
   type CalendlyMeeting,
   type CRMNotification,
 } from "./db";
-import { sendLeadNotificationEmail, sendFailedLoginAlertEmail } from "./email";
+import {
+  sendLeadNotificationEmail,
+  sendFailedLoginAlertEmail,
+  sendAccountActivationRequestEmail,
+} from "./email";
 import { evaluateLocationAccess, getOfficeGeoConfig, DEFAULT_OFFICE_CONFIG } from "./geo-config";
 import { createCrmSessionToken, verifySessionWithLocation, decodeAndVerifySessionToken } from "./crm-session";
 
@@ -613,10 +618,15 @@ export const toggleAdminUserStatusServerFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const cleanEmail = (data.email || "").toLowerCase().trim();
-      if (cleanEmail === "sa@aistudio.com" || cleanEmail.includes("superadmin")) {
+      const targetId = (data.id || "").toLowerCase().trim();
+      if (
+        cleanEmail === "sa@aistudio.us" ||
+        cleanEmail.includes("superadmin") ||
+        targetId === "usr_superadmin"
+      ) {
         return { success: false, error: "Super Admin account is permanently protected and cannot be deactivated." };
       }
-      const ok = await updateAdminUserStatusInDb(data.id, data.status);
+      const ok = await updateAdminUserStatusInDb(data.id || data.email || "", data.status);
       if (ok) {
         await addActivityLogInDb({
           action: "Admin Status Changed",
@@ -636,10 +646,15 @@ export const deleteAdminUserServerFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const cleanEmail = (data.email || "").toLowerCase().trim();
-      if (cleanEmail === "sa@aistudio.com" || cleanEmail.includes("superadmin")) {
+      const targetId = (data.id || "").toLowerCase().trim();
+      if (
+        cleanEmail === "sa@aistudio.us" ||
+        cleanEmail.includes("superadmin") ||
+        targetId === "usr_superadmin"
+      ) {
         return { success: false, error: "Super Admin account is permanently protected and cannot be deleted." };
       }
-      const ok = await deleteAdminUserInDb(data.id);
+      const ok = await deleteAdminUserInDb(data.id || data.email || "");
       if (ok) {
         await addActivityLogInDb({
           action: "Admin Deleted",
@@ -653,6 +668,38 @@ export const deleteAdminUserServerFn = createServerFn({ method: "POST" })
       return { success: false, error: error.message };
     }
   });
+
+export const sendAccountActivationRequestServerFn = createServerFn({ method: "POST" })
+  .validator((data: { email: string; name?: string; reason?: string; ip?: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const cleanEmail = (data.email || "").toLowerCase().trim();
+      const name = data.name || cleanEmail;
+      const res = await sendAccountActivationRequestEmail({
+        email: cleanEmail,
+        name,
+        reason: data.reason,
+        ip: data.ip,
+      });
+      if (res.success) {
+        await addActivityLogInDb({
+          action: "Account Activation Request",
+          details: `User ${name} (${cleanEmail}) requested account reactivation from login portal.`,
+          performed_by: name,
+          user_role: "unknown",
+        });
+        await saveCRMNotificationInDb({
+          type: "system",
+          title: "Account Activation Request",
+          message: `User ${name} (${cleanEmail}) is requesting their account to be reactivated.`,
+        });
+      }
+      return res;
+    } catch (err: any) {
+      return { success: false, error: err.message || "Failed to send activation request email." };
+    }
+  });
+
 
 // Helper to fetch live scheduled events from Calendly API and upsert into DB
 export async function syncCalendlyEventsFromApi(): Promise<{ count: number; error?: string }> {
@@ -1395,52 +1442,14 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
         };
       }
 
-      // 2. Validate credentials
-      let authRole: "super_admin" | "admin" | "leads_manager" | null = null;
-      let authName = "Admin";
+      // 2. Validate credentials via database / secure lookup
+      const user = await getAdminUserByEmailWithPassword(cleanEmail);
 
-      if (cleanEmail === "sa@aistudio.us" && cleanPass === "Anay@8080") {
-        authRole = "super_admin";
-        authName = "Super Admin";
-      } else if (cleanEmail === "admin@aistudio.us" && cleanPass === "Admin@123") {
-        authRole = "admin";
-        authName = "Admin";
-      } else if (cleanEmail === "lm@aistudio.us" && cleanPass === "leads@123") {
-        authRole = "leads_manager";
-        authName = "Leads Manager";
-      } else {
-        const dynamicUsers = await getAdminUsersFromDb();
-        const dynamicUser = dynamicUsers.find(
-          (u) => u.email.toLowerCase() === cleanEmail && u.password === cleanPass && u.status === "active"
-        );
-        if (dynamicUser) {
-          authRole = dynamicUser.role;
-          authName = dynamicUser.name;
-        }
-      }
-
-      // 3. Check account deactivation for built-in accounts
-      if (authRole && ["admin@aistudio.us", "lm@aistudio.us"].includes(cleanEmail)) {
-        const settings = await getCrmSettingsFromDb();
-        const accountStatusVal = settings?.["access_control_account_status"];
-        if (accountStatusVal) {
-          try {
-            const parsed = JSON.parse(accountStatusVal);
-            if (parsed[cleanEmail] === "inactive") {
-              return {
-                success: false,
-                error: "This account has been deactivated. Please contact the Super Admin.",
-              };
-            }
-          } catch {}
-        }
-      }
-
-      if (!authRole) {
+      if (!user || user.password !== cleanPass) {
         // Record failed attempt in security audit
         await addLoginLogInDb({
           email: cleanEmail || "unknown",
-          role: "unknown",
+          role: user?.role || "unknown",
           ip_address: ipAddress,
           location: locationName,
           latitude: data.latitude,
@@ -1478,9 +1487,41 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
           attemptsLeft: Math.max(threshold - newFailures, 0),
           error: lockedNow
             ? `Too many failed login attempts. This account / IP is locked for ${LOGIN_LOCKOUT_MINUTES} minutes.`
-            : `Invalid credentials. ${Math.max(threshold - newFailures, 0)} attempt(s) left before lockout.`,
+            : `Invalid email or password. ${Math.max(threshold - newFailures, 0)} attempt(s) left before lockout.`,
         };
       }
+
+      // 3. Check account deactivation (Super Admin can never be deactivated)
+      if (user.role !== "super_admin" && cleanEmail !== "sa@aistudio.us") {
+        let isDeactivated = user.status === "inactive" || user.status === "disabled" || user.status === "deactivated";
+        
+        if (!isDeactivated) {
+          try {
+            const settings = await getCrmSettingsFromDb();
+            const accountStatusVal = settings?.["account_status"] || settings?.["access_control_account_status"];
+            if (accountStatusVal) {
+              const parsed = JSON.parse(accountStatusVal);
+              if (parsed[cleanEmail] === "inactive") {
+                isDeactivated = true;
+              }
+            }
+          } catch {}
+        }
+
+        if (isDeactivated) {
+          return {
+            success: false,
+            deactivated: true,
+            email: user.email,
+            name: user.name,
+            error: "This account has been deactivated. Please contact the Super Admin for activation.",
+          };
+        }
+      }
+
+      const authRole = user.role;
+      const authName = user.name;
+
 
       // 4. Server-Side Location & Geofence Verification
       const locationEvaluation = evaluateLocationAccess(

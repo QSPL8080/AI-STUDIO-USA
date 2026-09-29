@@ -1029,3 +1029,122 @@ If this wasn't you or your team, review Login / IP Tracking in the admin panel.`
     return { success: false, error: error.message };
   }
 }
+
+/**
+ * Sends an email notification to info@quickuppaistudio.us / Super Admin
+ * when a deactivated user requests account reactivation from the CRM login page.
+ */
+export async function sendAccountActivationRequestEmail(data: {
+  name?: string;
+  email: string;
+  reason?: string;
+  ip?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const to = await resolveNotificationEmail();
+  const title = await resolvePlatformTitle();
+  const when = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+  const subject = `⚠️ [${title}] Account Activation Request: ${data.name || data.email} (${data.email})`;
+
+  const esc = (v: string) =>
+    v.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
+
+  const text = `A user has requested account reactivation for their CRM account.
+
+User Name: ${data.name || "N/A"}
+Email Address: ${data.email}
+Reason / Note: ${data.reason || "User requested account reactivation via CRM login portal."}
+IP Address: ${data.ip || "Unknown"}
+Requested At (ET): ${when}
+
+To reactivate this user, log in as Super Admin to the CRM portal and toggle their status to Active under User Management.`;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Account Activation Request</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b;">
+  <div style="max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+    <div style="background: #0f172a; padding: 24px; text-align: center;">
+      <h1 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 700;">${esc(title)}</h1>
+      <p style="color: #94a3b8; margin: 4px 0 0; font-size: 13px;">CRM Account Activation Request</p>
+    </div>
+    
+    <div style="padding: 24px;">
+      <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 14px 16px; border-radius: 6px; margin-bottom: 20px;">
+        <p style="margin: 0; color: #991b1b; font-size: 14px; font-weight: 600;">
+          A deactivated team member is requesting access reactivation.
+        </p>
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 24px;">
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 10px 0; color: #64748b; font-weight: 600; width: 140px;">User Name:</td>
+          <td style="padding: 10px 0; color: #0f172a; font-weight: 700;">${esc(data.name || "N/A")}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 10px 0; color: #64748b; font-weight: 600;">Email Address:</td>
+          <td style="padding: 10px 0; color: #0f172a; font-family: monospace; font-size: 13px;">${esc(data.email)}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 10px 0; color: #64748b; font-weight: 600;">Request Note:</td>
+          <td style="padding: 10px 0; color: #334155;">${esc(data.reason || "Reactivation requested via CRM login portal.")}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 10px 0; color: #64748b; font-weight: 600;">IP Address:</td>
+          <td style="padding: 10px 0; color: #64748b; font-family: monospace; font-size: 12px;">${esc(data.ip || "Unknown")}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 0; color: #64748b; font-weight: 600;">Timestamp:</td>
+          <td style="padding: 10px 0; color: #64748b; font-size: 13px;">${when}</td>
+        </tr>
+      </table>
+
+      <div style="text-align: center; padding-top: 8px;">
+        <p style="color: #64748b; font-size: 13px; margin-bottom: 16px;">
+          To grant access, log in to the CRM with your Super Admin account and activate this user under <b>User Management</b>.
+        </p>
+      </div>
+    </div>
+
+    <div style="background: #f8fafc; padding: 16px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;">
+      This is an automated administrative notification from ${esc(title)}.
+    </div>
+  </div>
+</body>
+</html>`;
+
+  const smtpHost = process.env["SMTP_HOST"] || "smtp.hostinger.com";
+  const smtpPort = Number(process.env["SMTP_PORT"] || 465);
+  const smtpSecure = process.env["SMTP_SECURE"] === "false" ? false : true;
+  const smtpUser = process.env["SMTP_USER"] || process.env["EMAIL_USER"] || "info@quickuppaistudio.us";
+  const smtpPass = process.env["SMTP_PASS"] || process.env["EMAIL_PASS"] || "Quickuppaistudio@8080";
+  const fromAddress = process.env["EMAIL_FROM"] || smtpUser;
+
+  if (!smtpUser || !smtpPass) {
+    console.warn("SMTP credentials not configured for activation email");
+    return { success: false, error: "SMTP credentials not configured" };
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpSecure,
+      auth: { user: smtpUser, pass: smtpPass.replace(/\s+/g, "") },
+    });
+    await transporter.sendMail({
+      from: `"${title.replace(/"/g, "")} Admin System" <${fromAddress}>`,
+      to,
+      subject,
+      text,
+      html,
+    });
+    return { success: true };
+  } catch (error: any) {
+    console.error("Account activation request email error:", error);
+    return { success: false, error: error.message };
+  }
+}
+

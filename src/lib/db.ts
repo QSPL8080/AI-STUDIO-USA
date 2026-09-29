@@ -280,6 +280,12 @@ export async function initDb() {
             last_login_at TIMESTAMP WITH TIME ZONE
           );
 
+          INSERT INTO admin_users (id, name, email, password, role, status, created_at)
+          VALUES 
+            ('usr_superadmin', 'Super Admin', 'sa@aistudio.us', 'Anay@8080', 'super_admin', 'active', NOW())
+          ON CONFLICT (email) DO NOTHING;
+
+
           CREATE TABLE IF NOT EXISTS activity_logs (
             id VARCHAR(64) PRIMARY KEY,
             lead_id VARCHAR(64),
@@ -924,29 +930,79 @@ export async function getLoginLogs(limit = 100): Promise<LoginLog[]> {
 }
 
 // ==========================================
+// ==========================================
 // ADMIN USER MANAGEMENT (SUPER ADMIN)
 // ==========================================
 export async function getAdminUsers(): Promise<AdminUser[]> {
-  if (getSupabaseConfig()) {
-    try {
-      const rows = await supabaseRest("admin_users?select=*&order=created_at.desc");
-      if (Array.isArray(rows)) return rows as AdminUser[];
-    } catch (e) {
-      console.warn("Supabase getAdminUsers fallback:", e);
+  await initDb();
+  let dbUsers: AdminUser[] = [];
+
+  try {
+    const pool = await getPool();
+    if (pool) {
+      const res = await pool.query(
+        "SELECT id, name, email, role, status, created_at, last_login_at FROM admin_users ORDER BY created_at DESC"
+      );
+      dbUsers = res.rows;
     }
+  } catch (err) {
+    console.error("PostgreSQL getAdminUsers error:", err);
   }
+
+  // Ensure Super Admin exists in list even if DB is brand new
+  const superAdminDef: AdminUser = {
+    id: "usr_superadmin",
+    name: "Super Admin",
+    email: "sa@aistudio.us",
+    role: "super_admin",
+    status: "active",
+    created_at: "System Protected",
+  };
+
+  const map = new Map<string, AdminUser>();
+  dbUsers.forEach((u) => {
+    if (u.email) map.set(u.email.toLowerCase().trim(), u);
+  });
+
+  if (!map.has("sa@aistudio.us")) {
+    map.set("sa@aistudio.us", superAdminDef);
+  }
+
+  return Array.from(map.values());
+}
+
+export async function getAdminUserByEmailWithPassword(email: string): Promise<AdminUser | null> {
+  const cleanEmail = (email || "").toLowerCase().trim();
+  if (!cleanEmail) return null;
 
   await initDb();
   try {
     const pool = await getPool();
     if (pool) {
-      const res = await pool.query("SELECT id, name, email, role, status, created_at, last_login_at FROM admin_users ORDER BY created_at DESC");
-      return res.rows;
+      const res = await pool.query(
+        "SELECT id, name, email, password, role, status, created_at, last_login_at FROM admin_users WHERE LOWER(email) = LOWER($1) LIMIT 1",
+        [cleanEmail]
+      );
+      if (res.rows[0]) return res.rows[0];
     }
   } catch (err) {
-    console.error("PostgreSQL getAdminUsers error:", err);
+    console.error("PostgreSQL getAdminUserByEmailWithPassword error:", err);
   }
-  return [];
+
+  // Fallback defaults only for system-protected Super Admin if DB is temporarily unreachable
+  if (cleanEmail === "sa@aistudio.us") {
+    return {
+      id: "usr_superadmin",
+      name: "Super Admin",
+      email: "sa@aistudio.us",
+      password: "Anay@8080",
+      role: "super_admin",
+      status: "active",
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  return null;
 }
 
 export async function saveAdminUser(user: {
@@ -968,19 +1024,6 @@ export async function saveAdminUser(user: {
     created_at: now,
   };
 
-  if (getSupabaseConfig()) {
-    try {
-      const rows = await supabaseRest("admin_users", {
-        method: "POST",
-        body: JSON.stringify(record),
-      });
-      if (Array.isArray(rows) && rows[0]) return rows[0];
-      return record;
-    } catch (e) {
-      console.warn("Supabase saveAdminUser fallback:", e);
-    }
-  }
-
   await initDb();
   try {
     const pool = await getPool();
@@ -992,7 +1035,7 @@ export async function saveAdminUser(user: {
          RETURNING *`,
         [id, record.name, record.email, record.password, record.role, record.status]
       );
-      return res.rows[0];
+      if (res.rows[0]) return res.rows[0];
     }
   } catch (err) {
     console.error("PostgreSQL saveAdminUser error:", err);
@@ -1000,25 +1043,24 @@ export async function saveAdminUser(user: {
   return record;
 }
 
-export async function updateAdminUserStatus(id: string, status: "active" | "inactive"): Promise<boolean> {
-  let ok = false;
-  if (getSupabaseConfig()) {
-    try {
-      await supabaseRest(`admin_users?id=eq.${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
-      });
-      ok = true;
-    } catch (e) {
-      console.warn("Supabase updateAdminUserStatus fallback:", e);
-    }
+export async function updateAdminUserStatus(idOrEmail: string, status: "active" | "inactive"): Promise<boolean> {
+  const cleanTarget = (idOrEmail || "").toLowerCase().trim();
+  if (!cleanTarget) return false;
+
+  // Protect Super Admin
+  if (cleanTarget === "sa@aistudio.us" || cleanTarget === "usr_superadmin") {
+    return false;
   }
 
+  let ok = false;
   await initDb();
   try {
     const pool = await getPool();
     if (pool) {
-      const res = await pool.query("UPDATE admin_users SET status = $1 WHERE id = $2", [status, id]);
+      const res = await pool.query(
+        "UPDATE admin_users SET status = $1 WHERE (id = $2 OR LOWER(email) = LOWER($2)) AND role != 'super_admin' AND LOWER(email) != 'sa@aistudio.us'",
+        [status, cleanTarget]
+      );
       if ((res.rowCount ?? 0) > 0) ok = true;
     }
   } catch (err) {
@@ -1027,22 +1069,24 @@ export async function updateAdminUserStatus(id: string, status: "active" | "inac
   return ok;
 }
 
-export async function deleteAdminUser(id: string): Promise<boolean> {
-  let ok = false;
-  if (getSupabaseConfig()) {
-    try {
-      await supabaseRest(`admin_users?id=eq.${id}`, { method: "DELETE" });
-      ok = true;
-    } catch (e) {
-      console.warn("Supabase deleteAdminUser fallback:", e);
-    }
+export async function deleteAdminUser(idOrEmail: string): Promise<boolean> {
+  const cleanTarget = (idOrEmail || "").toLowerCase().trim();
+  if (!cleanTarget) return false;
+
+  // Protect Super Admin
+  if (cleanTarget === "sa@aistudio.us" || cleanTarget === "usr_superadmin") {
+    return false;
   }
 
+  let ok = false;
   await initDb();
   try {
     const pool = await getPool();
     if (pool) {
-      const res = await pool.query("DELETE FROM admin_users WHERE id = $1", [id]);
+      const res = await pool.query(
+        "DELETE FROM admin_users WHERE (id = $1 OR LOWER(email) = LOWER($1)) AND role != 'super_admin' AND LOWER(email) != 'sa@aistudio.us'",
+        [cleanTarget]
+      );
       if ((res.rowCount ?? 0) > 0) ok = true;
     }
   } catch (err) {
@@ -1050,6 +1094,7 @@ export async function deleteAdminUser(id: string): Promise<boolean> {
   }
   return ok;
 }
+
 
 // ==========================================
 // CALENDLY MEETINGS
