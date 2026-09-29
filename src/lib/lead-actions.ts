@@ -1431,10 +1431,10 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
       // 3. Check account deactivation for built-in accounts
       if (authRole && ["admin@aistudio.us", "lm@aistudio.us"].includes(cleanEmail)) {
         const settings = await getCrmSettingsFromDb();
-        const accountStatusSetting = settings.find((s) => s.key === "access_control_account_status");
-        if (accountStatusSetting?.value) {
+        const accountStatusVal = settings?.["access_control_account_status"];
+        if (accountStatusVal) {
           try {
-            const parsed = JSON.parse(accountStatusSetting.value);
+            const parsed = JSON.parse(accountStatusVal);
             if (parsed[cleanEmail] === "inactive") {
               return {
                 success: false,
