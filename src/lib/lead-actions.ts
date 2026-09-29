@@ -737,20 +737,25 @@ export async function syncCalendlyEventsFromApi(): Promise<{ count: number; erro
       return { count: 0, error: "Calendly user URI not found" };
     }
 
-    const eventsRes = await fetch(
-      `https://api.calendly.com/scheduled_events?user=${encodeURIComponent(userUri)}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-    if (!eventsRes.ok) {
-      return { count: 0, error: `Calendly events API error (${eventsRes.status})` };
-    }
+    const [activeEventsRes, canceledEventsRes] = await Promise.all([
+      fetch(
+        `https://api.calendly.com/scheduled_events?user=${encodeURIComponent(userUri)}&status=active`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      ),
+      fetch(
+        `https://api.calendly.com/scheduled_events?user=${encodeURIComponent(userUri)}&status=canceled`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      ),
+    ]);
 
-    const eventsData = (await eventsRes.json()) as any;
+    const activeCollection = activeEventsRes.ok ? ((await activeEventsRes.json()) as any)?.collection || [] : [];
+    const canceledCollection = canceledEventsRes.ok ? ((await canceledEventsRes.json()) as any)?.collection || [] : [];
+
+    // Combine active and canceled events
+    const allEvents = [...activeCollection, ...canceledCollection];
     let syncedCount = 0;
 
-    for (const ev of eventsData.collection || []) {
+    for (const ev of allEvents) {
       try {
         const evCreatedAt = new Date(ev.created_at || ev.start_time).getTime();
         // Skip historical / pre-reset meetings
@@ -782,6 +787,7 @@ export async function syncCalendlyEventsFromApi(): Promise<{ count: number; erro
             timeZone: "America/New_York",
           }) + " EST";
 
+        const isCanceled = ev.status === "canceled" || invitee.status === "canceled";
         const isRescheduled =
           invitee.rescheduled === true ||
           Boolean(invitee.old_invitee) ||
@@ -790,18 +796,21 @@ export async function syncCalendlyEventsFromApi(): Promise<{ count: number; erro
 
         // If this invitee was cancelled specifically because it was rescheduled to another time,
         // skip inserting a separate cancelled row so it doesn't clutter the CRM.
-        if (invitee.status === "canceled" && isRescheduled) {
+        if (isCanceled && isRescheduled) {
           continue;
         }
 
         let status = "scheduled";
-        if (ev.status === "active" && invitee.status === "active") {
-          status = isRescheduled ? "rescheduled" : "scheduled";
-        } else if (invitee.status === "canceled" || ev.status === "canceled") {
-          status = isRescheduled ? "rescheduled" : "cancelled";
+        if (isCanceled) {
+          status = "cancelled";
+        } else if (isRescheduled) {
+          status = "rescheduled";
+        } else {
+          status = "scheduled";
         }
 
         const link = ev.location?.join_url || ev.uri;
+        const cancelReason = invitee.cancellation?.reason ? ` (Reason: ${invitee.cancellation.reason})` : "";
 
         await saveCalendlyMeetingInDb({
           client_name: invitee.name || "Calendly Client",
@@ -813,7 +822,9 @@ export async function syncCalendlyEventsFromApi(): Promise<{ count: number; erro
           meeting_link: link,
           meeting_type: ev.name || "Quickupp AI Studio - 30 Min Strategy Call",
           is_rescheduled: isRescheduled,
-          notes: isRescheduled
+          notes: isCanceled
+            ? `Cancelled in Calendly${cancelReason}`
+            : isRescheduled
             ? `Rescheduled in Calendly to ${dateStr} at ${timeStr}`
             : `Synced from live Calendly API (${ev.status})`,
         });

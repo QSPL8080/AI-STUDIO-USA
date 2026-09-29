@@ -1240,16 +1240,24 @@ export async function saveCalendlyMeeting(data: {
       let existingMeeting: any = null;
       if (isRescheduled) {
         const existingRes = await pool.query(
-          `SELECT * FROM calendly_meetings WHERE email = $1 ORDER BY created_at DESC LIMIT 1`,
+          `SELECT * FROM calendly_meetings WHERE email = $1 AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1`,
           [data.email]
         );
         if (existingRes.rows.length > 0) existingMeeting = existingRes.rows[0];
       } else {
         const existingRes = await pool.query(
-          `SELECT * FROM calendly_meetings WHERE email = $1 AND meeting_date = $2 LIMIT 1`,
+          `SELECT * FROM calendly_meetings WHERE email = $1 AND meeting_date = $2 AND deleted_at IS NULL LIMIT 1`,
           [data.email, data.meeting_date]
         );
-        if (existingRes.rows.length > 0) existingMeeting = existingRes.rows[0];
+        if (existingRes.rows.length > 0) {
+          existingMeeting = existingRes.rows[0];
+        } else if (finalStatus === "cancelled") {
+          const existingByEmail = await pool.query(
+            `SELECT * FROM calendly_meetings WHERE email = $1 AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1`,
+            [data.email]
+          );
+          if (existingByEmail.rows.length > 0) existingMeeting = existingByEmail.rows[0];
+        }
       }
 
       if (existingMeeting) {
