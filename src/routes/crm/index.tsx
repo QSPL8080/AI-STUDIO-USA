@@ -2728,6 +2728,9 @@ function AdminPage() {
   // Helper to identify India Leads (never convert, strictly remove from USA CRM)
   const isIndiaLead = (lead: Lead) => {
     const s = (lead.source || "").toLowerCase().trim();
+    // Leads from the USA website, manual CRM entries, Meta and Calendly always belong to the
+    // USA CRM, whatever phone number or location the client typed (e.g. a +91 test number)
+    if (/usa|manual|meta|facebook|instagram|calendly/.test(s)) return false;
     const loc = (lead.location || "").toLowerCase().trim();
     const phone = (lead.phone || "").replace(/\D/g, "");
     return (

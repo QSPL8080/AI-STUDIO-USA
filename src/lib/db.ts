@@ -383,35 +383,7 @@ export async function initDb() {
         `);
         isInitialized = true;
 
-        // One-time seed: create admin@aistudio.us as a normal (non built-in) database
-        // user. Guarded by a flag so it never re-appears after the Super Admin edits,
-        // deactivates or deletes it.
-        try {
-          await client.query(`
-            INSERT INTO admin_users (id, name, email, password, role, status, created_at)
-            SELECT 'usr_admin_aistudio', 'Admin', 'admin@aistudio.us', 'Admin@123', 'admin', 'active', NOW()
-            WHERE NOT EXISTS (SELECT 1 FROM crm_settings WHERE key = 'seed_admin_aistudio_us_v1')
-            ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = 'admin', status = 'active';
-
-            INSERT INTO crm_settings (key, value, updated_at)
-            VALUES ('seed_admin_aistudio_us_v1', 'done', NOW())
-            ON CONFLICT (key) DO NOTHING;
-          `);
-
-          // One-time seed: Leads Manager lm@aistudio.us (normal DB user, not built in)
-          await client.query(`
-            INSERT INTO admin_users (id, name, email, password, role, status, created_at)
-            SELECT 'usr_lm_aistudio', 'Leads Manager', 'lm@aistudio.us', 'Leads@123', 'leads_manager', 'active', NOW()
-            WHERE NOT EXISTS (SELECT 1 FROM crm_settings WHERE key = 'seed_lm_aistudio_us_v1')
-            ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = 'leads_manager', status = 'active';
-
-            INSERT INTO crm_settings (key, value, updated_at)
-            VALUES ('seed_lm_aistudio_us_v1', 'done', NOW())
-            ON CONFLICT (key) DO NOTHING;
-          `);
-        } catch (seedErr) {
-          console.warn("Admin seed warning:", seedErr);
-        }
+        await ensureDefaultAccounts(client);
 
         // Remove the old @aistudio.com alias accounts (duplicates of the @aistudio.us ones)
         try {
@@ -429,6 +401,57 @@ export async function initDb() {
     }
   } catch (error) {
     console.warn("PostgreSQL init warning:", error);
+  }
+}
+
+/**
+ * Default login accounts as normal database users (not built in): created once each,
+ * guarded by a flag so an account the Super Admin later edits / deletes never comes back.
+ * Each runs on its own, and a failure is written to Activity History so it is visible.
+ */
+async function ensureDefaultAccounts(client: any): Promise<void> {
+  // Older databases may restrict admin_users.role to ('super_admin','admin'), which blocks
+  // Leads Manager accounts. Drop any CHECK constraint on the role column.
+  try {
+    const cons = await client.query(
+      `SELECT conname FROM pg_constraint
+        WHERE conrelid = 'admin_users'::regclass AND contype = 'c' AND pg_get_constraintdef(oid) ILIKE '%role%'`
+    );
+    for (const r of cons.rows) {
+      await client.query(`ALTER TABLE admin_users DROP CONSTRAINT IF EXISTS "${String(r.conname).replace(/"/g, "")}"`);
+    }
+  } catch (e) {
+    console.warn("admin_users role constraint check warning:", e);
+  }
+
+  const seeds = [
+    { flag: "seed_admin_aistudio_us_v1", id: "usr_admin_aistudio", name: "Admin", email: "admin@aistudio.us", password: "Admin@123", role: "admin" },
+    { flag: "seed_lm_aistudio_us_v2", id: "usr_lm_aistudio", name: "Leads Manager", email: "lm@aistudio.us", password: "Leads@123", role: "leads_manager" },
+  ];
+  for (const sd of seeds) {
+    try {
+      const done = await client.query(`SELECT 1 FROM crm_settings WHERE key = $1`, [sd.flag]);
+      if (done.rows.length > 0) continue;
+      await client.query(
+        `INSERT INTO admin_users (id, name, email, password, role, status, created_at)
+         VALUES ($1, $2, $3, $4, $5, 'active', NOW())
+         ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role, status = 'active'`,
+        [sd.id, sd.name, sd.email, sd.password, sd.role]
+      );
+      await client.query(
+        `INSERT INTO crm_settings (key, value, updated_at) VALUES ($1, 'done', NOW()) ON CONFLICT (key) DO NOTHING`,
+        [sd.flag]
+      );
+    } catch (seedErr: any) {
+      console.error(`Default account ${sd.email} could not be created:`, seedErr);
+      try {
+        await client.query(
+          `INSERT INTO activity_logs (id, lead_id, action, details, performed_by, user_role, created_at)
+           VALUES ($1, NULL, 'Default Account Setup Failed', $2, 'System', 'system', NOW())`,
+          [`log_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, `${sd.email}: ${seedErr?.message || seedErr}`]
+        );
+      } catch {}
+    }
   }
 }
 
@@ -478,6 +501,9 @@ export async function saveLead(data: {
     // folded into an India lead that the USA admin never shows.
     const isIndiaRegion = (src?: string, loc?: string, phone?: string) => {
       const s = (src || "").toLowerCase().trim();
+      // Leads from the USA website, manual CRM entries, Meta and Calendly are always USA CRM leads,
+      // whatever phone number or location the client typed
+      if (/usa|manual|meta|facebook|instagram|calendly/.test(s)) return false;
       const l = (loc || "").toLowerCase().trim();
       const p = (phone || "").replace(/\D/g, "");
       return (

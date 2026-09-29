@@ -17,6 +17,13 @@ export const samples = [
     videoUrl: "/videos/UGC%20Sample.mp4",
   },
   {
+    format: "AI Cartoon",
+    industry: "Kitchen & Cookware",
+    description:
+      "3D animated kitchen story: a stressed chef battling smoking pans switches to non-stick cookware, with playful character-led product storytelling.",
+    videoUrl: "/videos/Cartoon%20Sample.mp4",
+  },
+  {
     format: "AI Avatar",
     industry: "Beauty & Cosmetics",
     description: "AI avatar presenter reel demonstrating a foundation and concealer makeup routine for a beauty brand.",
@@ -27,13 +34,6 @@ export const samples = [
     industry: "Luxury Cosmetics & Beauty",
     description: "Cinematic 3D hyper-realistic product commercial showcasing DIOR Addict Lip Maximizer with studio lighting and macro details.",
     videoUrl: "/videos/Hyper%20Realistic%20Sample.mp4",
-  },
-  {
-    format: "AI Cartoon",
-    industry: "Kitchen & Cookware",
-    description:
-      "3D animated kitchen story: a stressed chef battling smoking pans switches to non-stick cookware, with playful character-led product storytelling.",
-    videoUrl: "/videos/Cartoon%20Sample.mp4",
   },
   {
     format: "Digital Twin",
