@@ -793,6 +793,7 @@ function AdminPage() {
   const can = (key: PermissionKey): boolean => {
     if (!session) return false;
     if (session.role === "super_admin") return true;
+    if (key === "purge") return false; // Permanent delete strictly exclusive to Super Admin
     const perms = rolePermissions[session.role as ConfigurableRole];
     return Boolean(perms?.[key]);
   };
@@ -1381,7 +1382,7 @@ function AdminPage() {
     const count = selectedMeetingIds.size;
     if (
       !confirm(
-        `Are you sure you want to permanently delete ${count} selected Calendly meeting record(s) from the CRM?`
+        `Move ${count} selected Calendly meeting record(s) to Recycle Bin?`
       )
     ) {
       return;
@@ -1393,11 +1394,12 @@ function AdminPage() {
       const res = await deleteCalendlyMeetingsBulkServerFn({
         data: {
           ids: idsToDelete,
-          performedBy: session?.name || "Admin",
+          performedBy: session?.name || session?.email || "Admin",
+          userRole: session?.role || "admin",
         },
       });
       if (res.success) {
-        showToast(`Deleted ${count} Calendly meeting(s) from CRM`);
+        showToast(`${count} Calendly meeting(s) moved to Recycle Bin`);
       } else {
         showToast("Removed selected meetings from list");
       }
@@ -1410,7 +1412,7 @@ function AdminPage() {
   };
 
   const handleDeleteSingleMeeting = async (m: CalendlyMeeting) => {
-    if (!confirm(`Are you sure you want to permanently delete meeting record for ${m.client_name}?`)) {
+    if (!confirm(`Move meeting record for ${m.client_name} to Recycle Bin?`)) {
       return;
     }
     setMeetings((prev) => prev.filter((item) => item.id !== m.id));
@@ -1424,11 +1426,12 @@ function AdminPage() {
         data: {
           id: m.id,
           client_name: m.client_name,
-          performedBy: session?.name || "Admin",
+          performedBy: session?.name || session?.email || "Admin",
+          userRole: session?.role || "admin",
         },
       });
       if (res.success) {
-        showToast(`Meeting record for ${m.client_name} deleted`);
+        showToast(`Meeting record for ${m.client_name} moved to Recycle Bin`);
       } else {
         showToast("Meeting removed from list");
       }
@@ -1920,8 +1923,8 @@ function AdminPage() {
   };
 
   const handlePermanentDeleteLead = async (id: string) => {
-    if (!can("purge")) {
-      alert("You don't have permission to permanently delete records.");
+    if (!isSuperAdmin) {
+      alert("Access Denied: Only Super Admin can permanently delete records from the database.");
       return;
     }
     if (confirm("WARNING: This will permanently delete this lead from the database. This action cannot be undone. Continue?")) {
@@ -1972,7 +1975,7 @@ function AdminPage() {
         await bulkRestoreLeadsServerFn({
           data: {
             ids,
-            performedBy: session?.name || "Admin",
+            performedBy: session?.name || session?.email || "Admin",
             userRole: session?.role || "admin",
           },
         });
@@ -1986,8 +1989,8 @@ function AdminPage() {
   };
 
   const handleBulkPermanentDeleteRecycleBin = async () => {
-    if (!can("purge")) {
-      alert("You don't have permission to permanently delete records.");
+    if (!isSuperAdmin) {
+      alert("Access Denied: Only Super Admin can permanently delete records from the database.");
       return;
     }
     if (selectedRecycleBinIds.size === 0) return;
@@ -2012,8 +2015,8 @@ function AdminPage() {
   };
 
   const handleEmptyRecycleBin = async () => {
-    if (!can("purge")) {
-      alert("You don't have permission to empty the Recycle Bin.");
+    if (!isSuperAdmin) {
+      alert("Access Denied: Only Super Admin can empty the Recycle Bin.");
       return;
     }
     if (recycleBinLeads.length === 0) return;
@@ -6950,7 +6953,7 @@ function AdminPage() {
                 </p>
               </div>
 
-              {can("purge") && recycleBinLeads.length > 0 && (
+              {isSuperAdmin && recycleBinLeads.length > 0 && (
                 <button
                   onClick={handleEmptyRecycleBin}
                   className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-red-700 flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
@@ -6981,7 +6984,7 @@ function AdminPage() {
                     <span>Restore Selected ({selectedRecycleBinIds.size})</span>
                   </button>
 
-                  {can("purge") && (
+                  {isSuperAdmin && (
                     <button
                       onClick={handleBulkPermanentDeleteRecycleBin}
                       className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1 text-xs font-bold text-white hover:bg-red-700 shadow-xs cursor-pointer transition-colors"
@@ -7069,7 +7072,7 @@ function AdminPage() {
                                 <span>Restore</span>
                               </button>
 
-                              {can("purge") && (
+                              {isSuperAdmin && (
                                 <button
                                   onClick={() => handlePermanentDeleteLead(lead.id)}
                                   className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"

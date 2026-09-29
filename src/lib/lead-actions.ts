@@ -24,6 +24,11 @@ import {
   getCalendlyMeetings as getCalendlyMeetingsFromDb,
   updateCalendlyMeetingStatus as updateCalendlyMeetingStatusInDb,
   updateCalendlyMeetingDetails as updateCalendlyMeetingDetailsInDb,
+  softDeleteCalendlyMeeting as softDeleteCalendlyMeetingInDb,
+  softDeleteCalendlyMeetings as softDeleteCalendlyMeetingsInDb,
+  permanentDeleteCalendlyMeeting as permanentDeleteCalendlyMeetingInDb,
+  permanentDeleteCalendlyMeetings as permanentDeleteCalendlyMeetingsInDb,
+  restoreCalendlyMeeting as restoreCalendlyMeetingInDb,
   deleteCalendlyMeeting as deleteCalendlyMeetingInDb,
   deleteCalendlyMeetings as deleteCalendlyMeetingsInDb,
   clearAllCalendlyMeetings as clearAllCalendlyMeetingsInDb,
@@ -425,6 +430,9 @@ export const permanentDeleteLeadServerFn = createServerFn({ method: "POST" })
   .validator((data: { id: string; performedBy?: string; userRole?: string }) => data)
   .handler(async ({ data }) => {
     try {
+      if (data.userRole && data.userRole !== "super_admin") {
+        return { success: false, error: "Access Denied: Permanent delete can ONLY be performed by Super Admin." };
+      }
       const ok = await permanentDeleteInDb(data.id);
       if (ok) {
         await addActivityLogInDb({
@@ -432,7 +440,7 @@ export const permanentDeleteLeadServerFn = createServerFn({ method: "POST" })
           action: "Lead Permanently Deleted",
           details: `Lead permanently erased from database by ${data.performedBy || "Super Admin"}`,
           performed_by: data.performedBy || "Super Admin",
-          user_role: data.userRole || "super_admin",
+          user_role: "super_admin",
         });
       }
       return { success: ok };
@@ -446,6 +454,9 @@ export const bulkPermanentDeleteLeadsServerFn = createServerFn({ method: "POST" 
   .validator((data: { ids: string[]; performedBy?: string; userRole?: string }) => data)
   .handler(async ({ data }) => {
     try {
+      if (data.userRole && data.userRole !== "super_admin") {
+        return { success: false, count: 0, error: "Access Denied: Permanent delete can ONLY be performed by Super Admin." };
+      }
       if (!data.ids || data.ids.length === 0) return { success: true, count: 0 };
       let count = 0;
       for (const id of data.ids) {
@@ -457,7 +468,7 @@ export const bulkPermanentDeleteLeadsServerFn = createServerFn({ method: "POST" 
           action: "Bulk Leads Permanently Deleted",
           details: `${count} soft-deleted leads permanently erased from database by ${data.performedBy || "Super Admin"}`,
           performed_by: data.performedBy || "Super Admin",
-          user_role: data.userRole || "super_admin",
+          user_role: "super_admin",
         });
       }
       return { success: true, count };
@@ -496,12 +507,15 @@ export const emptyRecycleBinServerFn = createServerFn({ method: "POST" })
   .validator((data: { performedBy?: string; userRole?: string }) => data)
   .handler(async ({ data }) => {
     try {
+      if (data.userRole && data.userRole !== "super_admin") {
+        return { success: false, count: 0, error: "Access Denied: Emptying Recycle Bin can ONLY be performed by Super Admin." };
+      }
       const count = await emptyRecycleBinInDb();
       await addActivityLogInDb({
         action: "Recycle Bin Emptied",
         details: `Entire Recycle Bin emptied (${count} records permanently wiped) by ${data.performedBy || "Super Admin"}`,
         performed_by: data.performedBy || "Super Admin",
-        user_role: data.userRole || "super_admin",
+        user_role: "super_admin",
       });
       return { success: true, count };
     } catch (error: any) {
@@ -843,16 +857,27 @@ export const cancelCalendlyMeetingServerFn = createServerFn({ method: "POST" })
   });
 
 export const deleteCalendlyMeetingServerFn = createServerFn({ method: "POST" })
-  .validator((data: { id: string; client_name?: string; performedBy?: string }) => data)
+  .validator((data: { id: string; client_name?: string; performedBy?: string; userRole?: string; permanent?: boolean }) => data)
   .handler(async ({ data }) => {
     try {
-      const ok = await deleteCalendlyMeetingInDb(data.id);
+      const isSuper = data.userRole === "super_admin";
+      const isPermanent = data.permanent === true && isSuper;
+
+      let ok = false;
+      if (isPermanent) {
+        ok = await permanentDeleteCalendlyMeetingInDb(data.id);
+      } else {
+        ok = await softDeleteCalendlyMeetingInDb(data.id);
+      }
+
       if (ok) {
         await addActivityLogInDb({
-          action: "Calendly Meeting Deleted",
-          details: `Deleted meeting record for ${data.client_name || data.id}`,
+          action: isPermanent ? "Calendly Meeting Permanently Erased" : "Calendly Meeting Soft-Deleted",
+          details: isPermanent
+            ? `Permanently erased meeting record for ${data.client_name || data.id} by ${data.performedBy || "Super Admin"}`
+            : `Meeting record for ${data.client_name || data.id} moved to Recycle Bin by ${data.performedBy || "Admin"}`,
           performed_by: data.performedBy || "Admin",
-          user_role: "admin",
+          user_role: data.userRole || "admin",
         });
         broadcastLeadEvent({ type: "REFRESH_ALL" });
       }
@@ -863,16 +888,27 @@ export const deleteCalendlyMeetingServerFn = createServerFn({ method: "POST" })
   });
 
 export const deleteCalendlyMeetingsBulkServerFn = createServerFn({ method: "POST" })
-  .validator((data: { ids: string[]; performedBy?: string }) => data)
+  .validator((data: { ids: string[]; performedBy?: string; userRole?: string; permanent?: boolean }) => data)
   .handler(async ({ data }) => {
     try {
-      const ok = await deleteCalendlyMeetingsInDb(data.ids);
+      const isSuper = data.userRole === "super_admin";
+      const isPermanent = data.permanent === true && isSuper;
+
+      let ok = false;
+      if (isPermanent) {
+        ok = await permanentDeleteCalendlyMeetingsInDb(data.ids);
+      } else {
+        ok = await softDeleteCalendlyMeetingsInDb(data.ids);
+      }
+
       if (ok) {
         await addActivityLogInDb({
-          action: "Calendly Meetings Bulk Deleted",
-          details: `Deleted ${data.ids.length} meeting records in bulk`,
+          action: isPermanent ? "Calendly Meetings Bulk Permanently Erased" : "Calendly Meetings Bulk Soft-Deleted",
+          details: isPermanent
+            ? `Permanently erased ${data.ids.length} meeting records by ${data.performedBy || "Super Admin"}`
+            : `${data.ids.length} meeting records moved to Recycle Bin by ${data.performedBy || "Admin"}`,
           performed_by: data.performedBy || "Admin",
-          user_role: "admin",
+          user_role: data.userRole || "admin",
         });
         broadcastLeadEvent({ type: "REFRESH_ALL" });
       }
