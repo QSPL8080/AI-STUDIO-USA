@@ -3498,7 +3498,7 @@ function AdminPage() {
             </button>
             )}
 
-            {/* Calendly tab temporarily disabled
+            {(isSuperAdmin || session?.role === "admin") && (
             <button
               onClick={() => { setActiveTab("calendly"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
@@ -3515,7 +3515,8 @@ function AdminPage() {
               }`}>
                 {meetings.length}
               </span>
-            </button> */}
+            </button>
+            )}
 
             {can("activity") && (
             <button
