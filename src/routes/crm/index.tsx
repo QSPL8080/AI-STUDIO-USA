@@ -744,6 +744,8 @@ function AdminPage() {
 
   // Admin Users Management State
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+  // Database error while creating the default accounts (shown to the Super Admin)
+  const [accountSetupError, setAccountSetupError] = useState<string | null>(null);
 
   // Live status of built-in accounts (Super Admin can deactivate/activate them)
   const [accountStatus, setAccountStatus] = useState<Record<string, "active" | "inactive">>({});
@@ -1555,6 +1557,7 @@ function AdminPage() {
       if (res.success && res.users) {
         setAdminUsers(res.users);
       }
+      setAccountSetupError((res as any)?.setupError || null);
     } catch {}
   };
 
@@ -6712,6 +6715,14 @@ function AdminPage() {
                 <span>+ Create Admin Account</span>
               </button>
             </div>
+
+            {isSuperAdmin && accountSetupError && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+                <strong>A default account could not be created in the database:</strong>{" "}
+                <span className="font-mono">{accountSetupError}</span>
+                <div className="mt-1 text-red-700/80">The CRM retries automatically about once a minute. Share this message with your developer if it stays.</div>
+              </div>
+            )}
 
             {/* Admin Users Table (Deduplicated, Protected Super Admin) */}
             <div className="overflow-x-auto w-full rounded-2xl border border-slate-200 bg-white shadow-sm">

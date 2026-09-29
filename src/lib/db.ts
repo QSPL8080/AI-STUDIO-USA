@@ -409,9 +409,29 @@ export async function initDb() {
  * guarded by a flag so an account the Super Admin later edits / deletes never comes back.
  * Each runs on its own, and a failure is written to Activity History so it is visible.
  */
+/** Last error from creating the default accounts (shown in User Management), null when OK */
+let accountSetupError: string | null = null;
+export function getAccountSetupError(): string | null {
+  return accountSetupError;
+}
+
 async function ensureDefaultAccounts(client: any): Promise<void> {
-  // Older databases may restrict admin_users.role to ('super_admin','admin'), which blocks
-  // Leads Manager accounts. Drop any CHECK constraint on the role column.
+  // Older databases may define admin_users.role as an ENUM type limited to
+  // ('super_admin','admin'), which rejects 'leads_manager'. Convert it to plain text.
+  try {
+    const col = await client.query(
+      `SELECT data_type FROM information_schema.columns WHERE table_name = 'admin_users' AND column_name = 'role' LIMIT 1`
+    );
+    if (col.rows[0]?.data_type === "USER-DEFINED") {
+      await client.query(`ALTER TABLE admin_users ALTER COLUMN role DROP DEFAULT`);
+      await client.query(`ALTER TABLE admin_users ALTER COLUMN role TYPE VARCHAR(32) USING role::text`);
+      await client.query(`ALTER TABLE admin_users ALTER COLUMN role SET DEFAULT 'admin'`);
+    }
+  } catch (e) {
+    console.warn("admin_users role column type check warning:", e);
+  }
+
+  // Older databases may also restrict the role with a CHECK constraint. Drop it.
   try {
     const cons = await client.query(
       `SELECT conname FROM pg_constraint
@@ -442,8 +462,10 @@ async function ensureDefaultAccounts(client: any): Promise<void> {
         `INSERT INTO crm_settings (key, value, updated_at) VALUES ($1, 'done', NOW()) ON CONFLICT (key) DO NOTHING`,
         [sd.flag]
       );
+      if (accountSetupError?.startsWith(sd.email)) accountSetupError = null;
     } catch (seedErr: any) {
       console.error(`Default account ${sd.email} could not be created:`, seedErr);
+      accountSetupError = `${sd.email}: ${seedErr?.message || seedErr}`;
       try {
         await client.query(
           `INSERT INTO activity_logs (id, lead_id, action, details, performed_by, user_role, created_at)
@@ -1023,6 +1045,8 @@ function normalizeAdminRow<T extends Record<string, any>>(row: T): T {
   };
 }
 
+let lastAccountSetupAttempt = 0;
+
 export async function getAdminUsers(): Promise<AdminUser[]> {
   await initDb();
   let dbUsers: AdminUser[] = [];
@@ -1034,6 +1058,23 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
         "SELECT id, name, email, role, status, created_at, last_login_at FROM admin_users ORDER BY created_at DESC"
       );
       dbUsers = res.rows.map(normalizeAdminRow);
+
+      // Default accounts missing (e.g. setup failed at startup)? Try again, at most once a minute.
+      const hasLm = dbUsers.some((u) => (u.email || "").toLowerCase() === "lm@aistudio.us");
+      const hasAdmin = dbUsers.some((u) => (u.email || "").toLowerCase() === "admin@aistudio.us");
+      if ((!hasLm || !hasAdmin) && Date.now() - lastAccountSetupAttempt > 60_000) {
+        lastAccountSetupAttempt = Date.now();
+        const client = await pool.connect();
+        try {
+          await ensureDefaultAccounts(client);
+        } finally {
+          client.release();
+        }
+        const again = await pool.query(
+          "SELECT id, name, email, role, status, created_at, last_login_at FROM admin_users ORDER BY created_at DESC"
+        );
+        dbUsers = again.rows.map(normalizeAdminRow);
+      }
     }
   } catch (err) {
     console.error("PostgreSQL getAdminUsers error:", err);

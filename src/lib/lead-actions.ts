@@ -19,6 +19,7 @@ import {
   getLoginLogs as getLoginLogsFromDb,
   getAdminUsers as getAdminUsersFromDb,
   getAdminUserByEmailWithPassword,
+  getAccountSetupError,
   saveAdminUser as saveAdminUserInDb,
   updateAdminUserStatus as updateAdminUserStatusInDb,
   deleteAdminUser as deleteAdminUserInDb,
@@ -596,7 +597,7 @@ export const fetchLoginLogsServerFn = createServerFn({ method: "GET" })
 export const fetchAdminUsersServerFn = createServerFn({ method: "GET" }).handler(async () => {
   try {
     const users = await getAdminUsersFromDb();
-    return { success: true, users };
+    return { success: true, users, setupError: getAccountSetupError() };
   } catch (error: any) {
     return { success: false, users: [] as AdminUser[], error: error.message };
   }
