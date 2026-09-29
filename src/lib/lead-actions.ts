@@ -911,9 +911,13 @@ export const syncCalendlyEventsServerFn = createServerFn({ method: "POST" }).han
 
 // Programmatic Reset Action for Calendly meetings in CRM
 export const resetCalendlyDataServerFn = createServerFn({ method: "POST" })
-  .validator((data?: { resetBy?: string }) => data || {})
+  .validator((data?: { resetBy?: string; userRole?: string }) => data || {})
   .handler(async ({ data }) => {
     try {
+      // Hard-deletes every meeting: Super Admin only
+      if (data?.userRole !== "super_admin") {
+        return { success: false, error: "Only the Super Admin can reset Calendly data." };
+      }
       const ok = await clearAllCalendlyMeetingsInDb();
       const resetTime = new Date().toISOString();
       const settings = await getCrmSettingsFromDb();
@@ -1016,6 +1020,36 @@ export const deleteCalendlyMeetingServerFn = createServerFn({ method: "POST" })
           details: isPermanent
             ? `Permanently erased meeting record for ${data.client_name || data.id} by ${data.performedBy || "Super Admin"}`
             : `Meeting record for ${data.client_name || data.id} moved to Recycle Bin by ${data.performedBy || "Admin"}`,
+          performed_by: data.performedBy || "Admin",
+          user_role: data.userRole || "admin",
+        });
+        broadcastLeadEvent({ type: "REFRESH_ALL" });
+      }
+      return { success: ok };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+// Recycle Bin: soft-deleted Calendly meetings
+export const fetchDeletedCalendlyMeetingsServerFn = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const all = await getCalendlyMeetingsFromDb(true);
+    return { success: true, meetings: all.filter((m) => Boolean(m.deleted_at)) };
+  } catch (error: any) {
+    return { success: false, meetings: [] as CalendlyMeeting[], error: error.message };
+  }
+});
+
+export const restoreCalendlyMeetingServerFn = createServerFn({ method: "POST" })
+  .validator((data: { id: string; client_name?: string; performedBy?: string; userRole?: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const ok = await restoreCalendlyMeetingInDb(data.id);
+      if (ok) {
+        await addActivityLogInDb({
+          action: "Calendly Meeting Restored",
+          details: `Meeting record for ${data.client_name || data.id} restored from Recycle Bin by ${data.performedBy || "Admin"}`,
           performed_by: data.performedBy || "Admin",
           user_role: data.userRole || "admin",
         });

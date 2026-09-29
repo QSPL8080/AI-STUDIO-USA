@@ -397,6 +397,18 @@ export async function initDb() {
             VALUES ('seed_admin_aistudio_us_v1', 'done', NOW())
             ON CONFLICT (key) DO NOTHING;
           `);
+
+          // One-time seed: Leads Manager lm@aistudio.us (normal DB user, not built in)
+          await client.query(`
+            INSERT INTO admin_users (id, name, email, password, role, status, created_at)
+            SELECT 'usr_lm_aistudio', 'Leads Manager', 'lm@aistudio.us', 'Leads@123', 'leads_manager', 'active', NOW()
+            WHERE NOT EXISTS (SELECT 1 FROM crm_settings WHERE key = 'seed_lm_aistudio_us_v1')
+            ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = 'leads_manager', status = 'active';
+
+            INSERT INTO crm_settings (key, value, updated_at)
+            VALUES ('seed_lm_aistudio_us_v1', 'done', NOW())
+            ON CONFLICT (key) DO NOTHING;
+          `);
         } catch (seedErr) {
           console.warn("Admin seed warning:", seedErr);
         }
@@ -1275,6 +1287,19 @@ export async function saveCalendlyMeeting(data: {
         };
       }
 
+      // Moved to the Recycle Bin in the CRM? Keep it there instead of re-creating it.
+      {
+        const delBase = `calendly_meetings?email=eq.${encodeURIComponent(data.email)}&deleted_at=not.is.null`;
+        const slots: [string, string][] = [[data.meeting_date, data.meeting_time]];
+        if (hasPreviousSlot) slots.push([data.previous_meeting_date as string, data.previous_meeting_time as string]);
+        for (const [d, t] of slots) {
+          const del = await supabaseRest(
+            `${delBase}&meeting_date=eq.${encodeURIComponent(d)}&meeting_time=eq.${encodeURIComponent(t)}&limit=1&select=*`
+          );
+          if (Array.isArray(del) && del[0]) return del[0];
+        }
+      }
+
       const rows = await supabaseRest("calendly_meetings", {
         method: "POST",
         body: JSON.stringify(record),
@@ -1354,6 +1379,19 @@ export async function saveCalendlyMeeting(data: {
         } catch (_) {}
 
         return updated;
+      }
+
+      // Moved to the Recycle Bin in the CRM? Keep it there instead of re-creating it.
+      {
+        const slots: [string, string][] = [[data.meeting_date, data.meeting_time]];
+        if (hasPreviousSlot) slots.push([data.previous_meeting_date as string, data.previous_meeting_time as string]);
+        for (const [d, t] of slots) {
+          const del = await pool.query(
+            `SELECT * FROM calendly_meetings WHERE email = $1 AND meeting_date = $2 AND meeting_time = $3 AND deleted_at IS NOT NULL LIMIT 1`,
+            [data.email, d, t]
+          );
+          if (del.rows[0]) return del.rows[0];
+        }
       }
 
       const res = await pool.query(

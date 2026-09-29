@@ -30,10 +30,10 @@ export const samples = [
   },
   {
     format: "AI Cartoon",
-    industry: "Food & Confectionery",
+    industry: "Kitchen & Cookware",
     description:
-      "Engaging animated brand storytelling reel with custom characters for Chitale Kesar Modak.",
-    videoUrl: "",
+      "3D animated kitchen story: a stressed chef battling smoking pans switches to non-stick cookware, with playful character-led product storytelling.",
+    videoUrl: "/videos/Cartoon%20Sample.mp4",
   },
   {
     format: "Digital Twin",

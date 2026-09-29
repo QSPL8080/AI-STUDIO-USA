@@ -100,6 +100,8 @@ import {
   setMeetingOutcomeServerFn,
   cancelCalendlyMeetingServerFn,
   deleteCalendlyMeetingServerFn,
+  fetchDeletedCalendlyMeetingsServerFn,
+  restoreCalendlyMeetingServerFn,
   deleteCalendlyMeetingsBulkServerFn,
   sendTestCalendlyBookingServerFn,
   fetchNotificationsServerFn,
@@ -339,6 +341,7 @@ function AdminPage() {
   // Leads Data
   const [leads, setLeads] = useState<Lead[]>([]);
   const [recycleBinLeads, setRecycleBinLeads] = useState<Lead[]>([]);
+  const [deletedMeetings, setDeletedMeetings] = useState<CalendlyMeeting[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -1306,6 +1309,10 @@ function AdminPage() {
         setRecycleBinLeads(deleted);
       }
     } catch {}
+    try {
+      const mRes = await fetchDeletedCalendlyMeetingsServerFn();
+      if (mRes.success && Array.isArray(mRes.meetings)) setDeletedMeetings(mRes.meetings);
+    } catch {}
   };
 
   const fetchOrdersList = async () => {
@@ -1350,7 +1357,7 @@ function AdminPage() {
       return;
     }
     try {
-      const res = await resetCalendlyDataServerFn({ data: { resetBy: session?.name || "Super Admin" } });
+      const res = await resetCalendlyDataServerFn({ data: { userRole: session?.role, resetBy: session?.name || "Super Admin" } });
       if (res.success) {
         setMeetings([]);
         showToast("Calendly meetings reset. Ready for new bookings.");
@@ -1763,7 +1770,6 @@ function AdminPage() {
     setClosingLead(null);
     setDeliveringLead(null);
     setShowAddAdminModal(false);
-    setShowSecurityModal(false);
     try {
       sessionStorage.removeItem("ai_studio_auth_session");
       sessionStorage.removeItem("crm_last_active");
@@ -7109,6 +7115,98 @@ function AdminPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Soft-deleted Calendly meetings */}
+            {deletedMeetings.length > 0 && (
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
+                  <h4 className="text-sm font-bold flex items-center gap-2 text-slate-800">
+                    <Calendar className="h-4 w-4 text-slate-600" />
+                    <span>Deleted Calendly Meetings</span>
+                    <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-extrabold text-slate-700">
+                      {deletedMeetings.length}
+                    </span>
+                  </h4>
+                  <span className="text-[11px] text-slate-500">
+                    {isSuperAdmin ? "Restore or permanently delete" : "Restore only — permanent delete is Super Admin only"}
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[720px] text-left text-xs">
+                    <thead className="border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      <tr>
+                        <th className="px-4 py-2.5">Client</th>
+                        <th className="px-4 py-2.5">Meeting</th>
+                        <th className="px-4 py-2.5">Status</th>
+                        <th className="px-4 py-2.5">Deleted</th>
+                        <th className="px-4 py-2.5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {deletedMeetings.map((m) => (
+                        <tr key={m.id} className="hover:bg-slate-50/70">
+                          <td className="px-4 py-2.5">
+                            <div className="font-bold text-slate-900">{m.client_name}</div>
+                            <div className="font-mono text-[11px] text-slate-500">{m.email}</div>
+                          </td>
+                          <td className="px-4 py-2.5 text-slate-700">
+                            {m.meeting_date} · {m.meeting_time}
+                          </td>
+                          <td className="px-4 py-2.5 text-slate-700">{meetingStatusLabel(m.meeting_status)}</td>
+                          <td className="px-4 py-2.5 font-mono text-[11px] text-slate-500">
+                            {m.deleted_at ? new Date(m.deleted_at as unknown as string).toLocaleString() : "—"}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  const res = await restoreCalendlyMeetingServerFn({
+                                    data: {
+                                      id: m.id,
+                                      client_name: m.client_name,
+                                      performedBy: session?.name || "Admin",
+                                      userRole: session?.role || "admin",
+                                    },
+                                  });
+                                  showToast(res.success ? `Meeting for ${m.client_name} restored` : "Could not restore meeting");
+                                  await Promise.all([fetchRecycleBinList(), fetchMeetingsList()]);
+                                }}
+                                className="rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-100 cursor-pointer"
+                              >
+                                Restore
+                              </button>
+                              {isSuperAdmin && (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (!confirm(`Permanently delete the meeting record for ${m.client_name}? This cannot be undone.`)) return;
+                                    const res = await deleteCalendlyMeetingServerFn({
+                                      data: {
+                                        id: m.id,
+                                        client_name: m.client_name,
+                                        performedBy: session?.name || "Super Admin",
+                                        userRole: session?.role || "super_admin",
+                                        permanent: true,
+                                      },
+                                    });
+                                    showToast(res.success ? `Meeting for ${m.client_name} permanently deleted` : "Could not delete meeting");
+                                    await fetchRecycleBinList();
+                                  }}
+                                  className="rounded-lg border border-red-300 bg-white px-2.5 py-1 text-xs font-bold text-red-700 hover:bg-red-50 cursor-pointer"
+                                >
+                                  Permanently Delete
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -8321,9 +8419,9 @@ function AdminPage() {
       {/* MODAL 2: LEAD DETAILS FULL POPUP (SECTION 8: LEAD DETAILS PAGE) */}
       {/* ========================================================================= */}
       {viewLeadDetails && (() => {
-        const leadMeeting = calendlyMeetings.find((m) =>
+        const leadMeeting = meetings.find((m) =>
           (viewLeadDetails.email && m.email && m.email.toLowerCase() === viewLeadDetails.email.toLowerCase()) ||
-          (viewLeadDetails.phone && m.phone && m.phone.replace(/\D/g, "").slice(-10) === viewLeadDetails.phone.replace(/\D/g, "").slice(-10)) ||
+          (viewLeadDetails.phone && m.phone && m.phone.replace(/\D/g, "").length >= 7 && m.phone.replace(/\D/g, "").slice(-10) === viewLeadDetails.phone.replace(/\D/g, "").slice(-10)) ||
           (viewLeadDetails.name && m.client_name && viewLeadDetails.name.toLowerCase().trim() === m.client_name.toLowerCase().trim())
         );
 
@@ -8334,7 +8432,7 @@ function AdminPage() {
               <div className="flex items-center justify-between border-b pb-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-white font-extrabold text-base">
-                    {viewLeadDetails.name.slice(0, 2).toUpperCase()}
+                    {String(viewLeadDetails.name || "?").slice(0, 2).toUpperCase()}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
