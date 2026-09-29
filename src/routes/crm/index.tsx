@@ -3205,7 +3205,12 @@ function AdminPage() {
   }, [meetings, meetingSearchTerm, meetingStatusFilter]);
 
   // Overall & Source-Wise Summary Counts (§17 & §18)
-  const allCrmLeads = useMemo(() => leads.filter((l) => !isIndiaLead(l)), [leads]);
+  // Every CRM view (dashboard, counts, reports) uses these: no India-site leads and no
+  // Calendly-source leads (strategy calls live in the Calendly tab only)
+  const allCrmLeads = useMemo(
+    () => leads.filter((l) => !isIndiaLead(l) && !(l.source || "").toLowerCase().includes("calendly")),
+    [leads]
+  );
   const sourceWebsiteCount = useMemo(() => allCrmLeads.filter((l) => !isMetaLead(l) && (l.source || "").toLowerCase().trim() !== "manual").length, [allCrmLeads]);
   const sourceManualCount = useMemo(() => allCrmLeads.filter((l) => (l.source || "").toLowerCase().trim() === "manual").length, [allCrmLeads]);
   const sourceMetaCount = useMemo(() => allCrmLeads.filter((l) => isMetaLead(l)).length, [allCrmLeads]);
@@ -3922,7 +3927,7 @@ function AdminPage() {
                       </div>
                       <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700">Latest Inbound Leads</h3>
                       <span className="rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs font-bold text-blue-700 font-mono">
-                        {leads.length}
+                        {allCrmLeads.length}
                       </span>
                     </div>
                     <button
@@ -3935,7 +3940,7 @@ function AdminPage() {
                   </div>
 
                   <div className="divide-y divide-slate-100 max-h-[300px] overflow-y-auto pr-1 space-y-1">
-                    {leads.slice(0, 6).map((l) => (
+                    {allCrmLeads.slice(0, 6).map((l) => (
                       <div
                         key={l.id}
                         onClick={() => setViewLeadDetails(l)}
@@ -3973,7 +3978,7 @@ function AdminPage() {
                         </div>
                       </div>
                     ))}
-                    {leads.length === 0 && (
+                    {allCrmLeads.length === 0 && (
                       <div className="py-12 text-center text-xs text-slate-400">
                         <Layers className="h-6 w-6 text-slate-300 mx-auto mb-2" />
                         No leads received yet.
@@ -7985,16 +7990,16 @@ function AdminPage() {
                     <div className="rounded-xl border border-slate-200 p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <h4 className="text-xs font-bold text-slate-900">1. Lead Acquisition Source Breakdown</h4>
-                        <span className="text-[11px] font-semibold text-slate-500">{leads.length} Total</span>
+                        <span className="text-[11px] font-semibold text-slate-500">{allCrmLeads.length} Total</span>
                       </div>
                       <div className="space-y-2 text-xs">
                         {[
-                          { label: "USA Website Direct", count: leads.filter(l => l.source === "USA Website" || l.source === "Website Direct").length, color: "bg-blue-600" },
-                          { label: "Meta Ads (FB/IG)", count: leads.filter(l => (l.source || "").toLowerCase().includes("meta")).length, color: "bg-purple-600" },
-                          { label: "Calendly Strategy Calls", count: leads.filter(l => (l.source || "").toLowerCase().includes("calendly")).length, color: "bg-emerald-600" },
-                          { label: "Manual Direct Entry", count: leads.filter(l => (l.source || "").toLowerCase().includes("manual")).length, color: "bg-amber-500" },
+                          { label: "USA Website Direct", count: allCrmLeads.filter(l => { const s = (l.source || "").toLowerCase(); return s.includes("usa") || s === "website direct"; }).length, color: "bg-blue-600" },
+                          { label: "Meta Ads (FB/IG)", count: allCrmLeads.filter(l => (l.source || "").toLowerCase().includes("meta")).length, color: "bg-purple-600" },
+                          { label: "Calendly Strategy Calls", count: meetings.length, color: "bg-emerald-600" },
+                          { label: "Manual Direct Entry", count: allCrmLeads.filter(l => (l.source || "").toLowerCase().includes("manual")).length, color: "bg-amber-500" },
                         ].map((src, idx) => {
-                          const pct = leads.length > 0 ? Math.round((src.count / leads.length) * 100) : 0;
+                          const pct = allCrmLeads.length > 0 ? Math.round((src.count / allCrmLeads.length) * 100) : 0;
                           return (
                             <div key={idx} className="space-y-1">
                               <div className="flex justify-between text-[11px] font-medium text-slate-700">
