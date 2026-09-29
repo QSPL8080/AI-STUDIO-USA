@@ -1160,13 +1160,35 @@ export async function saveCalendlyMeeting(data: {
   assigned_admin?: string;
   notes?: string;
   is_rescheduled?: boolean;
+  /** Original slot of a rescheduled booking (from Calendly's old_invitee) */
+  previous_meeting_date?: string | undefined;
+  previous_meeting_time?: string | undefined;
 }): Promise<CalendlyMeeting> {
   const id = `meet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const now = new Date().toISOString();
   const isCancelled = data.meeting_status === "cancelled";
-  // A cancellation always wins; "rescheduled" only applies to active bookings
-  const isRescheduled = !isCancelled && (data.is_rescheduled || data.meeting_status === "rescheduled");
+  const isCompleted = data.meeting_status === "completed";
+  // Cancelled / completed always win; "rescheduled" only applies to upcoming bookings
+  const isRescheduled = !isCancelled && !isCompleted && (data.is_rescheduled || data.meeting_status === "rescheduled");
+  // This booking replaced an earlier one (status may now be rescheduled, completed or cancelled)
+  const replacesEarlier = Boolean(data.is_rescheduled) || Boolean(data.previous_meeting_date);
   const finalStatus = isCancelled ? "cancelled" : isRescheduled ? "rescheduled" : ((data.meeting_status as any) || "scheduled");
+  const hasPreviousSlot = Boolean(data.previous_meeting_date && data.previous_meeting_time);
+
+  // Keep a readable history (Booked → Rescheduled → Cancelled) instead of overwriting notes.
+  // Only append when something actually changed, since the sync re-processes events.
+  const mergeNotes = (existing: any): string | undefined => {
+    const prevNotes: string = existing?.notes || "";
+    const newNote = (data.notes || "").trim();
+    if (!newNote) return prevNotes || undefined;
+    if (!prevNotes) return newNote;
+    if (prevNotes.includes(newNote)) return prevNotes;
+    const changed =
+      existing?.meeting_status !== finalStatus ||
+      existing?.meeting_date !== data.meeting_date ||
+      existing?.meeting_time !== data.meeting_time;
+    return changed ? `${prevNotes}\n${newNote}` : prevNotes;
+  };
 
   const record: CalendlyMeeting = {
     id,
@@ -1186,23 +1208,19 @@ export async function saveCalendlyMeeting(data: {
 
   if (getSupabaseConfig()) {
     try {
-      // If rescheduled, lookup existing meeting for this client email to update in place
-      let existing: any[] = [];
-      if (isRescheduled) {
+      // Find the CRM meeting: 1) same slot, 2) original slot of a reschedule,
+      // 3) a reschedule whose original slot is unknown: the client's latest UPCOMING meeting
+      const base = `calendly_meetings?email=eq.${encodeURIComponent(data.email)}&deleted_at=is.null`;
+      const bySlot = (d: string, t: string) =>
+        supabaseRest(`${base}&meeting_date=eq.${encodeURIComponent(d)}&meeting_time=eq.${encodeURIComponent(t)}&order=created_at.desc&limit=1&select=*`);
+      let existing: any[] = await bySlot(data.meeting_date, data.meeting_time);
+      if ((!Array.isArray(existing) || existing.length === 0) && hasPreviousSlot) {
+        existing = await bySlot(data.previous_meeting_date as string, data.previous_meeting_time as string);
+      }
+      if ((!Array.isArray(existing) || existing.length === 0) && replacesEarlier && !hasPreviousSlot) {
         existing = await supabaseRest(
-          `calendly_meetings?email=eq.${encodeURIComponent(data.email)}&deleted_at=is.null&order=created_at.desc&limit=1&select=*`
+          `${base}&meeting_status=in.(scheduled,rescheduled,upcoming)&order=created_at.desc&limit=1&select=*`
         );
-      } else {
-        existing = await supabaseRest(
-          `calendly_meetings?email=eq.${encodeURIComponent(data.email)}&meeting_date=eq.${encodeURIComponent(
-            data.meeting_date
-          )}&meeting_time=eq.${encodeURIComponent(data.meeting_time)}&deleted_at=is.null&select=*`
-        );
-        if (isCancelled && (!Array.isArray(existing) || existing.length === 0)) {
-          existing = await supabaseRest(
-            `calendly_meetings?email=eq.${encodeURIComponent(data.email)}&deleted_at=is.null&order=created_at.desc&limit=1&select=*`
-          );
-        }
       }
 
       if (Array.isArray(existing) && existing.length > 0) {
@@ -1217,7 +1235,7 @@ export async function saveCalendlyMeeting(data: {
             meeting_status: finalStatus,
             meeting_link: data.meeting_link || existingMeeting.meeting_link,
             meeting_type: data.meeting_type || existingMeeting.meeting_type,
-            notes: data.notes || existingMeeting.notes,
+            notes: mergeNotes(existingMeeting),
             ...(isCancelled ? { cancelled_at: existingMeeting.cancelled_at || now } : {}),
           }),
         });
@@ -1246,27 +1264,27 @@ export async function saveCalendlyMeeting(data: {
   try {
     const pool = await getPool();
     if (pool) {
-      let existingMeeting: any = null;
-      if (isRescheduled) {
-        const existingRes = await pool.query(
-          `SELECT * FROM calendly_meetings WHERE email = $1 AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1`,
+      // Find the CRM meeting: 1) same slot, 2) original slot of a reschedule,
+      // 3) a reschedule whose original slot is unknown: the client's latest UPCOMING meeting
+      const bySlot = async (d: string, t: string) =>
+        (
+          await pool.query(
+            `SELECT * FROM calendly_meetings WHERE email = $1 AND meeting_date = $2 AND meeting_time = $3 AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1`,
+            [data.email, d, t]
+          )
+        ).rows[0] || null;
+      let existingMeeting: any = await bySlot(data.meeting_date, data.meeting_time);
+      if (!existingMeeting && hasPreviousSlot) {
+        existingMeeting = await bySlot(data.previous_meeting_date as string, data.previous_meeting_time as string);
+      }
+      if (!existingMeeting && replacesEarlier && !hasPreviousSlot) {
+        const latest = await pool.query(
+          `SELECT * FROM calendly_meetings WHERE email = $1 AND deleted_at IS NULL
+             AND meeting_status IN ('scheduled', 'rescheduled', 'upcoming')
+           ORDER BY created_at DESC LIMIT 1`,
           [data.email]
         );
-        if (existingRes.rows.length > 0) existingMeeting = existingRes.rows[0];
-      } else {
-        const existingRes = await pool.query(
-          `SELECT * FROM calendly_meetings WHERE email = $1 AND meeting_date = $2 AND deleted_at IS NULL LIMIT 1`,
-          [data.email, data.meeting_date]
-        );
-        if (existingRes.rows.length > 0) {
-          existingMeeting = existingRes.rows[0];
-        } else if (finalStatus === "cancelled") {
-          const existingByEmail = await pool.query(
-            `SELECT * FROM calendly_meetings WHERE email = $1 AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1`,
-            [data.email]
-          );
-          if (existingByEmail.rows.length > 0) existingMeeting = existingByEmail.rows[0];
-        }
+        existingMeeting = latest.rows[0] || null;
       }
 
       if (existingMeeting) {
@@ -1286,7 +1304,7 @@ export async function saveCalendlyMeeting(data: {
             data.meeting_time || null,
             finalStatus,
             data.meeting_link || null,
-            data.notes || null,
+            mergeNotes(existingMeeting) || null,
             data.client_name || null,
             data.phone || null,
             existingMeeting.id,
@@ -1612,6 +1630,37 @@ export async function deleteCalendlyMeeting(id: string): Promise<boolean> {
 
 export async function deleteCalendlyMeetings(ids: string[]): Promise<boolean> {
   return softDeleteCalendlyMeetings(ids);
+}
+
+/** Soft-delete meetings saved with placeholder data (old website-widget bug). */
+const PLACEHOLDER_CALENDLY_EMAILS = ["client@calendly-booking.com", "client@calendly.com"];
+export async function removePlaceholderCalendlyMeetings(): Promise<number> {
+  let count = 0;
+  if (getSupabaseConfig()) {
+    try {
+      const rows = await supabaseRest(
+        `calendly_meetings?email=in.(${PLACEHOLDER_CALENDLY_EMAILS.map((e) => `"${e}"`).join(",")})&deleted_at=is.null`,
+        { method: "PATCH", body: JSON.stringify({ deleted_at: new Date().toISOString() }) }
+      );
+      count = Array.isArray(rows) ? rows.length : 0;
+    } catch (e) {
+      console.warn("Supabase removePlaceholderCalendlyMeetings fallback:", e);
+    }
+  }
+  await initDb();
+  try {
+    const pool = await getPool();
+    if (pool) {
+      const res = await pool.query(
+        "UPDATE calendly_meetings SET deleted_at = NOW() WHERE email = ANY($1::text[]) AND deleted_at IS NULL",
+        [PLACEHOLDER_CALENDLY_EMAILS]
+      );
+      count += res.rowCount ?? 0;
+    }
+  } catch (err) {
+    console.error("PostgreSQL removePlaceholderCalendlyMeetings error:", err);
+  }
+  return count;
 }
 
 export async function clearAllCalendlyMeetings(): Promise<boolean> {

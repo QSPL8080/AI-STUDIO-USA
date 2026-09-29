@@ -159,7 +159,8 @@ export default {
           try {
             const body = await request.json();
             const { saveCalendlyMeeting, updateCalendlyMeetingStatus, getCrmSettings, saveCRMNotification } = await import("./lib/db");
-            const { broadcastLeadEvent } = await import("./lib/lead-actions");
+            const { broadcastLeadEvent, getCalendlyApiToken } = await import("./lib/lead-actions");
+            const { classifyCalendlyInvitee, resolvePreviousSlot } = await import("./lib/calendly-status");
 
             const settings = await getCrmSettings();
             const cutoffStr = settings?.["calendly_reset_cutoff_time"];
@@ -200,34 +201,26 @@ export default {
               ? parsedDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/New_York" }) + " EST"
               : "3:00 PM EST";
 
-            const isCancelEvent =
-              eventType.includes("canceled") ||
-              eventType.includes("cancelled") ||
-              invitee.status === "canceled" ||
-              payload.status === "canceled";
-
-            // Calendly marks the OLD booking of a reschedule with rescheduled=true / new_invitee.
-            // That cancel is not a real cancellation; the invitee.created event for the new time
-            // updates the meeting, so ignore it (processing it could overwrite the new date).
-            const cancelledForReschedule =
-              isCancelEvent &&
-              (payload.rescheduled === true ||
-                invitee.rescheduled === true ||
-                Boolean(payload.new_invitee) ||
-                Boolean(invitee.new_invitee));
-            if (cancelledForReschedule) {
+            // Scheduled → Rescheduled → Cancelled rules (shared with the API sync)
+            const decision = classifyCalendlyInvitee({
+              eventType,
+              eventStatus: scheduledEvent?.status,
+              invitee,
+              payload,
+            });
+            // Old slot of a reschedule: the invitee.created event for the new time updates
+            // the meeting, so ignore it (processing it could overwrite the new date).
+            if (decision.action === "ignore") {
               return new Response(
-                JSON.stringify({ success: true, ignored: true, reason: "old_slot_of_reschedule" }),
+                JSON.stringify({ success: true, ignored: true, reason: decision.reason }),
                 { status: 200, headers: { "Content-Type": "application/json" } }
               );
             }
-
-            // A new booking that replaced an earlier one (old_invitee set). A later real
-            // cancellation of that booking still counts as cancelled.
-            const isRescheduled =
-              !isCancelEvent && (Boolean(payload.old_invitee) || Boolean(invitee.old_invitee) || eventType.includes("rescheduled"));
-
-            const status = isCancelEvent ? "cancelled" : isRescheduled ? "rescheduled" : "scheduled";
+            const status = decision.status;
+            const isCancelEvent = status === "cancelled";
+            const isRescheduled = decision.isRescheduled;
+            // Original slot of a rescheduled booking, so exactly that CRM meeting is updated
+            const previousSlot = await resolvePreviousSlot(decision.oldInviteeUri, getCalendlyApiToken(settings));
             const cancellation = payload.cancellation || invitee.cancellation || {};
             const cancelNote = isCancelEvent
               ? `Cancelled in Calendly${cancellation.canceled_by ? ` by ${cancellation.canceled_by}` : ""}${
@@ -245,11 +238,13 @@ export default {
               meeting_link: joinUrl,
               meeting_type: eventTitle,
               is_rescheduled: isRescheduled,
+              previous_meeting_date: previousSlot?.date,
+              previous_meeting_time: previousSlot?.time,
               notes: isCancelEvent
                 ? cancelNote
                 : isRescheduled
                 ? `Rescheduled via Calendly (${meetingDate} at ${meetingTime})`
-                : `Received via Calendly Webhook (${eventType})`,
+                : `Booked via Calendly for ${meetingDate} at ${meetingTime}`,
             });
 
             await saveCRMNotification({

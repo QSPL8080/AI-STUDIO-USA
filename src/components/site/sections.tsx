@@ -2911,33 +2911,20 @@ export function StrategyCall() {
         if (e.data.event === "calendly.event_scheduled") {
           try {
             const { recordCalendlyBookingServerFn } = await import("@/lib/lead-actions");
+            // The widget only provides Calendly URIs (no name / email / time); the server
+            // fetches the real booking so it matches the webhook + sync (no duplicate row).
             const payload = e.data.payload || {};
-            const eventDetails = payload.event || {};
-            const inviteeDetails = payload.invitee || {};
-            const clientName = inviteeDetails.name || "USA Strategy Call Client";
-            const email = inviteeDetails.email || "client@calendly-booking.com";
-            const phone = inviteeDetails.text_reminder_number || "";
-            const startTime = eventDetails.start_time || new Date().toISOString();
-            const parsed = new Date(startTime);
-            const meetingDate = !isNaN(parsed.getTime())
-              ? parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-              : new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-            const meetingTime = !isNaN(parsed.getTime())
-              ? parsed.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) + " EST"
-              : "3:00 PM EST";
-
-            await recordCalendlyBookingServerFn({
-              client_name: clientName,
-              email: email,
-              phone: phone,
-              meeting_date: meetingDate,
-              meeting_time: meetingTime,
-              meeting_status: "scheduled",
-              meeting_link: "https://calendly.com/quickuppaistudio/strategy-call",
-              meeting_type: "AI Video Strategy Call (30 min)",
-              notes: "Booked via embedded Calendly widget on quickuppaistudio.us",
-              raw_event: JSON.stringify(e.data),
-            });
+            const inviteeUri = payload.invitee?.uri;
+            const eventUri = payload.event?.uri;
+            if (inviteeUri) {
+              await recordCalendlyBookingServerFn({
+                data: {
+                  invitee_uri: String(inviteeUri),
+                  event_uri: eventUri ? String(eventUri) : undefined,
+                  notes: "Booked via embedded Calendly widget on quickuppaistudio.us",
+                },
+              });
+            }
           } catch (err) {
             console.error("Failed to auto-record Calendly booking:", err);
           }

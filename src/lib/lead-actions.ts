@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { classifyCalendlyInvitee, resolvePreviousSlot, formatCalendlySlot } from "./calendly-status";
 import {
   saveLead as saveLeadToDb,
   getLeads as getLeadsFromDb,
@@ -33,6 +34,7 @@ import {
   deleteCalendlyMeeting as deleteCalendlyMeetingInDb,
   deleteCalendlyMeetings as deleteCalendlyMeetingsInDb,
   clearAllCalendlyMeetings as clearAllCalendlyMeetingsInDb,
+  removePlaceholderCalendlyMeetings as removePlaceholderCalendlyMeetingsInDb,
   saveCRMNotification as saveCRMNotificationInDb,
   getCRMNotifications as getCRMNotificationsFromDb,
   markNotificationRead as markNotificationReadInDb,
@@ -702,9 +704,20 @@ export const sendAccountActivationRequestServerFn = createServerFn({ method: "PO
 
 
 // Helper to fetch live scheduled events from Calendly API and upsert into DB
+/** Calendly API token: env var, then CRM settings, then the built-in fallback. */
+export function getCalendlyApiToken(settings?: Record<string, string> | null): string {
+  return (process.env.CALENDLY_API_TOKEN ||
+        process.env.VITE_CALENDLY_API_TOKEN ||
+        settings?.["calendly_api_token"] ||
+        settings?.["calendly_personal_access_token"] ||
+        settings?.["CALENDLY_API_TOKEN"] ||
+        "eyJraWQiOiIxY2UxZTEzNjE3ZGNmNzY2YjNjZWJjY2Y4ZGM1YmFmYThhNjVlNjg0MDIzZjdjMzJiZTgzNDliMjM4MDEzNWI0IiwidHlwIjoiUEFUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJodHRwczovL2F1dGguY2FsZW5kbHkuY29tIiwiaWF0IjoxNzkwNjcyODY3LCJqdGkiOiI4ZThmMzc5YS1mNWNkLTQzYTItYjAyMi03ZTdkMmUwMjRmMTQiLCJ1c2VyX3V1aWQiOiJlYjcxODgwNS05YzA3LTQ5MTYtOTBhZC0zNTE1ODQ1MTA3YTciLCJzY29wZSI6ImF2YWlsYWJpbGl0eTpyZWFkIGF2YWlsYWJpbGl0eTp3cml0ZSBldmVudF90eXBlczpyZWFkIGV2ZW50X3R5cGVzOndyaXRlIGxvY2F0aW9uczpyZWFkIHJvdXRpbmdfZm9ybXM6cmVhZCBzaGFyZXM6d3JpdGUgc2NoZWR1bGVkX2V2ZW50czpyZWFkIHNjaGVkdWxlZF9ldmVudHM6d3JpdGUgc2NoZWR1bGluZ19saW5rczp3cml0ZSBncm91cHM6cmVhZCBvcmdhbml6YXRpb25zOnJlYWQgb3JnYW5pemF0aW9uczp3cml0ZSB1c2VyczpyZWFkIG1lZXRpbmdfcmVjYXBzOnJlYWQgbWVldGluZ19yZWNhcHM6d3JpdGUgYWN0aXZpdHlfbG9nOnJlYWQgZGF0YV9jb21wbGlhbmNlOndyaXRlIG91dGdvaW5nX2NvbW11bmljYXRpb25zOnJlYWQgd2ViaG9va3M6cmVhZCB3ZWJob29rczp3cml0ZSBjb250YWN0czpyZWFkIGNvbnRhY3RzOndyaXRlIn0.5dFQT3HoJos1F1_hR5RAldfPFO1J1JfAaxXoKRp7FCLvneq1dBQpuO-f2MRr_i7AjkStqBOvnsO2aBdRpU1j0A") as string;
+}
+
 // Server-side throttle: every open admin tab polls, but Calendly only needs checking
 // about once a minute (the manual "Sync" button bypasses this).
 let lastCalendlySyncAt = 0;
+let placeholderCleanupDone = false;
 const CALENDLY_SYNC_MIN_INTERVAL_MS = 60 * 1000;
 
 export async function syncCalendlyEventsFromApi(opts?: { force?: boolean }): Promise<{ count: number; error?: string; skipped?: boolean }> {
@@ -714,19 +727,21 @@ export async function syncCalendlyEventsFromApi(opts?: { force?: boolean }): Pro
   lastCalendlySyncAt = Date.now();
   try {
     const settings = await getCrmSettingsFromDb();
-    const token =
-      process.env.CALENDLY_API_TOKEN ||
-      process.env.VITE_CALENDLY_API_TOKEN ||
-      settings?.["calendly_api_token"] ||
-      settings?.["calendly_personal_access_token"] ||
-      settings?.["CALENDLY_API_TOKEN"] ||
-      "eyJraWQiOiIxY2UxZTEzNjE3ZGNmNzY2YjNjZWJjY2Y4ZGM1YmFmYThhNjVlNjg0MDIzZjdjMzJiZTgzNDliMjM4MDEzNWI0IiwidHlwIjoiUEFUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJodHRwczovL2F1dGguY2FsZW5kbHkuY29tIiwiaWF0IjoxNzkwNjcyODY3LCJqdGkiOiI4ZThmMzc5YS1mNWNkLTQzYTItYjAyMi03ZTdkMmUwMjRmMTQiLCJ1c2VyX3V1aWQiOiJlYjcxODgwNS05YzA3LTQ5MTYtOTBhZC0zNTE1ODQ1MTA3YTciLCJzY29wZSI6ImF2YWlsYWJpbGl0eTpyZWFkIGF2YWlsYWJpbGl0eTp3cml0ZSBldmVudF90eXBlczpyZWFkIGV2ZW50X3R5cGVzOndyaXRlIGxvY2F0aW9uczpyZWFkIHJvdXRpbmdfZm9ybXM6cmVhZCBzaGFyZXM6d3JpdGUgc2NoZWR1bGVkX2V2ZW50czpyZWFkIHNjaGVkdWxlZF9ldmVudHM6d3JpdGUgc2NoZWR1bGluZ19saW5rczp3cml0ZSBncm91cHM6cmVhZCBvcmdhbml6YXRpb25zOnJlYWQgb3JnYW5pemF0aW9uczp3cml0ZSB1c2VyczpyZWFkIG1lZXRpbmdfcmVjYXBzOnJlYWQgbWVldGluZ19yZWNhcHM6d3JpdGUgYWN0aXZpdHlfbG9nOnJlYWQgZGF0YV9jb21wbGlhbmNlOndyaXRlIG91dGdvaW5nX2NvbW11bmljYXRpb25zOnJlYWQgd2ViaG9va3M6cmVhZCB3ZWJob29rczp3cml0ZSBjb250YWN0czpyZWFkIGNvbnRhY3RzOndyaXRlIn0.5dFQT3HoJos1F1_hR5RAldfPFO1J1JfAaxXoKRp7FCLvneq1dBQpuO-f2MRr_i7AjkStqBOvnsO2aBdRpU1j0A";
+    const token = getCalendlyApiToken(settings);
 
     if (!token) {
       return {
         count: 0,
         error: "Calendly API token not configured.",
       };
+    }
+
+    // Once per server start: hide junk rows the old widget code created with placeholder data
+    if (!placeholderCleanupDone) {
+      placeholderCleanupDone = true;
+      try {
+        await removePlaceholderCalendlyMeetingsInDb();
+      } catch {}
     }
 
     // Retrieve cutoff timestamp to prevent importing historical/pre-reset meetings
@@ -796,27 +811,16 @@ export async function syncCalendlyEventsFromApi(opts?: { force?: boolean }): Pro
             timeZone: "America/New_York",
           }) + " EST";
 
-        const isCanceled = ev.status === "canceled" || invitee.status === "canceled";
-        // Calendly sets rescheduled=true / new_invitee only on the OLD booking that was
-        // replaced by a reschedule. old_invitee is set on the NEW booking, which can itself
-        // be cancelled later, so it must not hide a real cancellation.
-        const cancelledForReschedule =
-          isCanceled && (invitee.rescheduled === true || Boolean(invitee.new_invitee));
-        const isRescheduled = !isCanceled && Boolean(invitee.old_invitee);
-
+        const decision = classifyCalendlyInvitee({ eventStatus: ev.status, endTime: ev.end_time, invitee });
         // The old slot of a reschedule: the new booking carries the meeting forward
-        if (cancelledForReschedule) {
+        if (decision.action === "ignore") {
           continue;
         }
-
-        let status = "scheduled";
-        if (isCanceled) {
-          status = "cancelled";
-        } else if (isRescheduled) {
-          status = "rescheduled";
-        } else {
-          status = "scheduled";
-        }
+        const status = decision.status;
+        const isCanceled = status === "cancelled";
+        const isRescheduled = decision.isRescheduled;
+        // Original slot of a rescheduled booking, so the right CRM meeting is updated
+        const previousSlot = await resolvePreviousSlot(decision.oldInviteeUri, token);
 
         const link = ev.location?.join_url || ev.uri;
         const cancelReason = invitee.cancellation?.reason ? ` (Reason: ${invitee.cancellation.reason})` : "";
@@ -831,11 +835,17 @@ export async function syncCalendlyEventsFromApi(opts?: { force?: boolean }): Pro
           meeting_link: link,
           meeting_type: ev.name || "Quickupp AI Studio - 30 Min Strategy Call",
           is_rescheduled: isRescheduled,
+          previous_meeting_date: previousSlot?.date,
+          previous_meeting_time: previousSlot?.time,
           notes: isCanceled
             ? `Cancelled in Calendly${cancelReason}`
+            : status === "completed"
+            ? decision.action === "save" && decision.noShow
+              ? `Meeting time passed — client marked as NO-SHOW in Calendly (${dateStr} at ${timeStr})`
+              : `Meeting completed (${dateStr} at ${timeStr})`
             : isRescheduled
             ? `Rescheduled in Calendly to ${dateStr} at ${timeStr}`
-            : `Synced from live Calendly API (${ev.status})`,
+            : `Booked in Calendly for ${dateStr} at ${timeStr}`,
         });
 
         syncedCount++;
@@ -985,65 +995,75 @@ export const deleteCalendlyMeetingsBulkServerFn = createServerFn({ method: "POST
     }
   });
 
-// 14. Record Calendly Booking (from widget listener or webhook)
+// 14. Record Calendly Booking (from the website widget). The widget only knows the
+//     Calendly URIs, so the real invitee / event details are fetched from the API.
 export const recordCalendlyBookingServerFn = createServerFn({ method: "POST" })
-  .validator((data: {
-    client_name: string;
-    email: string;
-    phone?: string;
-    meeting_date: string;
-    meeting_time: string;
-    meeting_status?: string;
-    meeting_link: string;
-    meeting_type?: string;
-    notes?: string;
-    raw_event?: string;
-  }) => data)
+  .validator((data: { invitee_uri: string; event_uri?: string | undefined; notes?: string }) => data)
   .handler(async ({ data }) => {
     try {
+      const inviteeUri = (data.invitee_uri || "").trim();
+      if (!inviteeUri.startsWith("https://api.calendly.com/")) {
+        return { success: false, error: "Invalid Calendly invitee URI" };
+      }
+      const settings = await getCrmSettingsFromDb();
+      const token = getCalendlyApiToken(settings);
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const invRes = await fetch(inviteeUri, { headers });
+      if (!invRes.ok) return { success: false, error: `Calendly invitee lookup failed (${invRes.status})` };
+      const invitee = ((await invRes.json()) as any)?.resource;
+      const eventUri = invitee?.event || data.event_uri;
+      if (!invitee?.email || !eventUri) return { success: false, error: "Calendly booking details unavailable" };
+
+      const evRes = await fetch(eventUri, { headers });
+      if (!evRes.ok) return { success: false, error: `Calendly event lookup failed (${evRes.status})` };
+      const ev = ((await evRes.json()) as any)?.resource || {};
+
+      const slot = formatCalendlySlot(ev.start_time);
+      if (!slot) return { success: false, error: "Calendly event has no start time" };
+      const decision = classifyCalendlyInvitee({ eventStatus: ev.status, endTime: ev.end_time, invitee });
+      if (decision.action === "ignore") return { success: true, ignored: true };
+      const previousSlot = await resolvePreviousSlot(decision.oldInviteeUri, token);
+
       const meeting = await saveCalendlyMeetingInDb({
-        client_name: data.client_name,
-        email: data.email,
-        phone: data.phone,
-        meeting_date: data.meeting_date,
-        meeting_time: data.meeting_time,
-        meeting_status: data.meeting_status || "scheduled",
-        meeting_link: data.meeting_link,
-        meeting_type: data.meeting_type || "AI Video Strategy Call (30 min)",
-        notes: data.notes || "Booked via Calendly",
+        client_name: invitee.name || "Calendly Client",
+        email: invitee.email,
+        phone: invitee.text_reminder_number || undefined,
+        meeting_date: slot.date,
+        meeting_time: slot.time,
+        meeting_status: decision.status,
+        meeting_link: ev.location?.join_url || ev.uri,
+        meeting_type: ev.name || "Quickupp AI Studio - 30 Min Strategy Call",
+        is_rescheduled: decision.isRescheduled,
+        previous_meeting_date: previousSlot?.date,
+        previous_meeting_time: previousSlot?.time,
+        notes:
+          decision.status === "rescheduled"
+            ? `Rescheduled in Calendly to ${slot.date} at ${slot.time}`
+            : `Booked in Calendly for ${slot.date} at ${slot.time}`,
       });
 
-      // Also create a linked Lead
+      // Linked lead (saveLead merges duplicates by email / phone)
       const lead = await saveLeadToDb({
         source: "USA Website - Calendly",
-        name: data.client_name,
-        email: data.email,
-        phone: data.phone || "N/A",
-        videoType: data.meeting_type || "AI Video Strategy Call (30 min)",
+        name: invitee.name || "Calendly Client",
+        email: invitee.email,
+        phone: invitee.text_reminder_number || "N/A",
+        videoType: ev.name || "AI Video Strategy Call (30 min)",
         business: "Inbound Calendly Strategy Call",
         status: "New",
-        notes: `Calendly booking on ${data.meeting_date} at ${data.meeting_time}. Meeting Link: ${data.meeting_link}`,
-        meetingDate: data.meeting_date,
-        meetingTime: data.meeting_time,
-        meetingLink: data.meeting_link,
+        notes: `Calendly booking on ${slot.date} at ${slot.time}. Meeting Link: ${ev.location?.join_url || ev.uri}`,
+        meetingDate: slot.date,
+        meetingTime: slot.time,
+        meetingLink: ev.location?.join_url || ev.uri,
       });
 
-      // Activity log
       await addActivityLogInDb({
         lead_id: lead.id,
-        action: "Calendly Meeting Booked",
-        details: `Strategy call scheduled for ${data.client_name} (${data.email}) on ${data.meeting_date} at ${data.meeting_time}`,
+        action: decision.status === "rescheduled" ? "Calendly Meeting Rescheduled" : "Calendly Meeting Booked",
+        details: `Strategy call for ${invitee.name} (${invitee.email}) on ${slot.date} at ${slot.time}`,
         performed_by: "Calendly Integration",
         user_role: "system",
-      });
-
-      // Notification
-      await saveCRMNotificationInDb({
-        type: "meeting_new",
-        title: "New Calendly Meeting Booked",
-        message: `${data.client_name} scheduled a strategy call for ${data.meeting_date} at ${data.meeting_time}`,
-        entity_id: meeting.id,
-        actor: "Calendly",
       });
 
       return { success: true, meeting, lead };
