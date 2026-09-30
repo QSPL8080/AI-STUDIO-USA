@@ -115,15 +115,15 @@ export const submitLeadServerFn = createServerFn({ method: "POST" })
     source: "Contact Form" | "Popup Modal" | "USA - Contact Form" | "USA - Popup Modal" | string;
     name: string;
     phone: string;
-    email?: string;
+    email?: string | undefined;
     videoType: string;
-    videoQuantity?: number | string;
+    videoQuantity?: number | string | undefined;
     business: string;
-    website?: string;
-    location?: string;
-    industry?: string;
-    requirement?: string;
-    additional?: string;
+    website?: string | undefined;
+    location?: string | undefined;
+    industry?: string | undefined;
+    requirement?: string | undefined;
+    additional?: string | undefined;
   }) => data)
   .handler(async ({ data }) => {
     try {
@@ -191,7 +191,7 @@ export const submitLeadServerFn = createServerFn({ method: "POST" })
 
 // 2. Fetch Leads (with optional deleted filter for Recycle Bin)
 export const fetchLeadsServerFn = createServerFn({ method: "GET" })
-  .validator((data?: { includeDeleted?: boolean }) => data || {})
+  .validator((data?: { includeDeleted?: boolean | undefined }) => data || {})
   .handler(async ({ data }) => {
     try {
       const leads = await getLeadsFromDb(data?.includeDeleted || false);
@@ -205,36 +205,36 @@ export const fetchLeadsServerFn = createServerFn({ method: "GET" })
 // 3. Add Manual Lead (Admin / Super Admin)
 export const addManualLeadServerFn = createServerFn({ method: "POST" })
   .validator((data: {
-    source?: string;
+    source?: string | undefined;
     name: string;
     phone: string;
-    email?: string;
+    email?: string | undefined;
     videoType: string;
-    videoQuantity?: number | string;
+    videoQuantity?: number | string | undefined;
     business: string;
-    website?: string;
-    location?: string;
-    industry?: string;
-    requirement?: string;
-    additional?: string;
-    status?: LeadStatus;
-    projectStatus?: ProjectStatus;
-    notes?: string;
-    deliveryDate?: string;
-    meetingDate?: string;
-    meetingTime?: string;
-    meetingLink?: string;
-    meetingType?: string;
-    meetingStatus?: string;
-    campaignName?: string;
-    adsetName?: string;
-    adName?: string;
-    formName?: string;
-    metaLeadId?: string;
-    isDuplicate?: boolean;
-    assignedAdmin?: string;
-    createdBy?: string;
-    userRole?: string;
+    website?: string | undefined;
+    location?: string | undefined;
+    industry?: string | undefined;
+    requirement?: string | undefined;
+    additional?: string | undefined;
+    status?: LeadStatus | undefined;
+    projectStatus?: ProjectStatus | undefined;
+    notes?: string | undefined;
+    deliveryDate?: string | undefined;
+    meetingDate?: string | undefined;
+    meetingTime?: string | undefined;
+    meetingLink?: string | undefined;
+    meetingType?: string | undefined;
+    meetingStatus?: string | undefined;
+    campaignName?: string | undefined;
+    adsetName?: string | undefined;
+    adName?: string | undefined;
+    formName?: string | undefined;
+    metaLeadId?: string | undefined;
+    isDuplicate?: boolean | undefined;
+    assignedAdmin?: string | undefined;
+    createdBy?: string | undefined;
+    userRole?: string | undefined;
   }) => data)
   .handler(async ({ data }) => {
     try {
@@ -297,9 +297,9 @@ export const updateLeadDetailsServerFn = createServerFn({ method: "POST" })
   .validator((data: {
     id: string;
     updates: Partial<Lead>;
-    updatedBy?: string;
-    userRole?: string;
-    changeSummary?: string;
+    updatedBy?: string | undefined;
+    userRole?: string | undefined;
+    changeSummary?: string | undefined;
   }) => data)
   .handler(async ({ data }) => {
     try {
@@ -324,10 +324,10 @@ export const updateLeadStatusServerFn = createServerFn({ method: "POST" })
   .validator((data: {
     id: string;
     status: LeadStatus;
-    closedBy?: string;
-    deliveryDate?: string;
-    closedAt?: string;
-    userRole?: string;
+    closedBy?: string | undefined;
+    deliveryDate?: string | undefined;
+    closedAt?: string | undefined;
+    userRole?: string | undefined;
   }) => data)
   .handler(async ({ data }) => {
     try {
@@ -380,9 +380,9 @@ export const updateProjectStatusServerFn = createServerFn({ method: "POST" })
   .validator((data: {
     id: string;
     projectStatus: ProjectStatus;
-    deliveryDate?: string;
-    performedBy?: string;
-    userRole?: string;
+    deliveryDate?: string | undefined;
+    performedBy?: string | undefined;
+    userRole?: string | undefined;
   }) => data)
   .handler(async ({ data }) => {
     try {
@@ -426,7 +426,7 @@ export const updateProjectStatusServerFn = createServerFn({ method: "POST" })
 
 // 7. Soft Delete (Move to Recycle Bin)
 export const softDeleteLeadServerFn = createServerFn({ method: "POST" })
-  .validator((data: { id: string; performedBy?: string; userRole?: string }) => data)
+  .validator((data: { id: string; performedBy?: string | undefined; userRole?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       const ok = await softDeleteInDb(data.id);
@@ -451,7 +451,7 @@ export const deleteLeadServerFn = softDeleteLeadServerFn;
 
 // 8. Restore Lead from Recycle Bin
 export const restoreLeadServerFn = createServerFn({ method: "POST" })
-  .validator((data: { id: string; performedBy?: string; userRole?: string }) => data)
+  .validator((data: { id: string; performedBy?: string | undefined; userRole?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       const ok = await restoreLeadInDb(data.id);
@@ -473,7 +473,7 @@ export const restoreLeadServerFn = createServerFn({ method: "POST" })
 
 // 9. Permanent Delete (Super Admin only)
 export const permanentDeleteLeadServerFn = createServerFn({ method: "POST" })
-  .validator((data: { id: string; performedBy?: string; userRole?: string }) => data)
+  .validator((data: { id: string; performedBy?: string | undefined; userRole?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       if (data.userRole && data.userRole !== "super_admin") {
@@ -498,7 +498,7 @@ export const permanentDeleteLeadServerFn = createServerFn({ method: "POST" })
 
 // 9b. Bulk Permanent Delete (Super Admin only)
 export const bulkPermanentDeleteLeadsServerFn = createServerFn({ method: "POST" })
-  .validator((data: { ids: string[]; performedBy?: string; userRole?: string }) => data)
+  .validator((data: { ids: string[]; performedBy?: string | undefined; userRole?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       if (data.userRole && data.userRole !== "super_admin") {
@@ -527,7 +527,7 @@ export const bulkPermanentDeleteLeadsServerFn = createServerFn({ method: "POST" 
 
 // 9c. Bulk Restore Leads (Super Admin / Admin)
 export const bulkRestoreLeadsServerFn = createServerFn({ method: "POST" })
-  .validator((data: { ids: string[]; performedBy?: string; userRole?: string }) => data)
+  .validator((data: { ids: string[]; performedBy?: string | undefined; userRole?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       if (!data.ids || data.ids.length === 0) return { success: true, count: 0 };
@@ -553,7 +553,7 @@ export const bulkRestoreLeadsServerFn = createServerFn({ method: "POST" })
 
 // 9d. Empty Entire Recycle Bin (Super Admin only)
 export const emptyRecycleBinServerFn = createServerFn({ method: "POST" })
-  .validator((data: { performedBy?: string; userRole?: string }) => data)
+  .validator((data: { performedBy?: string | undefined; userRole?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       if (data.userRole && data.userRole !== "super_admin") {
@@ -586,7 +586,7 @@ export const fetchActivityLogsServerFn = createServerFn({ method: "GET" })
   });
 
 export const addActivityLogServerFn = createServerFn({ method: "POST" })
-  .validator((data: { lead_id?: string; action: string; details: string; performed_by: string; user_role: string }) => data)
+  .validator((data: { lead_id?: string | undefined; action: string; details: string; performed_by: string; user_role: string }) => data)
   .handler(async ({ data }) => {
     try {
       const log = await addActivityLogInDb(data);
@@ -597,7 +597,7 @@ export const addActivityLogServerFn = createServerFn({ method: "POST" })
   });
 
 export const deleteActivityLogServerFn = createServerFn({ method: "POST" })
-  .validator((data: { id: string; userRole?: string; performedBy?: string }) => data)
+  .validator((data: { id: string; userRole?: string | undefined; performedBy?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       if (data.userRole !== "super_admin") {
@@ -611,7 +611,7 @@ export const deleteActivityLogServerFn = createServerFn({ method: "POST" })
   });
 
 export const deleteActivityLogsBulkServerFn = createServerFn({ method: "POST" })
-  .validator((data: { ids: string[]; userRole?: string; performedBy?: string }) => data)
+  .validator((data: { ids: string[]; userRole?: string | undefined; performedBy?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       if (data.userRole !== "super_admin") {
@@ -628,7 +628,7 @@ export const deleteActivityLogsBulkServerFn = createServerFn({ method: "POST" })
   });
 
 export const clearAllActivityLogsServerFn = createServerFn({ method: "POST" })
-  .validator((data: { userRole?: string; performedBy?: string }) => data)
+  .validator((data: { userRole?: string | undefined; performedBy?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       if (data.userRole !== "super_admin") {
@@ -647,14 +647,14 @@ export const recordLoginLogServerFn = createServerFn({ method: "POST" })
     email: string;
     role: string;
     ip_address: string;
-    location?: string;
-    latitude?: number | null;
-    longitude?: number | null;
-    accuracy?: number | null;
-    distance_meters?: number | null;
-    is_within_geofence?: boolean | null;
+    location?: string | undefined;
+    latitude?: number | null | undefined;
+    longitude?: number | null | undefined;
+    accuracy?: number | null | undefined;
+    distance_meters?: number | null | undefined;
+    is_within_geofence?: boolean | null | undefined;
     user_agent: string;
-    status?: "success" | "failed" | "blocked_location" | "session_terminated" | string;
+    status?: "success" | "failed" | "blocked_location" | "session_terminated" | string | undefined;
   }) => data)
   .handler(async ({ data }) => {
     try {
@@ -687,7 +687,7 @@ export const fetchAdminUsersServerFn = createServerFn({ method: "GET" }).handler
 });
 
 export const createAdminUserServerFn = createServerFn({ method: "POST" })
-  .validator((data: { name: string; email: string; password: string; role: "super_admin" | "admin" | "leads_manager"; status?: "active" | "inactive"; performedBy?: string }) => data)
+  .validator((data: { name: string; email: string; password: string; role: "super_admin" | "admin" | "leads_manager"; status?: "active" | "inactive" | undefined; performedBy?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       // The Super Admin can create Admin and Leads Manager accounts only
@@ -723,7 +723,7 @@ export const createAdminUserServerFn = createServerFn({ method: "POST" })
   });
 
 export const toggleAdminUserStatusServerFn = createServerFn({ method: "POST" })
-  .validator((data: { id: string; status: "active" | "inactive"; email?: string; performedBy?: string }) => data)
+  .validator((data: { id: string; status: "active" | "inactive"; email?: string | undefined; performedBy?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       const cleanEmail = (data.email || "").toLowerCase().trim();
@@ -751,7 +751,7 @@ export const toggleAdminUserStatusServerFn = createServerFn({ method: "POST" })
   });
 
 export const deleteAdminUserServerFn = createServerFn({ method: "POST" })
-  .validator((data: { id: string; email?: string; performedBy?: string }) => data)
+  .validator((data: { id: string; email?: string | undefined; performedBy?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       const cleanEmail = (data.email || "").toLowerCase().trim();
@@ -780,7 +780,7 @@ export const deleteAdminUserServerFn = createServerFn({ method: "POST" })
   });
 
 export const sendAccountActivationRequestServerFn = createServerFn({ method: "POST" })
-  .validator((data: { email: string; name?: string; reason?: string; ip?: string }) => data)
+  .validator((data: { email: string; name?: string | undefined; reason?: string | undefined; ip?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       const cleanEmail = (data.email || "").toLowerCase().trim();
@@ -814,8 +814,8 @@ export const sendAccountActivationRequestServerFn = createServerFn({ method: "PO
 // Helper to fetch live scheduled events from Calendly API and upsert into DB
 /** Calendly API token: env var, then CRM settings, then the built-in fallback. */
 export function getCalendlyApiToken(settings?: Record<string, string> | null): string {
-  return (process.env.CALENDLY_API_TOKEN ||
-        process.env.VITE_CALENDLY_API_TOKEN ||
+  return (process.env["CALENDLY_API_TOKEN"] ||
+        process.env["VITE_CALENDLY_API_TOKEN"] ||
         settings?.["calendly_api_token"] ||
         settings?.["calendly_personal_access_token"] ||
         settings?.["CALENDLY_API_TOKEN"] ||
@@ -828,7 +828,7 @@ let lastCalendlySyncAt = 0;
 let placeholderCleanupDone = false;
 const CALENDLY_SYNC_MIN_INTERVAL_MS = 60 * 1000;
 
-export async function syncCalendlyEventsFromApi(opts?: { force?: boolean }): Promise<{ count: number; error?: string; skipped?: boolean }> {
+export async function syncCalendlyEventsFromApi(opts?: { force?: boolean | undefined }): Promise<{ count: number; error?: string | undefined; skipped?: boolean | undefined }> {
   if (!opts?.force && Date.now() - lastCalendlySyncAt < CALENDLY_SYNC_MIN_INTERVAL_MS) {
     return { count: 0, skipped: true };
   }
@@ -1001,7 +1001,7 @@ export const syncCalendlyEventsServerFn = createServerFn({ method: "POST" }).han
 
 // Programmatic Reset Action for Calendly meetings in CRM
 export const resetCalendlyDataServerFn = createServerFn({ method: "POST" })
-  .validator((data?: { resetBy?: string; userRole?: string }) => data || {})
+  .validator((data?: { resetBy?: string | undefined; userRole?: string | undefined }) => data || {})
   .handler(async ({ data }) => {
     try {
       // Hard-deletes every meeting: Super Admin only
@@ -1060,7 +1060,7 @@ export const cancelCalendlyMeetingServerFn = createServerFn({ method: "POST" })
 // reschedule or cancellation in Calendly still updates the meeting.
 export const setMeetingOutcomeServerFn = createServerFn({ method: "POST" })
   .validator(
-    (data: { id: string; outcome: string; note: string; performedBy?: string; userRole?: string }) => data
+    (data: { id: string; outcome: string; note: string; performedBy?: string | undefined; userRole?: string | undefined }) => data
   )
   .handler(async ({ data }) => {
     try {
@@ -1091,7 +1091,7 @@ export const setMeetingOutcomeServerFn = createServerFn({ method: "POST" })
   });
 
 export const deleteCalendlyMeetingServerFn = createServerFn({ method: "POST" })
-  .validator((data: { id: string; client_name?: string; performedBy?: string; userRole?: string; permanent?: boolean }) => data)
+  .validator((data: { id: string; client_name?: string | undefined; performedBy?: string | undefined; userRole?: string | undefined; permanent?: boolean | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       const isSuper = data.userRole === "super_admin";
@@ -1136,7 +1136,7 @@ export const fetchDeletedCalendlyMeetingsServerFn = createServerFn({ method: "GE
 });
 
 export const restoreCalendlyMeetingServerFn = createServerFn({ method: "POST" })
-  .validator((data: { id: string; client_name?: string; performedBy?: string; userRole?: string }) => data)
+  .validator((data: { id: string; client_name?: string | undefined; performedBy?: string | undefined; userRole?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       await forgetDeletedCalendlyMeeting(data.id);
@@ -1158,7 +1158,7 @@ export const restoreCalendlyMeetingServerFn = createServerFn({ method: "POST" })
   });
 
 export const deleteCalendlyMeetingsBulkServerFn = createServerFn({ method: "POST" })
-  .validator((data: { ids: string[]; performedBy?: string; userRole?: string; permanent?: boolean }) => data)
+  .validator((data: { ids: string[]; performedBy?: string | undefined; userRole?: string | undefined; permanent?: boolean | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       const isSuper = data.userRole === "super_admin";
@@ -1195,7 +1195,7 @@ export const deleteCalendlyMeetingsBulkServerFn = createServerFn({ method: "POST
 // 14. Record Calendly Booking (from the website widget). The widget only knows the
 //     Calendly URIs, so the real invitee / event details are fetched from the API.
 export const recordCalendlyBookingServerFn = createServerFn({ method: "POST" })
-  .validator((data: { invitee_uri: string; event_uri?: string | undefined; notes?: string }) => data)
+  .validator((data: { invitee_uri: string; event_uri?: string | undefined; notes?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       const inviteeUri = (data.invitee_uri || "").trim();
@@ -1257,7 +1257,7 @@ export const recordCalendlyBookingServerFn = createServerFn({ method: "POST" })
 
 // 15. Send Test Calendly Booking Event (for Admins to test live sync)
 export const sendTestCalendlyBookingServerFn = createServerFn({ method: "POST" })
-  .validator((data: { performedBy?: string }) => data)
+  .validator((data: { performedBy?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       const names = [
@@ -1267,8 +1267,8 @@ export const sendTestCalendlyBookingServerFn = createServerFn({ method: "POST" }
         "Sophia Chen (E-Commerce CEO, NYC)",
         "Alexander Hayes (Beverly Hills Dental Group)",
       ];
-      const randomName = names[Math.floor(Math.random() * names.length)];
-      const randomSlug = randomName.split(" ")[0].toLowerCase() + Math.floor(Math.random() * 900 + 100);
+      const randomName = names[Math.floor(Math.random() * names.length)] as string;
+      const randomSlug = (randomName.split(" ")[0] || "client").toLowerCase() + Math.floor(Math.random() * 900 + 100);
       const email = `${randomSlug}@brandventures.us`;
       const phone = `+1 (${Math.floor(Math.random() * 800 + 200)}) ${Math.floor(Math.random() * 800 + 200)}-${Math.floor(Math.random() * 8900 + 1000)}`;
 
@@ -1330,7 +1330,7 @@ export const sendTestCalendlyBookingServerFn = createServerFn({ method: "POST" }
 
 // 16. CRM Notifications Server Functions
 export const fetchNotificationsServerFn = createServerFn({ method: "GET" })
-  .validator((data?: { limit?: number }) => data || {})
+  .validator((data?: { limit?: number | undefined }) => data || {})
   .handler(async ({ data }) => {
     try {
       const notifications = await getCRMNotificationsFromDb(data?.limit || 50);
@@ -1374,10 +1374,10 @@ export const clearNotificationsServerFn = createServerFn({ method: "POST" })
 // Broadcast Channel utility
 export function broadcastLeadEvent(event: {
   type: "NEW_LEAD" | "UPDATE_LEAD" | "DELETE_LEAD" | "RESTORE_LEAD" | "REFRESH_ALL" | "NEW_MEETING" | "NEW_NOTIFICATION";
-  lead?: Lead;
-  meeting?: CalendlyMeeting;
-  notification?: CRMNotification;
-  id?: string;
+  lead?: Lead | undefined;
+  meeting?: CalendlyMeeting | undefined;
+  notification?: CRMNotification | undefined;
+  id?: string | undefined;
 }) {
   if (typeof window === "undefined") return;
   try {
@@ -1416,9 +1416,9 @@ export const saveCrmSettingsServerFn = createServerFn({ method: "POST" })
     platformTitle: string;
     notificationEmail: string;
     syncInterval: number;
-    inactivityTimeout?: number;
-    loginAttempts?: number;
-    performedBy?: string;
+    inactivityTimeout?: number | undefined;
+    loginAttempts?: number | undefined;
+    performedBy?: string | undefined;
   }) => data)
   .handler(async ({ data }) => {
     try {
@@ -1483,7 +1483,7 @@ export const saveAccessControlServerFn = createServerFn({ method: "POST" })
     (data: {
       rolePermissions?: Record<string, Record<string, boolean>>;
       accountStatus?: Record<string, string>;
-      performedBy?: string;
+      performedBy?: string | undefined;
     }) => data
   )
   .handler(async ({ data }) => {
@@ -1537,7 +1537,7 @@ export const saveAccessControlServerFn = createServerFn({ method: "POST" })
 
 // ── Broadcast banner (shown to every logged-in admin) ──────────────────────────
 export const saveBroadcastServerFn = createServerFn({ method: "POST" })
-  .validator((data: { message: string; performedBy?: string }) => data)
+  .validator((data: { message: string; performedBy?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       const message = (data.message || "").trim().slice(0, 300);
@@ -1696,7 +1696,7 @@ async function getLoginThreshold(): Promise<number> {
 }
 
 export const checkLoginLockoutServerFn = createServerFn({ method: "POST" })
-  .validator((data: { email: string; ip?: string }) => data)
+  .validator((data: { email: string; ip?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       const lock = await getActiveLock(data.email);
@@ -1707,7 +1707,7 @@ export const checkLoginLockoutServerFn = createServerFn({ method: "POST" })
   });
 
 export const recordFailedLoginServerFn = createServerFn({ method: "POST" })
-  .validator((data: { email: string; ip?: string; location?: string; userAgent?: string }) => data)
+  .validator((data: { email: string; ip?: string | undefined; location?: string | undefined; userAgent?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
       await addLoginLogInDb({
@@ -1744,12 +1744,12 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
     (data: {
       email: string;
       password: string;
-      latitude?: number | null;
-      longitude?: number | null;
-      accuracy?: number | null;
-      ip?: string;
-      locationName?: string;
-      userAgent?: string;
+      latitude?: number | null | undefined;
+      longitude?: number | null | undefined;
+      accuracy?: number | null | undefined;
+      ip?: string | undefined;
+      locationName?: string | undefined;
+      userAgent?: string | undefined;
     }) => data
   )
   .handler(async ({ data }) => {
@@ -1930,11 +1930,11 @@ export const verifyLocationSessionServerFn = createServerFn({ method: "POST" })
   .validator(
     (data: {
       token: string;
-      latitude?: number | null;
-      longitude?: number | null;
-      accuracy?: number | null;
-      ip?: string;
-      userAgent?: string;
+      latitude?: number | null | undefined;
+      longitude?: number | null | undefined;
+      accuracy?: number | null | undefined;
+      ip?: string | undefined;
+      userAgent?: string | undefined;
     }) => data
   )
   .handler(async ({ data }) => {
