@@ -37,7 +37,7 @@ export function SectionHeading({
   descriptionClassName?: string;
 }) {
   return (
-    <div className={`mb-8 sm:mb-10 max-w-3xl ${center ? "mx-auto text-center" : ""} ${className}`}>
+    <div className={`mb-8 sm:mb-10 max-w-4xl ${center ? "mx-auto text-center" : ""} ${className}`}>
       <span className="eyebrow">
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75"></span>
@@ -54,7 +54,7 @@ export function SectionHeading({
         ) : null}
       </h2>
       {description ? (
-        <p className={`mt-3 text-sm sm:text-base md:text-lg leading-relaxed text-slate-600 ${descriptionClassName}`}>
+        <p className={`mt-3 text-sm sm:text-base md:text-lg leading-relaxed text-slate-600 max-w-2xl ${center ? "mx-auto" : ""} ${descriptionClassName}`}>
           {description}
         </p>
       ) : null}
