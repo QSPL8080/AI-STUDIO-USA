@@ -4431,6 +4431,81 @@ export function Faq() {
   );
 }
 
+export function CreativeScalingCta() {
+  return (
+    <section className="relative overflow-hidden border-t border-purple-200/70 bg-gradient-to-b from-white via-purple-50/40 to-slate-50 py-16 sm:py-20 md:py-24 px-4 sm:px-6">
+      {/* Background ambient lighting */}
+      <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-96 w-full max-w-4xl rounded-full bg-gradient-to-r from-purple-400/15 via-indigo-300/15 to-pink-400/15 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 right-10 h-64 w-64 rounded-full bg-purple-300/10 blur-2xl" />
+
+      <div className="relative z-10 mx-auto max-w-4xl text-center">
+        {/* Eyebrow badge */}
+        <div className="inline-flex items-center gap-2 rounded-full border border-purple-200/90 bg-white/90 px-3.5 py-1.5 text-xs font-semibold text-purple-700 shadow-2xs backdrop-blur-sm mb-6">
+          <Sparkles className="h-3.5 w-3.5 text-purple-600 animate-pulse" />
+          <span>Scale Your Creative Production</span>
+        </div>
+
+        {/* Headline */}
+        <h2 className="font-heading text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.15] max-w-3xl mx-auto">
+          Ready to Create More Ads Without Building a{" "}
+          <span className="bg-gradient-to-r from-purple-600 via-indigo-600 to-fuchsia-600 bg-clip-text text-transparent">
+            Bigger Production Team?
+          </span>
+        </h2>
+
+        {/* Subheadline */}
+        <p className="mt-4 sm:mt-5 text-base sm:text-lg md:text-xl font-medium text-slate-800">
+          Your next creative doesn't need another expensive shoot.
+        </p>
+
+        {/* Description */}
+        <p className="mx-auto mt-2 sm:mt-3 max-w-2xl text-xs sm:text-sm md:text-base text-slate-600 leading-relaxed">
+          Give your marketing team more hooks, more concepts, more angles, and more opportunities to test.
+        </p>
+
+        {/* CTAs */}
+        <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-3.5 sm:gap-4">
+          <a
+            href={calendlyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2.5 rounded-full bg-gradient-brand px-7 py-3.5 text-sm sm:text-base font-bold text-neon-foreground shadow-lg shadow-purple-500/25 transition-all hover:scale-105 hover:brightness-110 active:scale-95 glow-neon"
+          >
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span>Book Your Strategy Call</span>
+          </a>
+
+          <a
+            href="#pricing"
+            className="group inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-7 py-3.5 text-sm sm:text-base font-semibold text-slate-800 shadow-2xs transition-all hover:border-purple-400 hover:bg-purple-50/50 hover:text-purple-700 hover:scale-105 active:scale-95"
+          >
+            <span>View Pricing</span>
+            <ArrowRight className="h-4 w-4 text-slate-500 transition-transform group-hover:translate-x-0.5 group-hover:text-purple-600" />
+          </a>
+        </div>
+
+        {/* Supporting Lines */}
+        <div className="mt-10 sm:mt-12 flex flex-col items-center justify-center gap-2.5 sm:gap-3 border-t border-purple-100/80 pt-6 sm:pt-8 max-w-2xl mx-auto">
+          <div className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs sm:text-sm font-semibold text-purple-800 bg-purple-100/70 border border-purple-200/80 rounded-full px-4 py-1.5 shadow-2xs">
+            <span>AI UGC</span>
+            <span className="text-purple-400">•</span>
+            <span>AI Avatar</span>
+            <span className="text-purple-400">•</span>
+            <span>AI Cartoon</span>
+            <span className="text-purple-400">•</span>
+            <span>Hyper-Realistic</span>
+            <span className="text-purple-400">•</span>
+            <span>Digital Twin</span>
+          </div>
+          <p className="text-xs sm:text-sm font-medium text-slate-500">
+            From Research to Storyboard to Ready-to-Run Ad.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function Contact() {
   const [isInView, setIsInView] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

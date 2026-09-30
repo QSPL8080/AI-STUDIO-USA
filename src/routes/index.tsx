@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Contact,
+  CreativeScalingCta,
   DigitalTwin,
   Faq,
   Footer,
@@ -91,6 +92,7 @@ function Index() {
         <PackageInclusions />
         <Process />
         <Faq />
+        <CreativeScalingCta />
         <DigitalTwin />
         <UseCases />
         <StrategyCall />
