@@ -3861,10 +3861,9 @@ function AdminPage() {
               onClick={() => { setActiveTab("dashboard"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "dashboard"
-                  ? accentNavActive
+                  ? "bg-purple-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
-              style={activeTab === "dashboard" ? accentNavActiveStyle : undefined}
             >
               <LayoutDashboard className="h-4 w-4" />
               <span>Dashboard</span>
@@ -3875,10 +3874,9 @@ function AdminPage() {
               onClick={() => { setActiveTab("leads"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "leads"
-                  ? accentNavActive
+                  ? "bg-purple-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
-              style={activeTab === "leads" ? accentNavActiveStyle : undefined}
             >
               <Layers className="h-4 w-4" />
               <span>Leads Management</span>
@@ -3894,10 +3892,9 @@ function AdminPage() {
               onClick={() => { setActiveTab("meta_leads"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "meta_leads"
-                  ? accentNavActive
+                  ? "bg-purple-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
-              style={activeTab === "meta_leads" ? accentNavActiveStyle : undefined}
             >
               <Megaphone className="h-4 w-4" />
               <span>Meta Leads</span>
@@ -3914,10 +3911,9 @@ function AdminPage() {
               onClick={() => handleSelectOrdersTab()}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "orders"
-                  ? accentNavActive
+                  ? "bg-purple-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
-              style={activeTab === "orders" ? accentNavActiveStyle : undefined}
             >
               <DollarSign className="h-4 w-4" />
               <span>Orders &amp; Payments</span>
@@ -3934,10 +3930,9 @@ function AdminPage() {
               onClick={() => { setActiveTab("calendly"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "calendly"
-                  ? accentNavActive
+                  ? "bg-purple-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
-              style={activeTab === "calendly" ? accentNavActiveStyle : undefined}
             >
               <Calendar className="h-4 w-4" />
               <span>Calendly (USA)</span>
@@ -3954,10 +3949,9 @@ function AdminPage() {
               onClick={() => { setActiveTab("activity"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "activity"
-                  ? accentNavActive
+                  ? "bg-purple-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
-              style={activeTab === "activity" ? accentNavActiveStyle : undefined}
             >
               <Clock className="h-4 w-4" />
               <span>Activity History</span>
@@ -3973,7 +3967,7 @@ function AdminPage() {
                   className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                     activeTab === "users"
                       ? "bg-purple-600 text-white shadow-sm"
-                      : "text-purple-700 hover:bg-purple-50"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
                   <Users className="h-4 w-4" />
@@ -3987,7 +3981,7 @@ function AdminPage() {
                   className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                     activeTab === "security"
                       ? "bg-purple-600 text-white shadow-sm"
-                      : "text-purple-700 hover:bg-purple-50"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
                   <ShieldAlert className="h-4 w-4" />
@@ -4001,7 +3995,7 @@ function AdminPage() {
                   className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                     activeTab === "settings"
                       ? "bg-purple-600 text-white shadow-sm"
-                      : "text-purple-700 hover:bg-purple-50"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
                   <Settings className="h-4 w-4" />
@@ -4016,14 +4010,16 @@ function AdminPage() {
               onClick={() => { setActiveTab("recycle_bin"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "recycle_bin"
-                  ? "bg-red-600 text-white shadow-sm"
+                  ? "bg-purple-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
             >
               <Trash2 className="h-4 w-4" />
               <span>Recycle Bin</span>
               {recycleBinItems.length > 0 && (
-                <span className="rounded-full bg-red-100 px-1.5 py-0.2 text-[10px] font-extrabold text-red-700">
+                <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
+                  activeTab === "recycle_bin" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
+                }`}>
                   {recycleBinItems.length}
                 </span>
               )}
