@@ -1305,12 +1305,12 @@ export function WhyQuickuppAiStudio() {
     },
   ];
 
-  // Auto-change active benefit card every 3 seconds
+  // Auto-change active benefit card every 6 seconds (relaxed reading pace)
   useEffect(() => {
     if (isPaused) return;
     const timer = setInterval(() => {
       setActiveBenefit((prev) => (prev + 1) % benefits.length);
-    }, 3000);
+    }, 6000);
     return () => clearInterval(timer);
   }, [isPaused, benefits.length]);
 
@@ -1434,11 +1434,11 @@ export function WhyQuickuppAiStudio() {
                   key={activeBenefit}
                   className="group relative overflow-hidden rounded-2xl p-6 sm:p-7 border border-purple-200/80 bg-white/70 backdrop-blur-xl shadow-xl shadow-purple-500/10 transition-all duration-500 text-left flex flex-col justify-between min-h-[220px] sm:min-h-[240px]"
                 >
-                  {/* Running 3-second progress indicator */}
+                  {/* Running 6-second progress indicator */}
                   <div
                     className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600"
                     style={{
-                      animation: isPaused ? "none" : "scaleProgress 3s linear infinite",
+                      animation: isPaused ? "none" : "scaleProgress 6s linear infinite",
                     }}
                   />
 
