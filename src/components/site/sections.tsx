@@ -3919,7 +3919,13 @@ export function WhoWeServe() {
             {current.pitchPoints && current.pitchPoints.length > 0 && (
               <div className="space-y-2 pt-1">
                 {current.pitchPoints.map((point, i) => (
-                  <div key={i} className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-800">
+                  <div
+                    key={`${current.id}-pitch-${i}`}
+                    style={{ transitionDelay: `${i * 80}ms` }}
+                    className={`flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-800 transition-all duration-400 ${
+                      isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+                    }`}
+                  >
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-700 text-xs font-bold shadow-2xs">
                       ✓
                     </span>
@@ -3937,8 +3943,11 @@ export function WhoWeServe() {
               <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {current.industries.map((ind, i) => (
                   <span
-                    key={i}
-                    className="rounded-full bg-white border border-purple-100/90 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-purple-50 hover:text-purple-900 hover:border-purple-300 transition-colors shadow-2xs"
+                    key={`${current.id}-ind-${ind}`}
+                    style={{ transitionDelay: `${i * 45}ms` }}
+                    className={`rounded-full bg-white border border-purple-100/90 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-purple-50 hover:text-purple-900 hover:border-purple-300 transition-all duration-400 shadow-2xs ${
+                      isInView ? "opacity-100 scale-100" : "opacity-0 scale-90"
+                    }`}
                   >
                     {ind}
                   </span>
@@ -4003,10 +4012,17 @@ export function WhoWeServe() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
               {current.formats.map((fmt, i) => (
                 <div
-                  key={i}
-                  className="flex items-center gap-3 py-2 px-3 rounded-xl bg-white border border-slate-200/80 shadow-2xs hover:border-purple-300 hover:shadow-xs transition-all"
+                  key={`${current.id}-${fmt}`}
+                  style={{
+                    transitionDelay: `${i * 90}ms`,
+                  }}
+                  className={`flex items-center gap-3 py-2 px-3 rounded-xl bg-white border border-slate-200/80 shadow-2xs hover:border-purple-300 hover:shadow-xs transition-all duration-500 ease-out ${
+                    isInView
+                      ? "opacity-100 translate-y-0 scale-100"
+                      : "opacity-0 translate-y-4 scale-95"
+                  }`}
                 >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-700 text-xs font-bold">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-700 text-xs font-bold shadow-2xs">
                     ✓
                   </span>
                   <span className="text-xs sm:text-sm font-medium text-slate-800">
