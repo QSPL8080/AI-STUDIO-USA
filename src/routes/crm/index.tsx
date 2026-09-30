@@ -84,6 +84,7 @@ import {
   recordLoginLogServerFn,
   fetchLoginLogsServerFn,
   deleteLoginLogsServerFn,
+  fetchRecordCountsServerFn,
   checkCrmAccountServerFn,
   fetchAdminUsersServerFn,
   fetchDataVersionServerFn,
@@ -1101,6 +1102,43 @@ function AdminPage() {
       document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
     };
   }, [session, appliedInactivityTimeout]);
+
+  // CRM Settings → Access All Records: live counts straight from the database,
+  // refreshed on the CRM auto-sync interval while the tab is open.
+  type RecordCounts = {
+    activeLeads: number; recycleBin: number; totalOrders: number; paidOrders: number; revenue: number;
+    calendlyCalls: number | null; adminAccounts: number; activeAdminAccounts: number;
+    activityLogs: number | null; securityLogs: number | null;
+  };
+  const [recordCounts, setRecordCounts] = useState<RecordCounts | null>(null);
+  const [recordCountsAt, setRecordCountsAt] = useState<string | null>(null);
+  const [recordCountsError, setRecordCountsError] = useState<string | null>(null);
+  const [isLoadingRecordCounts, setIsLoadingRecordCounts] = useState(false);
+  const loadRecordCounts = async () => {
+    if (!session?.token || session.role !== "super_admin") return;
+    setIsLoadingRecordCounts(true);
+    try {
+      const res = await fetchRecordCountsServerFn({ data: { token: session.token } });
+      if (res.success) {
+        setRecordCounts(res.counts);
+        setRecordCountsAt(res.checkedAt);
+        setRecordCountsError(null);
+      } else {
+        setRecordCountsError(res.error || "Could not read the database");
+      }
+    } catch (err: any) {
+      setRecordCountsError(err?.message || "Could not read the database");
+    } finally {
+      setIsLoadingRecordCounts(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab !== "settings" || crmSettingsSubTab !== "records" || session?.role !== "super_admin") return;
+    loadRecordCounts();
+    const id = setInterval(loadRecordCounts, (appliedSyncInterval || 10) * 1000);
+    return () => clearInterval(id);
+  }, [activeTab, crmSettingsSubTab, appliedSyncInterval, session?.token, session?.role]);
 
   // Account watchdog: if the Super Admin deletes or deactivates this account, any browser
   // still using it is signed out within ~5 seconds. Other accounts are unaffected.
@@ -8185,80 +8223,64 @@ function AdminPage() {
                         <span>Live Database Master Record Counters</span>
                       </h3>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Real-time inspection of total record counts across all system tables and database collections.
+                        Counted directly from the database. Updates automatically every {appliedSyncInterval} seconds while this tab is open.
                       </p>
                     </div>
 
                     <button
-                      onClick={() => fetchAllData(false)}
-                      disabled={isSyncing}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+                      onClick={() => { loadRecordCounts(); fetchAllData(true); }}
+                      disabled={isLoadingRecordCounts}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0 disabled:opacity-60"
                     >
-                      <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? "animate-spin" : ""}`} />
-                      <span>{isSyncing ? "Syncing..." : "Force Deep Index Refresh"}</span>
+                      <RefreshCw className={`h-3.5 w-3.5 ${isLoadingRecordCounts ? "animate-spin" : ""}`} />
+                      <span>{isLoadingRecordCounts ? "Counting..." : "Refresh Now"}</span>
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-2 border-t border-slate-100">
-                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Leads</div>
-                      <div className="text-2xl font-black text-slate-900 mt-1">{leads.length}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">Website + Meta leads</div>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Recycle Bin</div>
-                      <div className="text-2xl font-black text-slate-900 mt-1">{recycleBinLeads.length}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">Soft-deleted items</div>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Orders</div>
-                      <div className="text-2xl font-black text-slate-900 mt-1">{orders.length}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">PayPal transactions</div>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Revenue</div>
-                      <div className="text-2xl font-black text-emerald-700 mt-1">
-                        ${orders.filter(o => (o.payment_status || "").toUpperCase() === "COMPLETED").reduce((sum, o) => sum + (Number(o.amount) || 0), 0).toLocaleString()}
+                  {(() => {
+                    const c = recordCounts;
+                    const show = (n: number | null | undefined) => (c ? (n === null || n === undefined ? "—" : n.toLocaleString()) : "…");
+                    const tiles: { label: string; value: string; hint: string; accent?: boolean }[] = [
+                      { label: "Active Leads", value: show(c?.activeLeads), hint: "Website + Meta leads (not deleted)" },
+                      { label: "Recycle Bin", value: show(c?.recycleBin), hint: "Soft-deleted leads" },
+                      { label: "Total Orders", value: show(c?.totalOrders), hint: c ? `${c.paidOrders} paid • ${c.totalOrders - c.paidOrders} unpaid` : "PayPal orders" },
+                      { label: "Total Revenue", value: c ? `$${c.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "…", hint: "Completed payments only", accent: true },
+                      { label: "Calendly Calls", value: show(c?.calendlyCalls), hint: "Meetings (not deleted)" },
+                      { label: "Admin Accounts", value: show(c?.adminAccounts), hint: c ? `${c.activeAdminAccounts} active` : "CRM user accounts" },
+                      { label: "Activity Logs", value: show(c?.activityLogs), hint: "Audit history entries" },
+                      { label: "Security Logs", value: show(c?.securityLogs), hint: "Login & IP tracking entries" },
+                    ];
+                    return (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-2 border-t border-slate-100">
+                        {tiles.map((t) => (
+                          <div key={t.label} className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t.label}</div>
+                            <div className={`text-2xl font-black mt-1 ${t.accent ? "text-emerald-700" : "text-slate-900"}`}>{t.value}</div>
+                            <div className="text-[10px] text-slate-400 mt-0.5">{t.hint}</div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">Captured payments</div>
-                    </div>
+                    );
+                  })()}
 
-                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Calendly Calls</div>
-                      <div className="text-2xl font-black text-slate-900 mt-1">{meetings.length}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">Booked sessions</div>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Admin Accounts</div>
-                      <div className="text-2xl font-black text-slate-900 mt-1">{adminUsers.length}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">Provisioned users</div>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Activity Logs</div>
-                      <div className="text-2xl font-black text-slate-900 mt-1">{activityLogs.length}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">Audit history entries</div>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Security Logs</div>
-                      <div className="text-2xl font-black text-slate-900 mt-1">{loginLogs.length}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">Login & IP tracking</div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4 text-xs text-slate-600 flex items-center justify-between">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4 text-xs text-slate-600 flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <span className="font-bold text-slate-800">Database Engine Architecture:</span> SQLite Local Storage • WAL Journal Mode • Direct Server Function Execution
+                      <span className="font-bold text-slate-800">Database:</span> Supabase (PostgreSQL)
+                      {recordCountsAt && (
+                        <span className="text-slate-400"> • Last counted {new Date(recordCountsAt).toLocaleTimeString()}</span>
+                      )}
                     </div>
-                    <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[11px]">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                      Status: Online & Healthy
-                    </span>
+                    {recordCountsError ? (
+                      <span className="inline-flex items-center gap-1.5 text-red-700 font-bold text-[11px]">
+                        <span className="h-2 w-2 rounded-full bg-red-500" />
+                        Status: {recordCountsError}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[11px]">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                        Status: {recordCounts ? "Online & Healthy" : "Connecting…"}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

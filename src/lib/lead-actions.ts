@@ -3,6 +3,8 @@ import { classifyCalendlyInvitee, resolvePreviousSlot, formatCalendlySlot } from
 import {
   saveLead as saveLeadToDb,
   getLeads as getLeadsFromDb,
+  countTableRows,
+  getOrders as getOrdersForCountsFromDb,
   getCrmSettings as getCrmSettingsFromDb,
   countRecentFailedLogins,
   saveCrmSettings as saveCrmSettingsToDb,
@@ -665,6 +667,56 @@ export const recordLoginLogServerFn = createServerFn({ method: "POST" })
       return { success: true, log };
     } catch (error: any) {
       return { success: false, error: error.message };
+    }
+  });
+
+// Live record counters for CRM Settings → Access All Records (Super Admin only).
+// Everything is counted from the database at request time, using the same rules as
+// the CRM tabs (Calendly calls and India-site leads are not counted as leads).
+export const fetchRecordCountsServerFn = createServerFn({ method: "POST" })
+  .validator((data: { token?: string | undefined }) => data)
+  .handler(async ({ data }) => {
+    const who = decodeAndVerifySessionToken(data.token || "");
+    if (!who.valid || who.payload?.role !== "super_admin") {
+      return { success: false as const, error: "Only Super Admin can view record counters." };
+    }
+    try {
+      const isIndia = (src?: string | null, loc?: string | null) => {
+        const s = (src || "").toLowerCase().trim();
+        if (/contact|popup|modal|quote|usa|website|manual|meta|facebook|instagram|calendly/.test(s)) return false;
+        const l = (loc || "").toLowerCase().trim();
+        return s.includes("india") || s.includes("in -") || /\bindia\b/.test(l) || l.includes("bharat");
+      };
+      const [leads, orders, meetings, admins, activity, logins] = await Promise.all([
+        getLeadsFromDb(true),
+        getOrdersForCountsFromDb(),
+        countTableRows("calendly_meetings", { supabase: "deleted_at=is.null", sql: "deleted_at IS NULL" }),
+        getAdminUsersFromDb(),
+        countTableRows("activity_logs"),
+        countTableRows("login_logs"),
+      ]);
+      const crmLeads = leads.filter(
+        (l) => !isIndia(l.source, l.location) && !(l.source || "").toLowerCase().includes("calendly")
+      );
+      const paid = orders.filter((o) => String(o.payment_status).toUpperCase() === "COMPLETED");
+      return {
+        success: true as const,
+        counts: {
+          activeLeads: crmLeads.filter((l) => !l.deleted_at).length,
+          recycleBin: crmLeads.filter((l) => !!l.deleted_at).length,
+          totalOrders: orders.length,
+          paidOrders: paid.length,
+          revenue: paid.reduce((sum, o) => sum + (Number(o.amount) || 0), 0),
+          calendlyCalls: meetings,
+          adminAccounts: admins.length,
+          activeAdminAccounts: admins.filter((u) => u.status !== "inactive").length,
+          activityLogs: activity,
+          securityLogs: logins,
+        },
+        checkedAt: new Date().toISOString(),
+      };
+    } catch (error: any) {
+      return { success: false as const, error: error?.message || "Could not read record counts" };
     }
   });
 

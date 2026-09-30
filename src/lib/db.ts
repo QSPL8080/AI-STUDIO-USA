@@ -1212,6 +1212,46 @@ export async function addLoginLog(data: {
   return record;
 }
 
+// Exact row count of a table (optionally filtered), straight from the database.
+// Returns null when the database can't be read.
+export async function countTableRows(
+  table: "leads" | "orders" | "calendly_meetings" | "admin_users" | "activity_logs" | "login_logs",
+  filter?: { supabase: string; sql: string } | undefined
+): Promise<number | null> {
+  const config = getSupabaseConfig();
+  if (config) {
+    try {
+      const qs = `select=id${filter ? `&${filter.supabase}` : ""}&limit=1`;
+      const res = await fetch(`${config.url}/rest/v1/${table}?${qs}`, {
+        headers: {
+          apikey: config.key,
+          Authorization: `Bearer ${config.key}`,
+          Prefer: "count=exact",
+          Range: "0-0",
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (res.ok || res.status === 206) {
+        const total = Number((res.headers.get("content-range") || "").split("/")[1]);
+        if (Number.isFinite(total)) return total;
+      }
+    } catch (e) {
+      console.warn(`Supabase count ${table} fallback:`, e);
+    }
+  }
+  await initDb();
+  try {
+    const pool = await getPool();
+    if (pool) {
+      const res = await pool.query(`SELECT COUNT(*)::int AS n FROM ${table}${filter ? ` WHERE ${filter.sql}` : ""}`);
+      return Number(res.rows[0]?.n ?? 0);
+    }
+  } catch (err) {
+    console.error(`PostgreSQL count ${table} error:`, err);
+  }
+  return null;
+}
+
 export async function deleteLoginLogs(ids: string[]): Promise<boolean> {
   if (!ids || ids.length === 0) return true;
   let ok = false;
