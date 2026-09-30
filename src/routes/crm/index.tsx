@@ -1118,6 +1118,7 @@ function AdminPage() {
     if (!session?.token || session.role !== "super_admin") return;
     setIsLoadingRecordCounts(true);
     try {
+      fetchAdminUsersList();
       const res = await fetchRecordCountsServerFn({ data: { token: session.token } });
       if (res.success) {
         setRecordCounts(res.counts);
@@ -8234,7 +8235,12 @@ function AdminPage() {
                       { label: "Total Orders", value: show(c?.totalOrders), hint: c ? `${c.paidOrders} paid • ${c.totalOrders - c.paidOrders} unpaid` : "PayPal orders" },
                       { label: "Total Revenue", value: c ? `$${c.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "…", hint: "Completed payments only", accent: true },
                       { label: "Calendly Calls", value: show(c?.calendlyCalls), hint: "Meetings (not deleted)" },
-                      { label: "Admin Accounts", value: show(c?.adminAccounts), hint: c ? `${c.activeAdminAccounts} active` : "CRM user accounts" },
+                      {
+                        // Same list as User Management: existing accounts only (deleted ones are gone)
+                        label: "User Accounts",
+                        value: uniqueAdminUsers.length.toLocaleString(),
+                        hint: `${uniqueAdminUsers.filter((u) => u.status !== "inactive").length} active • ${uniqueAdminUsers.filter((u) => u.status === "inactive").length} deactivated`,
+                      },
                       { label: "Activity Logs", value: show(c?.activityLogs), hint: "Audit history entries" },
                       { label: "Security Logs", value: show(c?.securityLogs), hint: "Login & IP tracking entries" },
                     ];
