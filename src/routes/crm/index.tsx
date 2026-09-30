@@ -84,6 +84,7 @@ import {
   recordLoginLogServerFn,
   fetchLoginLogsServerFn,
   deleteLoginLogsServerFn,
+  checkCrmAccountServerFn,
   fetchAdminUsersServerFn,
   fetchDataVersionServerFn,
   fetchCrmSettingsServerFn,
@@ -902,7 +903,7 @@ function AdminPage() {
     const savedSession = sessionStorage.getItem("ai_studio_auth_session") || localStorage.getItem("ai_studio_auth_session");
     const lastActiveStr = sessionStorage.getItem("crm_last_active") || localStorage.getItem("crm_last_active");
     const lastActive = lastActiveStr ? Number(lastActiveStr) : Date.now();
-    const timeoutMs = (appliedInactivityTimeout || 30) * 60 * 1000;
+    const timeoutMs = (appliedInactivityTimeout || 10) * 60 * 1000;
 
     if (savedSession) {
       try {
@@ -1096,6 +1097,8 @@ function AdminPage() {
       lastActivityTime = now;
       try {
         sessionStorage.setItem("crm_last_active", now.toString());
+        // Also in localStorage, so a reopened tab can't skip the inactivity timeout.
+        localStorage.setItem("crm_last_active", now.toString());
       } catch {}
     };
 
@@ -1150,6 +1153,35 @@ function AdminPage() {
       document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
     };
   }, [session, appliedInactivityTimeout]);
+
+  // Account watchdog: if the Super Admin deletes or deactivates this account, any browser
+  // still using it is signed out within ~5 seconds. Other accounts are unaffected.
+  useEffect(() => {
+    if (!session || session.role === "super_admin" || !session.token) return;
+    let stopped = false;
+    const token = session.token;
+    const check = async () => {
+      try {
+        const res = await checkCrmAccountServerFn({ data: { token } });
+        if (!stopped && !res.active && res.reason !== "invalid") {
+          stopped = true;
+          handleLogout();
+          setAuthError("Your session has ended. Please contact your administrator.");
+        }
+      } catch {}
+    };
+    check();
+    const id = setInterval(check, 5000);
+    const onFocus = () => check();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      stopped = true;
+      clearInterval(id);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [session?.token, session?.role]);
 
   // Real-Time Incoming Notifications
   const handleIncomingLead = (newLead: Lead) => {

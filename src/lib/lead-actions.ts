@@ -1966,6 +1966,20 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
     }
   });
 
+// Lightweight "is my account still allowed?" check, polled every few seconds by open CRMs
+// so a deleted or deactivated account is signed out almost immediately.
+export const checkCrmAccountServerFn = createServerFn({ method: "POST" })
+  .validator((data: { token?: string | undefined }) => data)
+  .handler(async ({ data }) => {
+    const check = decodeAndVerifySessionToken(data.token || "");
+    if (!check.valid || !check.payload) return { active: false as const, reason: "invalid" };
+    if (check.payload.role === "super_admin") return { active: true as const };
+    const state = await getAdminAccountState(check.payload.email);
+    // "unknown" = database not readable right now: never log people out for that.
+    if (state === "missing" || state === "inactive") return { active: false as const, reason: state };
+    return { active: true as const };
+  });
+
 export const verifyLocationSessionServerFn = createServerFn({ method: "POST" })
   .validator(
     (data: {
