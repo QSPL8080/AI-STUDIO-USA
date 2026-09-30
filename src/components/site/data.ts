@@ -57,53 +57,84 @@ export type PortfolioCategory = (typeof portfolioFilters)[number];
 
 export const portfolioItems = [
   {
-    title: "Skincare & Beauty",
+    title: "Rhode Peptide Glazing Fluid",
     format: "AI UGC",
     industry: "Skincare & Beauty",
     description:
       "Authentic creator-style morning routine and product review for Rhode Peptide Glazing Fluid.",
     videoUrl: "/videos/Portfolio 1.mp4",
+    isSpecConcept: true,
+    specLabel: "AI VIDEO SPEC CONCEPT",
   },
   {
-    title: "Luxury Haircare & Beauty",
+    title: "Dyson Airwrap Styler",
     format: "AI UGC",
     industry: "Luxury Haircare & Beauty",
     description:
       "Authentic creator-style hair styling routine and product spotlight reel for Dyson Airwrap.",
     videoUrl: "/videos/Portfolio 2.mp4",
+    isSpecConcept: true,
+    specLabel: "AI VIDEO SPEC CONCEPT",
   },
   {
-    title: "High Jewelry & Gemstones",
+    title: "Bvlgari Fine Jewelry",
     format: "Hyper-Realistic",
     industry: "High Jewelry & Gemstones",
     description:
       "Cinematic reveal commercial showcasing Bvlgari fine jewelry with volcanic gemstone transitions and macro studio lighting.",
     videoUrl: "/videos/Portfolio 3.mp4",
+    isSpecConcept: true,
+    specLabel: "SPEC AD / UNOFFICIAL CONCEPT",
   },
   {
-    title: "Athletic Footwear & Sportswear",
+    title: "Nike Performance Footwear",
     format: "AI UGC",
     industry: "Athletic Footwear & Sportswear",
     description:
       "High-energy performance commercial featuring Nike running shoes with explosive athlete movements and ground-strike closeups.",
     videoUrl: "/videos/Portfolio 4.mp4",
+    isSpecConcept: true,
+    specLabel: "AI VIDEO SPEC CONCEPT",
   },
   {
-    title: "Luxury Cosmetics & Lip Care",
+    title: "Dior Addict Lip Glow",
     format: "Hyper-Realistic",
     industry: "Luxury Cosmetics & Lip Care",
     description:
       "High-gloss commercial reveal reel showcasing Dior Addict Lip Glow with sensory macro textures and studio lighting.",
     videoUrl: "/videos/Portfolio 5.mp4",
+    isSpecConcept: true,
+    specLabel: "SPEC AD / UNOFFICIAL CONCEPT",
+  },
+  {
+    title: "AI Avatar Presenter",
+    format: "AI Avatar",
+    industry: "Presenter & Spokesperson",
+    description:
+      "Professional presenter-style spokesperson reel for corporate, marketing, and educational content.",
+    videoUrl: "",
+    imageUrl: "",
+    isComingSoon: true,
+  },
+  {
+    title: "AI Cartoon Animation",
+    format: "AI Cartoon",
+    industry: "Creative Animation & Storytelling",
+    description:
+      "Engaging character animation and narrative product storytelling for creative brands.",
+    videoUrl: "",
+    imageUrl: "",
+    isComingSoon: true,
   },
   {
     title: "Digital Twin & Executive",
     format: "Digital Twin",
     industry: "Founder Branding & Executive",
     description:
-      "Founder-led brand update reel powered by a hyper-realistic digital twin — no camera, no studio needed.",
+      "Founder-led video content powered by an AI digital twin without recording every video.",
     videoUrl: "",
-    imageUrl: "/images/Digital%20Twin%20Image.png",
+    imageUrl: "",
+    isComingSoon: true,
   },
 ];
 
