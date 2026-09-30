@@ -3554,38 +3554,20 @@ export function DigitalTwin() {
               isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}
           >
-            <div className="relative group w-full max-w-[340px] sm:max-w-[380px]">
+            <div className="relative group w-full max-w-[320px] sm:max-w-[360px]">
               {/* Subtle ambient backlight glow */}
               <div
                 aria-hidden
-                className="absolute -inset-2 rounded-3xl bg-gradient-to-tr from-purple-600/30 via-pink-500/20 to-indigo-600/30 blur-xl opacity-70 group-hover:opacity-100 transition-opacity duration-500"
+                className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-purple-500/20 via-pink-500/15 to-purple-500/20 blur-lg opacity-60 group-hover:opacity-90 transition-opacity duration-500"
               />
               
-              <div className="relative rounded-3xl border-2 border-purple-200/90 bg-white/90 p-3 sm:p-4 shadow-xl shadow-purple-900/10 backdrop-blur-xl overflow-hidden">
-                <div className="relative aspect-[9/16] w-full overflow-hidden rounded-2xl bg-slate-950 border border-slate-200">
-                  <img
-                    src="/images/digital-twin-image.png"
-                    alt="Digital Twin Setup"
-                    className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  {/* Overlay Top Badge */}
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-slate-950/80 px-3 py-1 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold shadow-sm">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>AI Digital Twin Model</span>
-                  </div>
-
-                  {/* Overlay Bottom Banner */}
-                  <div className="absolute bottom-3 inset-x-3 rounded-xl bg-slate-950/85 p-3 backdrop-blur-md border border-white/10 text-white">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-purple-300 font-mono">ONE-TIME SETUP</span>
-                      <span className="font-mono text-xs font-extrabold text-white bg-purple-600/80 px-2 py-0.5 rounded">$499</span>
-                    </div>
-                    <p className="mt-1 text-[11px] text-slate-300 leading-tight">
-                      Repeatable AI video asset for ongoing content scaling.
-                    </p>
-                  </div>
-                </div>
+              <div className="relative overflow-hidden rounded-2xl shadow-xl shadow-purple-900/10 transition-transform duration-500 group-hover:scale-[1.02]">
+                <img
+                  src="/images/digital-twin-image.png"
+                  alt="Digital Twin Setup"
+                  className="h-auto w-full object-contain block rounded-2xl"
+                  loading="lazy"
+                />
               </div>
             </div>
           </div>
