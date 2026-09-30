@@ -9440,13 +9440,13 @@ function AdminPage() {
                   try {
                     if (kind === "delete") {
                       const res = await deleteAdminUserServerFn({
-                        data: { id: user.id, email: user.email, performedBy: session?.name || "Super Admin" },
+                        data: { id: user.id, email: user.email, performedBy: session?.name || "Super Admin", token: session?.token },
                       });
                       showToast(res.success ? `Account ${user.email} deleted` : res.error || "Failed to delete account");
                     } else {
                       const nextStatus = kind === "deactivate" ? "inactive" : "active";
                       const res = await toggleAdminUserStatusServerFn({
-                        data: { id: user.id, status: nextStatus, email: user.email, performedBy: session?.name || "Super Admin" },
+                        data: { id: user.id, status: nextStatus, email: user.email, performedBy: session?.name || "Super Admin", token: session?.token },
                       });
                       if (res.success) {
                         // Update the row immediately, then confirm from the server
@@ -9540,6 +9540,7 @@ function AdminPage() {
                       role: role || "admin",
                       status: "active",
                       performedBy: session?.name || "Super Admin",
+                      token: session?.token,
                     },
                   });
 

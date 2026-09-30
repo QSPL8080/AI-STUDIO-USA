@@ -1379,19 +1379,7 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
 export async function getAdminAccountState(email: string): Promise<"active" | "inactive" | "missing" | "unknown"> {
   const cleanEmail = (email || "").toLowerCase().trim();
   if (!cleanEmail) return "missing";
-  if (getSupabaseConfig()) {
-    try {
-      const rows = await supabaseRest(
-        `admin_users?select=status&email=ilike.${encodeURIComponent(cleanEmail)}&limit=1`
-      );
-      if (Array.isArray(rows)) {
-        if (rows.length === 0) return "missing";
-        return rows[0]?.status === "inactive" ? "inactive" : "active";
-      }
-    } catch (err) {
-      console.warn("Supabase getAdminAccountState fallback:", err);
-    }
-  }
+  // 1. Direct database (the same source login uses) is authoritative.
   await initDb();
   try {
     const pool = await getPool();
@@ -1402,6 +1390,15 @@ export async function getAdminAccountState(email: string): Promise<"active" | "i
     }
   } catch (err) {
     console.error("PostgreSQL getAdminAccountState error:", err);
+  }
+  // 2. Supabase REST: only trust a row it actually returns (it may hide the table).
+  if (getSupabaseConfig()) {
+    try {
+      const rows = await supabaseRest(`admin_users?select=status&email=ilike.${encodeURIComponent(cleanEmail)}&limit=1`);
+      if (Array.isArray(rows) && rows.length > 0) return rows[0]?.status === "inactive" ? "inactive" : "active";
+    } catch (err) {
+      console.warn("Supabase getAdminAccountState fallback:", err);
+    }
   }
   return "unknown";
 }
@@ -1511,7 +1508,7 @@ export async function updateAdminUserStatus(idOrEmail: string, status: "active" 
     const pool = await getPool();
     if (pool) {
       const res = await pool.query(
-        "UPDATE admin_users SET status = $1 WHERE (id = $2 OR LOWER(email) = LOWER($2)) AND role != 'super_admin' AND LOWER(email) != 'sa@aistudio.us'",
+        "UPDATE admin_users SET status = $1 WHERE (LOWER(id) = LOWER($2) OR LOWER(email) = LOWER($2)) AND role != 'super_admin' AND LOWER(email) != 'sa@aistudio.us'",
         [status, cleanTarget]
       );
       if ((res.rowCount ?? 0) > 0) ok = true;
@@ -1537,7 +1534,7 @@ export async function deleteAdminUser(idOrEmail: string): Promise<boolean> {
     const pool = await getPool();
     if (pool) {
       const res = await pool.query(
-        "DELETE FROM admin_users WHERE (id = $1 OR LOWER(email) = LOWER($1)) AND role != 'super_admin' AND LOWER(email) != 'sa@aistudio.us'",
+        "DELETE FROM admin_users WHERE (LOWER(id) = LOWER($1) OR LOWER(email) = LOWER($1)) AND role != 'super_admin' AND LOWER(email) != 'sa@aistudio.us'",
         [cleanTarget]
       );
       if ((res.rowCount ?? 0) > 0) ok = true;

@@ -778,10 +778,26 @@ export const fetchAdminUsersServerFn = createServerFn({ method: "GET" }).handler
   }
 });
 
+// User Management is Super Admin only: every account change is checked against the signed session.
+// (Super Admin always; an Admin / Leads Manager only if the Permissions Matrix grants "manage_users".)
+async function requireSuperAdmin(token?: string | undefined): Promise<string | null> {
+  const who = decodeAndVerifySessionToken(token || "");
+  if (!who.valid || !who.payload) return "Your session has expired. Please log in again.";
+  if (who.payload.role === "super_admin") return null;
+  try {
+    const st = await getCrmSettingsFromDb();
+    const perms = JSON.parse(st["role_permissions"] || "{}");
+    if (perms?.[who.payload.role]?.["manage_users"] === true) return null;
+  } catch {}
+  return "You don't have permission to manage user accounts.";
+}
+
 export const createAdminUserServerFn = createServerFn({ method: "POST" })
-  .validator((data: { name: string; email: string; password: string; role: "super_admin" | "admin" | "leads_manager"; status?: "active" | "inactive" | undefined; performedBy?: string | undefined }) => data)
+  .validator((data: { name: string; email: string; password: string; role: "super_admin" | "admin" | "leads_manager"; status?: "active" | "inactive" | undefined; performedBy?: string | undefined; token?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
+      const denied = await requireSuperAdmin(data.token);
+      if (denied) return { success: false, error: denied };
       // The Super Admin can create Admin and Leads Manager accounts only
       if (data.role !== "admin" && data.role !== "leads_manager") {
         return { success: false, error: "Only Admin or Leads Manager accounts can be created." };
@@ -801,7 +817,9 @@ export const createAdminUserServerFn = createServerFn({ method: "POST" })
       if (existing) {
         return { success: false, error: `An account with ${cleanEmail} already exists.` };
       }
-      const user = await saveAdminUserInDb({ ...data, email: cleanEmail, status: "active" });
+      const { token: _t, ...accountData } = data;
+      const user = await saveAdminUserInDb({ ...accountData, email: cleanEmail, status: "active" });
+      await bumpDataVersion();
       await addActivityLogInDb({
         action: "Admin Account Created",
         details: `New ${data.role} account created for ${data.name} (${data.email})`,
@@ -815,9 +833,11 @@ export const createAdminUserServerFn = createServerFn({ method: "POST" })
   });
 
 export const toggleAdminUserStatusServerFn = createServerFn({ method: "POST" })
-  .validator((data: { id: string; status: "active" | "inactive"; email?: string | undefined; performedBy?: string | undefined }) => data)
+  .validator((data: { id: string; status: "active" | "inactive"; email?: string | undefined; performedBy?: string | undefined; token?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
+      const denied = await requireSuperAdmin(data.token);
+      if (denied) return { success: false, error: denied };
       const cleanEmail = (data.email || "").toLowerCase().trim();
       const targetId = (data.id || "").toLowerCase().trim();
       if (
@@ -835,6 +855,8 @@ export const toggleAdminUserStatusServerFn = createServerFn({ method: "POST" })
           performed_by: data.performedBy || "Super Admin",
           user_role: "super_admin",
         });
+        // Tell every open CRM to refresh now (lists, counts, live-session badges).
+        await bumpDataVersion();
       }
       return { success: ok };
     } catch (error: any) {
@@ -843,9 +865,11 @@ export const toggleAdminUserStatusServerFn = createServerFn({ method: "POST" })
   });
 
 export const deleteAdminUserServerFn = createServerFn({ method: "POST" })
-  .validator((data: { id: string; email?: string | undefined; performedBy?: string | undefined }) => data)
+  .validator((data: { id: string; email?: string | undefined; performedBy?: string | undefined; token?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
+      const denied = await requireSuperAdmin(data.token);
+      if (denied) return { success: false, error: denied };
       const cleanEmail = (data.email || "").toLowerCase().trim();
       const targetId = (data.id || "").toLowerCase().trim();
       if (
