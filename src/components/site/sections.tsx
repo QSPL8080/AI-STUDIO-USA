@@ -141,37 +141,37 @@ export function Header() {
           >
             <a
               href="/#services"
-              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-all duration-200 hover:bg-white hover:text-purple-700 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
             >
               Services
             </a>
             <a
-              href="/#industries"
-              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-all duration-200 hover:bg-white hover:text-purple-700 hover:shadow-xs active:scale-95"
+              href="/#who-we-serve"
+              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
             >
-              Industries
+              Who We Serve
             </a>
             <a
               href="/portfolio"
-              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-all duration-200 hover:bg-white hover:text-purple-700 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
             >
               Portfolio
             </a>
             <a
               href="/#pricing"
-              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-all duration-200 hover:bg-white hover:text-purple-700 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
             >
               Pricing
             </a>
             <a
               href="/#process"
-              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-all duration-200 hover:bg-white hover:text-purple-700 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
             >
               How It Works
             </a>
             <a
               href="/#faq"
-              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-all duration-200 hover:bg-white hover:text-purple-700 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
             >
               FAQ
             </a>
@@ -254,11 +254,11 @@ export function Header() {
               </a>
 
               <a
-                href="/#industries"
+                href="/#who-we-serve"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex min-h-[44px] items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
               >
-                <span>Industries</span>
+                <span>Who We Serve</span>
                 <span className="text-xs text-purple-600 font-bold">→</span>
               </a>
 
