@@ -57,105 +57,53 @@ export type PortfolioCategory = (typeof portfolioFilters)[number];
 
 export const portfolioItems = [
   {
-    title: "Rhode Peptide Glazing Fluid",
+    title: "Skincare & Beauty",
     format: "AI UGC",
     industry: "Skincare & Beauty",
     description:
       "Authentic creator-style morning routine and product review for Rhode Peptide Glazing Fluid.",
     videoUrl: "/videos/Portfolio 1.mp4",
-    isSpecConcept: true,
-    specLabel: "AI VIDEO SPEC CONCEPT",
   },
   {
-    title: "Dyson Airwrap Styler",
+    title: "Luxury Haircare & Beauty",
     format: "AI UGC",
     industry: "Luxury Haircare & Beauty",
     description:
       "Authentic creator-style hair styling routine and product spotlight reel for Dyson Airwrap.",
     videoUrl: "/videos/Portfolio 2.mp4",
-    isSpecConcept: true,
-    specLabel: "AI VIDEO SPEC CONCEPT",
   },
   {
-    title: "Bvlgari Fine Jewelry",
+    title: "High Jewelry & Gemstones",
     format: "Hyper-Realistic",
     industry: "High Jewelry & Gemstones",
     description:
       "Cinematic reveal commercial showcasing Bvlgari fine jewelry with volcanic gemstone transitions and macro studio lighting.",
     videoUrl: "/videos/Portfolio 3.mp4",
-    isSpecConcept: true,
-    specLabel: "SPEC AD / UNOFFICIAL CONCEPT",
   },
   {
-    title: "Nike Performance Footwear",
+    title: "Athletic Footwear & Sportswear",
     format: "AI UGC",
     industry: "Athletic Footwear & Sportswear",
     description:
       "High-energy performance commercial featuring Nike running shoes with explosive athlete movements and ground-strike closeups.",
     videoUrl: "/videos/Portfolio 4.mp4",
-    isSpecConcept: true,
-    specLabel: "AI VIDEO SPEC CONCEPT",
   },
   {
-    title: "Dior Addict Lip Glow",
+    title: "Luxury Cosmetics & Lip Care",
     format: "Hyper-Realistic",
     industry: "Luxury Cosmetics & Lip Care",
     description:
       "High-gloss commercial reveal reel showcasing Dior Addict Lip Glow with sensory macro textures and studio lighting.",
     videoUrl: "/videos/Portfolio 5.mp4",
-    isSpecConcept: true,
-    specLabel: "SPEC AD / UNOFFICIAL CONCEPT",
   },
   {
-    title: "CeraVe Hydration Routine",
-    format: "AI UGC",
-    industry: "Dermatological Skincare",
-    description:
-      "Engaging creator-led daily skincare hydration routine featuring CeraVe Moisturizing Cream.",
-    videoUrl: "/videos/UGC%20Sample.mp4",
-    isSpecConcept: true,
-    specLabel: "AI VIDEO SPEC CONCEPT",
-  },
-  {
-    title: "Smart Kitchen Cookware",
-    format: "AI Cartoon",
-    industry: "Kitchen & Cookware",
-    description:
-      "3D animated kitchen story: a stressed chef battling smoking pans switches to non-stick cookware, with playful character-led product storytelling.",
-    videoUrl: "/videos/Cartoon%20Sample.mp4",
-    isSpecConcept: false,
-    specLabel: "ORIGINAL AI CONCEPT",
-  },
-  {
-    title: "Radiant Beauty Glow",
-    format: "AI Avatar",
-    industry: "Beauty & Cosmetics",
-    description:
-      "AI avatar presenter reel demonstrating a foundation and concealer makeup routine for a modern beauty brand.",
-    videoUrl: "/videos/Avtar%20Sample.mp4",
-    isSpecConcept: false,
-    specLabel: "ORIGINAL AI CONCEPT",
-  },
-  {
-    title: "DIOR Addict Lip Maximizer",
-    format: "Hyper-Realistic",
-    industry: "Luxury Cosmetics & Beauty",
-    description:
-      "Cinematic 3D hyper-realistic product commercial showcasing DIOR Addict Lip Maximizer with studio lighting and macro details.",
-    videoUrl: "/videos/Hyper%20Realistic%20Sample.mp4",
-    isSpecConcept: true,
-    specLabel: "SPEC AD / UNOFFICIAL CONCEPT",
-  },
-  {
-    title: "Executive AI Persona",
+    title: "Digital Twin & Executive",
     format: "Digital Twin",
     industry: "Founder Branding & Executive",
     description:
       "Founder-led brand update reel powered by a hyper-realistic digital twin — no camera, no studio needed.",
     videoUrl: "",
     imageUrl: "/images/Digital%20Twin%20Image.png",
-    isSpecConcept: false,
-    specLabel: "DIGITAL TWIN CONCEPT",
   },
 ];
 

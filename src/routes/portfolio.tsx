@@ -5,12 +5,10 @@ import {
   Pause,
   Volume2,
   VolumeX,
-  ArrowRight,
   Sparkles,
   Film,
   Calendar,
   Zap,
-  Info,
 } from "lucide-react";
 import {
   Header,
@@ -185,20 +183,8 @@ function VideoCard({ item }: { item: (typeof portfolioItems)[number] }) {
       {/* Gradient Overlays */}
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-transparent to-slate-950/60 pointer-events-none z-10" />
 
-      {/* Top Badges Header */}
-      <div className="z-20 flex items-start justify-between gap-2 w-full">
-        <div className="flex flex-col gap-1.5 items-start">
-          <span className="inline-flex items-center rounded-full bg-purple-600/90 text-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md shadow-sm">
-            {item.format}
-          </span>
-          {item.isSpecConcept && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-slate-900/85 border border-amber-500/40 text-amber-300 px-2 py-0.5 text-[9px] font-semibold tracking-wide backdrop-blur-md">
-              <Info className="h-2.5 w-2.5 shrink-0 text-amber-400" />
-              <span>{item.specLabel || "SPEC CONCEPT"}</span>
-            </span>
-          )}
-        </div>
-
+      {/* Top Controls (Mute button only) */}
+      <div className="z-20 flex items-center justify-end w-full">
         {item.videoUrl && (
           <button
             type="button"
@@ -230,16 +216,11 @@ function VideoCard({ item }: { item: (typeof portfolioItems)[number] }) {
       )}
 
       {/* Bottom Metadata */}
-      <div className="z-20 space-y-1 rounded-xl bg-slate-900/80 p-3 backdrop-blur-md border border-white/10 w-full">
-        {item.title && (
-          <div className="text-xs sm:text-sm font-bold text-white line-clamp-1">
-            {item.title}
-          </div>
-        )}
-        <div className="text-[11px] font-medium text-purple-300">
+      <div className="z-20 space-y-1 rounded-xl bg-black/60 p-3 backdrop-blur-sm border border-white/10 w-full pointer-events-none">
+        <div className="text-xs sm:text-sm font-bold text-neon">
           Industry: {item.industry}
         </div>
-        <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
+        <p className="text-xs text-white/90 line-clamp-2 leading-relaxed">
           {item.description}
         </p>
       </div>
@@ -313,17 +294,6 @@ function PortfolioPage() {
             {filteredItems.map((item, idx) => (
               <VideoCard key={`${item.format}-${item.title}-${idx}`} item={item} />
             ))}
-          </div>
-
-          {/* Spec Concept Notice Disclaimer Box */}
-          <div className="mt-12 rounded-2xl border border-purple-200/70 bg-purple-50/50 p-4 sm:p-6 text-center max-w-3xl mx-auto text-xs text-slate-600 leading-relaxed">
-            <div className="flex items-center justify-center gap-2 font-bold text-slate-800 mb-1">
-              <Info className="h-4 w-4 text-purple-600" />
-              <span>SPEC CONCEPT NOTICE</span>
-            </div>
-            <p>
-              Videos marked with <strong>AI VIDEO SPEC CONCEPT</strong> or <strong>SPEC AD / UNOFFICIAL CONCEPT</strong> are creative speculative concepts produced to demonstrate AI video capabilities. They are not commissioned, endorsed by, or affiliated with the featured brand names or trademarks.
-            </p>
           </div>
 
           {/* Bottom Call to Action Section */}
