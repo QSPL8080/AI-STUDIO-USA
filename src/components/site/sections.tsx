@@ -1000,8 +1000,8 @@ export function HeroOverview() {
         </div>
 
         {/* Headline */}
-        <h1
-          className={`mt-4 sm:mt-5 font-[var(--font-google-sans)] text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.15] tracking-tight text-slate-900 transition-all duration-800 delay-100 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-3xl ${
+        <h2
+          className={`mt-3.5 font-heading text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-slate-900 transition-all duration-800 delay-100 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-3xl ${
             isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-6 blur-sm"
           }`}
         >
@@ -1009,11 +1009,11 @@ export function HeroOverview() {
           <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5">
             Find What Works.
           </span>
-        </h1>
+        </h2>
 
         {/* Description Paragraph 1 */}
         <p
-          className={`mt-3 sm:mt-4 text-base sm:text-lg md:text-xl font-semibold text-slate-800 leading-snug transition-all duration-800 delay-200 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
+          className={`mt-3 text-sm sm:text-base md:text-lg font-semibold text-slate-800 leading-snug transition-all duration-800 delay-200 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
             isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
           }`}
         >
@@ -1022,7 +1022,7 @@ export function HeroOverview() {
 
         {/* Description Paragraph 2 */}
         <p
-          className={`mt-3 text-xs sm:text-sm md:text-base leading-relaxed text-muted-foreground transition-all duration-800 delay-300 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-3xl ${
+          className={`mt-2.5 text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 transition-all duration-800 delay-300 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-3xl ${
             isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
           }`}
         >
@@ -1031,7 +1031,7 @@ export function HeroOverview() {
 
         {/* Description Paragraph 3 */}
         <p
-          className={`mt-2.5 text-xs sm:text-sm leading-relaxed text-muted-foreground transition-all duration-800 delay-400 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
+          className={`mt-2 text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 transition-all duration-800 delay-400 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
             isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
           }`}
         >
@@ -1124,22 +1124,22 @@ export function TrustStrip() {
       <div className="mx-auto w-full max-w-6xl relative z-10">
         {/* Purpose Header */}
         <div className="text-center max-w-3xl mx-auto mb-7 sm:mb-9">
-          <div className="inline-flex items-center gap-2 rounded-full border border-purple-200/80 bg-white/90 px-3.5 py-1 text-xs font-bold text-purple-950 shadow-sm backdrop-blur-md mb-2.5">
+          <span className="eyebrow">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-neon shadow-[0_0_8px_#c850ff]"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.6)]"></span>
             </span>
-            <span className="tracking-wide">Visual Process</span>
-          </div>
+            Visual Process
+          </span>
 
-          <h3 className="font-[var(--font-google-sans)] text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
+          <h2 className="mt-3.5 font-heading text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-slate-900">
             AI Creative{" "}
-            <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1">
+            <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5 whitespace-nowrap">
               Production Partner
             </span>
-          </h3>
+          </h2>
 
-          <p className="mt-2 text-sm sm:text-base font-medium text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-3 text-sm sm:text-base md:text-lg leading-relaxed text-slate-600 max-w-2xl mx-auto">
             Quickupp is an AI creative production partner, not simply an AI video-generation tool.
           </p>
         </div>
@@ -1333,18 +1333,18 @@ export function WhyQuickuppAiStudio() {
           {/* Left Column: Heading, Traditional Overhead & Transition (6 cols) */}
           <div className="lg:col-span-6 flex flex-col text-left">
             {/* Eyebrow */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-purple-200/80 bg-white/90 px-3.5 py-1 text-xs font-bold text-purple-950 shadow-sm backdrop-blur-md mb-3 w-fit">
+            <span className="eyebrow w-fit mb-3">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-neon shadow-[0_0_8px_#c850ff]"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.6)]"></span>
               </span>
-              <span className="tracking-wide">Why Quickupp AI Studio</span>
-            </div>
+              Why Quickupp AI Studio
+            </span>
 
             {/* Heading */}
-            <h2 className="font-[var(--font-google-sans)] text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
+            <h2 className="mt-1 font-heading text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-slate-900">
               Your AI Creative Team —{" "}
-              <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1">
+              <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5 whitespace-nowrap">
                 Without the Production Overhead
               </span>
             </h2>
@@ -1755,17 +1755,17 @@ export function Samples() {
       <div className="mx-auto w-full max-w-7xl relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-purple-200/80 bg-white/95 px-3.5 py-1 text-[11px] font-bold text-purple-950 shadow-sm backdrop-blur-md mb-2.5">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-neon shadow-[0_0_6px_#c850ff]"></span>
+          <span className="eyebrow">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.6)]"></span>
             </span>
-            <span className="tracking-wide">Creative Workflow</span>
-          </div>
+            Creative Workflow
+          </span>
 
-          <h2 className="font-[var(--font-google-sans)] text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
+          <h2 className="mt-3.5 font-heading text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-slate-900">
             11-Step Creative{" "}
-            <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1">
+            <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5 whitespace-nowrap">
               Production Process
             </span>
           </h2>
@@ -2374,22 +2374,22 @@ export function Services() {
       <div className="mx-auto w-full max-w-7xl relative z-10" ref={sectionRef}>
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-purple-200/80 bg-white/95 px-3.5 py-1 text-[11px] font-bold text-purple-950 shadow-sm backdrop-blur-md mb-2.5">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-neon shadow-[0_0_6px_#c850ff]"></span>
+          <span className="eyebrow">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.6)]"></span>
             </span>
-            <span className="tracking-wide">AI Video Services</span>
-          </div>
+            AI Video Services
+          </span>
 
-          <h2 className="font-[var(--font-google-sans)] text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight mb-2.5">
+          <h2 className="mt-3.5 font-heading text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-slate-900">
             AI Video Ad{" "}
-            <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1">
+            <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5 whitespace-nowrap">
               Services
             </span>
           </h2>
 
-          <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-3 text-sm sm:text-base md:text-lg leading-relaxed text-slate-600 max-w-2xl mx-auto">
             Choose the video format that fits your brand, audience, product, and campaign objective.
           </p>
         </div>
@@ -2662,9 +2662,7 @@ export function WhyAiVideo() {
           eyebrow="WHY AI VIDEO ADS"
           title="Why Brands Are Building More Creative With"
           highlight="AI"
-          className="!max-w-5xl"
           description="Modern paid media requires creative volume. Instead of depending on one ad concept, brands can develop multiple creative directions around the same product or offer."
-          descriptionClassName="!text-xs sm:!text-sm text-slate-600 max-w-2xl mx-auto leading-relaxed !mt-2.5"
         />
 
         {/* Variations Eyebrow */}
@@ -2769,7 +2767,7 @@ export function Pricing() {
   return (
     <Section id="pricing" className="relative overflow-hidden bg-aura-diagonal border-y border-purple-100/80">
       <SectionHeading
-        eyebrow="16. PRICING"
+        eyebrow="PRICING"
         title="Simple Pricing."
         highlight="Built for Creative Volume."
         description="Choose the package that fits your volume and production needs with instant checkout."
@@ -3285,7 +3283,6 @@ export function PackageInclusions() {
         title="Every Video"
         highlight="Includes"
         description="Comprehensive end-to-end production included in every single AI video we deliver."
-        descriptionClassName="!text-xs sm:!text-sm text-slate-600 max-w-2xl mx-auto leading-relaxed !mt-2"
         center={true}
       />
 
@@ -3412,20 +3409,23 @@ export function DigitalTwin() {
           }`}
         >
           <span className="eyebrow">
-            <span className="h-1.5 w-1.5 rounded-full bg-neon" />
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.6)]"></span>
+            </span>
             AI Digital Twin Videos
           </span>
-          <h2 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl md:text-4xl">
+          <h2 className="mt-3.5 font-heading text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-slate-900">
             Build Your AI Digital Twin Once.{" "}
-            <span className="font-serif italic text-gradient-brand inline-block pr-1.5">
+            <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5 whitespace-nowrap">
               Create Videos Again and Again.
             </span>
           </h2>
-          <p className="mt-4 text-base font-medium text-slate-800 md:text-lg">
+          <p className="mt-3 text-sm sm:text-base md:text-lg font-semibold text-slate-800">
             Turn your approved appearance and voice into a reusable AI video asset for future
             content.
           </p>
-          <p className="mt-4 text-sm leading-relaxed text-muted-foreground md:text-base">
+          <p className="mt-3 text-xs sm:text-sm md:text-base leading-relaxed text-slate-600">
             Our AI digital twin video service helps founders, doctors, coaches, consultants,
             educators and personal brands create recurring video content using an appropriately
             authorized and client-approved digital twin. Once your digital twin is configured, it
@@ -3438,7 +3438,7 @@ export function DigitalTwin() {
           <div className="mt-6">
             <NeonButton href="#contact">Get Your Digital Twin</NeonButton>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">
+          <p className="mt-4 text-xs text-slate-500">
             Digital twin and voice cloning services require appropriate client authorization and
             consent.
           </p>

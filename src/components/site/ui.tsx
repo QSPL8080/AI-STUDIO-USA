@@ -54,7 +54,7 @@ export function SectionHeading({
         ) : null}
       </h2>
       {description ? (
-        <p className={`mt-3 text-base leading-relaxed text-slate-600 md:text-lg ${descriptionClassName}`}>
+        <p className={`mt-3 text-sm sm:text-base md:text-lg leading-relaxed text-slate-600 ${descriptionClassName}`}>
           {description}
         </p>
       ) : null}
