@@ -572,24 +572,6 @@ function AdminPage() {
     }
     return true;
   });
-  const [crmAccentTheme, setCrmAccentTheme] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("crm_accent_theme") || "slate";
-    }
-    return "slate";
-  });
-  const [crmDensity, setCrmDensity] = useState<"comfortable" | "compact">(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("crm_density") as "comfortable" | "compact") || "comfortable";
-    }
-    return "comfortable";
-  });
-  const [crmHighContrast, setCrmHighContrast] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("crm_high_contrast") === "true";
-    }
-    return false;
-  });
   const [crmInactivityTimeout, setCrmInactivityTimeout] = useState<number>(() => {
     if (typeof window !== "undefined") {
       return Number(localStorage.getItem("crm_inactivity_timeout")) || 10;
@@ -626,7 +608,7 @@ function AdminPage() {
   const [crmBroadcastDraft, setCrmBroadcastDraft] = useState("");
   const [crmSettingsSaved, setCrmSettingsSaved] = useState(false);
   const [crmSettingsSubTab, setCrmSettingsSubTab] = useState<
-    "crm_config" | "colors" | "export" | "permissions" | "records" | "reports" | "security"
+    "crm_config" | "export" | "permissions" | "records" | "reports" | "security"
   >("crm_config");
 
   // Strict Mutually Exclusive Classification for Activity Logs
@@ -883,9 +865,7 @@ function AdminPage() {
   const accentNavActiveStyle = { background: "var(--crm-accent-bg, #0f172a)" } as const;
   // For primary action buttons (Add Lead, Save, etc.)
   const accentBtnStyle = { background: "var(--crm-accent-bg, #0f172a)" } as const;
-  // For density: compact = tighter table row padding
-  const rowPadding = crmDensity === "compact" ? "px-3 py-1.5" : "px-4 py-2.5";
-  const cellPadding = crmDensity === "compact" ? "px-3 py-1" : "px-4 py-2";
+
 
   // Refs for real-time handlers
   const leadsRef = useRef<Lead[]>(leads);
@@ -1053,38 +1033,6 @@ function AdminPage() {
     }
   }, [session, adminUsers]);
 
-  // ── Live Interface Theme Application ──────────────────────────────────────
-  // Whenever accent, density, or contrast changes: persist to localStorage and
-  // apply CSS custom-properties + data-attributes to <html> so every part of
-  // the CRM reflects the change immediately — no save button required.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const root = document.documentElement;
-
-    // Accent colour palette → CSS vars consumed by Tailwind-compatible inline classes
-    const accentMap: Record<string, { bg: string; text: string; ring: string; border: string }> = {
-      slate:      { bg: "#0f172a", text: "#ffffff", ring: "#0f172a40", border: "#0f172a" },
-      royal_blue: { bg: "#2563eb", text: "#ffffff", ring: "#2563eb40", border: "#2563eb" },
-      purple:     { bg: "#9333ea", text: "#ffffff", ring: "#9333ea40", border: "#9333ea" },
-      emerald:    { bg: "#059669", text: "#ffffff", ring: "#05966940", border: "#059669" },
-      indigo:     { bg: "#4338ca", text: "#ffffff", ring: "#4338ca40", border: "#4338ca" },
-    };
-    const accent = accentMap[crmAccentTheme] ||
-      accentMap["slate"] || { bg: "#0f172a", text: "#ffffff", ring: "#0f172a40", border: "#0f172a" };
-    root.style.setProperty("--crm-accent-bg",     accent.bg);
-    root.style.setProperty("--crm-accent-text",   accent.text);
-    root.style.setProperty("--crm-accent-ring",   accent.ring);
-    root.style.setProperty("--crm-accent-border", accent.border);
-
-    // Data-attributes for density + contrast (usable via CSS attribute selectors)
-    root.setAttribute("data-crm-density",   crmDensity);
-    root.setAttribute("data-crm-contrast",  crmHighContrast ? "high" : "normal");
-
-    // Persist
-    localStorage.setItem("crm_accent_theme",  crmAccentTheme);
-    localStorage.setItem("crm_density",       crmDensity);
-    localStorage.setItem("crm_high_contrast", String(crmHighContrast));
-  }, [crmAccentTheme, crmDensity, crmHighContrast]);
 
   // Inactivity Auto-Logout for Super Admin, Admin, & Lead Manager
   useEffect(() => {
@@ -2956,9 +2904,6 @@ function AdminPage() {
       localStorage.removeItem("crm_currency");
       localStorage.setItem("crm_sync_interval", crmSyncInterval.toString());
       localStorage.setItem("crm_audio_enabled", crmAudioEnabled ? "true" : "false");
-      localStorage.setItem("crm_accent_theme", crmAccentTheme);
-      localStorage.setItem("crm_density", crmDensity);
-      localStorage.setItem("crm_high_contrast", crmHighContrast ? "true" : "false");
       localStorage.setItem("crm_inactivity_timeout", crmInactivityTimeout.toString());
       localStorage.setItem("crm_login_attempts", crmLoginAttempts.toString());
     }
@@ -7758,7 +7703,7 @@ function AdminPage() {
               </div>
             </div>
 
-            {/* Sub-Tab Navigation Bar for the 7 Modules */}
+            {/* Sub-Tab Navigation Bar */}
             <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 pb-3">
               <button
                 onClick={() => setCrmSettingsSubTab("crm_config")}
@@ -7773,18 +7718,6 @@ function AdminPage() {
               </button>
 
               <button
-                onClick={() => setCrmSettingsSubTab("colors")}
-                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                  crmSettingsSubTab === "colors"
-                    ? "bg-slate-900 text-white shadow-xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
-                }`}
-              >
-                <Palette className="h-4 w-4" />
-                <span>2. Interface Colors</span>
-              </button>
-
-              <button
                 onClick={() => setCrmSettingsSubTab("export")}
                 className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                   crmSettingsSubTab === "export"
@@ -7793,7 +7726,7 @@ function AdminPage() {
                 }`}
               >
                 <Download className="h-4 w-4" />
-                <span>3. Export CRM Data</span>
+                <span>2. Export CRM Data</span>
               </button>
 
               {isSuperAdmin && (
@@ -7806,7 +7739,7 @@ function AdminPage() {
                 }`}
               >
                 <ShieldCheck className="h-4 w-4" />
-                <span>4. Permissions Matrix</span>
+                <span>3. Permissions Matrix</span>
               </button>
               )}
 
@@ -7819,7 +7752,7 @@ function AdminPage() {
                 }`}
               >
                 <Database className="h-4 w-4" />
-                <span>5. Access All Records</span>
+                <span>4. Access All Records</span>
               </button>
 
               <button
@@ -7831,7 +7764,7 @@ function AdminPage() {
                 }`}
               >
                 <BarChart3 className="h-4 w-4" />
-                <span>6. Dashboard Reports</span>
+                <span>5. Dashboard Reports</span>
               </button>
 
               <button
@@ -7843,7 +7776,7 @@ function AdminPage() {
                 }`}
               >
                 <Lock className="h-4 w-4" />
-                <span>7. Security Settings</span>
+                <span>6. Security Settings</span>
               </button>
             </div>
 
@@ -7942,99 +7875,6 @@ function AdminPage() {
 
             {/* ========================================================================= */}
             {/* MODULE 2: CHANGE CRM / INTERFACE COLORS */}
-            {/* ========================================================================= */}
-            {crmSettingsSubTab === "colors" && (
-              <div className="space-y-5 animate-in fade-in">
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-5">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                      <Palette className="h-4 w-4 text-slate-800" />
-                      <span>CRM Interface Appearance & Color Schemes</span>
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Select primary accent highlights, adjust data density modes, and configure visual layout parameters.
-                    </p>
-                  </div>
-
-                  {/* Accent Color Palettes */}
-                  <div className="space-y-3 pt-2 border-t border-slate-100">
-                    <label className="block text-xs font-bold text-slate-700">Primary Theme Accent Palette</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                      {[
-                        { id: "slate", name: "Slate Minimal", desc: "Clean Monochrome (System Default)", color: "bg-slate-900" },
-                        { id: "royal_blue", name: "Royal Blue", desc: "Classic Corporate Blue", color: "bg-blue-600" },
-                        { id: "purple", name: "Electric Purple", desc: "Super Admin Amethyst", color: "bg-purple-600" },
-                        { id: "emerald", name: "Emerald Green", desc: "High Conversion Forest", color: "bg-emerald-600" },
-                        { id: "indigo", name: "Executive Indigo", desc: "Deep Modern SaaS", color: "bg-indigo-600" },
-                      ].map((item) => (
-                        <div
-                          key={item.id}
-                          onClick={() => setCrmAccentTheme(item.id)}
-                          className={`rounded-xl border p-3.5 cursor-pointer transition-all ${
-                            crmAccentTheme === item.id
-                              ? "border-slate-900 bg-slate-50 ring-2 ring-slate-900/20 shadow-xs"
-                              : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 mb-2">
-                            <span className={`h-4 w-4 rounded-full ${item.color}`} />
-                            <span className="text-xs font-bold text-slate-900">{item.name}</span>
-                          </div>
-                          <p className="text-[11px] text-slate-500">{item.desc}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Layout Density */}
-                  <div className="space-y-3 pt-3 border-t border-slate-100">
-                    <label className="block text-xs font-bold text-slate-700">Interface Row Density</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl">
-                      <div
-                        onClick={() => setCrmDensity("comfortable")}
-                        className={`rounded-xl border p-3.5 cursor-pointer transition-all ${
-                          crmDensity === "comfortable"
-                            ? "border-slate-900 bg-slate-50 ring-2 ring-slate-900/20 shadow-xs"
-                            : "border-slate-200 hover:border-slate-300"
-                        }`}
-                      >
-                        <div className="text-xs font-bold text-slate-900 mb-1">Comfortable (Standard)</div>
-                        <p className="text-[11px] text-slate-500">Spacious table row heights, standard padding, and optimal readability.</p>
-                      </div>
-
-                      <div
-                        onClick={() => setCrmDensity("compact")}
-                        className={`rounded-xl border p-3.5 cursor-pointer transition-all ${
-                          crmDensity === "compact"
-                            ? "border-slate-900 bg-slate-50 ring-2 ring-slate-900/20 shadow-xs"
-                            : "border-slate-200 hover:border-slate-300"
-                        }`}
-                      >
-                        <div className="text-xs font-bold text-slate-900 mb-1">Compact (High Density)</div>
-                        <p className="text-[11px] text-slate-500">Tight data row heights, condensed padding for high-volume lead triaging.</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* High Contrast Toggle */}
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <div>
-                      <div className="text-xs font-bold text-slate-800">High Contrast Grid Borders</div>
-                      <div className="text-[11px] text-slate-400">Enhance outer cell borders across all data tables for maximum visual separation.</div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={crmHighContrast}
-                      onChange={(e) => setCrmHighContrast(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ========================================================================= */}
-            {/* MODULE 3: EXPORT CRM DATA */}
             {/* ========================================================================= */}
             {crmSettingsSubTab === "export" && (
               <div className="space-y-5 animate-in fade-in">
