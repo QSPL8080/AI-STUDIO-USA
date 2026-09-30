@@ -3457,11 +3457,35 @@ export function DigitalTwin() {
       />
 
       <div ref={sectionRef} className="mx-auto w-full max-w-7xl relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          {/* Content Column (Left on desktop) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+          {/* Image Column (Left on desktop) -> Slides in from LEFT */}
           <div
-            className={`lg:col-span-7 flex flex-col text-left transition-all duration-700 ${
-              isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            className={`lg:col-span-5 lg:order-1 flex justify-center items-center transition-all duration-800 ease-out ${
+              isInView ? "opacity-100 translate-x-0 scale-100" : "opacity-0 -translate-x-16 scale-95"
+            }`}
+          >
+            <div className="relative group w-full max-w-[320px] sm:max-w-[360px]">
+              {/* Subtle ambient backlight glow */}
+              <div
+                aria-hidden
+                className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-purple-500/20 via-pink-500/15 to-purple-500/20 blur-lg opacity-60 group-hover:opacity-90 transition-opacity duration-500"
+              />
+              
+              <div className="relative overflow-hidden rounded-2xl shadow-xl shadow-purple-900/10 transition-transform duration-500 group-hover:scale-[1.02]">
+                <img
+                  src="/images/digital-twin-image.png"
+                  alt="Digital Twin Setup"
+                  className="h-auto w-full object-contain block rounded-2xl"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Content Column (Right on desktop) -> Slides in from RIGHT */}
+          <div
+            className={`lg:col-span-7 lg:order-2 flex flex-col text-left transition-all duration-800 ease-out delay-100 ${
+              isInView ? "opacity-100 translate-x-0" : "opacity-0 translate-x-16"
             }`}
           >
             {/* Eyebrow */}
@@ -3545,30 +3569,6 @@ export function DigitalTwin() {
                 <span>Have questions? Contact us</span>
                 <ChevronRight className="h-3.5 w-3.5" />
               </a>
-            </div>
-          </div>
-
-          {/* Image Column (Right on desktop) */}
-          <div
-            className={`lg:col-span-5 flex justify-center items-center transition-all duration-700 delay-150 ${
-              isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-            }`}
-          >
-            <div className="relative group w-full max-w-[320px] sm:max-w-[360px]">
-              {/* Subtle ambient backlight glow */}
-              <div
-                aria-hidden
-                className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-purple-500/20 via-pink-500/15 to-purple-500/20 blur-lg opacity-60 group-hover:opacity-90 transition-opacity duration-500"
-              />
-              
-              <div className="relative overflow-hidden rounded-2xl shadow-xl shadow-purple-900/10 transition-transform duration-500 group-hover:scale-[1.02]">
-                <img
-                  src="/images/digital-twin-image.png"
-                  alt="Digital Twin Setup"
-                  className="h-auto w-full object-contain block rounded-2xl"
-                  loading="lazy"
-                />
-              </div>
             </div>
           </div>
         </div>
