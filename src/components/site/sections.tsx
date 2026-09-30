@@ -945,12 +945,18 @@ export function HeroOverview() {
     return () => observer.disconnect();
   }, []);
 
-  const checklistItems = [
-    "AI UGC",
-    "AI Avatar",
-    "AI Cartoon",
-    "Hyper-Realistic",
-    "Digital Twin",
+  const visualProcessSteps = [
+    "Research",
+    "Strategy",
+    "Hooks",
+    "Concepts",
+    "Scripts",
+    "Storyboard",
+    "AI Production",
+    "Editing",
+    "Sound Design",
+    "Quality Control",
+    "Delivery",
   ];
 
   return (
@@ -1071,24 +1077,51 @@ export function HeroOverview() {
             </div>
           </div>
 
-          {/* Right Column: 5 Video Formats */}
+          {/* Right Column: Visual Process (11-Step Production Pipeline) */}
           <div
-            className={`md:col-span-5 w-full grid grid-cols-2 md:grid-cols-1 gap-2 sm:gap-2.5 lg:gap-3 transition-all duration-800 delay-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            className={`md:col-span-5 w-full flex flex-col rounded-2xl border border-purple-200/80 bg-white/95 p-4 sm:p-5 shadow-lg backdrop-blur-xl transition-all duration-800 delay-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               isVisible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95"
             }`}
           >
-            {checklistItems.map((item, idx) => (
-              <div
-                key={item}
-                className="group flex items-center gap-2 sm:gap-3 rounded-xl border border-slate-200 bg-white/90 px-2.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-slate-800 shadow-sm transition-all duration-300 hover:border-purple-300 hover:bg-purple-50/50 hover:scale-[1.02] hover:shadow-md"
-                style={{ transitionDelay: isVisible ? `${450 + idx * 70}ms` : "0ms" }}
-              >
-                <span className="flex h-4 w-4 sm:h-5 sm:w-5 shrink-0 items-center justify-center rounded-full bg-neon/20 text-neon border border-neon/50 shadow-[0_0_10px_rgba(200,80,255,0.35)] group-hover:scale-110 group-hover:bg-neon group-hover:text-black transition-all duration-200">
-                  <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 stroke-[3]" />
-                </span>
-                <span className="tracking-wide">{item}</span>
+            {/* Purpose Header */}
+            <div className="flex items-center gap-2.5 pb-3 mb-3 border-b border-slate-100">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-brand text-white shadow-xs">
+                <Sparkles className="h-4 w-4" />
+              </span>
+              <div>
+                <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">
+                  Visual Process
+                </h4>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  AI creative production partner — not simply a video tool
+                </p>
               </div>
-            ))}
+            </div>
+
+            {/* Visual Process Stepped Grid / Flow */}
+            <div className="grid grid-cols-2 gap-2">
+              {visualProcessSteps.map((step, idx) => (
+                <div
+                  key={step}
+                  className={`group flex items-center gap-2 rounded-lg border border-slate-200/80 bg-slate-50/70 px-2.5 py-2 text-xs font-semibold text-slate-800 shadow-xs transition-all duration-200 hover:border-purple-300 hover:bg-purple-50/80 hover:scale-[1.02] ${
+                    idx === visualProcessSteps.length - 1 ? "col-span-2 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-300 text-purple-950 font-bold" : ""
+                  }`}
+                  style={{ transitionDelay: isVisible ? `${350 + idx * 30}ms` : "0ms" }}
+                >
+                  <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-md text-[10px] font-bold font-mono ${
+                    idx === visualProcessSteps.length - 1 ? "bg-purple-600 text-white" : "bg-purple-100 text-purple-700"
+                  }`}>
+                    {String(idx + 1).padStart(2, "0")}
+                  </span>
+                  <span className="tracking-tight truncate">{step}</span>
+                  {idx < visualProcessSteps.length - 1 ? (
+                    <ArrowRight className="h-3 w-3 text-purple-400 ml-auto opacity-60 group-hover:opacity-100 shrink-0" />
+                  ) : (
+                    <Check className="h-3.5 w-3.5 text-purple-700 ml-auto shrink-0 stroke-[3]" />
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -1097,22 +1130,58 @@ export function HeroOverview() {
 }
 
 export function TrustStrip() {
-  const items = [
-    { icon: Film, label: "5+ AI Video Formats" },
-    { icon: Clock, label: "48–72 Hour Delivery" },
-    { icon: Smartphone, label: "9:16 Reel Ready" },
-    { icon: BadgeCheck, label: "Script + 1 Revision Included" },
+  const steps = [
+    "Research",
+    "Strategy",
+    "Hooks",
+    "Concepts",
+    "Scripts",
+    "Storyboard",
+    "AI Production",
+    "Editing",
+    "Sound Design",
+    "Quality Control",
+    "Delivery",
   ];
 
   return (
-    <section className="border-y border-slate-200/80 bg-white/95 backdrop-blur-md shadow-xs">
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-4 px-5 py-5 lg:grid-cols-4">
-        {items.map((item) => (
-          <div key={item.label} className="flex items-center justify-center gap-3 lg:justify-start">
-            <item.icon className="h-5 w-5 shrink-0 text-neon" />
-            <span className="text-sm font-medium text-foreground">{item.label}</span>
+    <section className="border-y border-slate-200/80 bg-white/95 backdrop-blur-md shadow-xs py-4 sm:py-5 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <div className="mx-auto w-full max-w-7xl">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-6">
+          {/* Purpose Statement: Quickupp is an AI creative production partner */}
+          <div className="flex items-center gap-2.5 shrink-0 text-center lg:text-left">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-brand text-white shadow-xs">
+              <Sparkles className="h-4 w-4" />
+            </span>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-purple-900">
+                AI Creative Production Partner
+              </p>
+              <p className="text-[11px] text-slate-500 font-medium">
+                Not simply an AI video-generation tool — full-funnel creative workflow
+              </p>
+            </div>
           </div>
-        ))}
+
+          {/* Visual Process Flow */}
+          <div className="w-full lg:w-auto overflow-x-auto no-scrollbar py-1">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-max mx-auto lg:mx-0">
+              {steps.map((step, idx) => (
+                <div key={step} className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/90 px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-xs hover:border-purple-300 hover:bg-purple-50/60 transition-colors">
+                    <span className="text-[10px] font-bold text-purple-600 font-mono">
+                      {String(idx + 1).padStart(2, "0")}
+                    </span>
+                    <span>{step}</span>
+                  </div>
+                  {idx < steps.length - 1 && (
+                    <ArrowRight className="h-3 w-3 text-purple-400 shrink-0" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
