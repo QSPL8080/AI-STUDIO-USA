@@ -6,52 +6,52 @@ export interface Lead {
   source: "Contact Form" | "Popup Modal" | "USA - Contact Form" | "USA - Popup Modal" | "Manual" | "Meta" | string;
   name: string;
   phone: string;
-  email?: string;
+  email?: string | undefined;
   video_type: string;
-  video_quantity?: number | string;
+  video_quantity?: number | string | undefined;
   business: string;
-  website?: string;
-  location?: string;
-  industry?: string;
-  requirement?: string;
-  additional?: string;
+  website?: string | undefined;
+  location?: string | undefined;
+  industry?: string | undefined;
+  requirement?: string | undefined;
+  additional?: string | undefined;
   created_at: string;
   status: LeadStatus;
-  project_status?: ProjectStatus;
-  notes?: string;
-  closed_by?: string;
-  closed_at?: string;
-  delivery_date?: string;
-  delivered_at?: string;
-  meeting_date?: string;
-  meeting_time?: string;
-  meeting_status?: string;
-  meeting_link?: string;
-  meeting_type?: string;
-  assigned_admin?: string;
-  campaign_name?: string;
-  adset_name?: string;
-  ad_name?: string;
-  form_name?: string;
-  meta_lead_id?: string;
-  is_duplicate?: boolean;
-  deleted_at?: string | null;
+  project_status?: ProjectStatus | undefined;
+  notes?: string | undefined;
+  closed_by?: string | undefined;
+  closed_at?: string | undefined;
+  delivery_date?: string | undefined;
+  delivered_at?: string | undefined;
+  meeting_date?: string | undefined;
+  meeting_time?: string | undefined;
+  meeting_status?: string | undefined;
+  meeting_link?: string | undefined;
+  meeting_type?: string | undefined;
+  assigned_admin?: string | undefined;
+  campaign_name?: string | undefined;
+  adset_name?: string | undefined;
+  ad_name?: string | undefined;
+  form_name?: string | undefined;
+  meta_lead_id?: string | undefined;
+  is_duplicate?: boolean | undefined;
+  deleted_at?: string | null | undefined;
 }
 
 export interface AdminUser {
   id: string;
   name: string;
   email: string;
-  password?: string;
+  password?: string | undefined;
   role: "super_admin" | "admin" | "leads_manager";
   status: "active" | "inactive";
   created_at: string;
-  last_login_at?: string;
+  last_login_at?: string | undefined;
 }
 
 export interface ActivityLog {
   id: string;
-  lead_id?: string;
+  lead_id?: string | undefined;
   action: string;
   details: string;
   performed_by: string;
@@ -64,12 +64,12 @@ export interface LoginLog {
   email: string;
   role: string;
   ip_address: string;
-  location?: string;
-  latitude?: number;
-  longitude?: number;
-  accuracy?: number;
-  distance_meters?: number;
-  is_within_geofence?: boolean;
+  location?: string | undefined;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
+  accuracy?: number | undefined;
+  distance_meters?: number | undefined;
+  is_within_geofence?: boolean | undefined;
   user_agent: string;
   created_at: string;
   status: "success" | "failed" | "blocked_location" | "session_terminated" | string;
@@ -77,24 +77,24 @@ export interface LoginLog {
 
 export interface CalendlyMeeting {
   id: string;
-  lead_id?: string;
+  lead_id?: string | undefined;
   client_name: string;
   email: string;
-  phone?: string;
+  phone?: string | undefined;
   meeting_date: string;
   meeting_time: string;
   meeting_status: "scheduled" | "upcoming" | "completed" | "rescheduled" | "cancelled" | string;
   meeting_link: string;
-  meeting_type?: string;
-  assigned_admin?: string;
-  notes?: string;
+  meeting_type?: string | undefined;
+  assigned_admin?: string | undefined;
+  notes?: string | undefined;
   created_at: string;
-  cancelled_at?: string;
-  deleted_at?: string | null;
+  cancelled_at?: string | undefined;
+  deleted_at?: string | null | undefined;
   /** Result recorded by a CRM user (completed / not_conducted / no_show): Calendly sync won't overwrite it */
-  outcome_locked?: boolean | null;
-  outcome_set_by?: string | null;
-  outcome_set_at?: string | null;
+  outcome_locked?: boolean | null | undefined;
+  outcome_set_by?: string | null | undefined;
+  outcome_set_at?: string | null | undefined;
 }
 
 /** Statuses that describe what happened after the meeting time (a CRM user can set these) */
@@ -119,8 +119,8 @@ export interface CRMNotification {
     | string;
   title: string;
   message: string;
-  entity_id?: string;
-  actor?: string;
+  entity_id?: string | undefined;
+  actor?: string | undefined;
   is_read: boolean;
   created_at: string;
 }
@@ -150,8 +150,8 @@ export interface Order {
 let pgPool: any = null;
 
 function getSupabaseConfig() {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const key = process.env.SUPABASE_API_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_API_KEY;
+  const url = process.env["SUPABASE_URL"] || process.env["VITE_SUPABASE_URL"];
+  const key = process.env["SUPABASE_API_KEY"] || process.env["SUPABASE_ANON_KEY"] || process.env["VITE_SUPABASE_API_KEY"];
   if (url && key) {
     return { url, key };
   }
@@ -190,7 +190,7 @@ async function getPool() {
   if (!pgPool) {
     const pg = await import("pg");
     const Pool = pg.default?.Pool || pg.Pool;
-    const connectionString = process.env.DATABASE_URL || process.env.VITE_DATABASE_URL;
+    const connectionString = process.env["DATABASE_URL"] || process.env["VITE_DATABASE_URL"];
     if (!connectionString) return null;
 
     let cleanConnectionString = connectionString.trim();
@@ -201,7 +201,7 @@ async function getPool() {
       !cleanConnectionString.includes("localhost");
 
     if (cleanConnectionString.includes("?sslmode=")) {
-      cleanConnectionString = cleanConnectionString.split("?sslmode=")[0];
+      cleanConnectionString = cleanConnectionString.split("?sslmode=")[0] ?? cleanConnectionString;
     } else if (cleanConnectionString.includes("&sslmode=")) {
       cleanConnectionString = cleanConnectionString.replace(/&sslmode=[^&]+/, "");
     }
@@ -484,31 +484,31 @@ export async function saveLead(data: {
   source: string;
   name: string;
   phone: string;
-  email?: string;
+  email?: string | undefined;
   videoType: string;
-  videoQuantity?: number | string;
+  videoQuantity?: number | string | undefined;
   business: string;
-  website?: string;
-  location?: string;
-  industry?: string;
-  requirement?: string;
-  additional?: string;
-  status?: LeadStatus;
-  projectStatus?: ProjectStatus;
-  notes?: string;
-  deliveryDate?: string;
-  meetingDate?: string;
-  meetingTime?: string;
-  meetingLink?: string;
-  meetingType?: string;
-  meetingStatus?: string;
-  assignedAdmin?: string;
-  campaignName?: string;
-  adsetName?: string;
-  adName?: string;
-  formName?: string;
-  metaLeadId?: string;
-  isDuplicate?: boolean;
+  website?: string | undefined;
+  location?: string | undefined;
+  industry?: string | undefined;
+  requirement?: string | undefined;
+  additional?: string | undefined;
+  status?: LeadStatus | undefined;
+  projectStatus?: ProjectStatus | undefined;
+  notes?: string | undefined;
+  deliveryDate?: string | undefined;
+  meetingDate?: string | undefined;
+  meetingTime?: string | undefined;
+  meetingLink?: string | undefined;
+  meetingType?: string | undefined;
+  meetingStatus?: string | undefined;
+  assignedAdmin?: string | undefined;
+  campaignName?: string | undefined;
+  adsetName?: string | undefined;
+  adName?: string | undefined;
+  formName?: string | undefined;
+  metaLeadId?: string | undefined;
+  isDuplicate?: boolean | undefined;
 }): Promise<Lead> {
   const id = `lead_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const status: LeadStatus = data.status || "New";
@@ -523,7 +523,7 @@ export async function saveLead(data: {
     const metaId = data.metaLeadId?.trim();
 
     // Leads duplicate check: website form submissions belong to this USA CRM
-    const isIndiaRegion = (src?: string, loc?: string, phone?: string) => {
+    const isIndiaRegion = (src?: string | undefined, loc?: string | undefined, phone?: string) => {
       const s = (src || "").toLowerCase().trim();
       if (
         s.includes("contact") ||
@@ -821,7 +821,7 @@ export async function updateLead(id: string, updates: Partial<Lead>): Promise<bo
   // Synchronize in-memory store
   const memIdx = inMemoryLeads.findIndex((l) => l.id === id);
   if (memIdx >= 0) {
-    inMemoryLeads[memIdx] = { ...inMemoryLeads[memIdx], ...updates };
+    inMemoryLeads[memIdx] = { ...inMemoryLeads[memIdx], ...updates } as Lead;
     ok = true;
   }
 
@@ -831,7 +831,7 @@ export async function updateLead(id: string, updates: Partial<Lead>): Promise<bo
 export async function updateLeadStatus(
   id: string,
   status: Lead["status"],
-  meta?: { closed_by?: string; delivery_date?: string; closed_at?: string }
+  meta?: { closed_by?: string | undefined; delivery_date?: string | undefined; closed_at?: string | undefined }
 ): Promise<boolean> {
   const payload: Partial<Lead> = { status };
   if (status === "Closed") {
@@ -922,7 +922,7 @@ export async function emptyRecycleBin(): Promise<number> {
   }
 
   for (let i = inMemoryLeads.length - 1; i >= 0; i--) {
-    if (inMemoryLeads[i].deleted_at) {
+    if (inMemoryLeads[i]?.deleted_at) {
       inMemoryLeads.splice(i, 1);
       deletedCount++;
     }
@@ -935,7 +935,7 @@ export async function emptyRecycleBin(): Promise<number> {
 // ACTIVITY LOGS
 // ==========================================
 export async function addActivityLog(data: {
-  lead_id?: string;
+  lead_id?: string | undefined;
   action: string;
   details: string;
   performed_by: string;
@@ -1087,14 +1087,14 @@ export async function addLoginLog(data: {
   email: string;
   role: string;
   ip_address: string;
-  location?: string;
-  latitude?: number | null;
-  longitude?: number | null;
-  accuracy?: number | null;
-  distance_meters?: number | null;
-  is_within_geofence?: boolean | null;
+  location?: string | undefined;
+  latitude?: number | null | undefined;
+  longitude?: number | null | undefined;
+  accuracy?: number | null | undefined;
+  distance_meters?: number | null | undefined;
+  is_within_geofence?: boolean | null | undefined;
   user_agent: string;
-  status?: "success" | "failed" | "blocked_location" | "session_terminated" | string;
+  status?: "success" | "failed" | "blocked_location" | "session_terminated" | string | undefined;
 }): Promise<LoginLog> {
   const id = `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const now = new Date().toISOString();
@@ -1288,7 +1288,7 @@ export async function saveAdminUser(user: {
   email: string;
   password: string;
   role: "super_admin" | "admin" | "leads_manager";
-  status?: "active" | "inactive";
+  status?: "active" | "inactive" | undefined;
 }): Promise<AdminUser> {
   const id = `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const cleanEmail = user.email.toLowerCase().trim();
@@ -1399,7 +1399,7 @@ export async function deleteAdminUser(idOrEmail: string): Promise<boolean> {
 // Key = client email + meeting date + time (normalised), stored in crm_settings.
 const DELETED_SLOTS_KEY = "calendly_deleted_slots";
 
-export function calendlySlotKey(email?: string, date?: string, time?: string): string {
+export function calendlySlotKey(email?: string | undefined, date?: string | undefined, time?: string): string {
   const e = (email || "").toLowerCase().trim();
   const cleanTime = String(time || "").replace(/\s*E[SD]T$/i, "").trim();
   let d = String(date || "").trim();
@@ -1461,18 +1461,18 @@ export async function forgetDeletedCalendlyMeeting(id: string): Promise<void> {
 }
 
 export async function saveCalendlyMeeting(data: {
-  lead_id?: string;
+  lead_id?: string | undefined;
   client_name: string;
   email: string;
-  phone?: string;
+  phone?: string | undefined;
   meeting_date: string;
   meeting_time: string;
-  meeting_status?: string;
+  meeting_status?: string | undefined;
   meeting_link: string;
-  meeting_type?: string;
-  assigned_admin?: string;
-  notes?: string;
-  is_rescheduled?: boolean;
+  meeting_type?: string | undefined;
+  assigned_admin?: string | undefined;
+  notes?: string | undefined;
+  is_rescheduled?: boolean | undefined;
   /** Original slot of a rescheduled booking (from Calendly's old_invitee) */
   previous_meeting_date?: string | undefined;
   previous_meeting_time?: string | undefined;
@@ -1785,7 +1785,7 @@ export async function getCalendlyMeetings(includeDeleted = false): Promise<Calen
 export async function updateCalendlyMeetingStatus(
   id: string,
   status: string,
-  notes?: string,
+  notes?: string | undefined,
   cancelled_at?: string
 ): Promise<boolean> {
   const cancelTimestamp = status === "cancelled" ? (cancelled_at || new Date().toISOString()) : null;
@@ -2148,8 +2148,8 @@ export async function saveCRMNotification(data: {
   type: string;
   title: string;
   message: string;
-  entity_id?: string;
-  actor?: string;
+  entity_id?: string | undefined;
+  actor?: string | undefined;
 }): Promise<CRMNotification> {
   const id = `notif_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const now = new Date().toISOString();

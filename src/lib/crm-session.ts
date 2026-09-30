@@ -6,10 +6,10 @@ export interface CrmSessionPayload {
   email: string;
   name: string;
   role: "super_admin" | "admin" | "leads_manager";
-  latitude?: number | null;
-  longitude?: number | null;
-  accuracy?: number | null;
-  distanceMeters?: number | null;
+  latitude?: number | null | undefined;
+  longitude?: number | null | undefined;
+  accuracy?: number | null | undefined;
+  distanceMeters?: number | null | undefined;
   issuedAt: number;
   lastVerifiedAt: number;
   expiresAt: number;
@@ -17,17 +17,17 @@ export interface CrmSessionPayload {
 
 export interface SessionVerificationResult {
   valid: boolean;
-  payload?: CrmSessionPayload;
-  locationResult?: LocationEvaluationResult;
-  error?: string;
-  errorCode?: "EXPIRED" | "INVALID_SIGNATURE" | "OUT_OF_BOUNDS" | "MISSING_LOCATION" | "POOR_ACCURACY" | "MALFORMED";
+  payload?: CrmSessionPayload | undefined;
+  locationResult?: LocationEvaluationResult | undefined;
+  error?: string | undefined;
+  errorCode?: "EXPIRED" | "INVALID_SIGNATURE" | "OUT_OF_BOUNDS" | "MISSING_LOCATION" | "POOR_ACCURACY" | "MALFORMED" | undefined;
 }
 
 const DEFAULT_SECRET = "quickupp_ai_studio_crm_geo_secret_2026_secure_key_#8080";
 
 function getSessionSecret(): string {
-  if (typeof process !== "undefined" && process.env?.CRM_SESSION_SECRET) {
-    return process.env.CRM_SESSION_SECRET;
+  if (typeof process !== "undefined" && process.env?.["CRM_SESSION_SECRET"]) {
+    return process.env["CRM_SESSION_SECRET"];
   }
   return DEFAULT_SECRET;
 }
@@ -62,10 +62,10 @@ export function createCrmSessionToken(
     role: "super_admin" | "admin" | "leads_manager";
   },
   location?: {
-    latitude?: number | null;
-    longitude?: number | null;
-    accuracy?: number | null;
-    distanceMeters?: number | null;
+    latitude?: number | null | undefined;
+    longitude?: number | null | undefined;
+    accuracy?: number | null | undefined;
+    distanceMeters?: number | null | undefined;
   },
   durationHours: number = 24
 ): string {
@@ -96,7 +96,7 @@ export function createCrmSessionToken(
 /**
  * Decodes and verifies the cryptographic signature of a CRM session token.
  */
-export function decodeAndVerifySessionToken(tokenString: string): { valid: boolean; payload?: CrmSessionPayload; error?: string } {
+export function decodeAndVerifySessionToken(tokenString: string): { valid: boolean; payload?: CrmSessionPayload | undefined; error?: string | undefined } {
   if (!tokenString || typeof tokenString !== "string") {
     return { valid: false, error: "Missing session token" };
   }
@@ -106,7 +106,8 @@ export function decodeAndVerifySessionToken(tokenString: string): { valid: boole
     return { valid: false, error: "Malformed session token format" };
   }
 
-  const [encodedPayload, providedSignature] = parts;
+  const encodedPayload = parts[0] as string; // length checked above
+  const providedSignature = parts[1] as string;
   const expectedSignature = signString(encodedPayload, getSessionSecret());
 
   if (providedSignature !== expectedSignature) {
@@ -133,9 +134,9 @@ export function decodeAndVerifySessionToken(tokenString: string): { valid: boole
 export function verifySessionWithLocation(
   tokenString: string,
   freshCoords?: {
-    latitude?: number | null;
-    longitude?: number | null;
-    accuracy?: number | null;
+    latitude?: number | null | undefined;
+    longitude?: number | null | undefined;
+    accuracy?: number | null | undefined;
   }
 ): SessionVerificationResult {
   const tokenCheck = decodeAndVerifySessionToken(tokenString);

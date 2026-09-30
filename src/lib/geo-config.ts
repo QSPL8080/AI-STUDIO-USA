@@ -29,10 +29,10 @@ export const DEFAULT_OFFICE_CONFIG: OfficeGeoConfig = {
  * Environment variables override default values if defined.
  */
 export function getOfficeGeoConfig(): OfficeGeoConfig {
-  const envLat = typeof process !== "undefined" && process.env?.CRM_OFFICE_LAT ? parseFloat(process.env.CRM_OFFICE_LAT) : NaN;
-  const envLng = typeof process !== "undefined" && process.env?.CRM_OFFICE_LNG ? parseFloat(process.env.CRM_OFFICE_LNG) : NaN;
-  const envRadius = typeof process !== "undefined" && process.env?.CRM_ALLOWED_RADIUS_METERS ? parseFloat(process.env.CRM_ALLOWED_RADIUS_METERS) : NaN;
-  const envAccuracy = typeof process !== "undefined" && process.env?.CRM_MAX_ACCURACY_METERS ? parseFloat(process.env.CRM_MAX_ACCURACY_METERS) : NaN;
+  const envLat = typeof process !== "undefined" && process.env?.["CRM_OFFICE_LAT"] ? parseFloat(process.env["CRM_OFFICE_LAT"]) : NaN;
+  const envLng = typeof process !== "undefined" && process.env?.["CRM_OFFICE_LNG"] ? parseFloat(process.env["CRM_OFFICE_LNG"]) : NaN;
+  const envRadius = typeof process !== "undefined" && process.env?.["CRM_ALLOWED_RADIUS_METERS"] ? parseFloat(process.env["CRM_ALLOWED_RADIUS_METERS"]) : NaN;
+  const envAccuracy = typeof process !== "undefined" && process.env?.["CRM_MAX_ACCURACY_METERS"] ? parseFloat(process.env["CRM_MAX_ACCURACY_METERS"]) : NaN;
 
   return {
     name: DEFAULT_OFFICE_CONFIG.name,
@@ -89,11 +89,11 @@ export interface LocationEvaluationResult {
   role: string;
   distanceMeters: number;
   allowedRadiusMeters: number;
-  accuracyMeters?: number;
+  accuracyMeters?: number | undefined;
   isSuperAdminBypass: boolean;
   isAccuracyPoor: boolean;
   status: "authorized" | "out_of_bounds" | "poor_accuracy" | "missing_coordinates" | "super_admin_bypass";
-  userMessage?: string;
+  userMessage?: string | undefined;
 }
 
 /**
@@ -101,9 +101,9 @@ export interface LocationEvaluationResult {
  */
 export function evaluateLocationAccess(
   role: string,
-  userLat?: number | null,
-  userLng?: number | null,
-  accuracy?: number | null,
+  userLat?: number | null | undefined,
+  userLng?: number | null | undefined,
+  accuracy?: number | null | undefined,
   config: OfficeGeoConfig = getOfficeGeoConfig()
 ): LocationEvaluationResult {
   const isSuperAdmin = role === "super_admin";

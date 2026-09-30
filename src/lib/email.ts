@@ -7,16 +7,16 @@ export interface LeadEmailPayload {
   source: "Contact Form" | "Popup Modal" | "USA - Contact Form" | "USA - Popup Modal" | string;
   name: string;
   phone: string;
-  email?: string;
+  email?: string | undefined;
   videoType: string;
   business: string;
-  website?: string;
-  videoQuantity?: number | string;
-  location?: string;
-  industry?: string;
-  requirement?: string;
-  additional?: string;
-  leadId?: string;
+  website?: string | undefined;
+  videoQuantity?: number | string | undefined;
+  location?: string | undefined;
+  industry?: string | undefined;
+  requirement?: string | undefined;
+  additional?: string | undefined;
+  leadId?: string | undefined;
 }
 
 const DEFAULT_NOTIFICATION_EMAIL = "info@quickuppaistudio.us";
@@ -49,7 +49,7 @@ async function resolvePlatformTitle(): Promise<string> {
 }
 const BACKUP_NOTIFICATION_EMAIL = "quickuppaistudio1@gmail.com";
 
-export async function sendLeadNotificationEmail(lead: LeadEmailPayload): Promise<{ success: boolean; error?: string }> {
+export async function sendLeadNotificationEmail(lead: LeadEmailPayload): Promise<{ success: boolean; error?: string | undefined }> {
   const NOTIFICATION_EMAIL = await resolveNotificationEmail();
   const PLATFORM_TITLE = await resolvePlatformTitle();
   const timestamp = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
@@ -304,12 +304,12 @@ Call: tel:${cleanPhone}
   `;
 
   // 1. Direct Hostinger / SMTP Delivery (Primary Guaranteed Delivery)
-  const smtpHost = process.env.SMTP_HOST || "smtp.hostinger.com";
-  const smtpPort = Number(process.env.SMTP_PORT || 465);
-  const smtpSecure = process.env.SMTP_SECURE === "false" ? false : true;
-  const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || "info@quickuppaistudio.us";
-  const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || "Quickuppaistudio@8080";
-  const fromAddress = process.env.EMAIL_FROM || smtpUser || "info@quickuppaistudio.us";
+  const smtpHost = process.env["SMTP_HOST"] || "smtp.hostinger.com";
+  const smtpPort = Number(process.env["SMTP_PORT"] || 465);
+  const smtpSecure = process.env["SMTP_SECURE"] === "false" ? false : true;
+  const smtpUser = process.env["SMTP_USER"] || process.env["EMAIL_USER"] || "info@quickuppaistudio.us";
+  const smtpPass = process.env["SMTP_PASS"] || process.env["EMAIL_PASS"] || "Quickuppaistudio@8080";
+  const fromAddress = process.env["EMAIL_FROM"] || smtpUser || "info@quickuppaistudio.us";
 
   if (smtpUser && smtpPass) {
     try {
@@ -349,8 +349,8 @@ Call: tel:${cleanPhone}
   }
 
   // 2. Backup Gmail SMTP Fallback
-  const backupUser = process.env.GMAIL_USER || "quickuppaistudio1@gmail.com";
-  const backupPass = process.env.GMAIL_APP_PASSWORD || "ggtodbgiucfdypcj";
+  const backupUser = process.env["GMAIL_USER"] || "quickuppaistudio1@gmail.com";
+  const backupPass = process.env["GMAIL_APP_PASSWORD"] || "ggtodbgiucfdypcj";
   if (backupUser && backupPass && backupUser !== smtpUser) {
     try {
       const backupTransporter = nodemailer.createTransport({
@@ -387,7 +387,7 @@ Call: tel:${cleanPhone}
   }
 
   // 3. Check for Resend API Key
-  const resendApiKey = process.env.RESEND_API_KEY;
+  const resendApiKey = process.env["RESEND_API_KEY"];
   if (resendApiKey) {
     try {
       const res = await fetch("https://api.resend.com/emails", {
@@ -397,7 +397,7 @@ Call: tel:${cleanPhone}
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: process.env.RESEND_FROM || "Quickupp Leads <leads@quickuppaistudio.us>",
+          from: process.env["RESEND_FROM"] || "Quickupp Leads <leads@quickuppaistudio.us>",
           to: [NOTIFICATION_EMAIL],
           reply_to: lead.email || undefined,
           subject,
@@ -477,7 +477,7 @@ export interface PaymentReceiptEmailPayload {
  */
 export async function sendPaymentReceiptEmail(
   payload: PaymentReceiptEmailPayload
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string | undefined }> {
   const NOTIFICATION_EMAIL = await resolveNotificationEmail();
   const currency = payload.currency || "USD";
   const formattedAmount = `$${payload.amount.toFixed(2)} ${currency}`;
@@ -864,12 +864,12 @@ Operated by-Quickupp Softech LLC
   ];
 
   // 1. Send via Hostinger SMTP directly to customer (clean transactional headers, no spam BCC)
-  const smtpHost = process.env.SMTP_HOST || "smtp.hostinger.com";
-  const smtpPort = Number(process.env.SMTP_PORT || 465);
-  const smtpSecure = process.env.SMTP_SECURE === "false" ? false : true;
-  const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || "info@quickuppaistudio.us";
-  const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || "Quickuppaistudio@8080";
-  const fromAddress = process.env.EMAIL_FROM || smtpUser || "info@quickuppaistudio.us";
+  const smtpHost = process.env["SMTP_HOST"] || "smtp.hostinger.com";
+  const smtpPort = Number(process.env["SMTP_PORT"] || 465);
+  const smtpSecure = process.env["SMTP_SECURE"] === "false" ? false : true;
+  const smtpUser = process.env["SMTP_USER"] || process.env["EMAIL_USER"] || "info@quickuppaistudio.us";
+  const smtpPass = process.env["SMTP_PASS"] || process.env["EMAIL_PASS"] || "Quickuppaistudio@8080";
+  const fromAddress = process.env["EMAIL_FROM"] || smtpUser || "info@quickuppaistudio.us";
 
   if (smtpUser && smtpPass) {
     try {
@@ -924,8 +924,8 @@ Operated by-Quickupp Softech LLC
   }
 
   // 2. Backup Gmail SMTP Fallback
-  const backupUser = process.env.GMAIL_USER || "quickuppaistudio1@gmail.com";
-  const backupPass = process.env.GMAIL_APP_PASSWORD || "ggtodbgiucfdypcj";
+  const backupUser = process.env["GMAIL_USER"] || "quickuppaistudio1@gmail.com";
+  const backupPass = process.env["GMAIL_APP_PASSWORD"] || "ggtodbgiucfdypcj";
   if (backupUser && backupPass && backupUser !== smtpUser) {
     try {
       const backupTransporter = nodemailer.createTransport({
@@ -975,7 +975,7 @@ export async function sendFailedLoginAlertEmail(info: {
   attempts: number;
   threshold: number;
   lockoutMinutes: number;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; error?: string | undefined }> {
   const to = await resolveNotificationEmail();
   const title = await resolvePlatformTitle();
   const when = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
@@ -1041,11 +1041,11 @@ If this wasn't you or your team, review Login / IP Tracking in the admin panel.`
  * when a deactivated user requests account reactivation from the CRM login page.
  */
 export async function sendAccountActivationRequestEmail(data: {
-  name?: string;
+  name?: string | undefined;
   email: string;
-  reason?: string;
-  ip?: string;
-}): Promise<{ success: boolean; error?: string }> {
+  reason?: string | undefined;
+  ip?: string | undefined;
+}): Promise<{ success: boolean; error?: string | undefined }> {
   const to = await resolveNotificationEmail();
   const title = await resolvePlatformTitle();
   const when = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });

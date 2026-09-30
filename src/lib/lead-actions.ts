@@ -858,6 +858,7 @@ export async function syncCalendlyEventsFromApi(opts?: { force?: boolean }): Pro
 
     const userRes = await fetch("https://api.calendly.com/users/me", {
       headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(10000),
     });
     if (!userRes.ok) {
       return { count: 0, error: `Calendly API user lookup failed (${userRes.status})` };
@@ -876,8 +877,8 @@ export async function syncCalendlyEventsFromApi(opts?: { force?: boolean }): Pro
       `https://api.calendly.com/scheduled_events?user=${encodeURIComponent(userUri)}&status=${status}` +
       `&count=100&sort=start_time:desc&min_start_time=${encodeURIComponent(minStart)}`;
     const [activeEventsRes, canceledEventsRes] = await Promise.all([
-      fetch(listUrl("active"), { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(listUrl("canceled"), { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(listUrl("active"), { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000) }),
+      fetch(listUrl("canceled"), { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000) }),
     ]);
 
     const activeCollection = activeEventsRes.ok ? ((await activeEventsRes.json()) as any)?.collection || [] : [];
@@ -897,6 +898,7 @@ export async function syncCalendlyEventsFromApi(opts?: { force?: boolean }): Pro
 
         const invRes = await fetch(`${ev.uri}/invitees`, {
           headers: { Authorization: `Bearer ${token}` },
+          signal: AbortSignal.timeout(10000),
         });
         if (!invRes.ok) continue;
 
@@ -977,8 +979,11 @@ export async function syncCalendlyEventsFromApi(opts?: { force?: boolean }): Pro
 // 13. Calendly Meetings (Strictly Read-Only from CRM)
 export const fetchCalendlyMeetingsServerFn = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    // 1. Live Sync from Calendly API in background/inline (respecting cutoff)
-    await syncCalendlyEventsFromApi();
+    // 1. Live sync from Calendly (respecting cutoff), but never let a slow
+    // Calendly API hold the request open long enough to trigger a 504:
+    // wait at most 8s, then serve what's in the DB while the sync finishes.
+    const sync = syncCalendlyEventsFromApi().catch(() => ({ count: 0 }));
+    await Promise.race([sync, new Promise((resolve) => setTimeout(resolve, 8000))]);
 
     // 2. Fetch all meetings from DB
     const meetings = await getCalendlyMeetingsFromDb();
@@ -1201,13 +1206,13 @@ export const recordCalendlyBookingServerFn = createServerFn({ method: "POST" })
       const token = getCalendlyApiToken(settings);
       const headers = { Authorization: `Bearer ${token}` };
 
-      const invRes = await fetch(inviteeUri, { headers });
+      const invRes = await fetch(inviteeUri, { headers, signal: AbortSignal.timeout(10000) });
       if (!invRes.ok) return { success: false, error: `Calendly invitee lookup failed (${invRes.status})` };
       const invitee = ((await invRes.json()) as any)?.resource;
       const eventUri = invitee?.event || data.event_uri;
       if (!invitee?.email || !eventUri) return { success: false, error: "Calendly booking details unavailable" };
 
-      const evRes = await fetch(eventUri, { headers });
+      const evRes = await fetch(eventUri, { headers, signal: AbortSignal.timeout(10000) });
       if (!evRes.ok) return { success: false, error: `Calendly event lookup failed (${evRes.status})` };
       const ev = ((await evRes.json()) as any)?.resource || {};
 

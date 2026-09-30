@@ -184,8 +184,8 @@ interface AuthSession {
   email: string;
   name: string;
   role: "super_admin" | "admin" | "leads_manager";
-  token?: string;
-  distanceMeters?: number | null;
+  token?: string | undefined;
+  distanceMeters?: number | null | undefined;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -778,7 +778,7 @@ function AdminPage() {
   }, [adminUsers]);
 
   // Modals State
-  const [showAddLeadModal, setShowAddLeadModal] = useState(false);
+  const [showAddLeadModal, setShowAddLeadModal] = useState<boolean | "Website" | "Meta Ads">(false);
   const [prefillLeadFromMeeting, setPrefillLeadFromMeeting] = useState<Partial<Lead> | null>(null);
   const [viewLeadDetails, setViewLeadDetails] = useState<Lead | null>(null);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -816,7 +816,7 @@ function AdminPage() {
   const [highlightedOrderIds, setHighlightedOrderIds] = useState<Set<string>>(new Set());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const showToast = (msg: string) => {
+  const showToast = (msg: string, _type?: "success" | "error" | "info") => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
@@ -837,7 +837,7 @@ function AdminPage() {
     if (key === "activity") return false; // Activity logs strictly exclusive to Super Admin
     if (key === "security_logs") return false; // Login / Security logs strictly exclusive to Super Admin
     if (key === "delete_leads") return true; // Admin and Super Admin can ALWAYS soft-delete leads to Recycle Bin!
-    if (session.role === "leads_manager") return key === "meta_leads" || key === "delete_leads";
+    if (session.role === "leads_manager") return key === "meta_leads";
     const perms = rolePermissions[session.role as ConfigurableRole];
     return Boolean(perms?.[key]);
   };
@@ -1065,7 +1065,8 @@ function AdminPage() {
       emerald:    { bg: "#059669", text: "#ffffff", ring: "#05966940", border: "#059669" },
       indigo:     { bg: "#4338ca", text: "#ffffff", ring: "#4338ca40", border: "#4338ca" },
     };
-    const accent = accentMap[crmAccentTheme] || accentMap["slate"];
+    const accent = accentMap[crmAccentTheme] ||
+      accentMap["slate"] || { bg: "#0f172a", text: "#ffffff", ring: "#0f172a40", border: "#0f172a" };
     root.style.setProperty("--crm-accent-bg",     accent.bg);
     root.style.setProperty("--crm-accent-text",   accent.text);
     root.style.setProperty("--crm-accent-ring",   accent.ring);
@@ -1703,7 +1704,7 @@ function AdminPage() {
             prev
               ? {
                   ...prev,
-                  token: res.refreshedToken,
+                  token: res.refreshedToken as string,
                   distanceMeters: res.distanceMeters ?? prev.distanceMeters,
                 }
               : null
@@ -1804,8 +1805,8 @@ function AdminPage() {
           );
         } else if (res.locked) {
           setAuthError(res.error || `Too many failed login attempts. This account is locked.`);
-        } else if (typeof res.attemptsLeft === "number") {
-          setAuthError(res.error || `Invalid credentials. ${res.attemptsLeft} attempt(s) left.`);
+        } else if (typeof (res as any).attemptsLeft === "number") {
+          setAuthError(res.error || `Invalid credentials. ${(res as any).attemptsLeft} attempt(s) left.`);
         } else {
           setAuthError(res.error || "Authentication failed. Please verify your email and password.");
         }
@@ -1850,13 +1851,13 @@ function AdminPage() {
 
     const updated = leads.map((l) =>
       l.id === lead.id
-        ? {
+        ? ({
             ...l,
             status: newStatus,
             closed_by: newStatus === "Closed" ? session?.name || "Admin" : l.closed_by,
             closed_at: newStatus === "Closed" ? new Date().toISOString() : l.closed_at,
             delivery_date: extra?.deliveryDate || l.delivery_date,
-          }
+          } as Lead)
         : l
     );
     setLeads(updated);
@@ -1892,12 +1893,12 @@ function AdminPage() {
 
     const updated = leads.map((l) =>
       l.id === lead.id
-        ? {
+        ? ({
             ...l,
             project_status: newProjectStatus,
             delivered_at: newProjectStatus === "Delivered" ? new Date().toISOString() : l.delivered_at,
             delivery_date: deliveryDate || l.delivery_date,
-          }
+          } as Lead)
         : l
     );
     setLeads(updated);
@@ -2484,7 +2485,7 @@ function AdminPage() {
       `"${o.customer_name || ""}"`,
       `"${o.customer_email || ""}"`,
       `"${o.customer_phone || ""}"`,
-      `"${o.service_name || ""}"`,
+      `"${o.item_name || ""}"`,
       o.amount,
       `"${o.currency || "USD"}"`,
       `"${o.payment_status || ""}"`,
@@ -2508,29 +2509,34 @@ function AdminPage() {
       return;
     }
     if (!meetings.length) return alert("No Calendly meetings found to export.");
+    const csvCell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const headers = [
       "Meeting ID",
-      "Event Name",
-      "Invitee Name",
-      "Invitee Email",
-      "Start Time",
-      "End Time",
+      "Meeting Type",
+      "Client Name",
+      "Client Email",
+      "Phone",
+      "Meeting Date",
+      "Meeting Time",
       "Status",
       "Assigned Admin",
-      "Join URL",
+      "Meeting Link",
+      "Notes",
       "Created At",
     ];
     const rows = meetings.map((m) => [
-      `"${m.id}"`,
-      `"${m.event_name || "Strategy Session"}"`,
-      `"${m.invitee_name || ""}"`,
-      `"${m.invitee_email || ""}"`,
-      `"${m.start_time ? new Date(m.start_time).toLocaleString() : ""}"`,
-      `"${m.end_time ? new Date(m.end_time).toLocaleString() : ""}"`,
-      `"${m.status || "active"}"`,
-      `"${m.assigned_admin || ""}"`,
-      `"${m.join_url || ""}"`,
-      `"${new Date(m.created_at).toLocaleString()}"`,
+      csvCell(m.id),
+      csvCell(m.meeting_type || "Strategy Call"),
+      csvCell(m.client_name),
+      csvCell(m.email),
+      csvCell(m.phone),
+      csvCell(m.meeting_date),
+      csvCell(m.meeting_time),
+      csvCell(meetingStatusLabel(m.meeting_status)),
+      csvCell(m.assigned_admin),
+      csvCell(m.meeting_link),
+      csvCell(m.notes),
+      csvCell(m.created_at ? new Date(m.created_at).toLocaleString() : ""),
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
@@ -4091,7 +4097,7 @@ function AdminPage() {
                             </span>
                           </div>
                           <p className="text-xs text-slate-500 truncate mt-1">
-                            {l.business_name || l.email || l.phone || "Direct Lead"} • {l.video_type || "AI Video"}
+                            {l.business || l.email || l.phone || "Direct Lead"} • {l.video_type || "AI Video"}
                           </p>
                         </div>
                         <div className="text-right shrink-0">
@@ -4592,21 +4598,24 @@ function AdminPage() {
                   )}
                 </div>
 
+                {/* Apply Filter and Clear Filter Buttons (Add/Export live in the page header) */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
-                    onClick={() => setShowAddLeadModal(true)}
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-900 bg-slate-900 px-3.5 py-2 text-xs font-bold text-white hover:bg-black transition-all cursor-pointer shadow-xs"
+                    onClick={handleApplyFilters}
+                    className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition-all cursor-pointer"
+                    title="Apply Filters"
                   >
-                    <Plus className="h-4 w-4" />
-                    <span>+ Add Lead</span>
+                    <Filter className="h-3.5 w-3.5" />
+                    <span>Apply Filter</span>
                   </button>
 
                   <button
-                    onClick={() => exportCSV(false)}
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer shadow-xs"
+                    onClick={handleClearFilters}
+                    className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                    title="Clear Filters"
                   >
-                    <Download className="h-4 w-4 text-slate-800" />
-                    <span>Export CSV</span>
+                    <RotateCcw className="h-3.5 w-3.5 text-slate-400" />
+                    <span>Clear Filter</span>
                   </button>
                 </div>
               </div>
@@ -4737,26 +4746,6 @@ function AdminPage() {
                   />
                 </div>
 
-                {/* Apply Filter and Clear Filter Buttons */}
-                <div className="flex items-center gap-1.5 ml-auto">
-                  <button
-                    onClick={handleApplyFilters}
-                    className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition-all cursor-pointer"
-                    title="Apply Filters"
-                  >
-                    <Filter className="h-3.5 w-3.5" />
-                    <span>Apply Filter</span>
-                  </button>
-
-                  <button
-                    onClick={handleClearFilters}
-                    className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
-                    title="Clear Filters"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5 text-slate-400" />
-                    <span>Clear Filter</span>
-                  </button>
-                </div>
               </div>
             </div>
 
@@ -5454,21 +5443,24 @@ function AdminPage() {
                   )}
                 </div>
 
+                {/* Apply Filter and Clear Filter Buttons (Add/Export live in the page header) */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
-                    onClick={() => setShowAddLeadModal(true)}
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-900 bg-slate-900 px-3.5 py-2 text-xs font-bold text-white hover:bg-black transition-all cursor-pointer shadow-xs"
+                    onClick={handleApplyMetaFilters}
+                    className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition-all cursor-pointer"
+                    title="Apply Filters"
                   >
-                    <Plus className="h-4 w-4" />
-                    <span>+ Add Meta Lead</span>
+                    <Filter className="h-3.5 w-3.5" />
+                    <span>Apply Filter</span>
                   </button>
 
                   <button
-                    onClick={() => exportMetaCSV(false)}
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer shadow-xs"
+                    onClick={handleClearMetaFilters}
+                    className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                    title="Clear Filters"
                   >
-                    <Download className="h-4 w-4 text-slate-800" />
-                    <span>Export CSV</span>
+                    <RotateCcw className="h-3.5 w-3.5 text-slate-400" />
+                    <span>Clear Filter</span>
                   </button>
                 </div>
               </div>
@@ -5598,26 +5590,6 @@ function AdminPage() {
                   />
                 </div>
 
-                {/* Apply Filter and Clear Filter Buttons */}
-                <div className="flex items-center gap-1.5 ml-auto">
-                  <button
-                    onClick={handleApplyMetaFilters}
-                    className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition-all cursor-pointer"
-                    title="Apply Filters"
-                  >
-                    <Filter className="h-3.5 w-3.5" />
-                    <span>Apply Filter</span>
-                  </button>
-
-                  <button
-                    onClick={handleClearMetaFilters}
-                    className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
-                    title="Clear Filters"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5 text-slate-400" />
-                    <span>Clear Filter</span>
-                  </button>
-                </div>
               </div>
             </div>
 
@@ -8302,13 +8274,12 @@ function AdminPage() {
                       </div>
                       <div className="space-y-2 text-xs">
                         {[
-                          { label: "Scripting & Conceptualization", count: leads.filter(l => l.project_status === "Scripting").length, color: "bg-blue-500" },
-                          { label: "Voiceover & Audio Synthesis", count: leads.filter(l => l.project_status === "Voiceover").length, color: "bg-amber-500" },
-                          { label: "AI Video Production & Render", count: leads.filter(l => l.project_status === "Video Production" || l.project_status === "In Progress").length, color: "bg-purple-500" },
-                          { label: "Review & Quality Control", count: leads.filter(l => l.project_status === "Review & QC").length, color: "bg-orange-500" },
-                          { label: "Delivered & Client Finalized", count: leads.filter(l => l.project_status === "Delivered" || l.status === "Delivered" || l.status === "Closed").length, color: "bg-emerald-500" },
+                          { label: "New / Not Started", count: allCrmLeads.filter(l => l.status === "New").length, color: "bg-blue-500" },
+                          { label: "In Production", count: allCrmLeads.filter(l => (l.project_status || "In Progress") === "In Progress" && l.status !== "New" && l.status !== "Closed").length, color: "bg-purple-500" },
+                          { label: "On Hold", count: allCrmLeads.filter(l => l.project_status === "Hold" || l.status === "Hold").length, color: "bg-amber-500" },
+                          { label: "Delivered / Closed", count: allCrmLeads.filter(l => l.project_status === "Delivered" || l.status === "Closed").length, color: "bg-emerald-500" },
                         ].map((stage, idx) => {
-                          const pct = leads.length > 0 ? Math.round((stage.count / leads.length) * 100) : 0;
+                          const pct = allCrmLeads.length > 0 ? Math.round((stage.count / allCrmLeads.length) * 100) : 0;
                           return (
                             <div key={idx} className="space-y-1">
                               <div className="flex justify-between text-[11px] font-medium text-slate-700">
@@ -8330,26 +8301,26 @@ function AdminPage() {
                       <div className="grid grid-cols-3 gap-2 text-center">
                         <div className="rounded-lg bg-slate-50 p-2.5">
                           <div className="text-[10px] text-slate-500 font-bold">TOTAL INBOUND</div>
-                          <div className="text-base font-black text-slate-900 mt-0.5">{leads.length}</div>
+                          <div className="text-base font-black text-slate-900 mt-0.5">{allCrmLeads.length}</div>
                         </div>
                         <div className="rounded-lg bg-blue-50 p-2.5">
                           <div className="text-[10px] text-blue-700 font-bold">CONTACTED</div>
                           <div className="text-base font-black text-blue-900 mt-0.5">
-                            {leads.filter(l => l.status === "Contacted" || l.status === "In Progress" || l.status === "Meeting Scheduled").length}
+                            {allCrmLeads.filter(l => l.status === "Contacted" || l.status === "In Progress").length}
                           </div>
                         </div>
                         <div className="rounded-lg bg-emerald-50 p-2.5">
                           <div className="text-[10px] text-emerald-700 font-bold">WON / CLOSED</div>
                           <div className="text-base font-black text-emerald-900 mt-0.5">
-                            {leads.filter(l => l.status === "Closed" || l.status === "Delivered").length}
+                            {allCrmLeads.filter(l => l.status === "Closed").length}
                           </div>
                         </div>
                       </div>
                       <div className="text-[11px] text-slate-500 font-medium text-center">
                         Pipeline Conversion Rate:{" "}
                         <span className="font-bold text-emerald-700">
-                          {leads.length > 0
-                            ? ((leads.filter(l => l.status === "Closed" || l.status === "Delivered").length / leads.length) * 100).toFixed(1)
+                          {allCrmLeads.length > 0
+                            ? ((allCrmLeads.filter(l => l.status === "Closed").length / allCrmLeads.length) * 100).toFixed(1)
                             : "0.0"}%
                         </span>
                       </div>

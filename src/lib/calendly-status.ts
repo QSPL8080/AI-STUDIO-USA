@@ -97,12 +97,12 @@ export async function resolvePreviousSlot(
   if (previousSlotCache.has(oldInviteeUri)) return previousSlotCache.get(oldInviteeUri) || null;
   try {
     const headers = { Authorization: `Bearer ${token}` };
-    const invRes = await fetch(oldInviteeUri, { headers });
+    const invRes = await fetch(oldInviteeUri, { headers, signal: AbortSignal.timeout(10000) });
     if (!invRes.ok) return null;
     const inv = ((await invRes.json()) as any)?.resource;
     const eventUri: string | undefined = inv?.event;
     if (!eventUri) return null;
-    const evRes = await fetch(eventUri, { headers });
+    const evRes = await fetch(eventUri, { headers, signal: AbortSignal.timeout(10000) });
     if (!evRes.ok) return null;
     const ev = ((await evRes.json()) as any)?.resource;
     const slot = formatCalendlySlot(ev?.start_time);
