@@ -113,7 +113,7 @@ export function Header() {
   return (
     <header id="site-nav-container" className="fixed top-0 left-0 right-0 z-50 flex flex-col">
       <div id="site-header-bar" className="relative border-b border-slate-200/80 bg-white/95 backdrop-blur-xl shadow-xs z-50">
-        <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 md:py-3.5">
+        <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4 md:py-4.5 min-h-[72px] sm:min-h-[78px] md:min-h-[82px]">
           <a
             href="/#top"
             id="navbar-logo-anchor"
@@ -123,64 +123,64 @@ export function Header() {
             <img
               src="/images/LOGO 1.png"
               alt="QUICKUPP AI STUDIO"
-              className="h-7 sm:h-8 md:h-9 lg:h-10 w-auto object-contain shrink-0"
-              width={125}
-              height={40}
+              className="h-8 sm:h-9 md:h-10 lg:h-11 w-auto object-contain shrink-0"
+              width={140}
+              height={44}
             />
           </a>
 
           {/* Desktop Navigation Links (>=1024px) */}
           <nav
             aria-label="Main Navigation"
-            className="hidden items-center gap-1 xl:gap-1.5 rounded-lg border border-slate-200 bg-slate-100/70 px-2.5 xl:px-3 py-1.5 lg:flex shadow-xs relative shrink-0"
+            className="hidden items-center gap-1 xl:gap-2 rounded-xl border border-slate-200/90 bg-slate-100/80 px-3 xl:px-4 py-1.5 lg:flex shadow-2xs relative shrink-0"
           >
             <a
               href="/#services"
-              className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-all duration-200 hover:bg-white hover:text-purple-700 hover:shadow-xs active:scale-95"
             >
               Services
             </a>
             <a
               href="/#industries"
-              className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-all duration-200 hover:bg-white hover:text-purple-700 hover:shadow-xs active:scale-95"
             >
               Industries
             </a>
             <a
               href="/portfolio"
-              className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-all duration-200 hover:bg-white hover:text-purple-700 hover:shadow-xs active:scale-95"
             >
               Portfolio
             </a>
             <a
               href="/#pricing"
-              className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-all duration-200 hover:bg-white hover:text-purple-700 hover:shadow-xs active:scale-95"
             >
               Pricing
             </a>
             <a
               href="/#process"
-              className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-all duration-200 hover:bg-white hover:text-purple-700 hover:shadow-xs active:scale-95"
             >
               How It Works
             </a>
             <a
               href="/#faq"
-              className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-all duration-200 hover:bg-white hover:text-purple-700 hover:shadow-xs active:scale-95"
             >
               FAQ
             </a>
           </nav>
 
           {/* Desktop Right Action CTA Buttons (Only on Large Screens >= 1024px) */}
-          <div className="hidden lg:flex items-center gap-2 xl:gap-2.5 shrink-0">
+          <div className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0">
             <NeonButton
               href={calendlyUrl}
               variant="call"
               size="sm"
-              className="hidden xl:inline-flex items-center gap-1.5 whitespace-nowrap group !rounded-lg"
+              className="hidden xl:inline-flex items-center gap-1.5 whitespace-nowrap group !rounded-xl !px-4 !py-2.5 !text-xs sm:!text-[13px] font-bold shadow-xs"
             >
-              <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+              <Calendar className="h-4 w-4 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
               <span>Book a Strategy Call</span>
             </NeonButton>
 
@@ -188,7 +188,7 @@ export function Header() {
               href="/#contact"
               variant="primary"
               size="sm"
-              className="whitespace-nowrap text-xs py-2 px-3.5 !rounded-lg"
+              className="whitespace-nowrap !text-xs sm:!text-[13px] font-bold !py-2.5 !px-4.5 !rounded-xl shadow-md glow-neon"
             >
               Get AI Video Quote
             </NeonButton>
@@ -197,9 +197,9 @@ export function Header() {
               variant="buy"
               size="sm"
               onClick={() => openCheckoutModal({ itemType: "package" })}
-              className="inline-flex items-center gap-1.5 whitespace-nowrap group !rounded-lg"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap group !rounded-xl !px-4 !py-2.5 !text-xs sm:!text-[13px] font-bold shadow-xs"
             >
-              <Zap className="h-3.5 w-3.5 text-white shrink-0 transition-transform duration-200 group-hover:scale-110" />
+              <Zap className="h-4 w-4 text-white shrink-0 transition-transform duration-200 group-hover:scale-110" />
               <span>Buy Now</span>
             </NeonButton>
           </div>
@@ -209,7 +209,7 @@ export function Header() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex h-10 w-10 min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-slate-200/90 bg-slate-100/90 text-slate-800 transition-colors hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 active:scale-95 cursor-pointer shadow-xs shrink-0"
+              className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-200/90 bg-slate-100/90 text-slate-800 transition-colors hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 active:scale-95 cursor-pointer shadow-xs shrink-0"
               aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
               aria-expanded={mobileMenuOpen}
             >
