@@ -21,6 +21,7 @@ import {
 import { sendPaymentReceiptEmail } from "./email";
 import { bumpDataVersion } from "./lead-actions";
 import { generateInvoicePdfBuffer } from "./pdf-receipt";
+import { decodeAndVerifySessionToken } from "./crm-session";
 
 /**
  * Sends the customer's payment receipt (with PDF) and records the outcome in the
@@ -316,12 +317,24 @@ export const updateOrderStatusServerFn = createServerFn({ method: "POST" })
   });
 
 /**
- * Delete order record (Admin).
+ * Delete an order record. Super Admin only, and only while the payment is still PENDING:
+ * paid / failed / refunded orders are financial records and are never deleted.
  */
 export const deleteOrderServerFn = createServerFn({ method: "POST" })
-  .validator((data: { id: string }) => data)
+  .validator((data: { id: string; token?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
+      const check = decodeAndVerifySessionToken(data.token || "");
+      if (!check.valid || check.payload?.role !== "super_admin") {
+        return { success: false, error: "Only Super Admin can delete orders." };
+      }
+      const order = await getOrderByIdFromDb(data.id);
+      if (!order) {
+        return { success: false, error: "Order not found." };
+      }
+      if (String(order.payment_status).toUpperCase() !== "PENDING") {
+        return { success: false, error: "Only PENDING orders can be deleted." };
+      }
       const ok = await deleteOrderFromDb(data.id);
       await bumpDataVersion();
       return { success: ok };

@@ -116,6 +116,7 @@ import {
   broadcastLeadEvent,
 } from "@/lib/lead-actions";
 import { getOfficeGeoConfig, DEFAULT_OFFICE_CONFIG } from "@/lib/geo-config";
+import { getLiveSessionLoginLogIds } from "@/lib/login-sessions";
 import {
   fetchOrdersServerFn,
   updateOrderStatusServerFn,
@@ -2600,15 +2601,12 @@ function AdminPage() {
     }
   };
 
-  // Login / IP Tracking: the newest successful login of the signed-in user is the live
-  // session, so it is kept and can't be selected or deleted.
-  const currentSessionLoginLogId = useMemo(() => {
-    const me = (session?.email || "").toLowerCase();
-    return loginLogs.find((l) => (l.email || "").toLowerCase() === me && l.status === "success")?.id;
-  }, [loginLogs, session?.email]);
+  // Login / IP Tracking: several users can be signed in at the same time. Every user's
+  // live-session entry is kept and can't be selected or deleted (the server enforces this too).
+  const liveSessionLoginLogIds = useMemo(() => getLiveSessionLoginLogIds(loginLogs), [loginLogs]);
   const deletableLoginLogs = useMemo(
-    () => loginLogs.filter((l) => l.id !== currentSessionLoginLogId),
-    [loginLogs, currentSessionLoginLogId]
+    () => loginLogs.filter((l) => !liveSessionLoginLogIds.has(l.id)),
+    [loginLogs, liveSessionLoginLogIds]
   );
 
   const deleteLoginLogs = async (ids: string[]) => {
@@ -2616,22 +2614,39 @@ function AdminPage() {
       showToast("Only Super Admin can delete login logs.");
       return;
     }
-    const toDelete = ids.filter((id) => id !== currentSessionLoginLogId);
+    const toDelete = ids.filter((id) => !liveSessionLoginLogIds.has(id));
     if (toDelete.length === 0) return;
     const label = toDelete.length === 1 ? "this login log" : `${toDelete.length} login logs`;
-    if (!confirm(`Permanently delete ${label}? Your current live session is kept.`)) return;
+    if (!confirm(`Permanently delete ${label}? Live sessions are kept.`)) return;
     try {
       const res = await deleteLoginLogsServerFn({ data: { ids: toDelete, token: session?.token } });
       if (res.success) {
         const gone = new Set(toDelete);
         setLoginLogs((prev) => prev.filter((l) => !gone.has(l.id)));
         setSelectedLoginLogIds((prev) => new Set([...prev].filter((id) => !gone.has(id))));
-        showToast(`Deleted ${toDelete.length} login log(s)`);
+        showToast(`Deleted ${res.count ?? toDelete.length} login log(s)`);
       } else {
         showToast(res.error || "Failed to delete login logs");
       }
     } catch (err: any) {
       showToast("Error deleting login logs: " + (err?.message || "Unknown error"));
+    }
+  };
+
+  // Orders: Super Admin can delete PENDING (unpaid) orders only. The server enforces this too.
+  const handleDeletePendingOrder = async (order: Order) => {
+    if (!isSuperAdmin || order.payment_status !== "PENDING") return;
+    if (!confirm(`Delete pending order from ${order.customer_name} ($${Number(order.amount).toFixed(2)})? This cannot be undone.`)) return;
+    try {
+      const res = await deleteOrderServerFn({ data: { id: order.id, token: session?.token } });
+      if (res.success) {
+        setOrders((prev) => prev.filter((o) => o.id !== order.id));
+        showToast("Pending order deleted");
+      } else {
+        showToast(res.error || "Failed to delete order");
+      }
+    } catch (err: any) {
+      showToast("Error deleting order: " + (err?.message || "Unknown error"));
     }
   };
 
@@ -6210,12 +6225,23 @@ function AdminPage() {
                           {new Date(order.created_at).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-3.5 text-right">
-                          <button
-                            onClick={() => setSelectedOrderDetails(order)}
-                            className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                          >
-                            Details
-                          </button>
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              onClick={() => setSelectedOrderDetails(order)}
+                              className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                            >
+                              Details
+                            </button>
+                            {isSuperAdmin && order.payment_status === "PENDING" && (
+                              <button
+                                onClick={() => handleDeletePendingOrder(order)}
+                                title="Delete this pending order"
+                                className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -7259,7 +7285,7 @@ function AdminPage() {
                 <span className="font-semibold text-slate-600">
                   {selectedLoginLogIds.size > 0
                     ? `${selectedLoginLogIds.size} login log(s) selected`
-                    : "Select entries to delete. Your current live session is always kept."}
+                    : `Select entries to delete. ${liveSessionLoginLogIds.size} live session(s) are always kept.`}
                 </span>
                 <div className="flex items-center gap-2">
                   {selectedLoginLogIds.size > 0 && (
@@ -7284,7 +7310,7 @@ function AdminPage() {
                     className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 font-bold text-red-700 hover:bg-red-100 cursor-pointer shadow-xs"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    <span>Delete All Except Live Session</span>
+                    <span>Delete All Except Live Sessions</span>
                   </button>
                 </div>
               </div>
@@ -7298,7 +7324,7 @@ function AdminPage() {
                       <th className="px-4 py-3.5 w-10">
                         <input
                           type="checkbox"
-                          title="Select all (except your live session)"
+                          title="Select all (except live sessions)"
                           checked={deletableLoginLogs.length > 0 && selectedLoginLogIds.size === deletableLoginLogs.length}
                           onChange={(e) =>
                             setSelectedLoginLogIds(e.target.checked ? new Set(deletableLoginLogs.map((l) => l.id)) : new Set())
@@ -7330,7 +7356,7 @@ function AdminPage() {
                       <tr key={log.id} className={`transition-colors ${selectedLoginLogIds.has(log.id) ? "bg-red-50/60" : "hover:bg-slate-50/75"}`}>
                         {isSuperAdmin && (
                           <td className="px-4 py-3.5">
-                            {log.id === currentSessionLoginLogId ? null : (
+                            {liveSessionLoginLogIds.has(log.id) ? null : (
                               <input
                                 type="checkbox"
                                 checked={selectedLoginLogIds.has(log.id)}
@@ -7348,7 +7374,7 @@ function AdminPage() {
                           </td>
                         )}
                         <td className="px-4 py-3.5 text-slate-500 font-mono">
-                          {log.id === currentSessionLoginLogId && (
+                          {liveSessionLoginLogIds.has(log.id) && (
                             <span className="mb-1 inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-700 font-sans">
                               Live session
                             </span>
@@ -7442,7 +7468,7 @@ function AdminPage() {
                         </td>
                         {isSuperAdmin && (
                           <td className="px-4 py-3.5 text-right">
-                            {log.id === currentSessionLoginLogId ? (
+                            {liveSessionLoginLogIds.has(log.id) ? (
                               <span className="text-[10px] text-slate-400">Kept</span>
                             ) : (
                               <button

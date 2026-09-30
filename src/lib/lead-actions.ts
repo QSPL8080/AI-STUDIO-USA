@@ -67,6 +67,7 @@ import {
 } from "./email";
 import { evaluateLocationAccess, getOfficeGeoConfig, DEFAULT_OFFICE_CONFIG } from "./geo-config";
 import { createCrmSessionToken, verifySessionWithLocation, decodeAndVerifySessionToken } from "./crm-session";
+import { getLiveSessionLoginLogIds } from "./login-sessions";
 
 function sanitizeLeadPhone(phone: string, _isUsa: boolean = true): string {
   const trimmed = phone.trim();
@@ -675,7 +676,9 @@ export const deleteLoginLogsServerFn = createServerFn({ method: "POST" })
       if (!check.valid || check.payload?.role !== "super_admin") {
         return { success: false, count: 0, error: "Only Super Admin can delete login logs." };
       }
-      const ids = Array.isArray(data.ids) ? data.ids.filter((id) => typeof id === "string" && id) : [];
+      // Never delete the entry of a session that may still be live (anyone's, not just the caller's).
+      const live = getLiveSessionLoginLogIds(await getLoginLogsFromDb(1000));
+      const ids = Array.isArray(data.ids) ? data.ids.filter((id) => typeof id === "string" && id && !live.has(id)) : [];
       if (ids.length === 0) return { success: true, count: 0 };
       const ok = await deleteLoginLogsInDb(ids);
       if (!ok) return { success: false, count: 0, error: "Could not delete login logs from the database." };
