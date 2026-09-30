@@ -5370,12 +5370,14 @@ export function QuotePopupModal() {
                 const form = e.currentTarget;
                 const data = new FormData(form);
                 const name = String(data.get("name") || "");
-                const phone = formatUsaPhoneInput(String(data.get("phone") || ""));
                 const email = String(data.get("email") || "");
-                const videoType = String(data.get("videoType") || "");
+                const phone = formatUsaPhoneInput(String(data.get("phone") || ""));
                 const business = String(data.get("business") || "");
-                const location = String(data.get("location") || "");
-                const additional = String(data.get("additional") || "");
+                const website = String(data.get("website") || "");
+                const industry = String(data.get("industry") || "");
+                const videoType = String(data.get("videoType") || "");
+                const videoQuantity = String(data.get("videoQuantity") || "");
+                const requirement = String(data.get("requirement") || "");
 
                 // 1. Send directly to PostgreSQL Database
                 let savedLead: any = null;
@@ -5384,12 +5386,14 @@ export function QuotePopupModal() {
                     data: {
                       source: "USA - Popup Modal",
                       name,
-                      phone,
                       email,
-                      videoType,
+                      phone,
                       business,
-                      location,
-                      additional,
+                      website,
+                      industry,
+                      videoType,
+                      videoQuantity,
+                      requirement,
                     },
                   });
                   if (res?.success && res.lead) {
@@ -5407,9 +5411,11 @@ export function QuotePopupModal() {
                   phone,
                   email: email || undefined,
                   business,
+                  website: website || undefined,
+                  industry,
                   video_type: videoType,
-                  location: location || undefined,
-                  requirement: additional || undefined,
+                  video_quantity: videoQuantity || undefined,
+                  requirement,
                   status: "New" as const,
                   created_at: new Date().toISOString(),
                 };
@@ -5438,50 +5444,32 @@ export function QuotePopupModal() {
                   setIsOpen(false);
                 }, 3000);
               }}
-              className="mt-4 space-y-3"
+              className="mt-4 space-y-3.5 sm:space-y-4"
             >
-              <div className="grid gap-2.5 sm:grid-cols-2">
+              {/* Row 1: Name & Work Email */}
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="w-full">
                   <label
-                    htmlFor="modalFullName"
-                    className="block text-[11px] font-semibold text-slate-800 sm:text-xs"
+                    htmlFor="modalName"
+                    className="block text-xs font-bold text-slate-800"
                   >
-                    Full Name <span className="text-purple-600">*</span>
+                    Name*
                   </label>
                   <input
-                    id="modalFullName"
+                    id="modalName"
                     type="text"
                     name="name"
                     required
-                    placeholder="e.g. John Doe"
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none sm:text-sm"
+                    placeholder="Your full name"
+                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
                   />
                 </div>
-                <div className="w-full">
-                  <label
-                    htmlFor="modalPhone"
-                    className="block text-[11px] font-semibold text-slate-800 sm:text-xs"
-                  >
-                    Phone Number <span className="text-purple-600">*</span>
-                  </label>
-                  <input
-                    id="modalPhone"
-                    type="tel"
-                    name="phone"
-                    required
-                    placeholder="+1 (555) 000-0000"
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-2.5 sm:grid-cols-2">
                 <div className="w-full">
                   <label
                     htmlFor="modalEmail"
-                    className="block text-[11px] font-semibold text-slate-800 sm:text-xs"
+                    className="block text-xs font-bold text-slate-800"
                   >
-                    Email Address <span className="text-purple-600">*</span>
+                    Work Email*
                   </label>
                   <input
                     id="modalEmail"
@@ -5489,105 +5477,160 @@ export function QuotePopupModal() {
                     name="email"
                     required
                     placeholder="you@company.com"
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none sm:text-sm"
+                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Phone & Company / Brand */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="w-full">
+                  <label
+                    htmlFor="modalPhone"
+                    className="block text-xs font-bold text-slate-800"
+                  >
+                    Phone*
+                  </label>
+                  <input
+                    id="modalPhone"
+                    type="tel"
+                    name="phone"
+                    required
+                    placeholder="+1 (555) 000-0000"
+                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
                   />
                 </div>
                 <div className="w-full">
                   <label
-                    htmlFor="modalVideoType"
-                    className="block text-[11px] font-semibold text-slate-800 sm:text-xs"
+                    htmlFor="modalCompany"
+                    className="block text-xs font-bold text-slate-800"
                   >
-                    Type of AI Video <span className="text-purple-600">*</span>
+                    Company / Brand*
                   </label>
-                  <div className="relative mt-1">
+                  <input
+                    id="modalCompany"
+                    type="text"
+                    name="business"
+                    required
+                    placeholder="Company or brand name"
+                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: Website & Industry */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="w-full">
+                  <label
+                    htmlFor="modalWebsite"
+                    className="block text-xs font-bold text-slate-800"
+                  >
+                    Website
+                  </label>
+                  <input
+                    id="modalWebsite"
+                    type="text"
+                    name="website"
+                    placeholder="https://yourbrand.com or yourbrand.com"
+                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                  />
+                </div>
+                <div className="w-full">
+                  <label
+                    htmlFor="modalIndustry"
+                    className="block text-xs font-bold text-slate-800"
+                  >
+                    Industry*
+                  </label>
+                  <div className="relative mt-1.5">
                     <select
-                      id="modalVideoType"
-                      name="videoType"
+                      id="modalIndustry"
+                      name="industry"
                       required
-                      defaultValue=""
-                      className="w-full appearance-none rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 pr-9 text-xs text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none sm:text-sm cursor-pointer"
+                      className="w-full appearance-none rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 pr-9 text-xs sm:text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer shadow-2xs"
                     >
-                      <option value="" disabled className="text-slate-400">
-                        Select video type...
-                      </option>
-                      <option value="AI UGC Video">
-                        AI UGC Video
-                      </option>
-                      <option value="AI Cartoon Animation">
-                        AI Cartoon Animation
-                      </option>
-                      <option value="AI Avatar Video">
-                        AI Avatar Video
-                      </option>
-                      <option value="Hyper-Realistic AI Video">
-                        Hyper-Realistic AI Video
-                      </option>
-                      <option value="AI Digital Twin / Clone">
-                        AI Digital Twin / Clone
-                      </option>
-                      <option value="Monthly Bulk Package">
-                        Monthly Package (5-15 Reels)
-                      </option>
-                      <option value="Custom Requirement">
-                        Custom AI Video
-                      </option>
+                      <option value="">Select industry</option>
+                      <option value="E-commerce / DTC">E-commerce / DTC</option>
+                      <option value="SaaS / AI">SaaS / AI</option>
+                      <option value="Real Estate">Real Estate</option>
+                      <option value="Med Spa / Aesthetics">Med Spa / Aesthetics</option>
+                      <option value="Agency">Agency</option>
+                      <option value="Other">Other</option>
                     </select>
                     <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                   </div>
                 </div>
               </div>
 
-              <div className="grid gap-2.5 sm:grid-cols-2">
+              {/* Row 4: What do you need? & Monthly creative requirement */}
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="w-full">
                   <label
-                    htmlFor="modalBusiness"
-                    className="block text-[11px] font-semibold text-slate-800 sm:text-xs"
+                    htmlFor="modalWhatDoYouNeed"
+                    className="block text-xs font-bold text-slate-800"
                   >
-                    Your Business / Brand <span className="text-purple-600">*</span>
+                    What do you need?*
                   </label>
-                  <input
-                    id="modalBusiness"
-                    type="text"
-                    name="business"
-                    required
-                    placeholder="e.g. Skincare, Real Estate..."
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none sm:text-sm"
-                  />
+                  <div className="relative mt-1.5">
+                    <select
+                      id="modalWhatDoYouNeed"
+                      name="videoType"
+                      required
+                      className="w-full appearance-none rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 pr-9 text-xs sm:text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer shadow-2xs"
+                    >
+                      <option value="">Select video format / need</option>
+                      <option value="AI UGC Video Ads">AI UGC Video Ads</option>
+                      <option value="AI Avatar / Presenter Videos">AI Avatar / Presenter Videos</option>
+                      <option value="Hyper-Realistic AI Ads">Hyper-Realistic AI Ads</option>
+                      <option value="AI Cartoon Animation">AI Cartoon Animation</option>
+                      <option value="AI Digital Twin / Clone">AI Digital Twin / Clone</option>
+                      <option value="Full Creative Ad Package">Full Creative Ad Package</option>
+                      <option value="Not Sure - Need Guidance">Not Sure - Need Guidance</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                  </div>
                 </div>
                 <div className="w-full">
                   <label
-                    htmlFor="modalLocation"
-                    className="block text-[11px] font-semibold text-slate-800 sm:text-xs"
+                    htmlFor="modalMonthlyRequirement"
+                    className="block text-xs font-bold text-slate-800"
                   >
-                    Location (City / Country) <span className="text-purple-600">*</span>
+                    Monthly creative requirement*
                   </label>
-                  <input
-                    id="modalLocation"
-                    type="text"
-                    name="location"
-                    required
-                    placeholder="e.g. New York, USA"
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none sm:text-sm"
-                  />
+                  <div className="relative mt-1.5">
+                    <select
+                      id="modalMonthlyRequirement"
+                      name="videoQuantity"
+                      required
+                      className="w-full appearance-none rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 pr-9 text-xs sm:text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer shadow-2xs"
+                    >
+                      <option value="">Select volume / requirement</option>
+                      <option value="1 – 3 Videos (Testing / One-off)">1 – 3 Videos (Testing / One-off)</option>
+                      <option value="4 – 8 Videos / month (Starter)">4 – 8 Videos / month (Starter)</option>
+                      <option value="9 – 15 Videos / month (Growth)">9 – 15 Videos / month (Growth)</option>
+                      <option value="16 – 30+ Videos / month (Scale / High Volume)">16 – 30+ Videos / month (Scale / High Volume)</option>
+                      <option value="Custom / Ongoing Retainer">Custom / Ongoing Retainer</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                  </div>
                 </div>
               </div>
 
+              {/* Row 5: Project details */}
               <div className="w-full">
-                <div className="flex items-center justify-between">
-                  <label
-                    htmlFor="modalAdditional"
-                    className="block text-[11px] font-semibold text-slate-800 sm:text-xs"
-                  >
-                    Additional Notes
-                  </label>
-                  <span className="text-[10px] text-slate-400 font-normal">(Optional)</span>
-                </div>
+                <label
+                  htmlFor="modalProjectDetails"
+                  className="block text-xs font-bold text-slate-800"
+                >
+                  Project details*
+                </label>
                 <textarea
-                  id="modalAdditional"
-                  name="additional"
-                  rows={2}
-                  placeholder="Any specific duration, language, script ideas..."
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none sm:text-sm"
+                  id="modalProjectDetails"
+                  name="requirement"
+                  rows={3}
+                  required
+                  placeholder="Tell us what you're selling, who you're targeting, hooks/angles, and what you're trying to achieve..."
+                  className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
                 />
               </div>
 
