@@ -23,6 +23,7 @@ import {
   getLoginLogs as getLoginLogsFromDb,
   getAdminUsers as getAdminUsersFromDb,
   getAdminUserByEmailWithPassword,
+  getAdminAccountState,
   getAccountSetupError,
   saveAdminUser as saveAdminUserInDb,
   updateAdminUserStatus as updateAdminUserStatusInDb,
@@ -677,7 +678,14 @@ export const deleteLoginLogsServerFn = createServerFn({ method: "POST" })
         return { success: false, count: 0, error: "Only Super Admin can delete login logs." };
       }
       // Never delete the entry of a session that may still be live (anyone's, not just the caller's).
-      const live = getLiveSessionLoginLogIds(await getLoginLogsFromDb(1000));
+      const recentLogs = await getLoginLogsFromDb(1000);
+      const live = getLiveSessionLoginLogIds(recentLogs);
+      // A deleted or deactivated account has no live session, so its rows can be deleted.
+      for (const id of [...live]) {
+        const email = recentLogs.find((l) => l.id === id)?.email || "";
+        const state = await getAdminAccountState(email);
+        if (state === "missing" || state === "inactive") live.delete(id);
+      }
       const ids = Array.isArray(data.ids) ? data.ids.filter((id) => typeof id === "string" && id && !live.has(id)) : [];
       if (ids.length === 0) return { success: true, count: 0 };
       const ok = await deleteLoginLogsInDb(ids);
@@ -2010,6 +2018,37 @@ export const verifyLocationSessionServerFn = createServerFn({ method: "POST" })
           errorCode: verification.errorCode || "OUT_OF_BOUNDS",
           distanceMeters: isFinite(dist ?? Infinity) ? dist : null,
         };
+      }
+
+      // The account must still exist and be active: deleting or deactivating a user in
+      // User Management ends their open session at the next check (within ~60s).
+      if (verification.payload.role !== "super_admin") {
+        const state = await getAdminAccountState(verification.payload.email);
+        if (state === "missing" || state === "inactive") {
+          try {
+            await addLoginLogInDb({
+              email: verification.payload.email,
+              role: verification.payload.role,
+              ip_address: data.ip || "Unknown IP",
+              location: state === "missing" ? "Account deleted" : "Account deactivated",
+              latitude: data.latitude,
+              longitude: data.longitude,
+              accuracy: data.accuracy,
+              distance_meters: null,
+              is_within_geofence: null,
+              user_agent: data.userAgent || "Web Browser",
+              status: "session_terminated",
+            });
+          } catch {}
+          return {
+            authorized: false,
+            error: state === "missing"
+              ? "This account has been removed by the Super Admin. Please contact your administrator."
+              : "This account has been deactivated by the Super Admin. Please contact your administrator.",
+            errorCode: "ACCOUNT_REMOVED",
+            distanceMeters: null,
+          };
+        }
       }
 
       // Re-issue refreshed token

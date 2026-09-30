@@ -213,7 +213,14 @@ async function supabaseWriteTolerant(
 }
 
 // 2. Direct PostgreSQL Pool (For localhost development or direct pg connection)
+// When the direct PostgreSQL connection can't be reached (common on shared hosting, where
+// only Supabase REST works), don't retry it on every request: each retry waited up to 10s
+// and made deletes/updates feel stuck. Try again after a short cool-down instead.
+const PG_RETRY_MS = 5 * 60 * 1000;
+let pgUnavailableUntil = 0;
+
 async function getPool() {
+  if (Date.now() < pgUnavailableUntil) return null;
   if (!pgPool) {
     const pg = await import("pg");
     const Pool = pg.default?.Pool || pg.Pool;
@@ -251,7 +258,10 @@ export async function initDb() {
   try {
     const pool = await getPool();
     if (pool) {
-      const client = await pool.connect();
+      const client = await pool.connect().catch((e: unknown) => {
+        pgUnavailableUntil = Date.now() + PG_RETRY_MS;
+        throw e;
+      });
       try {
         await client.query(`
           CREATE TABLE IF NOT EXISTS leads (
@@ -847,9 +857,10 @@ export async function updateLead(id: string, updates: Partial<Lead>): Promise<bo
     }
   }
 
-  await initDb();
+  // Supabase already saved it: no need for a second write through the direct connection.
+  if (!ok) await initDb();
   try {
-    const pool = await getPool();
+    const pool = ok ? null : await getPool();
     if (pool) {
       const fields = Object.keys(updates);
       if (fields.length === 0) return true;
@@ -1321,6 +1332,38 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
   }
 
   return Array.from(map.values());
+}
+
+// Is this CRM account still allowed in? "unknown" means the database couldn't be read,
+// in which case callers must NOT treat the account as removed.
+export async function getAdminAccountState(email: string): Promise<"active" | "inactive" | "missing" | "unknown"> {
+  const cleanEmail = (email || "").toLowerCase().trim();
+  if (!cleanEmail) return "missing";
+  if (getSupabaseConfig()) {
+    try {
+      const rows = await supabaseRest(
+        `admin_users?select=status&email=ilike.${encodeURIComponent(cleanEmail)}&limit=1`
+      );
+      if (Array.isArray(rows)) {
+        if (rows.length === 0) return "missing";
+        return rows[0]?.status === "inactive" ? "inactive" : "active";
+      }
+    } catch (err) {
+      console.warn("Supabase getAdminAccountState fallback:", err);
+    }
+  }
+  await initDb();
+  try {
+    const pool = await getPool();
+    if (pool) {
+      const res = await pool.query("SELECT status FROM admin_users WHERE LOWER(email) = LOWER($1) LIMIT 1", [cleanEmail]);
+      if (!res.rows[0]) return "missing";
+      return res.rows[0].status === "inactive" ? "inactive" : "active";
+    }
+  } catch (err) {
+    console.error("PostgreSQL getAdminAccountState error:", err);
+  }
+  return "unknown";
 }
 
 export async function getAdminUserByEmailWithPassword(email: string): Promise<AdminUser | null> {

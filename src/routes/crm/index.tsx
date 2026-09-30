@@ -1697,7 +1697,9 @@ function AdminPage() {
         if (!res.authorized) {
           // Terminate session immediately & force logout
           handleLogout();
-          setLocationErrorType(res.errorCode === "OUT_OF_BOUNDS" ? "out_of_bounds" : "denied");
+          setLocationErrorType(
+            res.errorCode === "OUT_OF_BOUNDS" ? "out_of_bounds" : res.errorCode === "ACCOUNT_REMOVED" ? "none" : "denied"
+          );
           setAuthError(
             res.error ||
               "CRM access is not available at your current location. Please move within the permitted office location to continue."
@@ -2603,7 +2605,20 @@ function AdminPage() {
 
   // Login / IP Tracking: several users can be signed in at the same time. Every user's
   // live-session entry is kept and can't be selected or deleted (the server enforces this too).
-  const liveSessionLoginLogIds = useMemo(() => getLiveSessionLoginLogIds(loginLogs), [loginLogs]);
+  // Only accounts that still exist and are active can have a live session.
+  const liveSessionLoginLogIds = useMemo(() => {
+    const live = getLiveSessionLoginLogIds(loginLogs);
+    if (adminUsers.length === 0) return live; // user list not loaded yet: stay on the safe side
+    const activeEmails = new Set(
+      adminUsers.filter((u) => u.status !== "inactive").map((u) => (u.email || "").toLowerCase().trim())
+    );
+    return new Set(
+      [...live].filter((id) => {
+        const log = loginLogs.find((l) => l.id === id);
+        return !!log && activeEmails.has((log.email || "").toLowerCase().trim());
+      })
+    );
+  }, [loginLogs, adminUsers]);
   const deletableLoginLogs = useMemo(
     () => loginLogs.filter((l) => !liveSessionLoginLogIds.has(l.id)),
     [loginLogs, liveSessionLoginLogIds]
