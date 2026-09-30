@@ -3785,6 +3785,7 @@ export function WhoWeServe() {
   const [activeIdx, setActiveIdx] = useState(0);
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isInView, setIsInView] = useState(false);
+  const [revealedCount, setRevealedCount] = useState(0);
   const current = audienceSegments[activeIdx];
 
   useEffect(() => {
@@ -3795,15 +3796,35 @@ export function WhoWeServe() {
       ([entry]) => {
         if (entry?.isIntersecting) {
           setIsInView(true);
-          observer.unobserve(el);
         }
       },
-      { threshold: 0.08, rootMargin: "50px 0px 50px 0px" },
+      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" },
     );
 
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!isInView) {
+      setRevealedCount(0);
+      return;
+    }
+
+    setRevealedCount(0);
+    let count = 0;
+    const total = current.formats.length;
+
+    const timer = setInterval(() => {
+      count += 1;
+      setRevealedCount(count);
+      if (count >= total) {
+        clearInterval(timer);
+      }
+    }, 220);
+
+    return () => clearInterval(timer);
+  }, [isInView, activeIdx, current.formats.length]);
 
   const renderIcon = (type: AudienceSegment["icon"], className = "h-4 w-4") => {
     switch (type) {
@@ -3918,20 +3939,22 @@ export function WhoWeServe() {
             {/* Pitch Points if any */}
             {current.pitchPoints && current.pitchPoints.length > 0 && (
               <div className="space-y-2 pt-1">
-                {current.pitchPoints.map((point, i) => (
-                  <div
-                    key={`${current.id}-pitch-${i}`}
-                    style={{ transitionDelay: `${i * 80}ms` }}
-                    className={`flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-800 transition-all duration-400 ${
-                      isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
-                    }`}
-                  >
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-700 text-xs font-bold shadow-2xs">
-                      ✓
-                    </span>
-                    <span>{point}</span>
-                  </div>
-                ))}
+                {current.pitchPoints.map((point, i) => {
+                  const isPointVisible = i < revealedCount;
+                  return (
+                    <div
+                      key={`${current.id}-pitch-${i}`}
+                      className={`flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-800 transition-all duration-500 ease-out ${
+                        isPointVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+                      }`}
+                    >
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-700 text-xs font-bold shadow-2xs">
+                        ✓
+                      </span>
+                      <span>{point}</span>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -3944,7 +3967,7 @@ export function WhoWeServe() {
                 {current.industries.map((ind, i) => (
                   <span
                     key={`${current.id}-ind-${ind}`}
-                    style={{ transitionDelay: `${i * 45}ms` }}
+                    style={{ transitionDelay: `${i * 35}ms` }}
                     className={`rounded-full bg-white border border-purple-100/90 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-purple-50 hover:text-purple-900 hover:border-purple-300 transition-all duration-400 shadow-2xs ${
                       isInView ? "opacity-100 scale-100" : "opacity-0 scale-90"
                     }`}
@@ -4010,26 +4033,26 @@ export function WhoWeServe() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
-              {current.formats.map((fmt, i) => (
-                <div
-                  key={`${current.id}-${fmt}`}
-                  style={{
-                    transitionDelay: `${i * 90}ms`,
-                  }}
-                  className={`flex items-center gap-3 py-2 px-3 rounded-xl bg-white border border-slate-200/80 shadow-2xs hover:border-purple-300 hover:shadow-xs transition-all duration-500 ease-out ${
-                    isInView
-                      ? "opacity-100 translate-y-0 scale-100"
-                      : "opacity-0 translate-y-4 scale-95"
-                  }`}
-                >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-700 text-xs font-bold shadow-2xs">
-                    ✓
-                  </span>
-                  <span className="text-xs sm:text-sm font-medium text-slate-800">
-                    {fmt}
-                  </span>
-                </div>
-              ))}
+              {current.formats.map((fmt, i) => {
+                const isRevealed = i < revealedCount;
+                return (
+                  <div
+                    key={`${current.id}-${fmt}`}
+                    className={`flex items-center gap-3 py-2.5 px-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs hover:border-purple-300 hover:shadow-xs transition-all duration-500 ease-out ${
+                      isRevealed
+                        ? "opacity-100 translate-y-0 translate-x-0 scale-100"
+                        : "opacity-0 translate-y-4 -translate-x-2 scale-[0.97] pointer-events-none"
+                    }`}
+                  >
+                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-700 text-xs font-bold shadow-2xs transition-transform duration-300 ${isRevealed ? "scale-100" : "scale-50"}`}>
+                      ✓
+                    </span>
+                    <span className="text-xs sm:text-sm font-medium text-slate-800">
+                      {fmt}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
