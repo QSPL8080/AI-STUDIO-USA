@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowRight,
   ArrowUp,
   BadgeCheck,
   Bot,
@@ -945,12 +946,11 @@ export function HeroOverview() {
   }, []);
 
   const checklistItems = [
-    "Script Included",
-    "5+ AI Video Formats",
-    "Up to 60-Second Videos",
-    "9:16 Reel Format",
-    "48–72 Hour Delivery",
-    "1 Revision Included",
+    "AI UGC",
+    "AI Avatar",
+    "AI Cartoon",
+    "Hyper-Realistic",
+    "Digital Twin",
   ];
 
   return (
@@ -995,86 +995,83 @@ export function HeroOverview() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-neon shadow-[0_0_8px_#c850ff]"></span>
                 </span>
-                AI Video Production Company
+                Conversion-Focused AI Video Ads for Modern Brands
               </span>
             </div>
 
             {/* Headline */}
-            <h2
+            <h1
               className={`mt-3 sm:mt-4 font-[var(--font-google-sans)] text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.15] tracking-tight text-slate-900 transition-all duration-800 delay-100 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-6 blur-sm"
               }`}
             >
-              AI Video Production Services for{" "}
+              Create More Ad Creatives. Test More Ideas.{" "}
               <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5">
-                Modern Businesses
+                Find What Works.
               </span>
-            </h2>
+            </h1>
 
-            {/* Subheading */}
-            <h3
-              className={`mt-2.5 sm:mt-3 text-sm sm:text-base md:text-lg font-semibold text-slate-700 leading-snug transition-all duration-800 delay-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            {/* Description Paragraph 1 */}
+            <p
+              className={`mt-2.5 sm:mt-3 text-sm sm:text-base md:text-lg font-semibold text-slate-800 leading-snug transition-all duration-800 delay-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
               }`}
             >
-              Create AI UGC, AI Avatar, Cartoon, Hyper-Realistic &amp; Digital Twin Videos for Your
-              Brand
-            </h3>
+              Your next winning ad shouldn't require a full production team.
+            </p>
 
-            {/* Paragraph 1 & 2 */}
+            {/* Description Paragraph 2 */}
             <p
               className={`mt-2.5 sm:mt-3 text-xs sm:text-sm md:text-base leading-relaxed text-muted-foreground transition-all duration-800 delay-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
               }`}
             >
-              Create engaging and professional video content without traditional production
-              complexity. Quickupp AI Studio provides professional AI video production services for
-              businesses, brands, founders and marketing teams — from AI UGC videos and AI avatar
-              reels to hyper-realistic AI advertisements and digital twin videos.
+              Quickupp AI Studio creates conversion-focused AI video ads for brands that need more creative variations—without the traditional costs and logistics of expensive shoots, creators, locations, and production teams.
             </p>
 
+            {/* Description Paragraph 3 */}
             <p
               className={`mt-2 text-xs sm:text-sm leading-relaxed text-muted-foreground transition-all duration-800 delay-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
               }`}
             >
-              Our AI video production includes scripting, AI-generated visuals, voiceover, lip-sync,
-              captions, background music and editing, delivered in social-media-ready 9:16 format.
+              From AI UGC and AI avatars to hyper-realistic product ads and digital twins, we take your idea from research to ready-to-run ad.
             </p>
 
-            {/* Action Buttons */}
+            {/* Action Buttons & Microcopy */}
             <div
-              className={`mt-5 sm:mt-6 flex flex-wrap items-center gap-3 transition-all duration-800 delay-550 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              className={`mt-5 sm:mt-6 flex flex-col items-start gap-2.5 transition-all duration-800 delay-550 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 isVisible
                   ? "opacity-100 translate-y-0 scale-100"
                   : "opacity-0 translate-y-4 scale-95"
               }`}
             >
-              <NeonButton
-                href="#book-call"
-                variant="call"
-                className="text-xs sm:text-sm inline-flex items-center gap-1.5 group"
-              >
-                <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-                <span>Book a 30 min call</span>
-              </NeonButton>
-              <NeonButton href="#contact" className="text-xs sm:text-sm">
-                Get Your AI Video Quote
-              </NeonButton>
-              <NeonButton
-                href="#samples"
-                variant="ghost"
-                className="text-xs sm:text-sm inline-flex items-center gap-2"
-              >
-                <span className="flex h-4 w-4 items-center justify-center rounded-full border border-neon/60 bg-neon/10">
-                  <Play className="h-2 w-2 fill-neon text-neon ml-0.5" />
-                </span>
-                <span>View Video Samples</span>
-              </NeonButton>
+              <div className="flex flex-wrap items-center gap-3">
+                <NeonButton
+                  href={calendlyUrl}
+                  variant="call"
+                  className="text-xs sm:text-sm inline-flex items-center gap-1.5 group !rounded-lg"
+                >
+                  <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                  <span>Book a Strategy Call</span>
+                </NeonButton>
+                <NeonButton
+                  href="#services"
+                  variant="ghost"
+                  className="text-xs sm:text-sm inline-flex items-center gap-2 !rounded-lg"
+                >
+                  <span>Explore Our Services</span>
+                  <ArrowRight className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                </NeonButton>
+              </div>
+              <p className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 pl-0.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                Starting at $79 / AI Video
+              </p>
             </div>
           </div>
 
-          {/* Right Column: 6 Feature Cards (2 cols on mobile, 1 col on tablet/desktop) */}
+          {/* Right Column: 5 Video Formats */}
           <div
             className={`md:col-span-5 w-full grid grid-cols-2 md:grid-cols-1 gap-2 sm:gap-2.5 lg:gap-3 transition-all duration-800 delay-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               isVisible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95"
