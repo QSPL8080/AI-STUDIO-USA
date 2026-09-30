@@ -3603,7 +3603,7 @@ const audienceSegments: AudienceSegment[] = [
     title: "AI Video Ads for DTC & E-Commerce Brands",
     description:
       "Turn your products into scroll-stopping video creatives designed for social media, paid advertising, and product marketing.",
-    industriesLabel: "INDUSTRIES",
+    industriesLabel: "IDEAL FOR",
     industries: [
       "Skincare",
       "Cosmetics",
@@ -3674,7 +3674,7 @@ const audienceSegments: AudienceSegment[] = [
     title: "AI Video Ads for Real Estate",
     description:
       "Turn properties, developments, and real estate services into compelling video creatives.",
-    industriesLabel: "BUILT FOR",
+    industriesLabel: "IDEAL FOR",
     industries: [
       "Realtors",
       "Brokerages",
@@ -3744,7 +3744,7 @@ const audienceSegments: AudienceSegment[] = [
       "Your clients need more creative.",
       "Your team doesn't necessarily need another production department.",
     ],
-    industriesLabel: "BUILT FOR",
+    industriesLabel: "IDEAL FOR",
     industries: [
       "Performance Marketing Agencies",
       "Meta Advertising Agencies",
