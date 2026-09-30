@@ -99,7 +99,7 @@ export function CookiePolicyPage() {
         </div>
 
         {/* Legal Sections (1 to 12) */}
-        <div className="mt-8 space-y-8 text-sm sm:text-base leading-relaxed text-muted-foreground">
+        <div className="mt-8 space-y-8 text-sm sm:text-base leading-relaxed text-slate-700">
 
           {/* 1. WHAT ARE COOKIES? */}
           <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">

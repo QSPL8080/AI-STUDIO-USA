@@ -122,7 +122,7 @@ function PrivacyPolicyPage() {
         </div>
 
         {/* Policy Sections (1 to 26) */}
-        <div className="mt-8 space-y-8 text-sm sm:text-base leading-relaxed text-muted-foreground">
+        <div className="mt-8 space-y-8 text-sm sm:text-base leading-relaxed text-slate-700">
 
           {/* 1. INFORMATION WE COLLECT */}
           <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
@@ -186,7 +186,7 @@ function PrivacyPolicyPage() {
                 <li>Images or recordings of individuals</li>
                 <li>Other content necessary to produce your requested creative</li>
               </ul>
-              <p className="text-xs sm:text-sm bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 text-slate-300 mt-2">
+              <p className="text-xs sm:text-sm bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 text-slate-800 font-medium mt-2">
                 If you provide content containing another person, you represent that you have the necessary permission, authorization, consent, license, or other lawful basis to provide that content to us for processing.
               </p>
             </div>

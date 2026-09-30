@@ -107,7 +107,7 @@ export function TermsPage() {
         </div>
 
         {/* Legal Sections (1 to 32) */}
-        <div className="mt-8 space-y-8 text-sm sm:text-base leading-relaxed text-muted-foreground">
+        <div className="mt-8 space-y-8 text-sm sm:text-base leading-relaxed text-slate-700">
 
           {/* 1. OUR SERVICES */}
           <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
@@ -374,22 +374,22 @@ export function TermsPage() {
             </h2>
             <p>You may not use our services to create or distribute content that:</p>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-2 list-none text-xs sm:text-sm">
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Is illegal</li>
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Facilitates fraud</li>
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Impersonates another person without authorization</li>
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Uses someone&rsquo;s likeness or voice without appropriate authorization</li>
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Creates deceptive fake testimonials</li>
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Creates fabricated customer experiences presented as genuine</li>
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Infringes intellectual property rights</li>
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Violates privacy rights</li>
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Violates publicity rights</li>
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Facilitates harassment or abuse</li>
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Contains unlawful discriminatory content</li>
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Facilitates criminal activity</li>
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Misrepresents regulated products or services</li>
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Violates advertising laws</li>
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Violates applicable platform policies</li>
-              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Attempts to bypass legal or regulatory requirements</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Is illegal</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Facilitates fraud</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Impersonates another person without authorization</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Uses someone&rsquo;s likeness or voice without appropriate authorization</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Creates deceptive fake testimonials</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Creates fabricated customer experiences presented as genuine</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Infringes intellectual property rights</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Violates privacy rights</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Violates publicity rights</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Facilitates harassment or abuse</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Contains unlawful discriminatory content</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Facilitates criminal activity</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Misrepresents regulated products or services</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Violates advertising laws</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Violates applicable platform policies</li>
+              <li className="flex items-center gap-2 text-rose-900 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0" /> Attempts to bypass legal or regulatory requirements</li>
             </ul>
             <p className="text-xs sm:text-sm">
               We may refuse or discontinue a project that we reasonably believe creates legal, ethical, safety, or compliance risks.
