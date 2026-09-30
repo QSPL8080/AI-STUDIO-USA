@@ -3625,7 +3625,7 @@ export function StrategyCall() {
   }, []);
 
   return (
-    <Section id="book-call" className="py-14 md:py-20 lg:py-24 my-4 md:my-8 relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-y border-slate-200/80">
+    <Section id="book-call" className="py-8 sm:py-10 md:py-12 relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-b border-slate-200/80">
       <SectionHeading
         eyebrow="CALENDLY + PAYMENT FLOW"
         title="Treat This as a Core"
@@ -4103,7 +4103,7 @@ export function LeadFormSection() {
   const [loading, setLoading] = useState(false);
 
   return (
-    <Section id="contact" className="relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-t border-slate-200/80 py-16 sm:py-20">
+    <Section id="contact" className="relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-t border-slate-200/80 pt-10 sm:pt-14 pb-6 sm:pb-8">
       {/* Light Shade Dynamic Fluid Ribbon Wave Background */}
       <div className="pointer-events-none absolute inset-0 select-none overflow-hidden z-0">
         <svg
