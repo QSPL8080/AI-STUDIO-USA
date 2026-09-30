@@ -245,35 +245,35 @@ function PortfolioPage() {
 
       <main id="main-content" className="pt-20 md:pt-24 pb-16 flex-1">
         {/* Page Hero Section */}
-        <div className="bg-gradient-to-b from-purple-50/40 via-white to-transparent py-10 sm:py-14 md:py-16 border-b border-purple-100/60">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center">
-            <div className="inline-flex items-center gap-2 mb-3">
-              <span className="eyebrow text-xs">
-                <span className="relative flex h-2 w-2">
+        <div className="bg-gradient-to-b from-purple-50/40 via-white to-transparent py-8 sm:py-10 md:py-12 border-b border-purple-100/60">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
+            <div className="inline-flex items-center gap-1.5 mb-2.5">
+              <span className="eyebrow text-[11px] py-0.5 px-3">
+                <span className="relative flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.6)]"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-purple-600 shadow-[0_0_6px_rgba(147,51,234,0.6)]"></span>
                 </span>
                 PORTFOLIO
               </span>
             </div>
 
-            <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-tight">
+            <h1 className="font-heading text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-slate-900 leading-tight">
               See What AI Creative{" "}
               <span className="font-serif italic text-gradient-brand pr-1">
                 Can Look Like
               </span>
             </h1>
 
-            <p className="mt-3.5 text-sm sm:text-base md:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
+            <p className="mt-2.5 text-xs sm:text-sm text-slate-600 max-w-2xl mx-auto leading-relaxed">
               Explore AI-powered video concepts created across e-commerce, beauty, fashion, fitness, technology, food, lifestyle, and other high-growth categories.
             </p>
 
             {/* Portfolio Filters */}
-            <div className="mt-7 sm:mt-9">
-              <div className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">
+            <div className="mt-5 sm:mt-7">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
                 PORTFOLIO FILTERS
               </div>
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
                 {portfolioFilters.map((filter) => {
                   const isActive = selectedFilter === filter;
                   return (
@@ -281,9 +281,9 @@ function PortfolioPage() {
                       key={filter}
                       type="button"
                       onClick={() => setSelectedFilter(filter)}
-                      className={`rounded-full px-4 sm:px-5 py-2 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                      className={`rounded-full px-3 sm:px-4 py-1.5 text-xs font-semibold transition-all duration-200 cursor-pointer ${
                         isActive
-                          ? "bg-gradient-brand text-white shadow-md glow-neon scale-105"
+                          ? "bg-gradient-brand text-white shadow-sm glow-neon scale-105"
                           : "bg-white text-slate-700 border border-slate-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
                       }`}
                     >
