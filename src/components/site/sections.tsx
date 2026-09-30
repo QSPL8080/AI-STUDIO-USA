@@ -1814,6 +1814,24 @@ export function Samples() {
     },
   ];
 
+  // Auto-advance every 5 seconds while the section is on screen (loops 11 -> 01).
+  // Hovering the card pauses it; clicking Previous/Next restarts the 5 seconds.
+  const stepsSectionRef = useRef<HTMLDivElement>(null); // stays mounted (the stage re-mounts per step)
+  const [stepsInView, setStepsInView] = useState(false);
+  const [stepsHovered, setStepsHovered] = useState(false);
+  useEffect(() => {
+    const el = stepsSectionRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => setStepsInView(!!entry?.isIntersecting), { threshold: 0.3 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!stepsInView || stepsHovered) return;
+    const t = setTimeout(() => setActiveStep((prev) => (prev + 1) % processSteps.length), 5000);
+    return () => clearTimeout(t);
+  }, [activeStep, stepsInView, stepsHovered, processSteps.length]);
+
   const current = processSteps[activeStep];
   const IconComp = current.icon;
 
@@ -1831,7 +1849,7 @@ export function Samples() {
         style={{ background: "radial-gradient(circle, #ec4899 0%, transparent 70%)" }}
       />
 
-      <div className="mx-auto w-full max-w-7xl relative z-10">
+      <div ref={stepsSectionRef} className="mx-auto w-full max-w-7xl relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
           <span className="eyebrow">
@@ -1853,6 +1871,8 @@ export function Samples() {
         {/* Detailed Active Step Presentation Stage */}
         <div 
           ref={stageRef}
+          onMouseEnter={() => setStepsHovered(true)}
+          onMouseLeave={() => setStepsHovered(false)}
           key={activeStep}
           className={`${
             isVisible || activeStep > 0 ? "animate-step-transition" : "opacity-0"
