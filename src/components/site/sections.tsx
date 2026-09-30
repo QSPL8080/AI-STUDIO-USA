@@ -3696,19 +3696,22 @@ export function Process() {
   const doubledSteps = [...processSteps, ...processSteps];
 
   return (
-    <Section id="process" className="relative overflow-hidden bg-gradient-to-b from-purple-50/40 via-white to-purple-50/20 border-y border-purple-100/70 py-16 sm:py-20">
-      <SectionHeading
-        eyebrow="HOW IT WORKS"
-        title="From Brief to"
-        highlight="Ready-to-Run Creative"
-        center={true}
-      />
+    <section id="process" className="scroll-mt-[72px] relative w-full overflow-hidden bg-gradient-to-b from-purple-50/40 via-white to-purple-50/20 border-y border-purple-100/70 py-14 sm:py-18">
+      {/* Centered Heading */}
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
+        <SectionHeading
+          eyebrow="HOW IT WORKS"
+          title="From Brief to"
+          highlight="Ready-to-Run Creative"
+          center={true}
+        />
+      </div>
 
-      {/* Infinite Smooth Looping Track (Left to Right, Readable Speed, Pause on Hover) */}
-      <div className="relative mt-10 sm:mt-12 w-full overflow-hidden">
+      {/* 100% Full-Width Infinite Smooth Looping Track (Left to Right) */}
+      <div className="relative mt-8 sm:mt-10 w-full overflow-hidden">
         {/* Left & Right Soft Fade Gradients */}
-        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 sm:w-24 bg-gradient-to-r from-white via-white/80 to-transparent z-10" />
-        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 sm:w-24 bg-gradient-to-l from-white via-white/80 to-transparent z-10" />
+        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-r from-white via-white/80 to-transparent z-10" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-l from-white via-white/80 to-transparent z-10" />
 
         {/* Marquee Row */}
         <div className="flex gap-4 sm:gap-5 py-3 animate-marquee-ltr hover:[animation-play-state:paused]">
@@ -3750,18 +3753,17 @@ export function Process() {
         </div>
       </div>
 
-      {/* CTA Button */}
-      <div className="mt-10 sm:mt-12 flex flex-col items-center justify-center text-center">
-        <button
-          type="button"
-          onClick={() => openCheckoutModal({ itemType: "package" })}
+      {/* CTA Button Linked to Contact Form */}
+      <div className="mt-10 sm:mt-12 flex flex-col items-center justify-center text-center px-4">
+        <a
+          href="#contact"
           className="inline-flex items-center justify-center rounded-full bg-gradient-brand px-8 py-3.5 text-xs sm:text-sm font-bold text-neon-foreground shadow-lg glow-neon transition-all duration-200 hover:scale-105 hover:brightness-110 cursor-pointer"
         >
           <Zap className="mr-2 h-4 w-4" />
           <span>Start Your Project</span>
-        </button>
+        </a>
       </div>
-    </Section>
+    </section>
   );
 }
 
