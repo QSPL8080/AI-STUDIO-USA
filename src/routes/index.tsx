@@ -18,6 +18,7 @@ import {
   ResearchToAdStrip,
   Samples,
   Services,
+  DigitalTwin,
   StrategyCall,
   TrustStrip,
   WhyAiVideo,
@@ -83,6 +84,7 @@ function Index() {
         <ResearchToAdStrip />
         <Samples />
         <Services />
+        <DigitalTwin />
         <WhyAiVideo />
         <Pricing />
         <PackageInclusions />

@@ -3369,11 +3369,18 @@ export function PackageInclusions() {
   );
 }
 
+const digitalTwinSetupItems = [
+  "Digital twin creation",
+  "Character setup",
+  "Visual configuration",
+  "Voice setup",
+  "Production-ready configuration",
+  "Testing and quality control",
+];
+
 export function DigitalTwin() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const twinVideoRef = useRef<HTMLVideoElement>(null);
   const [isInView, setIsInView] = useState(false);
-  const twinSample = samples.find((s) => s.format === "Digital Twin") || samples[4];
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -3383,130 +3390,162 @@ export function DigitalTwin() {
       ([entry]) => {
         if (entry?.isIntersecting) {
           setIsInView(true);
+          observer.unobserve(el);
         }
       },
-      { threshold: 0.05, rootMargin: "50px 0px 50px 0px" },
+      { threshold: 0.1, rootMargin: "50px 0px 50px 0px" },
     );
 
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    const video = twinVideoRef.current;
-    if (!video || !isInView) return;
-
-    video.defaultMuted = true;
-    video.muted = true;
-    video.playsInline = true;
-
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        const onTouch = () => {
-          if (twinVideoRef.current) {
-            twinVideoRef.current.defaultMuted = true;
-            twinVideoRef.current.muted = true;
-            twinVideoRef.current.play().catch(() => {});
-          }
-          window.removeEventListener("touchstart", onTouch);
-          window.removeEventListener("scroll", onTouch);
-        };
-        window.addEventListener("touchstart", onTouch, { once: true, passive: true });
-        window.addEventListener("scroll", onTouch, { once: true, passive: true });
-      });
-    }
-  }, [isInView, twinSample?.videoUrl]);
-
   return (
-    <Section id="digital-twin" className="relative overflow-hidden bg-aura-diagonal-soft border-y border-purple-100/70">
-      {/* Giant left-scrolling 'AI VIDEO' watermark */}
+    <Section id="digital-twin" className="relative overflow-hidden bg-gradient-to-b from-purple-50/30 via-white to-slate-50/50 py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 border-y border-purple-100/80 shadow-inner">
+      {/* Light atmospheric ambient background glows */}
       <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden select-none z-0"
-      >
-        <div className="animate-watermark-scroll flex whitespace-nowrap">
-          {[0, 1].map((i) => (
-            <span
-              key={i}
-              className="flex shrink-0 items-center font-extrabold uppercase text-slate-900/[0.04]"
-              style={{ fontSize: "clamp(5rem, 18vw, 14rem)", letterSpacing: "0.2em" }}
-            >
-              AI VIDEO&nbsp;&nbsp;•&nbsp;&nbsp;AI VIDEO&nbsp;&nbsp;•&nbsp;&nbsp;AI VIDEO&nbsp;&nbsp;•&nbsp;&nbsp;
-            </span>
-          ))}
-        </div>
-      </div>
+        aria-hidden
+        className="pointer-events-none absolute -left-20 top-1/4 h-96 w-96 rounded-full opacity-25 blur-3xl"
+        style={{ background: "radial-gradient(circle, #a855f7 0%, transparent 70%)" }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-20 bottom-1/4 h-96 w-96 rounded-full opacity-25 blur-3xl"
+        style={{ background: "radial-gradient(circle, #ec4899 0%, transparent 70%)" }}
+      />
 
-      <div ref={sectionRef} className="relative z-10 grid gap-12 lg:grid-cols-12 lg:items-center">
-        {/* Content Side: Enters from RIGHT */}
-        <div
-          className={`lg:col-span-5 transition-all duration-700 ${
-            isInView ? "animate-item-right" : "opacity-0 translate-x-12"
-          }`}
-        >
-          <span className="eyebrow">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.6)]"></span>
-            </span>
-            AI Digital Twin Videos
-          </span>
-          <h2 className="mt-3.5 font-heading text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-slate-900">
-            Build Your AI Digital Twin Once.{" "}
-            <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5 whitespace-nowrap">
-              Create Videos Again and Again.
-            </span>
-          </h2>
-          <p className="mt-3 text-sm sm:text-base md:text-lg font-semibold text-slate-800">
-            Turn your approved appearance and voice into a reusable AI video asset for future
-            content.
-          </p>
-          <p className="mt-3 text-xs sm:text-sm md:text-base leading-relaxed text-slate-600">
-            Our AI digital twin video service helps founders, doctors, coaches, consultants,
-            educators and personal brands create recurring video content using an appropriately
-            authorized and client-approved digital twin. Once your digital twin is configured, it
-            can be used for future AI video production without requiring you to record every
-            individual video.
-          </p>
-          <p className="mt-6 text-2xl font-bold text-gradient-brand md:text-3xl">
-            $499 One-Time Setup
-          </p>
-          <div className="mt-6">
-            <NeonButton href="#contact">Get Your Digital Twin</NeonButton>
-          </div>
-          <p className="mt-4 text-xs text-slate-500">
-            Digital twin and voice cloning services require appropriate client authorization and
-            consent.
-          </p>
-        </div>
-
-        {/* Card Side: Enters from LEFT with points and Reel Player side-by-side */}
-        <div
-          className={`panel lg:col-span-7 flex flex-col items-center justify-between gap-6 p-6 shadow-xl transition-all duration-700 sm:flex-row sm:p-8 md:p-9 ${
-            isInView ? "animate-item-left" : "opacity-0 -translate-x-12"
-          }`}
-        >
-          {/* Checklist Points */}
-          <ul className="flex flex-1 flex-col justify-between gap-3 self-stretch sm:gap-3.5">
-            {twinFeatures.map((feature) => (
-              <li key={feature} className="flex items-center gap-3 text-xs md:text-sm">
-                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-purple-100 text-[10px] font-bold text-purple-700 shadow-sm">
-                  ✓
+      <div ref={sectionRef} className="mx-auto w-full max-w-7xl relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          {/* Content Column (Left on desktop) */}
+          <div
+            className={`lg:col-span-7 flex flex-col text-left transition-all duration-700 ${
+              isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
+          >
+            {/* Eyebrow */}
+            <div>
+              <span className="eyebrow">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.6)]"></span>
                 </span>
-                <span className="font-medium text-slate-700">{feature}</span>
-              </li>
-            ))}
-          </ul>
+                DIGITAL TWIN SETUP
+              </span>
+            </div>
 
-          {/* Digital Twin Image Card */}
-          <div className="relative aspect-[9/16] w-full max-w-[200px] shrink-0 overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-lg sm:max-w-[210px] md:max-w-[220px]">
-            <img
-              src="/images/Digital%20Twin%20Image.png?v=3"
-              alt="Digital Twin Sample Reel"
-              className="h-full w-full object-cover"
-              loading="eager"
-            />
+            {/* Heading */}
+            <h2 className="mt-3.5 font-heading text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-slate-900">
+              Build Your Digital Twin Once.{" "}
+              <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5 whitespace-nowrap">
+                Create Content at Scale.
+              </span>
+            </h2>
+
+            {/* Subheading */}
+            <p className="mt-3 text-sm sm:text-base md:text-lg leading-relaxed text-slate-600">
+              Your digital twin can become a repeatable content asset for ongoing video production.
+            </p>
+
+            {/* Setup & Price Card */}
+            <div className="mt-6 rounded-2xl border border-purple-200/90 bg-white/90 p-5 sm:p-6 shadow-xl shadow-purple-500/5 backdrop-blur-md">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-purple-100">
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-purple-700 font-mono">
+                    DIGITAL TWIN SETUP
+                  </span>
+                  <div className="mt-0.5 text-2xl sm:text-3xl font-extrabold text-slate-900 font-mono">
+                    $499 <span className="text-sm font-semibold text-slate-500 font-sans">One-Time</span>
+                  </div>
+                </div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100/80 px-3 py-1 text-xs font-bold text-purple-800 border border-purple-200 shadow-2xs">
+                  <Sparkles className="h-3.5 w-3.5 text-purple-600" />
+                  Turnkey Asset Creation
+                </span>
+              </div>
+
+              {/* Setup Includes Checklist */}
+              <div className="mt-4">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-900 font-mono block mb-3">
+                  SETUP INCLUDES
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {digitalTwinSetupItems.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm font-medium text-slate-700">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-700 text-xs font-bold shadow-2xs">
+                        ✓
+                      </span>
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Supporting Copy */}
+            <p className="mt-4 text-xs sm:text-sm md:text-base leading-relaxed text-slate-600">
+              After setup, use your digital twin for ongoing AI video production without repeatedly arranging traditional on-camera shoots.
+            </p>
+
+            {/* CTA Row */}
+            <div className="mt-6 flex flex-wrap items-center gap-3.5">
+              <button
+                type="button"
+                onClick={() => openCheckoutModal({ itemType: "setup", itemId: "digital-twin-setup" })}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 px-6 py-3 text-xs sm:text-sm md:text-base font-bold text-white shadow-md shadow-purple-500/20 transition-all duration-300 hover:scale-105 hover:shadow-purple-500/35 cursor-pointer"
+              >
+                <span>Set Up Your Digital Twin</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+              <a
+                href="#contact"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-purple-700 hover:text-purple-900 transition-colors px-2 py-2"
+              >
+                <span>Have questions? Contact us</span>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </a>
+            </div>
+          </div>
+
+          {/* Image Column (Right on desktop) */}
+          <div
+            className={`lg:col-span-5 flex justify-center items-center transition-all duration-700 delay-150 ${
+              isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
+          >
+            <div className="relative group w-full max-w-[340px] sm:max-w-[380px]">
+              {/* Subtle ambient backlight glow */}
+              <div
+                aria-hidden
+                className="absolute -inset-2 rounded-3xl bg-gradient-to-tr from-purple-600/30 via-pink-500/20 to-indigo-600/30 blur-xl opacity-70 group-hover:opacity-100 transition-opacity duration-500"
+              />
+              
+              <div className="relative rounded-3xl border-2 border-purple-200/90 bg-white/90 p-3 sm:p-4 shadow-xl shadow-purple-900/10 backdrop-blur-xl overflow-hidden">
+                <div className="relative aspect-[9/16] w-full overflow-hidden rounded-2xl bg-slate-950 border border-slate-200">
+                  <img
+                    src="/images/digital-twin-image.png"
+                    alt="Digital Twin Setup"
+                    className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  {/* Overlay Top Badge */}
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-slate-950/80 px-3 py-1 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold shadow-sm">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>AI Digital Twin Model</span>
+                  </div>
+
+                  {/* Overlay Bottom Banner */}
+                  <div className="absolute bottom-3 inset-x-3 rounded-xl bg-slate-950/85 p-3 backdrop-blur-md border border-white/10 text-white">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-purple-300 font-mono">ONE-TIME SETUP</span>
+                      <span className="font-mono text-xs font-extrabold text-white bg-purple-600/80 px-2 py-0.5 rounded">$499</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-300 leading-tight">
+                      Repeatable AI video asset for ongoing content scaling.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
