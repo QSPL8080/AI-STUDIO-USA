@@ -1332,9 +1332,14 @@ function AdminPage() {
   const fetchLeadsList = async () => {
     try {
       const res = await fetchLeadsServerFn({ data: { includeDeleted: false } });
-      if (res.success && res.leads) {
-        setLeads(res.leads);
-        localStorage.setItem("ai_studio_local_leads", JSON.stringify(res.leads));
+      if (res.success && Array.isArray(res.leads)) {
+        const local = localStorage.getItem("ai_studio_local_leads");
+        const localLeads: Lead[] = local ? JSON.parse(local) : [];
+        const dbLeadIds = new Set(res.leads.map((l) => l.id));
+        const unsynced = localLeads.filter((l) => !dbLeadIds.has(l.id));
+        const combined = [...unsynced, ...res.leads];
+        setLeads(combined);
+        localStorage.setItem("ai_studio_local_leads", JSON.stringify(combined));
       } else {
         const local = localStorage.getItem("ai_studio_local_leads");
         if (local) setLeads(JSON.parse(local));
@@ -2869,23 +2874,27 @@ function AdminPage() {
     );
   };
 
-  // Helper to identify India Leads (never convert, strictly remove from USA CRM)
+  // Helper to identify India Leads (never convert, strictly remove from USA CRM only if explicitly tagged from external India site)
   const isIndiaLead = (lead: Lead) => {
     const s = (lead.source || "").toLowerCase().trim();
-    // Leads from the USA website, manual CRM entries, Meta and Calendly always belong to the
-    // USA CRM, whatever phone number or location the client typed (e.g. a +91 test number)
-    if (/usa|manual|meta|facebook|instagram|calendly/.test(s)) return false;
+    // All website form submissions (Contact Form, Popup Modal, USA forms, Manual, Meta, Calendly) ALWAYS belong to this CRM
+    if (
+      s.includes("contact") ||
+      s.includes("popup") ||
+      s.includes("modal") ||
+      s.includes("quote") ||
+      s.includes("usa") ||
+      s.includes("website") ||
+      s.includes("manual") ||
+      s.includes("meta") ||
+      s.includes("facebook") ||
+      s.includes("instagram") ||
+      s.includes("calendly")
+    ) {
+      return false;
+    }
     const loc = (lead.location || "").toLowerCase().trim();
-    const phone = (lead.phone || "").replace(/\D/g, "");
-    return (
-      s.includes("india") ||
-      s.includes("in -") ||
-      s === "contact form" ||
-      s === "popup modal" ||
-      /\bindia\b/.test(loc) ||
-      loc.includes("bharat") ||
-      (phone.startsWith("91") && phone.length === 12 && !lead.phone.startsWith("+1"))
-    );
+    return s.includes("india") || s.includes("in -") || /\bindia\b/.test(loc) || loc.includes("bharat");
   };
 
   // Helper to match a Calendly meeting to an existing lead by Email, Phone, or Client Name (Section 14)
@@ -2936,7 +2945,7 @@ function AdminPage() {
           matchesSource =
             rawSrc === targetSrc ||
             categorySrc === targetSrc ||
-            (targetSrc.includes("usa") && (rawSrc.includes("usa") || categorySrc.includes("usa"))) ||
+            (targetSrc.includes("usa") && (rawSrc.includes("usa") || categorySrc.includes("usa") || rawSrc.includes("contact") || rawSrc.includes("popup") || rawSrc.includes("modal") || rawSrc.includes("quote"))) ||
             (targetSrc.includes("manual") && rawSrc.includes("manual")) ||
             (targetSrc.includes("calendly") && rawSrc.includes("calendly"));
         }
