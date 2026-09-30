@@ -5570,8 +5570,8 @@ export function Footer() {
       <div className="relative z-10 mx-auto w-full max-w-6xl flex flex-col">
         {/* Main Footer Grid: 5 Columns across full width */}
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-12 lg:gap-6 items-start">
-          {/* Col 1: Brand & Tagline & CTA (lg:col-span-4) */}
-          <div className="flex flex-col items-start gap-3.5 lg:col-span-4">
+          {/* Col 1: Brand & Tagline & CTA (lg:col-span-3) */}
+          <div className="flex flex-col items-start gap-3.5 lg:col-span-3">
             <a href="#top" className="-ml-1 flex items-center transition-opacity hover:opacity-90">
               <img
                 src="/images/logo.png"
@@ -5663,8 +5663,8 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Col 5: Locations & Contact (lg:col-span-2) */}
-          <div className="flex flex-col gap-3.5 lg:col-span-2">
+          {/* Col 5: Locations & Contact (lg:col-span-3) */}
+          <div className="flex flex-col gap-3.5 lg:col-span-3">
             <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-white sm:text-sm">
               OUR LOCATIONS
             </h3>
@@ -5701,25 +5701,25 @@ export function Footer() {
             </div>
 
             {/* Direct Email and Phone Contact Links */}
-            <div className="border-t border-slate-800/80 pt-2.5 flex flex-col gap-1.5 text-xs">
+            <div className="border-t border-slate-800/80 pt-3 flex flex-col gap-2.5">
               <a
                 href={`https://mail.google.com/mail/?view=cm&fs=1&to=${footerEmail}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-slate-400 transition-colors hover:text-neon"
+                className="group inline-flex items-center gap-2 text-slate-300 transition-colors hover:text-neon"
                 title="Send email via Gmail"
               >
-                <Mail className="h-3.5 w-3.5 text-neon shrink-0" />
-                <span className="truncate text-[11px]">{footerEmail}</span>
+                <Mail className="h-4.5 w-4.5 text-neon shrink-0 transition-transform group-hover:scale-110" />
+                <span className="text-[13px] sm:text-sm font-medium tracking-tight break-all">{footerEmail}</span>
               </a>
 
               <a
                 href={`tel:${footerPhone.replace(/[^0-9+]/g, "")}`}
-                className="inline-flex items-center gap-1.5 text-slate-400 transition-colors hover:text-emerald-400"
+                className="group inline-flex items-center gap-2 text-slate-300 transition-colors hover:text-emerald-400"
                 title="Call Quickupp AI Studio"
               >
-                <Phone className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                <span className="font-mono text-[11px]">{footerPhone}</span>
+                <Phone className="h-4.5 w-4.5 text-emerald-400 shrink-0 transition-transform group-hover:scale-110" />
+                <span className="font-mono text-[13px] sm:text-sm font-medium tracking-wide">{footerPhone}</span>
               </a>
             </div>
           </div>
