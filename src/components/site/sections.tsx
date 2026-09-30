@@ -2473,9 +2473,9 @@ export function Services() {
           </p>
         </div>
 
-        {/* Interactive Services Tab Bar */}
-        <div className="mb-6 sm:mb-8 overflow-x-auto scrollbar-none pb-2">
-          <div className="flex items-center justify-between min-w-[620px] lg:min-w-0 gap-1.5 p-1.5 rounded-2xl border border-purple-100/80 bg-white/80 backdrop-blur-md shadow-sm">
+        {/* Table-Format Services Tab Navigation (same style as "Who We Serve") */}
+        <div className="mb-6 sm:mb-8 overflow-x-auto scrollbar-none pb-1">
+          <div className="mx-auto flex items-stretch min-w-[760px] lg:min-w-0 max-w-5xl border border-slate-300 bg-white rounded-none divide-x divide-slate-300 shadow-2xs">
             {services.map((srv, idx) => {
               const isSelected = activeIdx === idx;
               return (
@@ -2483,18 +2483,16 @@ export function Services() {
                   key={srv.num}
                   type="button"
                   onClick={() => setActiveIdx(idx)}
-                  className={`flex-1 flex flex-col items-center py-2 px-2 rounded-xl transition-all duration-300 cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-3.5 rounded-none transition-all duration-150 cursor-pointer text-xs sm:text-sm font-bold text-center select-none ${
                     isSelected
-                      ? "bg-purple-900 text-white shadow-md shadow-purple-900/20 scale-[1.02]"
-                      : "text-slate-600 hover:text-purple-700 hover:bg-purple-50/70"
+                      ? "bg-purple-900 text-white font-extrabold shadow-inner"
+                      : "bg-slate-50/70 text-slate-700 hover:bg-purple-50 hover:text-purple-900"
                   }`}
                 >
-                  <span className={`font-mono text-[10px] font-bold ${isSelected ? "text-purple-200" : "text-slate-400"}`}>
+                  <span className={`font-mono text-[11px] font-bold shrink-0 ${isSelected ? "text-purple-200" : "text-purple-600"}`}>
                     {srv.num}
                   </span>
-                  <span className="text-[11px] font-bold tracking-tight truncate max-w-[120px] flex items-center justify-center">
-                    <span>{srv.title.replace("AI ", "")}</span>
-                  </span>
+                  <span className="whitespace-nowrap">{srv.title.replace("AI ", "")}</span>
                 </button>
               );
             })}
