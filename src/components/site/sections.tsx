@@ -1077,7 +1077,6 @@ export function HeroOverview() {
 export function TrustStrip() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isInView, setIsInView] = useState(false);
-  const [activeStepPulse, setActiveStepPulse] = useState(0);
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -1095,15 +1094,6 @@ export function TrustStrip() {
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-
-  // Traveling active step highlight pulse (advances step by step)
-  useEffect(() => {
-    if (!isInView) return;
-    const timer = setInterval(() => {
-      setActiveStepPulse((prev) => (prev + 1) % 11);
-    }, 1500);
-    return () => clearInterval(timer);
-  }, [isInView]);
 
   const phases = [
     {
@@ -1204,28 +1194,23 @@ export function TrustStrip() {
                 {phase.steps.map((step, sIdx) => {
                   const IconComp = step.icon;
                   const globalIdx = globalStepCounter++;
-                  const isActive = activeStepPulse === globalIdx;
 
                   return (
                     <div
                       key={step.name}
                       style={{
-                        transitionDelay: `${globalIdx * 100}ms`,
+                        transitionDelay: `${globalIdx * 120}ms`,
                       }}
-                      className={`group relative flex items-center justify-between p-2.5 sm:p-3 rounded-xl transition-all duration-500 cursor-default ${
-                        isInView ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-5 scale-95"
-                      } ${
-                        isActive
-                          ? "scale-[1.03] shadow-lg shadow-purple-500/20 z-20 ring-2 ring-purple-400/80 bg-white"
-                          : "hover:-translate-y-0.5"
-                      }`}
+                      className={`group relative flex items-center justify-between p-2.5 sm:p-3 rounded-xl transition-all duration-600 ease-out cursor-default ${
+                        isInView
+                          ? "opacity-100 translate-y-0 scale-100"
+                          : "opacity-0 translate-y-6 scale-95"
+                      } hover:-translate-y-0.5`}
                     >
-                      {/* Active Traveling Pulse / Ambient step glow */}
+                      {/* Ambient step hover background glow */}
                       <div
-                        className={`absolute inset-0 rounded-xl transition-all duration-300 ${
-                          isActive
-                            ? "bg-gradient-to-r from-purple-500/15 via-pink-500/15 to-purple-500/10 border-2 border-purple-400 opacity-100"
-                            : step.highlight
+                        className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${
+                          step.highlight
                             ? "bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-transparent border border-purple-300/60 opacity-100"
                             : step.isFinal
                             ? "bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-emerald-500/10 border border-emerald-300/60 opacity-100"
@@ -1238,14 +1223,12 @@ export function TrustStrip() {
                         {/* Number & Icon cluster */}
                         <div className="relative shrink-0">
                           <div
-                            className={`h-9 w-9 sm:h-9.5 sm:w-9.5 rounded-lg flex items-center justify-center transition-all duration-300 ${
-                              isActive
-                                ? "bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/40 scale-110"
-                                : step.highlight
-                                ? "bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-sm shadow-purple-500/25 group-hover:scale-105"
+                            className={`h-9 w-9 sm:h-9.5 sm:w-9.5 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-105 ${
+                              step.highlight
+                                ? "bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-sm shadow-purple-500/25"
                                 : step.isFinal
-                                ? "bg-gradient-to-br from-purple-600 via-pink-600 to-emerald-500 text-white shadow-sm shadow-purple-500/30 group-hover:scale-105"
-                                : "bg-white text-purple-700 border border-purple-100 shadow-2xs group-hover:text-purple-900 group-hover:border-purple-200 group-hover:scale-105"
+                                ? "bg-gradient-to-br from-purple-600 via-pink-600 to-emerald-500 text-white shadow-sm shadow-purple-500/30"
+                                : "bg-white text-purple-700 border border-purple-100 shadow-2xs group-hover:text-purple-900 group-hover:border-purple-200"
                             }`}
                           >
                             <IconComp className="h-4.5 w-4.5 stroke-[2.2]" />
@@ -1255,18 +1238,12 @@ export function TrustStrip() {
                         {/* Title and Tag */}
                         <div className="flex flex-col min-w-0 text-left">
                           <div className="flex items-center gap-1.5">
-                            <span
-                              className={`font-mono text-[10px] font-bold transition-colors ${
-                                isActive ? "text-purple-700 font-extrabold" : "text-slate-400"
-                              }`}
-                            >
+                            <span className="font-mono text-[10px] font-bold text-slate-400">
                               {step.num}
                             </span>
                             <span
-                              className={`text-xs sm:text-sm font-bold tracking-tight truncate transition-colors ${
-                                isActive
-                                  ? "text-purple-950 font-black"
-                                  : step.highlight || step.isFinal
+                              className={`text-xs sm:text-sm font-bold tracking-tight truncate ${
+                                step.highlight || step.isFinal
                                   ? "text-purple-950 font-extrabold"
                                   : "text-slate-800 group-hover:text-purple-700"
                               }`}
@@ -1281,21 +1258,9 @@ export function TrustStrip() {
                       </div>
 
                       {/* Forward connector arrow */}
-                      <div
-                        className={`relative z-10 shrink-0 transition-all pl-2 ${
-                          isActive
-                            ? "text-purple-600 translate-x-1 font-bold"
-                            : "text-slate-300 group-hover:text-purple-500"
-                        }`}
-                      >
+                      <div className="relative z-10 shrink-0 text-slate-300 group-hover:text-purple-500 transition-colors pl-2">
                         {step.isFinal ? (
-                          <span
-                            className={`inline-flex items-center justify-center h-5 px-1.5 rounded-full border text-[9px] font-black uppercase tracking-wider transition-all ${
-                              isActive
-                                ? "bg-emerald-500 text-white border-emerald-400 shadow-sm shadow-emerald-500/30 scale-105"
-                                : "bg-emerald-100 border-emerald-300 text-emerald-800"
-                            }`}
-                          >
+                          <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full bg-emerald-100 border border-emerald-300 text-[9px] font-black text-emerald-800 uppercase tracking-wider">
                             Ready ✓
                           </span>
                         ) : (
