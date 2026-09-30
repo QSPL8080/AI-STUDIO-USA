@@ -945,25 +945,11 @@ export function HeroOverview() {
     return () => observer.disconnect();
   }, []);
 
-  const visualProcessSteps = [
-    "Research",
-    "Strategy",
-    "Hooks",
-    "Concepts",
-    "Scripts",
-    "Storyboard",
-    "AI Production",
-    "Editing",
-    "Sound Design",
-    "Quality Control",
-    "Delivery",
-  ];
-
   return (
     <section
       id="overview"
       ref={sectionRef}
-      className="relative overflow-hidden px-5 sm:px-8 lg:px-12 py-10 sm:py-14 md:py-16 border-b border-purple-100/80 bg-aura-diagonal"
+      className="relative overflow-hidden px-5 sm:px-8 lg:px-12 py-12 sm:py-16 md:py-20 border-b border-purple-100/80 bg-aura-diagonal"
     >
       {/* Ambient background brand glow */}
       <div
@@ -984,145 +970,93 @@ export function HeroOverview() {
         }}
       />
 
-      <div className="mx-auto w-full max-w-6xl relative z-10">
-        <div className="grid md:grid-cols-12 gap-8 md:gap-10 lg:gap-12 items-center">
-          {/* Left Column: Heading, Value Prop, Paragraphs & CTAs (7 cols on tablet/desktop) */}
-          <div className="md:col-span-7 flex flex-col items-start text-left">
-            {/* Brand Eyebrow Badge */}
-            <div
-              className={`transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                isVisible
-                  ? "opacity-100 translate-y-0 scale-100 blur-0"
-                  : "opacity-0 -translate-y-3 scale-95 blur-sm"
-              }`}
-            >
-              <span className="eyebrow text-[11px] sm:text-xs">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-neon shadow-[0_0_8px_#c850ff]"></span>
-                </span>
-                Conversion-Focused AI Video Ads for Modern Brands
-              </span>
-            </div>
+      <div className="mx-auto w-full max-w-4xl relative z-10 flex flex-col items-center text-center">
+        {/* Brand Eyebrow Badge */}
+        <div
+          className={`transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            isVisible
+              ? "opacity-100 translate-y-0 scale-100 blur-0"
+              : "opacity-0 -translate-y-3 scale-95 blur-sm"
+          }`}
+        >
+          <span className="eyebrow text-[11px] sm:text-xs">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-neon shadow-[0_0_8px_#c850ff]"></span>
+            </span>
+            Conversion-Focused AI Video Ads for Modern Brands
+          </span>
+        </div>
 
-            {/* Headline */}
-            <h1
-              className={`mt-3 sm:mt-4 font-[var(--font-google-sans)] text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.15] tracking-tight text-slate-900 transition-all duration-800 delay-100 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-6 blur-sm"
-              }`}
-            >
-              Create More Ad Creatives. Test More Ideas.{" "}
-              <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5">
-                Find What Works.
-              </span>
-            </h1>
+        {/* Headline */}
+        <h1
+          className={`mt-4 sm:mt-5 font-[var(--font-google-sans)] text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.15] tracking-tight text-slate-900 transition-all duration-800 delay-100 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-3xl ${
+            isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-6 blur-sm"
+          }`}
+        >
+          Create More Ad Creatives. Test More Ideas.{" "}
+          <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5">
+            Find What Works.
+          </span>
+        </h1>
 
-            {/* Description Paragraph 1 */}
-            <p
-              className={`mt-2.5 sm:mt-3 text-sm sm:text-base md:text-lg font-semibold text-slate-800 leading-snug transition-all duration-800 delay-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
-              }`}
-            >
-              Your next winning ad shouldn't require a full production team.
-            </p>
+        {/* Description Paragraph 1 */}
+        <p
+          className={`mt-3 sm:mt-4 text-base sm:text-lg md:text-xl font-semibold text-slate-800 leading-snug transition-all duration-800 delay-200 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
+            isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
+          }`}
+        >
+          Your next winning ad shouldn't require a full production team.
+        </p>
 
-            {/* Description Paragraph 2 */}
-            <p
-              className={`mt-2.5 sm:mt-3 text-xs sm:text-sm md:text-base leading-relaxed text-muted-foreground transition-all duration-800 delay-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
-              }`}
-            >
-              Quickupp AI Studio creates conversion-focused AI video ads for brands that need more creative variations—without the traditional costs and logistics of expensive shoots, creators, locations, and production teams.
-            </p>
+        {/* Description Paragraph 2 */}
+        <p
+          className={`mt-3 text-xs sm:text-sm md:text-base leading-relaxed text-muted-foreground transition-all duration-800 delay-300 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-3xl ${
+            isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
+          }`}
+        >
+          Quickupp AI Studio creates conversion-focused AI video ads for brands that need more creative variations—without the traditional costs and logistics of expensive shoots, creators, locations, and production teams.
+        </p>
 
-            {/* Description Paragraph 3 */}
-            <p
-              className={`mt-2 text-xs sm:text-sm leading-relaxed text-muted-foreground transition-all duration-800 delay-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
-              }`}
-            >
-              From AI UGC and AI avatars to hyper-realistic product ads and digital twins, we take your idea from research to ready-to-run ad.
-            </p>
+        {/* Description Paragraph 3 */}
+        <p
+          className={`mt-2.5 text-xs sm:text-sm leading-relaxed text-muted-foreground transition-all duration-800 delay-400 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
+            isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
+          }`}
+        >
+          From AI UGC and AI avatars to hyper-realistic product ads and digital twins, we take your idea from research to ready-to-run ad.
+        </p>
 
-            {/* Action Buttons & Microcopy */}
-            <div
-              className={`mt-5 sm:mt-6 flex flex-col items-start gap-2.5 transition-all duration-800 delay-550 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                isVisible
-                  ? "opacity-100 translate-y-0 scale-100"
-                  : "opacity-0 translate-y-4 scale-95"
-              }`}
+        {/* Action Buttons & Microcopy */}
+        <div
+          className={`mt-6 sm:mt-8 flex flex-col items-center gap-3 transition-all duration-800 delay-550 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            isVisible
+              ? "opacity-100 translate-y-0 scale-100"
+              : "opacity-0 translate-y-4 scale-95"
+          }`}
+        >
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <NeonButton
+              href={calendlyUrl}
+              variant="call"
+              className="text-xs sm:text-sm inline-flex items-center gap-1.5 group !rounded-lg"
             >
-              <div className="flex flex-wrap items-center gap-3">
-                <NeonButton
-                  href={calendlyUrl}
-                  variant="call"
-                  className="text-xs sm:text-sm inline-flex items-center gap-1.5 group !rounded-lg"
-                >
-                  <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-                  <span>Book a Strategy Call</span>
-                </NeonButton>
-                <NeonButton
-                  href="#services"
-                  variant="ghost"
-                  className="text-xs sm:text-sm inline-flex items-center gap-2 !rounded-lg"
-                >
-                  <span>Explore Our Services</span>
-                  <ArrowRight className="h-3.5 w-3.5 text-purple-600 shrink-0" />
-                </NeonButton>
-              </div>
-              <p className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 pl-0.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                Starting at $79 / AI Video
-              </p>
-            </div>
+              <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+              <span>Book a Strategy Call</span>
+            </NeonButton>
+            <NeonButton
+              href="#services"
+              variant="ghost"
+              className="text-xs sm:text-sm inline-flex items-center gap-2 !rounded-lg"
+            >
+              <span>Explore Our Services</span>
+              <ArrowRight className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+            </NeonButton>
           </div>
-
-          {/* Right Column: Visual Process (11-Step Production Pipeline) */}
-          <div
-            className={`md:col-span-5 w-full flex flex-col rounded-2xl border border-purple-200/80 bg-white/95 p-4 sm:p-5 shadow-lg backdrop-blur-xl transition-all duration-800 delay-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-              isVisible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95"
-            }`}
-          >
-            {/* Purpose Header */}
-            <div className="flex items-center gap-2.5 pb-3 mb-3 border-b border-slate-100">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-brand text-white shadow-xs">
-                <Sparkles className="h-4 w-4" />
-              </span>
-              <div>
-                <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">
-                  Visual Process
-                </h4>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  AI creative production partner — not simply a video tool
-                </p>
-              </div>
-            </div>
-
-            {/* Visual Process Stepped Grid / Flow */}
-            <div className="grid grid-cols-2 gap-2">
-              {visualProcessSteps.map((step, idx) => (
-                <div
-                  key={step}
-                  className={`group flex items-center gap-2 rounded-lg border border-slate-200/80 bg-slate-50/70 px-2.5 py-2 text-xs font-semibold text-slate-800 shadow-xs transition-all duration-200 hover:border-purple-300 hover:bg-purple-50/80 hover:scale-[1.02] ${
-                    idx === visualProcessSteps.length - 1 ? "col-span-2 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-300 text-purple-950 font-bold" : ""
-                  }`}
-                  style={{ transitionDelay: isVisible ? `${350 + idx * 30}ms` : "0ms" }}
-                >
-                  <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-md text-[10px] font-bold font-mono ${
-                    idx === visualProcessSteps.length - 1 ? "bg-purple-600 text-white" : "bg-purple-100 text-purple-700"
-                  }`}>
-                    {String(idx + 1).padStart(2, "0")}
-                  </span>
-                  <span className="tracking-tight truncate">{step}</span>
-                  {idx < visualProcessSteps.length - 1 ? (
-                    <ArrowRight className="h-3 w-3 text-purple-400 ml-auto opacity-60 group-hover:opacity-100 shrink-0" />
-                  ) : (
-                    <Check className="h-3.5 w-3.5 text-purple-700 ml-auto shrink-0 stroke-[3]" />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          <p className="text-xs font-semibold text-slate-500 flex items-center justify-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block"></span>
+            Starting at $79 / AI Video
+          </p>
         </div>
       </div>
     </section>
@@ -1145,41 +1079,35 @@ export function TrustStrip() {
   ];
 
   return (
-    <section className="border-y border-slate-200/80 bg-white/95 backdrop-blur-md shadow-xs py-4 sm:py-5 px-4 sm:px-6 lg:px-8 overflow-hidden">
-      <div className="mx-auto w-full max-w-7xl">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-6">
-          {/* Purpose Statement: Quickupp is an AI creative production partner */}
-          <div className="flex items-center gap-2.5 shrink-0 text-center lg:text-left">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-brand text-white shadow-xs">
-              <Sparkles className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-purple-900">
-                AI Creative Production Partner
-              </p>
-              <p className="text-[11px] text-slate-500 font-medium">
-                Not simply an AI video-generation tool — full-funnel creative workflow
-              </p>
-            </div>
-          </div>
+    <section className="border-y border-slate-200/80 bg-white/95 backdrop-blur-md shadow-xs py-5 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <div className="mx-auto w-full max-w-7xl flex flex-col items-center text-center gap-4">
+        {/* Purpose */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+          <span className="flex items-center gap-1.5 rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-900 border border-purple-200">
+            <Sparkles className="h-3.5 w-3.5 text-purple-600" />
+            Visual Process
+          </span>
+          <p className="text-xs sm:text-sm font-semibold text-slate-700">
+            Quickupp is an AI creative production partner, not simply an AI video-generation tool.
+          </p>
+        </div>
 
-          {/* Visual Process Flow */}
-          <div className="w-full lg:w-auto overflow-x-auto no-scrollbar py-1">
-            <div className="flex items-center gap-1.5 sm:gap-2 min-w-max mx-auto lg:mx-0">
-              {steps.map((step, idx) => (
-                <div key={step} className="flex items-center gap-1.5 sm:gap-2">
-                  <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/90 px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-xs hover:border-purple-300 hover:bg-purple-50/60 transition-colors">
-                    <span className="text-[10px] font-bold text-purple-600 font-mono">
-                      {String(idx + 1).padStart(2, "0")}
-                    </span>
-                    <span>{step}</span>
-                  </div>
-                  {idx < steps.length - 1 && (
-                    <ArrowRight className="h-3 w-3 text-purple-400 shrink-0" />
-                  )}
+        {/* Visual Process Flow */}
+        <div className="w-full overflow-x-auto no-scrollbar py-1">
+          <div className="flex items-center justify-start lg:justify-center gap-1.5 sm:gap-2 min-w-max mx-auto px-2">
+            {steps.map((step, idx) => (
+              <div key={step} className="flex items-center gap-1.5 sm:gap-2">
+                <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/90 px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-xs hover:border-purple-300 hover:bg-purple-50/70 transition-colors">
+                  <span className="text-[10px] font-bold text-purple-600 font-mono">
+                    {String(idx + 1).padStart(2, "0")}
+                  </span>
+                  <span>{step}</span>
                 </div>
-              ))}
-            </div>
+                {idx < steps.length - 1 && (
+                  <ArrowRight className="h-3 w-3 text-purple-400 shrink-0" />
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>
