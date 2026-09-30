@@ -4088,10 +4088,11 @@ export function Process() {
             return (
               <div
                 key={`${step.step}-${i}`}
-                className="group relative flex w-[280px] sm:w-[320px] md:w-[340px] shrink-0 flex-col justify-between rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-purple-300 hover:shadow-lg backdrop-blur-md"
+                className="group relative flex w-[280px] sm:w-[320px] md:w-[340px] shrink-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-purple-300 hover:shadow-xl hover:shadow-purple-500/10 backdrop-blur-md"
               >
-                {/* Step Top Bar Accent Line */}
-                <div className="absolute left-0 top-0 h-1 w-0 bg-gradient-brand transition-all duration-400 group-hover:w-full rounded-t-2xl" />
+                {/* Step Top Bar Accent Line with Smooth Edge Masking */}
+                <div className="absolute left-0 top-0 h-1 w-0 bg-gradient-brand transition-all duration-500 ease-out group-hover:w-full" />
+                <div className="pointer-events-none absolute -top-1 left-0 h-3 w-0 bg-gradient-brand opacity-0 blur-xs transition-all duration-500 ease-out group-hover:w-full group-hover:opacity-40" />
 
                 {/* Ambient Step Number Watermark */}
                 <span className="pointer-events-none absolute right-4 top-2 text-4xl font-black text-slate-900/[0.04] transition-all duration-300 group-hover:text-purple-600/15">
