@@ -9,14 +9,14 @@ export const Route = createFileRoute("/cookie-policy")({
       {
         name: "description",
         content:
-          "Official Cookie Policy for Quickupp AI Studio, operated by Quickupp Softech LLC. Learn how cookies and tracking technologies are used.",
+          "Official Cookie Policy for Quickupp AI Studio, operated by Quickupp Softech LLC. Learn how we use cookies and tracking technologies on quickuppaistudio.us.",
       },
     ],
   }),
   component: CookiePolicyPage,
 });
 
-function CookiePolicyPage() {
+export function CookiePolicyPage() {
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-neon selection:text-black">
       {/* Top Header */}
@@ -27,7 +27,7 @@ function CookiePolicyPage() {
             className="-ml-3 sm:-ml-5 flex items-center transition-opacity hover:opacity-90"
           >
             <img
-              src="/images/LOGO 1.png"
+              src="/images/logo.png"
               alt="Quickupp AI Studio logo"
               className="h-9 md:h-10 w-auto object-contain"
               width={125}
@@ -56,10 +56,10 @@ function CookiePolicyPage() {
               Cookie &amp; Tracking Policy
             </span>
             <span className="rounded-full bg-surface/80 border border-border/70 px-3 py-0.5 text-[11px] font-medium text-muted-foreground">
-              Effective Date: September 18, 2026
+              Effective Date: September 30, 2026
             </span>
             <span className="rounded-full bg-surface/80 border border-border/70 px-3 py-0.5 text-[11px] font-medium text-muted-foreground">
-              Last Updated: September 18, 2026
+              Last Updated: September 30, 2026
             </span>
           </div>
 
@@ -71,7 +71,7 @@ function CookiePolicyPage() {
           </h1>
 
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
-            This Cookie Policy explains how Quickupp AI Studio uses cookies and similar technologies on <strong className="text-foreground">quickuppaistudio.us</strong>. Quickupp AI Studio is operated by <strong className="text-foreground">Quickupp Softech LLC</strong>.
+            This Cookie Policy explains how Quickupp AI Studio, operated by <strong className="text-foreground">Quickupp Softech LLC</strong> (&ldquo;Quickupp,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;), uses cookies and similar technologies on <strong className="text-foreground">quickuppaistudio.us</strong>.
           </p>
 
           {/* Policy Navigation Tabs */}
@@ -100,160 +100,410 @@ function CookiePolicyPage() {
           </div>
         </div>
 
-        {/* Company Information Box */}
-        <div className="my-8 rounded-xl border border-border/70 bg-surface/40 p-5 sm:p-6">
-          <h2 className="text-sm font-semibold tracking-wide text-foreground uppercase text-neon">
-            1. Company Information
-          </h2>
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm text-muted-foreground">
-            <div><span className="font-semibold text-foreground">Legal Entity:</span> Quickupp Softech LLC</div>
-            <div><span className="font-semibold text-foreground">Brand:</span> Quickupp AI Studio</div>
-            <div><span className="font-semibold text-foreground">Business Address:</span> 8 The Green, Suite A, Dover, DE 19901, USA</div>
-            <div><span className="font-semibold text-foreground">Website:</span> <a href="https://www.quickuppaistudio.us/" target="_blank" rel="noopener noreferrer" className="text-neon underline">https://www.quickuppaistudio.us/</a></div>
-            <div className="sm:col-span-2"><span className="font-semibold text-foreground">Email:</span> <a href="mailto:info@quickuppaistudio.us" className="text-neon underline">info@quickuppaistudio.us</a></div>
-          </div>
-        </div>
+        {/* Legal Sections (1 to 12) */}
+        <div className="mt-8 space-y-8 text-sm sm:text-base leading-relaxed text-muted-foreground">
 
-        {/* Policy Sections */}
-        <div className="space-y-8 text-sm sm:text-base leading-relaxed text-muted-foreground">
-          {/* Section 2 */}
-          <section className="space-y-3">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">02.</span>
-              What Are Cookies?
+          {/* 1. WHAT ARE COOKIES? */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                01
+              </span>
+              WHAT ARE COOKIES?
             </h2>
             <p>
-              Cookies are small text files that websites may place on your device when you visit a website. Cookies allow websites to recognize your browser and remember certain information.
+              Cookies are small text files or similar technologies that may be stored on your browser or device when you visit a website.
             </p>
+            <p>Cookies can help websites:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs sm:text-sm">
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Operate properly</span>
+              </div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Remember preferences</span>
+              </div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Understand website usage</span>
+              </div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Measure advertising</span>
+              </div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Improve performance</span>
+              </div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Provide security</span>
+              </div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Personalize experiences</span>
+              </div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Measure conversions</span>
+              </div>
+            </div>
+          </section>
+
+          {/* 2. TYPES OF TECHNOLOGIES WE MAY USE */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                02
+              </span>
+              TYPES OF TECHNOLOGIES WE MAY USE
+            </h2>
+            <p>We may use:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs sm:text-sm">
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center font-medium text-foreground">Cookies</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center font-medium text-foreground">Pixels</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center font-medium text-foreground">Web beacons</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center font-medium text-foreground">Tags</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center font-medium text-foreground">Scripts</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center font-medium text-foreground">Local storage</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center font-medium text-foreground">Device identifiers</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center font-medium text-foreground">Similar tracking technologies</div>
+            </div>
+          </section>
+
+          {/* 3. CATEGORIES OF COOKIES */}
+          <section className="space-y-5 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                03
+              </span>
+              CATEGORIES OF COOKIES
+            </h2>
+
+            {/* A. Strictly Necessary Cookies */}
+            <div className="rounded-xl border border-border/60 bg-surface/40 p-5 space-y-3">
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-neon" />
+                A. Strictly Necessary Cookies
+              </h3>
+              <p className="text-xs sm:text-sm">
+                These cookies are required for essential website functions.
+              </p>
+              <p className="text-xs sm:text-sm">They may support:</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <div className="rounded bg-surface/80 p-2 text-center">Security</div>
+                <div className="rounded bg-surface/80 p-2 text-center">Session management</div>
+                <div className="rounded bg-surface/80 p-2 text-center">Form functionality</div>
+                <div className="rounded bg-surface/80 p-2 text-center">Checkout</div>
+                <div className="rounded bg-surface/80 p-2 text-center">Authentication</div>
+                <div className="rounded bg-surface/80 p-2 text-center">Load balancing</div>
+                <div className="rounded bg-surface/80 p-2 text-center">Fraud prevention</div>
+                <div className="rounded bg-surface/80 p-2 text-center">Basic website operation</div>
+              </div>
+              <p className="text-xs text-slate-400 pt-1">
+                These technologies generally cannot be disabled through our cookie preference tool where they are necessary for the website to function.
+              </p>
+            </div>
+
+            {/* B. Functional Cookies */}
+            <div className="rounded-xl border border-border/60 bg-surface/40 p-5 space-y-3">
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-neon" />
+                B. Functional Cookies
+              </h3>
+              <p className="text-xs sm:text-sm">
+                Functional technologies may remember choices such as:
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                <div className="rounded bg-surface/80 p-2 text-center">Language</div>
+                <div className="rounded bg-surface/80 p-2 text-center">Region</div>
+                <div className="rounded bg-surface/80 p-2 text-center">Preferences</div>
+                <div className="rounded bg-surface/80 p-2 text-center">Previously selected options</div>
+                <div className="rounded bg-surface/80 p-2 text-center">Website settings</div>
+              </div>
+              <p className="text-xs text-slate-400 pt-1">
+                Where required by applicable law, these technologies will be subject to your preferences.
+              </p>
+            </div>
+
+            {/* C. Analytics Cookies */}
+            <div className="rounded-xl border border-border/60 bg-surface/40 p-5 space-y-3">
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-neon" />
+                C. Analytics Cookies
+              </h3>
+              <p className="text-xs sm:text-sm">
+                Analytics technologies help us understand how visitors use our website.
+              </p>
+              <p className="text-xs sm:text-sm">They may help us understand:</p>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pl-2 list-none text-xs sm:text-sm">
+                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Which pages are visited</li>
+                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> How users navigate the website</li>
+                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> How long visitors remain on pages</li>
+                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Which content performs well</li>
+                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Whether pages are functioning correctly</li>
+                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> How visitors arrive at our website</li>
+              </ul>
+              <p className="text-xs text-slate-400 pt-1">
+                We may use third-party analytics providers for these purposes.
+              </p>
+            </div>
+
+            {/* D. Advertising and Targeting Technologies */}
+            <div className="rounded-xl border border-border/60 bg-surface/40 p-5 space-y-3">
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-neon" />
+                D. Advertising and Targeting Technologies
+              </h3>
+              <p className="text-xs sm:text-sm">
+                Advertising technologies may be used to:
+              </p>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pl-2 list-none text-xs sm:text-sm">
+                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Measure advertising campaigns</li>
+                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Track conversions</li>
+                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Understand campaign performance</li>
+                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Build advertising audiences</li>
+                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Deliver relevant advertisements</li>
+                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Retarget website visitors</li>
+                <li className="flex items-center gap-2 sm:col-span-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Measure interactions with advertisements</li>
+              </ul>
+              <p className="text-xs sm:text-sm text-foreground pt-1">
+                Depending on applicable law, these activities may constitute &ldquo;sale,&rdquo; &ldquo;sharing,&rdquo; targeted advertising, or similar regulated processing.
+              </p>
+              <p className="text-xs text-neon font-medium">
+                Where required, we provide mechanisms to opt out.
+              </p>
+            </div>
+          </section>
+
+          {/* 4. THIRD-PARTY TECHNOLOGIES */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                04
+              </span>
+              THIRD-PARTY TECHNOLOGIES
+            </h2>
             <p>
-              We may also use technologies similar to cookies, including pixels, web beacons, tags, scripts, local storage, tracking technologies, and advertising identifiers. For simplicity, this Cookie Policy refers to these technologies collectively as &ldquo;cookies.&rdquo;
+              Third-party providers may place cookies or similar technologies on our website.
             </p>
-          </section>
-
-          {/* Section 3 */}
-          <section className="space-y-3">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">03.</span>
-              Why We Use Cookies
-            </h2>
-            <p>We may use cookies and similar technologies for purposes including:</p>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pl-4 list-disc text-xs sm:text-sm">
-              <li>Operating our website &amp; maintaining security</li>
-              <li>Remembering preferences &amp; settings</li>
-              <li>Understanding website usage &amp; navigation</li>
-              <li>Improving website performance &amp; user experience</li>
-              <li>Measuring marketing campaigns &amp; advertising effectiveness</li>
-              <li>Supporting personalized advertising</li>
-              <li>Preventing fraud and unauthorized activity</li>
-            </ul>
-          </section>
-
-          {/* Section 4 */}
-          <section className="space-y-4">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">04.</span>
-              Types of Cookies We May Use
-            </h2>
-
-            <div className="space-y-2 rounded-xl border border-border/70 bg-surface/20 p-5">
-              <h3 className="text-base font-semibold text-foreground">A. Strictly Necessary Cookies</h3>
-              <p className="text-xs sm:text-sm">
-                These cookies are necessary for the website to operate correctly, supporting security, page functionality, form submissions, session management, and consent preferences. Because they are necessary, they cannot be disabled via our consent banner.
-              </p>
+            <p>Depending on the tools we use, these may include providers for:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs sm:text-sm">
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center">Analytics</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center">Advertising</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center">Social media</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center">Video</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center">Payment processing</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center">Scheduling</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center">Website performance</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center">Security</div>
             </div>
-
-            <div className="space-y-2 rounded-xl border border-border/70 bg-surface/20 p-5">
-              <h3 className="text-base font-semibold text-foreground">B. Functional Cookies</h3>
-              <p className="text-xs sm:text-sm">
-                Functional cookies remember choices and preferences such as language, region, or previously selected UI settings to provide an enhanced and personalized experience.
-              </p>
-            </div>
-
-            <div className="space-y-2 rounded-xl border border-border/70 bg-surface/20 p-5">
-              <h3 className="text-base font-semibold text-foreground">C. Analytics Cookies</h3>
-              <p className="text-xs sm:text-sm">
-                Analytics cookies help us understand how visitors interact with our website by gathering metrics on pages visited, time spent, traffic sources, and navigation patterns.
-              </p>
-            </div>
-
-            <div className="space-y-2 rounded-xl border border-border/70 bg-surface/20 p-5">
-              <h3 className="text-base font-semibold text-foreground">D. Advertising and Marketing Cookies</h3>
-              <p className="text-xs sm:text-sm">
-                Advertising cookies help measure advertising campaigns, track conversions, build target audiences, and deliver relevant promotions across platforms.
-              </p>
-            </div>
-
-            <div className="space-y-2 rounded-xl border border-border/70 bg-surface/20 p-5">
-              <h3 className="text-base font-semibold text-foreground">E. Social Media Technologies</h3>
-              <p className="text-xs sm:text-sm">
-                Our website may include social media features or tracking technologies provided by third-party platforms allowing them to receive interaction data in accordance with their privacy policies.
-              </p>
-            </div>
-          </section>
-
-          {/* Section 5 & 6 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-            <section className="space-y-2.5 rounded-xl border border-border/70 bg-surface/20 p-5">
-              <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
-                <span className="font-mono text-neon">05.</span> Third-Party Cookies
-              </h2>
-              <p className="text-xs sm:text-sm">
-                Some cookies are placed by third-party providers (analytics, advertising, payment, hosting, and security partners). These providers may change over time as our platform evolves.
-              </p>
-            </section>
-
-            <section className="space-y-2.5 rounded-xl border border-border/70 bg-surface/20 p-5">
-              <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
-                <span className="font-mono text-neon">06.</span> Cookie Consent
-              </h2>
-              <p className="text-xs sm:text-sm">
-                Where required by applicable law, we provide mechanisms allowing visitors to accept, reject, or customize non-essential cookies. Essential cookies continue to operate where necessary.
-              </p>
-            </section>
-          </div>
-
-          {/* Section 7, 8, 9, 10: Privacy Rights */}
-          <section className="space-y-3 pt-2">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">07â€“10.</span>
-              Your Privacy Choices &amp; Global Privacy Control (GPC)
-            </h2>
-            <p>
-              Depending on your location (including California under the CCPA and other U.S. states), you may have rights to opt out of targeted advertising, sale, or sharing of personal information. Where required by law, we recognize and process Universal Opt-Out Preference Signals such as Global Privacy Control (GPC).
-            </p>
-          </section>
-
-          {/* Section 11 & 12 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-            <section className="space-y-2.5 rounded-xl border border-border/70 bg-surface/20 p-5">
-              <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
-                <span className="font-mono text-neon">11.</span> Browser Controls
-              </h2>
-              <p className="text-xs sm:text-sm">
-                Most web browsers allow you to manage, block, or delete cookies in your settings. Note that disabling certain cookies may affect website functionality.
-              </p>
-            </section>
-
-            <section className="space-y-2.5 rounded-xl border border-border/70 bg-surface/20 p-5">
-              <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
-                <span className="font-mono text-neon">12.</span> Do Not Track (DNT)
-              </h2>
-              <p className="text-xs sm:text-sm">
-                Because there is no universally accepted industry standard for DNT signals, our website responds primarily to legally recognized mechanisms like GPC.
-              </p>
-            </section>
-          </div>
-
-          {/* Section 13, 14, 15 */}
-          <section className="space-y-3 pt-2">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">13â€“15.</span>
-              Retention, Policy Changes &amp; Legal Relationship
-            </h2>
             <p className="text-xs sm:text-sm">
-              Cookies remain on your device as session cookies (until browser closes) or persistent cookies (until expiration/deletion). We may update this Cookie Policy periodically. This policy should be read alongside our <Link to="/privacy-policy" className="text-neon underline font-medium">Privacy Policy</Link> and <Link to="/terms" className="text-neon underline font-medium">Terms &amp; Conditions</Link>.
+              Third-party providers may process information according to their own privacy policies.
+            </p>
+            <p className="text-xs sm:text-sm text-slate-400">
+              The exact providers used on our website may change over time.
             </p>
           </section>
+
+          {/* 5. COOKIE PREFERENCES */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                05
+              </span>
+              COOKIE PREFERENCES
+            </h2>
+            <p>
+              Where required or appropriate, our website may provide a cookie preference center allowing you to:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm">
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Accept optional cookies</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Reject optional cookies</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Manage analytics cookies</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Manage advertising cookies</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5 sm:col-span-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Change your preferences</span>
+              </div>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-400">
+              Your preferences may be stored so that we can honor your choices.
+            </p>
+          </section>
+
+          {/* 6. GLOBAL PRIVACY CONTROL AND OPT-OUT SIGNALS */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                06
+              </span>
+              GLOBAL PRIVACY CONTROL AND OPT-OUT SIGNALS
+            </h2>
+            <p>
+              Where applicable, we recognize qualifying universal opt-out preference signals required by law.
+            </p>
+            <p>
+              For example, California requires covered businesses to honor qualifying opt-out preference signals such as Global Privacy Control for applicable sale/sharing opt-outs. Colorado also provides for universal opt-out mechanisms, and Connecticut requires covered businesses to honor qualifying universal opt-out signals.
+            </p>
+            <p className="text-xs sm:text-sm text-foreground bg-surface/60 border border-border/60 p-3.5 rounded-xl font-medium">
+              Where required, we will treat an applicable signal as a request to opt out of the processing covered by that signal.
+            </p>
+          </section>
+
+          {/* 7. HOW TO CONTROL COOKIES THROUGH YOUR BROWSER */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                07
+              </span>
+              HOW TO CONTROL COOKIES THROUGH YOUR BROWSER
+            </h2>
+            <p>Most browsers allow you to:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center">View cookies</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center">Delete cookies</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center">Block cookies</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center">Restrict cookies</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5 text-center sm:col-span-1">Receive alerts</div>
+            </div>
+            <p className="text-xs sm:text-sm text-amber-400/90 font-medium">
+              Blocking certain cookies may affect website functionality.
+            </p>
+          </section>
+
+          {/* 8. DO-NOT-TRACK */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                08
+              </span>
+              DO-NOT-TRACK
+            </h2>
+            <p>
+              Some browsers offer a &ldquo;Do Not Track&rdquo; setting.
+            </p>
+            <p>
+              Because there is currently no universally accepted technical standard governing all Do Not Track signals, our website may not respond to every browser-based Do Not Track signal.
+            </p>
+            <p className="text-xs sm:text-sm text-foreground font-medium">
+              Where applicable law requires recognition of a qualifying opt-out preference signal, we will honor it as required by law.
+            </p>
+          </section>
+
+          {/* 9. CALIFORNIA RESIDENTS */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                09
+              </span>
+              CALIFORNIA RESIDENTS
+            </h2>
+            <p>
+              California residents may have rights concerning certain online tracking activities, including rights relating to the sale or sharing of personal information and targeted advertising.
+            </p>
+            <p>
+              Depending on our processing activities and applicable law, advertising and analytics technologies may constitute regulated &ldquo;sharing&rdquo; or other processing.
+            </p>
+            <p className="text-xs sm:text-sm text-neon font-medium">
+              California recognizes Global Privacy Control and other qualifying universal opt-out preference signals for applicable requests.
+            </p>
+          </section>
+
+          {/* 10. OTHER U.S. STATES */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                10
+              </span>
+              OTHER U.S. STATES
+            </h2>
+            <p>
+              Various U.S. states provide consumers with rights concerning targeted advertising, sale of personal data, profiling, and universal opt-out preference signals.
+            </p>
+            <p>These include, depending on applicability:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-xs">
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Colorado</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Connecticut</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">California</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Delaware</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Indiana</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Kentucky</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Maryland</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Minnesota</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Montana</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Nebraska</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">New Hampshire</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">New Jersey</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Oregon</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Rhode Island</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Tennessee</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Texas</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Utah</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Virginia</div>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-400">
+              The exact rights and requirements differ by state and may depend on the business, data processed, consumer, and applicable thresholds.
+            </p>
+          </section>
+
+          {/* 11. CHANGES TO THIS COOKIE POLICY */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                11
+              </span>
+              CHANGES TO THIS COOKIE POLICY
+            </h2>
+            <p>
+              We may update this Cookie Policy from time to time.
+            </p>
+            <p className="text-xs sm:text-sm text-slate-400">
+              Changes will be posted on this page with an updated &ldquo;Last Updated&rdquo; date.
+            </p>
+          </section>
+
+          {/* 12. CONTACT US */}
+          <section className="space-y-4 rounded-2xl border border-neon/40 bg-surface/40 p-6 sm:p-7 shadow-lg shadow-neon/5">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/20 font-mono text-xs font-bold text-neon">
+                12
+              </span>
+              CONTACT US
+            </h2>
+            <p>
+              If you have questions about our use of cookies or tracking technologies, contact:
+            </p>
+            <div className="space-y-2 text-xs sm:text-sm">
+              <div className="font-semibold text-foreground text-base">Quickupp Softech LLC / Quickupp AI Studio</div>
+              <div>
+                <span className="text-muted-foreground">Email: </span>
+                <a href="mailto:info@quickuppaistudio.us" className="text-neon underline font-medium">
+                  info@quickuppaistudio.us
+                </a>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Website: </span>
+                <a href="https://quickuppaistudio.us" target="_blank" rel="noopener noreferrer" className="text-neon underline">
+                  quickuppaistudio.us
+                </a>
+              </div>
+            </div>
+          </section>
+
         </div>
 
         {/* Contact & Support Section */}
@@ -264,7 +514,7 @@ function CookiePolicyPage() {
                 Have questions about our Cookie Policy?
               </h3>
               <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                Contact our privacy compliance team at <a href="mailto:info@quickuppaistudio.us" className="text-neon underline">info@quickuppaistudio.us</a>.
+                Contact our privacy compliance team at <a href="mailto:info@quickuppaistudio.us" className="text-neon underline">info@quickuppaistudio.us</a> or via WhatsApp.
               </p>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-3">
