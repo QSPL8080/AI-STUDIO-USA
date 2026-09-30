@@ -10,7 +10,6 @@ import {
   Hero,
   HeroOverview,
   LeadFormSection,
-  Portfolio,
   Pricing,
   PackageInclusions,
   Process,
@@ -95,7 +94,6 @@ function Index() {
         <StrategyCall />
         <Process />
         <WhyUs />
-        <Portfolio />
         <Faq />
         <WhatsAppCtaSection />
         <LeadFormSection />

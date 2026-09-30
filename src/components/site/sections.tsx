@@ -147,7 +147,7 @@ export function Header() {
               Industries
             </a>
             <a
-              href="/#portfolio"
+              href="/portfolio"
               className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
             >
               Portfolio
@@ -258,7 +258,7 @@ export function Header() {
               </a>
 
               <a
-                href="/#portfolio"
+                href="/portfolio"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex min-h-[44px] items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
               >

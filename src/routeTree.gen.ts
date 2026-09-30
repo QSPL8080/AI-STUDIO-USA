@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
 import { Route as CrmRouteImport } from './routes/crm'
 import { Route as OrderConfirmationRouteImport } from './routes/order-confirmation'
+import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as CrmIndexRouteImport } from './routes/crm/index'
@@ -44,6 +45,11 @@ const OrderConfirmationRoute = OrderConfirmationRouteImport.update({
   path: '/order-confirmation',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortfolioRoute = PortfolioRouteImport.update({
+  id: '/portfolio',
+  path: '/portfolio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   id: '/privacy-policy',
   path: '/privacy-policy',
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/cookie-policy': typeof CookiePolicyRoute
   '/crm': typeof CrmRouteWithChildren
   '/order-confirmation': typeof OrderConfirmationRoute
+  '/portfolio': typeof PortfolioRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms': typeof TermsRoute
   '/crm/login': typeof CrmLoginRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/order-confirmation': typeof OrderConfirmationRoute
+  '/portfolio': typeof PortfolioRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms': typeof TermsRoute
   '/crm/login': typeof CrmLoginRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/cookie-policy': typeof CookiePolicyRoute
   '/crm': typeof CrmRouteWithChildren
   '/order-confirmation': typeof OrderConfirmationRoute
+  '/portfolio': typeof PortfolioRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms': typeof TermsRoute
   '/crm/login': typeof CrmLoginRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/cookie-policy'
     | '/crm'
     | '/order-confirmation'
+    | '/portfolio'
     | '/privacy-policy'
     | '/terms'
     | '/crm/login'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cookie-policy'
     | '/order-confirmation'
+    | '/portfolio'
     | '/privacy-policy'
     | '/terms'
     | '/crm/login'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/cookie-policy'
     | '/crm'
     | '/order-confirmation'
+    | '/portfolio'
     | '/privacy-policy'
     | '/terms'
     | '/crm/login'
@@ -139,6 +151,7 @@ export interface RootRouteChildren {
   CookiePolicyRoute: typeof CookiePolicyRoute
   CrmRoute: typeof CrmRouteWithChildren
   OrderConfirmationRoute: typeof OrderConfirmationRoute
+  PortfolioRoute: typeof PortfolioRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   TermsRoute: typeof TermsRoute
 }
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       path: '/order-confirmation'
       fullPath: '/order-confirmation'
       preLoaderRoute: typeof OrderConfirmationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portfolio': {
+      id: '/portfolio'
+      path: '/portfolio'
+      fullPath: '/portfolio'
+      preLoaderRoute: typeof PortfolioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy-policy': {
@@ -229,6 +249,7 @@ const rootRouteChildren: RootRouteChildren = {
   CookiePolicyRoute: CookiePolicyRoute,
   CrmRoute: CrmRouteWithChildren,
   OrderConfirmationRoute: OrderConfirmationRoute,
+  PortfolioRoute: PortfolioRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   TermsRoute: TermsRoute,
 }
