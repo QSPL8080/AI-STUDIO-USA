@@ -1065,50 +1065,62 @@ export function HeroOverview() {
 
 export function TrustStrip() {
   const steps = [
-    "Research",
-    "Strategy",
-    "Hooks",
-    "Concepts",
-    "Scripts",
-    "Storyboard",
-    "AI Production",
-    "Editing",
-    "Sound Design",
-    "Quality Control",
-    "Delivery",
+    { num: "01", name: "Research" },
+    { num: "02", name: "Strategy" },
+    { num: "03", name: "Hooks" },
+    { num: "04", name: "Concepts" },
+    { num: "05", name: "Scripts" },
+    { num: "06", name: "Storyboard" },
+    { num: "07", name: "AI Production" },
+    { num: "08", name: "Editing" },
+    { num: "09", name: "Sound Design" },
+    { num: "10", name: "Quality Control" },
+    { num: "11", name: "Delivery" },
   ];
 
   return (
-    <section className="border-y border-slate-200/80 bg-white/95 backdrop-blur-md shadow-xs py-5 px-4 sm:px-6 lg:px-8 overflow-hidden">
-      <div className="mx-auto w-full max-w-7xl flex flex-col items-center text-center gap-4">
-        {/* Purpose */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
-          <span className="flex items-center gap-1.5 rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-900 border border-purple-200">
+    <section className="border-y border-purple-100/80 bg-white/95 backdrop-blur-md shadow-xs py-8 sm:py-10 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl flex flex-col items-center text-center gap-5">
+        {/* Purpose Header */}
+        <div className="flex flex-col items-center gap-2 max-w-2xl">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-purple-100/80 px-3.5 py-1 text-xs font-bold text-purple-900 border border-purple-200 shadow-xs">
             <Sparkles className="h-3.5 w-3.5 text-purple-600" />
-            Visual Process
-          </span>
-          <p className="text-xs sm:text-sm font-semibold text-slate-700">
+            <span>AI Creative Production Partner</span>
+          </div>
+          <p className="text-sm sm:text-base font-semibold text-slate-800 leading-snug">
             Quickupp is an AI creative production partner, not simply an AI video-generation tool.
           </p>
         </div>
 
-        {/* Visual Process Flow */}
-        <div className="w-full overflow-x-auto no-scrollbar py-1">
-          <div className="flex items-center justify-start lg:justify-center gap-1.5 sm:gap-2 min-w-max mx-auto px-2">
-            {steps.map((step, idx) => (
-              <div key={step} className="flex items-center gap-1.5 sm:gap-2">
-                <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/90 px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-xs hover:border-purple-300 hover:bg-purple-50/70 transition-colors">
-                  <span className="text-[10px] font-bold text-purple-600 font-mono">
-                    {String(idx + 1).padStart(2, "0")}
+        {/* Visual Process Flow (Responsive Centered Wrap with Arrows) */}
+        <div className="w-full max-w-5xl flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 pt-1">
+          {steps.map((step, idx) => {
+            const isLast = idx === steps.length - 1;
+            return (
+              <div key={step.name} className="flex items-center gap-2">
+                <div
+                  className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold shadow-xs transition-all duration-200 hover:scale-105 ${
+                    isLast
+                      ? "border-purple-300 bg-gradient-to-r from-violet-100 via-purple-100 to-pink-100 text-purple-950 font-bold shadow-sm"
+                      : "border-slate-200 bg-slate-50/90 text-slate-800 hover:border-purple-300 hover:bg-purple-50/70"
+                  }`}
+                >
+                  <span
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded text-[10px] font-bold font-mono ${
+                      isLast ? "bg-purple-600 text-white" : "bg-purple-100 text-purple-700"
+                    }`}
+                  >
+                    {step.num}
                   </span>
-                  <span>{step}</span>
+                  <span>{step.name}</span>
+                  {isLast && <Check className="h-3 w-3 text-purple-700 ml-0.5 stroke-[3]" />}
                 </div>
-                {idx < steps.length - 1 && (
-                  <ArrowRight className="h-3 w-3 text-purple-400 shrink-0" />
+                {!isLast && (
+                  <ArrowRight className="h-3 w-3 text-purple-400 shrink-0 hidden xs:inline-block" />
                 )}
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
     </section>
