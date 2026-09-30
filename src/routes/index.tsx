@@ -92,14 +92,13 @@ function Index() {
         <PackageInclusions />
         <Process />
         <Faq />
-        <CreativeScalingCta />
         <LeadFormSection />
         <StrategyCall />
         <DigitalTwin />
         <UseCases />
         <WhyUs />
         <WhatsAppCtaSection />
-        <Contact />
+        <CreativeScalingCta />
       </main>
       <Footer />
       <FloatingWhatsAppButton />
