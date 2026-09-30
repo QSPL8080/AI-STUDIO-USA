@@ -9,14 +9,14 @@ export const Route = createFileRoute("/terms")({
       {
         name: "description",
         content:
-          "Official Terms & Conditions governing your use of Quickupp AI Studio services, operated by Quickupp Softech LLC.",
+          "Official Terms & Conditions governing your access to and use of Quickupp AI Studio services, operated by Quickupp Softech LLC.",
       },
     ],
   }),
   component: TermsPage,
 });
 
-function TermsPage() {
+export function TermsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-neon selection:text-black">
       {/* Top Header */}
@@ -27,7 +27,7 @@ function TermsPage() {
             className="-ml-3 sm:-ml-5 flex items-center transition-opacity hover:opacity-90"
           >
             <img
-              src="/images/LOGO 1.png"
+              src="/images/logo.png"
               alt="Quickupp AI Studio logo"
               className="h-9 md:h-10 w-auto object-contain"
               width={125}
@@ -56,10 +56,10 @@ function TermsPage() {
               Legal Documentation
             </span>
             <span className="rounded-full bg-surface/80 border border-border/70 px-3 py-0.5 text-[11px] font-medium text-muted-foreground">
-              Effective Date: September 18, 2026
+              Effective Date: September 30, 2026
             </span>
             <span className="rounded-full bg-surface/80 border border-border/70 px-3 py-0.5 text-[11px] font-medium text-muted-foreground">
-              Last Updated: September 18, 2026
+              Last Updated: September 30, 2026
             </span>
           </div>
 
@@ -71,11 +71,15 @@ function TermsPage() {
           </h1>
 
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
-            These Terms &amp; Conditions (“Terms”) govern your access to and use of the Quickupp AI Studio website and services. Quickupp AI Studio is operated by <strong className="text-foreground">Quickupp Softech LLC</strong>, a Delaware company.
+            These Terms &amp; Conditions (&ldquo;Terms&rdquo;) govern your access to and use of the Quickupp AI Studio website and services.
           </p>
 
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
-            By accessing our website, requesting a quotation, placing an order, making a payment, or using our services, you agree to these Terms. If you do not agree with these Terms, please do not use our services.
+            Quickupp AI Studio is operated by <strong className="text-foreground">Quickupp Softech LLC</strong> (&ldquo;Quickupp,&rdquo; &ldquo;Quickupp AI Studio,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;).
+          </p>
+
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
+            By accessing our website, purchasing our services, submitting a project, or otherwise using our services, you agree to these Terms. If you do not agree with these Terms, do not use our website or services.
           </p>
 
           {/* Policy Navigation Tabs */}
@@ -104,286 +108,937 @@ function TermsPage() {
           </div>
         </div>
 
-        {/* Company Quick Summary Box */}
-        <div className="my-8 rounded-xl border border-border/70 bg-surface/40 p-5 sm:p-6">
-          <h2 className="text-sm font-semibold tracking-wide text-foreground uppercase text-neon">
-            1. Company Information
-          </h2>
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm text-muted-foreground">
-            <div><span className="font-semibold text-foreground">Legal Entity:</span> Quickupp Softech LLC</div>
-            <div><span className="font-semibold text-foreground">Brand:</span> Quickupp AI Studio</div>
-            <div><span className="font-semibold text-foreground">Business Address:</span> 8 The Green, Suite A, Dover, DE 19901, USA</div>
-            <div><span className="font-semibold text-foreground">Website:</span> <a href="https://www.quickuppaistudio.us/" target="_blank" rel="noopener noreferrer" className="text-neon underline">https://www.quickuppaistudio.us/</a></div>
-            <div className="sm:col-span-2"><span className="font-semibold text-foreground">Email:</span> <a href="mailto:info@quickuppaistudio.us" className="text-neon underline">info@quickuppaistudio.us</a></div>
-          </div>
-        </div>
+        {/* Legal Sections (1 to 32) */}
+        <div className="mt-8 space-y-8 text-sm sm:text-base leading-relaxed text-muted-foreground">
 
-        {/* Legal Sections */}
-        <div className="space-y-8 text-sm sm:text-base leading-relaxed text-muted-foreground">
-          {/* Section 2 */}
-          <section className="space-y-3">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">02.</span>
-              Our Services
+          {/* 1. OUR SERVICES */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                01
+              </span>
+              OUR SERVICES
             </h2>
             <p>
-              Quickupp AI Studio provides AI-powered creative and video production services, which may include:
+              Quickupp AI Studio provides AI-assisted creative production services, including:
             </p>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-4 list-disc text-xs sm:text-sm">
-              <li>AI UGC videos</li>
-              <li>AI Avatar videos</li>
-              <li>AI spokesperson videos</li>
-              <li>AI Cartoon videos</li>
-              <li>Hyper-realistic AI videos</li>
-              <li>Digital Clone videos</li>
-              <li>Voice-cloning services</li>
-              <li>Product videos &amp; demonstrations</li>
-              <li>Social-media videos</li>
-              <li>Advertising creatives &amp; Promotional videos</li>
-              <li>Explainer videos &amp; Brand videos</li>
-              <li>Other AI-assisted creative production services</li>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm">
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>AI UGC Video Ads</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>AI Avatar Video Ads</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>AI Cartoon Video Ads</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>AI Hyper-Realistic Video Ads</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>AI Digital Twin Video</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Digital Twin Setup</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Creative research</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Creative strategy</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Hooks and angles</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Concepts</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Script writing</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Storyboarding</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>AI production</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Video editing</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Voiceover</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Sound design</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Captions</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-surface/40 p-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Other creative production services</span>
+              </div>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-400">
+              The exact scope of a project will depend on the package, proposal, order, project brief, or other written agreement applicable to that project.
+            </p>
+          </section>
+
+          {/* 2. AI-GENERATED CONTENT */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                02
+              </span>
+              AI-GENERATED CONTENT
+            </h2>
+            <p>
+              Our services may use artificial intelligence, machine-learning systems, generative AI tools, automated systems, and third-party technology.
+            </p>
+            <p>
+              AI-generated content may contain inaccuracies, inconsistencies, artifacts, or other errors.
+            </p>
+            <p>
+              We will use reasonable production and quality-control processes, but we do not guarantee that every AI-generated element will be completely accurate or indistinguishable from real-world content.
+            </p>
+            <p className="text-xs sm:text-sm font-medium text-foreground">
+              You are responsible for reviewing final content before publishing or using it in advertising.
+            </p>
+          </section>
+
+          {/* 3. CREATIVE PRODUCTION PROCESS */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                03
+              </span>
+              CREATIVE PRODUCTION PROCESS
+            </h2>
+            <p>
+              Our standard creative workflow may include:
+            </p>
+            <div className="rounded-xl border border-border/60 bg-surface/40 p-4 text-xs sm:text-sm font-mono text-foreground flex flex-wrap items-center gap-2">
+              <span className="text-neon">Research</span> →
+              <span className="text-neon">Strategy</span> →
+              <span className="text-neon">Hooks</span> →
+              <span className="text-neon">Concepts</span> →
+              <span className="text-neon">Scripts</span> →
+              <span className="text-neon">Storyboard</span> →
+              <span className="text-neon">AI Production</span> →
+              <span className="text-neon">Editing</span> →
+              <span className="text-neon">Sound Design</span> →
+              <span className="text-neon">Quality Control</span> →
+              <span className="text-emerald-400 font-bold">Delivery</span>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-400">
+              The exact workflow may vary depending on the service purchased.
+            </p>
+          </section>
+
+          {/* 4. CLIENT RESPONSIBILITIES */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                04
+              </span>
+              CLIENT RESPONSIBILITIES
+            </h2>
+            <p>
+              You agree to provide accurate and complete information necessary for your project.
+            </p>
+            <p>You are responsible for providing:</p>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-2 list-none text-xs sm:text-sm">
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Accurate product information</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Accurate claims</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Brand guidelines</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Logos and assets</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Product images/videos</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Scripts or messaging where applicable</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Appropriate permissions</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Necessary approvals</span>
+              </li>
+              <li className="flex items-center gap-2 sm:col-span-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" />
+                <span>Accurate contact and billing information</span>
+              </li>
             </ul>
-            <p className="text-xs sm:text-sm text-slate-400 pt-1">
-              Specific deliverables, pricing, timelines, revisions, and specifications may be described in an individual quotation, proposal, order, invoice, or written agreement.
+            <p className="text-xs sm:text-sm text-amber-400/90 font-medium">
+              Delays caused by missing, inaccurate, or late information may affect delivery timelines.
             </p>
           </section>
 
-          {/* Section 3 */}
-          <section className="space-y-3">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">03.</span>
-              AI-Generated Content
+          {/* 5. CLIENT CONTENT AND RIGHTS */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                05
+              </span>
+              CLIENT CONTENT AND RIGHTS
             </h2>
             <p>
-              Our services may use artificial intelligence, machine-learning systems, synthetic media, avatars, voice synthesis, generative video, image generation, and other automated technologies.
+              You retain ownership of the content and materials you provide to us, subject to any rights you grant us to perform the services.
             </p>
             <p>
-              AI-generated content may contain inaccuracies, inconsistencies, artifacts, or unexpected results. Customers are responsible for reviewing all content before publishing, advertising, distributing, or using it commercially.
+              You represent and warrant that you have all rights, licenses, permissions, consents, and authorizations necessary for us to use the materials you provide.
+            </p>
+            <p>This includes, where applicable:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Copyright</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Trademark rights</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Publicity rights</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Privacy rights</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Image/likeness rights</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Voice rights</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Music licenses</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Model releases</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Creator permissions</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Product rights</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 sm:col-span-2">Third-party content permissions</div>
+            </div>
+            <p className="text-xs sm:text-sm font-semibold text-rose-400">
+              You must not provide content that you do not have permission to use.
             </p>
           </section>
 
-          {/* Section 4 */}
-          <section className="space-y-3">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">04.</span>
-              Digital Clones, Voice Clones and AI Avatars
+          {/* 6. DIGITAL TWIN AND VOICE AUTHORIZATION */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                06
+              </span>
+              DIGITAL TWIN AND VOICE AUTHORIZATION
             </h2>
             <p>
-              Digital Clone, voice-cloning, AI-avatar, and similar services may involve processing a real person's image, voice, likeness, or other identifying characteristics. You represent and warrant that:
+              If you request a Digital Twin, AI Avatar, voice clone, or similar service involving a real person, you confirm that you have the authority and necessary permission to use that person&rsquo;s:
             </p>
-            <ul className="space-y-1.5 pl-5 list-disc text-xs sm:text-sm">
-              <li>You have obtained all necessary permissions and authorizations.</li>
-              <li>You have the right to provide the relevant materials to Quickupp.</li>
-              <li>The requested use does not violate another person's rights.</li>
-              <li>The requested content is not intended to facilitate fraud, impersonation, identity theft, or other unlawful conduct.</li>
+            <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2 pl-2 list-none text-xs sm:text-sm">
+              <li className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Image</li>
+              <li className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Likeness</li>
+              <li className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Voice</li>
+              <li className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Video</li>
+              <li className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Audio</li>
+              <li className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Name</li>
+              <li className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Performance</li>
+              <li className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Other identifying characteristics</li>
             </ul>
-            <p>
-              Quickupp may request proof of authorization. We may refuse or discontinue a Digital Clone or voice-cloning project where we reasonably believe the required authorization is absent or the requested use may violate applicable law or these Terms.
+            <p className="text-xs sm:text-sm text-foreground bg-surface/60 border border-border/60 p-3 rounded-xl">
+              You may not use our services to create unauthorized impersonations, fraudulent identities, deceptive endorsements, or content intended to mislead people about the identity or participation of another person.
             </p>
           </section>
 
-          {/* Section 5 */}
-          <section className="space-y-3">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">05.</span>
-              Customer-Provided Materials
+          {/* 7. PROHIBITED USES */}
+          <section className="space-y-4 rounded-2xl border border-rose-500/30 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10 font-mono text-xs font-bold text-rose-400">
+                07
+              </span>
+              PROHIBITED USES
             </h2>
-            <p>
-              Customers may provide images, videos, audio, voice recordings, logos, product information, scripts, brand guidelines, written content, music, graphics, and other creative materials.
-            </p>
-            <p>
-              You are responsible for ensuring that you have the necessary rights, licenses, consents, and permissions to use and provide these materials.
-            </p>
-          </section>
-
-          {/* Section 6 */}
-          <section className="space-y-3">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">06.</span>
-              Prohibited Content and Uses
-            </h2>
-            <p>
-              You may not use our services to create or distribute content intended to facilitate:
-            </p>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pl-5 list-disc text-xs sm:text-sm">
-              <li>Fraud or identity theft</li>
-              <li>Unauthorized impersonation</li>
-              <li>Non-consensual Digital Clones or voice cloning</li>
-              <li>Fake testimonials presented as genuine</li>
-              <li>Deceptive endorsements</li>
-              <li>Illegal deepfakes or non-consensual intimate imagery</li>
-              <li>Harassment or defamation</li>
-              <li>Infringement of intellectual-property rights</li>
-              <li>Unlawful discrimination or illegal activities</li>
-              <li>Misleading political or election-related deception</li>
-              <li>Other unlawful activity</li>
+            <p>You may not use our services to create or distribute content that:</p>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-2 list-none text-xs sm:text-sm">
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Is illegal</li>
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Facilitates fraud</li>
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Impersonates another person without authorization</li>
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Uses someone&rsquo;s likeness or voice without appropriate authorization</li>
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Creates deceptive fake testimonials</li>
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Creates fabricated customer experiences presented as genuine</li>
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Infringes intellectual property rights</li>
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Violates privacy rights</li>
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Violates publicity rights</li>
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Facilitates harassment or abuse</li>
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Contains unlawful discriminatory content</li>
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Facilitates criminal activity</li>
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Misrepresents regulated products or services</li>
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Violates advertising laws</li>
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Violates applicable platform policies</li>
+              <li className="flex items-center gap-2 text-rose-300/90"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Attempts to bypass legal or regulatory requirements</li>
             </ul>
             <p className="text-xs sm:text-sm">
-              We reserve the right to refuse any project that violates these Terms, applicable law, or our internal safety requirements.
+              We may refuse or discontinue a project that we reasonably believe creates legal, ethical, safety, or compliance risks.
+            </p>
+            <p className="text-xs sm:text-sm text-slate-400">
+              The FTC&rsquo;s current reviews/testimonials rule addresses deceptive reviews and testimonials, including certain AI-generated fake reviews and testimonials.
             </p>
           </section>
 
-          {/* Section 7 */}
-          <section className="space-y-3">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">07.</span>
-              Customer Representations
+          {/* 8. ADVERTISING AND MARKETING COMPLIANCE */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                08
+              </span>
+              ADVERTISING AND MARKETING COMPLIANCE
             </h2>
-            <p>By ordering our services, you represent that:</p>
-            <ul className="space-y-1.5 pl-5 list-disc text-xs sm:text-sm">
-              <li>You are legally permitted to enter into the agreement.</li>
-              <li>The information you provide is accurate.</li>
-              <li>You have rights to materials supplied to us.</li>
-              <li>You have obtained required permissions for individuals appearing in the content.</li>
-              <li>Your requested content will not knowingly violate applicable law.</li>
-              <li>Your requested content will not knowingly infringe third-party rights.</li>
+            <p>
+              Quickupp provides creative production services.
+            </p>
+            <p>
+              Unless expressly agreed otherwise in writing, Quickupp does not guarantee that a particular advertisement will comply with every law, regulation, industry rule, advertising platform policy, or claim-substantiation requirement applicable to your business.
+            </p>
+            <p>
+              You remain responsible for ensuring that your final advertisements comply with applicable requirements.
+            </p>
+            <p>This is especially important for:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Healthcare</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Medical services</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Med spas</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Financial services</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Supplements</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Cosmetics</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Children&rsquo;s products</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Real estate</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Legal services</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Insurance</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Regulated products</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Testimonials</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 sm:col-span-3">Influencer advertising</div>
+            </div>
+            <p className="text-xs sm:text-sm font-medium text-foreground">
+              You should obtain appropriate legal or regulatory review when necessary.
+            </p>
+          </section>
+
+          {/* 9. TESTIMONIALS AND REVIEWS */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                09
+              </span>
+              TESTIMONIALS AND REVIEWS
+            </h2>
+            <p>
+              You may not instruct Quickupp to create a fictional customer testimonial and present it as the genuine experience of a real customer.
+            </p>
+            <p>
+              AI avatars, actors, fictional characters, or other simulated presenters may be used for advertising where lawful, but they must not be used to falsely represent a person&rsquo;s genuine experience.
+            </p>
+            <p className="text-xs sm:text-sm text-slate-400">
+              The FTC&rsquo;s 2024 rule prohibits certain fake or false consumer reviews and testimonials, including certain AI-generated fake testimonials.
+            </p>
+          </section>
+
+          {/* 10. STORYBOARDS AND CREATIVE APPROVAL */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                10
+              </span>
+              STORYBOARDS AND CREATIVE APPROVAL
+            </h2>
+            <p>
+              Where applicable, Quickupp may provide a storyboard before production.
+            </p>
+            <p>A storyboard may include:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs sm:text-sm">
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Scene descriptions</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Camera direction</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Character actions</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Product placement</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Backgrounds</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Text</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Timing</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Transitions</div>
+            </div>
+            <p className="text-xs sm:text-sm">
+              Client approval of a storyboard, script, concept, or production direction may authorize Quickupp to proceed with production.
+            </p>
+          </section>
+
+          {/* 11. REVISIONS */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                11
+              </span>
+              REVISIONS
+            </h2>
+            <p>
+              The number and scope of revisions depend on the package or project agreement.
+            </p>
+            <p>Unless otherwise stated:</p>
+            <ul className="space-y-2 pl-2 list-none text-xs sm:text-sm">
+              <li className="flex items-start gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0 mt-1.5" />
+                <span>Minor revisions may be included where specified.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0 mt-1.5" />
+                <span>Major creative changes may require additional charges.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0 mt-1.5" />
+                <span>Changes to an approved script or storyboard after production begins may require additional production time or fees.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0 mt-1.5" />
+                <span>Changes requested because of inaccurate information supplied by the client may be treated as additional work.</span>
+              </li>
             </ul>
           </section>
 
-          {/* Section 8 & 9 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-            <section className="space-y-2.5 rounded-xl border border-border/70 bg-surface/20 p-5">
-              <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
-                <span className="font-mono text-neon">08.</span> Client Approval
-              </h2>
-              <p className="text-xs sm:text-sm">
-                Customers are responsible for reviewing project materials before final approval. Once the customer approves the script, concept, voice, avatar, visual direction, or final video, Quickupp may proceed with production based on that approval. Customers are responsible for ensuring that final content accurately reflects their intended claims, branding, products, services, and representations.
-              </p>
-            </section>
+          {/* 12. DELIVERY TIMES */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                12
+              </span>
+              DELIVERY TIMES
+            </h2>
+            <p>Estimated delivery timelines will depend on:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs sm:text-sm">
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Project scope</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Video format</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Number of videos</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Client responsiveness</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Approval time</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Third-party technology</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 sm:col-span-2">Production complexity</div>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-400">
+              Any stated delivery timeframe is an estimate unless expressly guaranteed in writing.
+            </p>
+          </section>
 
-            <section className="space-y-2.5 rounded-xl border border-border/70 bg-surface/20 p-5">
-              <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
-                <span className="font-mono text-neon">09.</span> Revisions
-              </h2>
-              <p className="text-xs sm:text-sm">
-                The number of revisions included in a project will depend on the applicable quotation, package, proposal, or agreement. Additional revisions or changes outside the agreed scope may result in additional charges. Changes requested after production has substantially begun may also result in additional fees or revised delivery timelines.
-              </p>
-            </section>
-          </div>
+          {/* 13. PRICING */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                13
+              </span>
+              PRICING
+            </h2>
+            <p>Current website pricing may include:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs sm:text-sm">
+              <div className="rounded-xl border border-border/60 bg-surface/40 p-3">
+                <div className="text-muted-foreground">AI UGC</div>
+                <div className="text-base font-bold text-foreground">starting at $79</div>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-surface/40 p-3">
+                <div className="text-muted-foreground">AI Avatar</div>
+                <div className="text-base font-bold text-foreground">starting at $79</div>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-surface/40 p-3">
+                <div className="text-muted-foreground">AI Cartoon</div>
+                <div className="text-base font-bold text-foreground">starting at $79</div>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-surface/40 p-3">
+                <div className="text-muted-foreground">AI Hyper-Realistic</div>
+                <div className="text-base font-bold text-foreground">starting at $149</div>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-surface/40 p-3">
+                <div className="text-muted-foreground">AI Digital Twin</div>
+                <div className="text-base font-bold text-foreground">starting at $179</div>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-surface/40 p-3">
+                <div className="text-muted-foreground">Digital Twin Setup</div>
+                <div className="text-base font-bold text-neon">$499</div>
+              </div>
+            </div>
+            <p className="pt-1">Actual pricing may vary depending on:</p>
+            <ul className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pl-2 list-none text-xs sm:text-sm">
+              <li className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Scope</li>
+              <li className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Customization</li>
+              <li className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Quantity</li>
+              <li className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Complexity</li>
+              <li className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Rush requirements</li>
+              <li className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Additional services</li>
+            </ul>
+            <p className="text-xs sm:text-sm text-slate-400">
+              The price presented during checkout, proposal, or written order confirmation controls the applicable transaction.
+            </p>
+          </section>
 
-          {/* Section 10 */}
-          <section className="space-y-3">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">10.</span>
-              Delivery Timelines
+          {/* 14. PAYMENT */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                14
+              </span>
+              PAYMENT
             </h2>
             <p>
-              Estimated delivery timelines will be communicated during the sales or production process. Delivery times may vary depending on project complexity, customer response time, availability of required materials, revision requests, third-party technology, technical issues, or approval delays.
+              Payment must be made using the payment methods offered during checkout or otherwise agreed in writing.
             </p>
             <p>
-              Unless expressly guaranteed in writing, delivery dates are estimates rather than guaranteed deadlines.
+              You authorize us or our payment processor to charge the applicable amount.
+            </p>
+            <p className="text-xs sm:text-sm text-slate-400">
+              Taxes, transaction fees, or other applicable charges may apply.
             </p>
           </section>
 
-          {/* Section 11, 12, 13, 14 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
-            <div className="rounded-xl border border-border/70 bg-surface/20 p-5 space-y-2">
-              <h3 className="text-sm sm:text-base font-bold text-foreground"><span className="font-mono text-neon">11.</span> Pricing</h3>
-              <p className="text-xs sm:text-sm">Prices are communicated via our website, quotation, proposal, or invoice. Prices are in the specified currency; applicable taxes may be added where required. Custom projects may receive individually negotiated pricing.</p>
-            </div>
-            <div className="rounded-xl border border-border/70 bg-surface/20 p-5 space-y-2">
-              <h3 className="text-sm sm:text-base font-bold text-foreground"><span className="font-mono text-neon">12.</span> Payment</h3>
-              <p className="text-xs sm:text-sm">Payment terms are specified in the quotation, invoice, order, or agreement. We may require advance payment before production begins. Failure to make payment may result in suspension or cancellation.</p>
-            </div>
-            <div className="rounded-xl border border-border/70 bg-surface/20 p-5 space-y-2">
-              <h3 className="text-sm sm:text-base font-bold text-foreground"><span className="font-mono text-neon">13.</span> Final Delivery</h3>
-              <p className="text-xs sm:text-sm">Final production files are delivered after all required payments have been received. Quickupp may withhold final deliverables where outstanding amounts remain unpaid.</p>
-            </div>
-            <div className="rounded-xl border border-border/70 bg-surface/20 p-5 space-y-2">
-              <h3 className="text-sm sm:text-base font-bold text-foreground"><span className="font-mono text-neon">14.</span> Refunds and Cancellations</h3>
-              <p className="text-xs sm:text-sm">Because services involve customized creative production and AI processing, refund eligibility depends on the stage of production and specific agreement terms.</p>
-            </div>
-          </div>
-
-          {/* Section 15 & 16 */}
-          <section className="space-y-3">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">15 &amp; 16.</span>
-              Intellectual Property &amp; AI Output Ownership
+          {/* 15. REFUNDS AND CANCELLATIONS */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                15
+              </span>
+              REFUNDS AND CANCELLATIONS
             </h2>
             <p>
-              Customers retain ownership of materials they provide to Quickupp, subject to the rights necessary for us to provide the services. Upon receipt of full payment, customers generally receive the agreed deliverables according to the applicable project agreement.
+              Unless otherwise stated in a project-specific agreement or required by applicable law:
             </p>
-            <p>
-              Third-party materials, software, AI models, stock assets, fonts, music, trademarks, and other third-party content remain subject to their respective licenses and rights. AI-generated outputs may be subject to legal limitations regarding copyright, ownership, and exclusive rights. Quickupp does not guarantee that every AI-generated element qualifies for copyright protection or exclusive rights.
+            <ul className="space-y-2 pl-2 list-none text-xs sm:text-sm">
+              <li className="flex items-start gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0 mt-1.5" />
+                <span>Customized production work may become non-refundable once production has commenced.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0 mt-1.5" />
+                <span>Completed and approved work is generally non-refundable.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0 mt-1.5" />
+                <span>Cancellation requests should be submitted as soon as possible.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0 mt-1.5" />
+                <span>Refund eligibility may depend on the stage of production.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0 mt-1.5" />
+                <span>Where a separate service-specific refund policy applies, that policy will control.</span>
+              </li>
+            </ul>
+            <p className="text-xs sm:text-sm text-slate-400">
+              Nothing in these Terms is intended to exclude any non-waivable consumer right.
             </p>
           </section>
 
-          {/* Section 17 */}
-          <section className="space-y-3">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">17.</span>
-              Third-Party Technology
+          {/* 16. INTELLECTUAL PROPERTY */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                16
+              </span>
+              INTELLECTUAL PROPERTY
+            </h2>
+            <div className="space-y-3">
+              <div className="rounded-xl border border-border/60 bg-surface/40 p-4">
+                <h3 className="font-semibold text-foreground text-sm">Client Materials</h3>
+                <p className="mt-1 text-xs sm:text-sm">You retain ownership of materials you provide to us.</p>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-surface/40 p-4">
+                <h3 className="font-semibold text-foreground text-sm">Final Deliverables</h3>
+                <p className="mt-1 text-xs sm:text-sm">
+                  Subject to full payment and any third-party restrictions, you receive the rights specified in your applicable order, proposal, or project agreement.
+                </p>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-surface/40 p-4">
+                <h3 className="font-semibold text-foreground text-sm">Third-Party Materials</h3>
+                <p className="mt-1 text-xs sm:text-sm">Some projects may use third-party:</p>
+                <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs">
+                  <span className="rounded bg-surface/80 p-1.5 text-center">AI models</span>
+                  <span className="rounded bg-surface/80 p-1.5 text-center">Stock assets</span>
+                  <span className="rounded bg-surface/80 p-1.5 text-center">Music</span>
+                  <span className="rounded bg-surface/80 p-1.5 text-center">Fonts</span>
+                  <span className="rounded bg-surface/80 p-1.5 text-center">Software</span>
+                  <span className="rounded bg-surface/80 p-1.5 text-center">Voice systems</span>
+                  <span className="rounded bg-surface/80 p-1.5 text-center">Images</span>
+                  <span className="rounded bg-surface/80 p-1.5 text-center">Video elements</span>
+                </div>
+                <p className="mt-2 text-xs text-slate-400">
+                  Third-party terms may apply to those elements. Quickupp cannot transfer rights that it does not own.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* 17. AI MODEL AND THIRD-PARTY TECHNOLOGY LIMITATIONS */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                17
+              </span>
+              AI MODEL AND THIRD-PARTY TECHNOLOGY LIMITATIONS
             </h2>
             <p>
-              Our services may depend on third-party technologies, including AI platforms, cloud platforms, video/voice generation systems, hosting providers, payment processors, analytics, and storage systems. We are not responsible for failures caused solely by third-party systems outside our reasonable control.
+              AI systems are operated by third-party providers and may change over time.
+            </p>
+            <p>Models may:</p>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pl-2 list-none text-xs sm:text-sm">
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Change</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Become unavailable</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Produce different outputs</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Have usage restrictions</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Impose content restrictions</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Experience outages</li>
+              <li className="flex items-center gap-2 sm:col-span-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Change commercial terms</li>
+            </ul>
+            <p className="text-xs sm:text-sm text-slate-400">
+              We may substitute technology providers or production methods when reasonably necessary to provide the service.
             </p>
           </section>
 
-          {/* Section 18 & 19 */}
-          <section className="space-y-3">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">18 &amp; 19.</span>
-              Advertising Claims, Testimonials &amp; AI UGC
+          {/* 18. PORTFOLIO AND MARKETING USE */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                18
+              </span>
+              PORTFOLIO AND MARKETING USE
             </h2>
             <p>
-              Quickupp provides creative production services but does not guarantee the performance of advertisements or marketing campaigns (such as leads, sales, ROI, conversion rates, revenue, or platform approval) unless expressly agreed in writing.
+              Unless you specifically request otherwise in writing, Quickupp may request permission to display completed work in:
             </p>
-            <p>
-              Customers must not present AI-generated actors, avatars, or synthetic UGC as genuine customer testimonials when doing so would be deceptive or unlawful. Customers are responsible for ensuring appropriate disclosure and compliance with advertising and endorsement requirements.
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Portfolio</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Website</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Social media</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Presentations</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Case studies</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Marketing materials</div>
+            </div>
+            <p className="text-xs sm:text-sm">
+              We will not intentionally disclose confidential information that you have specifically identified as confidential without authorization.
+            </p>
+            <p className="text-xs sm:text-sm text-slate-400">
+              For confidential or NDA-covered projects, the applicable confidentiality agreement controls.
             </p>
           </section>
 
-          {/* Section 20 & 21 */}
-          <section className="space-y-3">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">20 &amp; 21.</span>
-              Healthcare Content &amp; Customer Responsibility
+          {/* 19. CONFIDENTIALITY */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                19
+              </span>
+              CONFIDENTIALITY
             </h2>
             <p>
-              Customers operating in healthcare or related industries must ensure content complies with applicable healthcare and advertising laws. Customers should not provide protected health information (PHI) without contractual safeguards. Quickupp does not provide legal, medical, regulatory, or compliance advice.
+              Each party agrees to use reasonable care to protect confidential information received from the other party.
+            </p>
+            <p>Confidential information does not include information that:</p>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pl-2 list-none text-xs sm:text-sm">
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Is publicly available</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Was already lawfully known</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Is independently developed</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Is received lawfully from another source</li>
+              <li className="flex items-center gap-2 sm:col-span-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Must be disclosed by law</li>
+            </ul>
+          </section>
+
+          {/* 20. THIRD-PARTY SERVICES */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                20
+              </span>
+              THIRD-PARTY SERVICES
+            </h2>
+            <p>Our website and services may depend on third-party services such as:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs sm:text-sm">
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Payment processors</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Scheduling platforms</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">AI platforms</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Cloud storage</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Analytics providers</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2">Email providers</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 sm:col-span-2">Hosting providers</div>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-400">
+              We are not responsible for outages or failures caused by third-party providers beyond our reasonable control.
+            </p>
+          </section>
+
+          {/* 21. WEBSITE USE */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                21
+              </span>
+              WEBSITE USE
+            </h2>
+            <p>You agree not to:</p>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-2 list-none text-xs sm:text-sm">
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Attempt unauthorized access</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Interfere with website operation</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Introduce malware</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Scrape or copy protected website content without permission</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Reverse engineer restricted systems</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Use the website for unlawful purposes</li>
+              <li className="flex items-center gap-2 sm:col-span-2"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Attempt to circumvent security controls</li>
+            </ul>
+          </section>
+
+          {/* 22. NO GUARANTEE OF AD PERFORMANCE */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                22
+              </span>
+              NO GUARANTEE OF AD PERFORMANCE
+            </h2>
+            <p>We do not guarantee:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Leads</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Sales</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Revenue</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">ROAS</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Click-through rate</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Conversion rate</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Advertising approval</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Platform performance</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Viral performance</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2 text-center">Business results</div>
+            </div>
+            <p className="pt-2">Creative performance depends on many factors outside our control, including:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-xs text-slate-400">
+              <div>• Offer</div>
+              <div>• Pricing</div>
+              <div>• Audience</div>
+              <div>• Landing page</div>
+              <div>• Product</div>
+              <div>• Market</div>
+              <div>• Advertising budget</div>
+              <div>• Competition</div>
+              <div>• Platform algorithms</div>
+              <div className="sm:col-span-3">• Campaign structure</div>
+            </div>
+          </section>
+
+          {/* 23. DISCLAIMERS */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                23
+              </span>
+              DISCLAIMERS
+            </h2>
+            <p>
+              Our website and services are provided on an &ldquo;as available&rdquo; and &ldquo;as is&rdquo; basis to the maximum extent permitted by applicable law.
+            </p>
+            <p>We do not guarantee that:</p>
+            <ul className="space-y-1.5 pl-2 list-none text-xs sm:text-sm">
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> The website will always be available.</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> AI systems will always operate without errors.</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Services will always be uninterrupted.</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Generated content will always be error-free.</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> Third-party platforms will remain available.</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-neon shrink-0" /> A particular marketing outcome will occur.</li>
+            </ul>
+          </section>
+
+          {/* 24. LIMITATION OF LIABILITY */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                24
+              </span>
+              LIMITATION OF LIABILITY
+            </h2>
+            <p>
+              To the maximum extent permitted by applicable law, Quickupp will not be liable for indirect, incidental, consequential, special, exemplary, or punitive damages arising from use of the website or services.
             </p>
             <p>
-              Customers are solely responsible for reviewing all final content, confirming factual accuracy, licensing rights, required permissions, talent releases, Digital Clone authorizations, and regulatory compliance.
+              To the extent permitted by law, our aggregate liability relating to a specific service will not exceed the amount actually paid to Quickupp for that service giving rise to the claim.
+            </p>
+            <p className="text-xs sm:text-sm text-slate-400">
+              Nothing in these Terms limits liability that cannot legally be limited or excluded under applicable law.
             </p>
           </section>
 
-          {/* Section 22, 23, 24, 25, 26 */}
-          <section className="space-y-4 pt-2">
-            <div className="rounded-xl border border-border/70 bg-surface/20 p-5 space-y-2">
-              <h3 className="text-base font-bold text-foreground"><span className="font-mono text-neon">22.</span> Right to Refuse Service</h3>
-              <p className="text-xs sm:text-sm">Quickupp may refuse, suspend, or terminate a project if we reasonably believe the project violates these Terms, lacks authorization, involves unlawful or deceptive content, or creates legal/security risks.</p>
-            </div>
-
-            <div className="rounded-xl border border-border/70 bg-surface/20 p-5 space-y-2">
-              <h3 className="text-base font-bold text-foreground"><span className="font-mono text-neon">23.</span> Confidentiality</h3>
-              <p className="text-xs sm:text-sm">Where commercially reasonable, we treat confidential customer information as confidential. Separate NDAs may be executed for projects requiring additional protections.</p>
-            </div>
-
-            <div className="rounded-xl border border-border/70 bg-surface/20 p-5 space-y-2">
-              <h3 className="text-base font-bold text-foreground"><span className="font-mono text-neon">24 &amp; 25.</span> Warranties &amp; Limitation of Liability</h3>
-              <p className="text-xs sm:text-sm">To the maximum extent permitted by law, services are provided without guarantees that AI outputs are uninterrupted or error-free. Quickupp Softech LLC will not be liable for indirect, incidental, consequential, special, exemplary, or punitive damages.</p>
-            </div>
-
-            <div className="rounded-xl border border-border/70 bg-surface/20 p-5 space-y-2">
-              <h3 className="text-base font-bold text-foreground"><span className="font-mono text-neon">26.</span> Indemnification</h3>
-              <p className="text-xs sm:text-sm">You agree to defend, indemnify, and hold harmless Quickupp Softech LLC, affiliates, and personnel from claims, damages, or costs arising from materials you provide, your violation of these Terms, third-party rights, or applicable law.</p>
-            </div>
-          </section>
-
-          {/* Section 27 to 34 */}
-          <section className="space-y-3 pt-2">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="font-mono text-neon text-base sm:text-lg">27–34.</span>
-              General Legal Provisions
+          {/* 25. INDEMNIFICATION */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                25
+              </span>
+              INDEMNIFICATION
             </h2>
-            <div className="space-y-3 text-xs sm:text-sm">
-              <p><strong className="text-foreground">Privacy &amp; Cookies:</strong> Our collection of personal data and cookies is governed by our separate <Link to="/privacy-policy" className="text-neon underline">Privacy Policy</Link> and <Link to="/cookie-policy" className="text-neon underline">Cookie Policy</Link>.</p>
-              <p><strong className="text-foreground">Changes to Terms:</strong> We may update these Terms from time to time. The updated version will be posted on our website with a revised “Last Updated” date.</p>
-              <p><strong className="text-foreground">Governing Law:</strong> These Terms are governed by applicable law, and disputes will be handled in courts having jurisdiction over Quickupp Softech LLC.</p>
-              <p><strong className="text-foreground">Entire Agreement:</strong> These Terms, together with applicable quotations, proposals, invoices, and policies, constitute the entire agreement between the parties.</p>
+            <p>
+              To the extent permitted by applicable law, you agree to defend, indemnify, and hold harmless Quickupp, its affiliates, officers, employees, contractors, and service providers from claims, losses, liabilities, damages, costs, and expenses arising from:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm">
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5">Your misuse of the services</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5">Your violation of these Terms</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5">Your violation of another person&rsquo;s rights</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5">Content you provide</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5">Unauthorized likeness or voice use</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5">Your advertising claims</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5">Your violation of applicable laws</div>
+              <div className="rounded-lg border border-border/50 bg-surface/40 p-2.5">Your infringement of intellectual property rights</div>
             </div>
           </section>
+
+          {/* 26. TERMINATION */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                26
+              </span>
+              TERMINATION
+            </h2>
+            <p>We may suspend or terminate access to our services if:</p>
+            <ul className="space-y-1.5 pl-2 list-none text-xs sm:text-sm">
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> You violate these Terms.</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> You fail to pay amounts due.</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> You provide unlawful content.</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> You request prohibited content.</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Continued performance creates unreasonable legal or security risk.</li>
+              <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" /> Required by law.</li>
+            </ul>
+            <p className="text-xs sm:text-sm text-slate-400">
+              Termination does not affect provisions that by their nature should survive termination.
+            </p>
+          </section>
+
+          {/* 27. GOVERNING LAW */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                27
+              </span>
+              GOVERNING LAW
+            </h2>
+            <p>
+              These Terms are governed by the laws of the <strong className="text-foreground">State of Delaware</strong>, without regard to conflict-of-law principles, except to the extent applicable law requires otherwise.
+            </p>
+            <p className="text-xs sm:text-sm text-slate-400">
+              Nothing in these Terms is intended to eliminate or restrict mandatory consumer protections that cannot legally be waived.
+            </p>
+          </section>
+
+          {/* 28. DISPUTES */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                28
+              </span>
+              DISPUTES
+            </h2>
+            <p>
+              Before filing a formal claim, the parties agree to attempt in good faith to resolve the dispute by contacting the other party.
+            </p>
+            <div className="rounded-xl border border-border/60 bg-surface/40 p-3.5 text-xs sm:text-sm">
+              <span className="text-muted-foreground">Send dispute notices to: </span>
+              <a href="mailto:info@quickuppaistudio.us" className="text-neon underline font-medium">
+                info@quickuppaistudio.us
+              </a>
+            </div>
+            <p>
+              Where legally permitted, disputes may be brought in the appropriate state or federal courts located in Delaware.
+            </p>
+            <p className="text-xs sm:text-sm text-slate-400">
+              Nothing in this section prevents a consumer from exercising a non-waivable right under applicable law.
+            </p>
+          </section>
+
+          {/* 29. CHANGES TO THESE TERMS */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                29
+              </span>
+              CHANGES TO THESE TERMS
+            </h2>
+            <p>
+              We may update these Terms from time to time.
+            </p>
+            <p>
+              Updated Terms become effective when posted unless a different effective date is specified.
+            </p>
+            <p className="text-xs sm:text-sm text-slate-400">
+              Your continued use of the services after an update constitutes acceptance to the extent permitted by law.
+            </p>
+          </section>
+
+          {/* 30. SEVERABILITY */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                30
+              </span>
+              SEVERABILITY
+            </h2>
+            <p>
+              If any provision of these Terms is determined to be invalid or unenforceable, the remaining provisions will remain in effect to the extent permitted by law.
+            </p>
+          </section>
+
+          {/* 31. ENTIRE AGREEMENT */}
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-surface/20 p-6 sm:p-7">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/10 font-mono text-xs font-bold text-neon">
+                31
+              </span>
+              ENTIRE AGREEMENT
+            </h2>
+            <p>
+              These Terms, together with any applicable proposal, order, service-specific terms, privacy policy, and other written agreement, constitute the agreement governing your use of our services.
+            </p>
+            <p className="text-xs sm:text-sm text-slate-400">
+              If there is a conflict between these Terms and a signed written agreement, the signed written agreement controls to the extent of the conflict.
+            </p>
+          </section>
+
+          {/* 32. CONTACT */}
+          <section className="space-y-4 rounded-2xl border border-neon/40 bg-surface/40 p-6 sm:p-7 shadow-lg shadow-neon/5">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon/20 font-mono text-xs font-bold text-neon">
+                32
+              </span>
+              CONTACT
+            </h2>
+            <div className="space-y-2 text-xs sm:text-sm">
+              <div className="font-semibold text-foreground text-base">Quickupp Softech LLC</div>
+              <div className="text-muted-foreground">Quickupp AI Studio</div>
+              <div>
+                <span className="text-muted-foreground">Website: </span>
+                <a href="https://quickuppaistudio.us" target="_blank" rel="noopener noreferrer" className="text-neon underline">
+                  quickuppaistudio.us
+                </a>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Email: </span>
+                <a href="mailto:info@quickuppaistudio.us" className="text-neon underline font-medium">
+                  info@quickuppaistudio.us
+                </a>
+              </div>
+            </div>
+          </section>
+
         </div>
 
         {/* Contact & Support Section */}
@@ -394,7 +1049,7 @@ function TermsPage() {
                 Have questions regarding our Terms &amp; Conditions?
               </h3>
               <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                Our support team is available at <a href="mailto:info@quickuppaistudio.us" className="text-neon underline">info@quickuppaistudio.us</a> or via WhatsApp to assist you.
+                Our team is available at <a href="mailto:info@quickuppaistudio.us" className="text-neon underline">info@quickuppaistudio.us</a> or via WhatsApp to assist you.
               </p>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-3">
