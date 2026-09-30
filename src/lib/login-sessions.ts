@@ -25,3 +25,21 @@ export function getLiveSessionLoginLogIds(
   }
   return live;
 }
+
+// Presence: every open CRM checks in with the server (~every 30s) and reports when the
+// user was last active. A session only counts as live while its CRM is open (checked in
+// recently) and the user was active within the inactivity timeout.
+export type SessionPresence = Record<string, { seen: number; active: number }>;
+export const PRESENCE_CHECKIN_MS = 30_000;
+export const PRESENCE_STALE_MS = 90_000;
+
+export function isSessionPresent(
+  presence: SessionPresence | null | undefined,
+  email: string | null | undefined,
+  inactivityMinutes: number,
+  now: number = Date.now()
+): boolean {
+  const p = presence?.[(email || "").toLowerCase().trim()];
+  if (!p) return false;
+  return now - p.seen < PRESENCE_STALE_MS && now - p.active < Math.max(1, inactivityMinutes) * 60_000;
+}

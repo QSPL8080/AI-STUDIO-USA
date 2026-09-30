@@ -84,6 +84,8 @@ import {
   recordLoginLogServerFn,
   fetchLoginLogsServerFn,
   deleteLoginLogsServerFn,
+  sessionHeartbeatServerFn,
+  endSessionServerFn,
   fetchRecordCountsServerFn,
   checkCrmAccountServerFn,
   fetchAdminUsersServerFn,
@@ -117,7 +119,7 @@ import {
   broadcastLeadEvent,
 } from "@/lib/lead-actions";
 import { getOfficeGeoConfig, DEFAULT_OFFICE_CONFIG } from "@/lib/geo-config";
-import { getLiveSessionLoginLogIds } from "@/lib/login-sessions";
+import { getLiveSessionLoginLogIds, isSessionPresent, PRESENCE_CHECKIN_MS, type SessionPresence } from "@/lib/login-sessions";
 import {
   fetchOrdersServerFn,
   updateOrderStatusServerFn,
@@ -533,6 +535,8 @@ function AdminPage() {
   // Activity & Login Logs State
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loginLogs, setLoginLogs] = useState<LoginLog[]>([]);
+  const [sessionPresence, setSessionPresence] = useState<SessionPresence>({});
+  const [presenceClockSkew, setPresenceClockSkew] = useState(0); // server time - browser time
   const [selectedLoginLogIds, setSelectedLoginLogIds] = useState<Set<string>>(new Set());
   const [activityCategoryFilter, setActivityCategoryFilter] = useState<"all" | "calendly" | "leads" | "user_activity">("all");
   const [leadsActivitySubTab, setLeadsActivitySubTab] = useState<"website_manual" | "meta" | "all">("website_manual");
@@ -1049,7 +1053,7 @@ function AdminPage() {
         const lastActive = lastActiveStr ? Number(lastActiveStr) : lastActivityTime;
         const now = Date.now();
         if (now - lastActive >= timeoutMs) {
-          handleLogout();
+          handleLogout(`Inactivity timeout (${appliedInactivityTimeout || 10} min)`);
           setAuthError(`You were automatically logged out due to ${appliedInactivityTimeout || 10} minutes of inactivity.`);
         }
       } catch {}
@@ -1144,7 +1148,7 @@ function AdminPage() {
         const res = await checkCrmAccountServerFn({ data: { token } });
         if (!stopped && !res.active && res.reason !== "invalid") {
           stopped = true;
-          handleLogout();
+          handleLogout(false);
           setAuthError("Your session has ended. Please contact your administrator.");
         }
       } catch {}
@@ -1532,7 +1536,12 @@ function AdminPage() {
         fetchLoginLogsServerFn({ data: 100 }),
       ]);
       if (actRes.success && actRes.logs) setActivityLogs(actRes.logs);
-      if (logRes.success && logRes.logs) setLoginLogs(logRes.logs);
+      if (logRes.success && logRes.logs) {
+        setLoginLogs(logRes.logs);
+        const pr = logRes as { presence?: SessionPresence; serverNow?: number };
+        if (pr.presence) setSessionPresence(pr.presence);
+        if (pr.serverNow) setPresenceClockSkew(pr.serverNow - Date.now());
+      }
     } catch {}
   };
 
@@ -1724,8 +1733,8 @@ function AdminPage() {
         });
 
         if (!res.authorized) {
-          // Terminate session immediately & force logout
-          handleLogout();
+          // Terminate session immediately & force logout (the server already logged why)
+          handleLogout(false);
           setLocationErrorType(
             res.errorCode === "OUT_OF_BOUNDS" ? "out_of_bounds" : res.errorCode === "ACCOUNT_REMOVED" ? "none" : "denied"
           );
@@ -1852,7 +1861,11 @@ function AdminPage() {
     }
   };
 
-  const handleLogout = () => {
+  // reason: text recorded in Login / IP Tracking; false = already recorded by the server.
+  // (When used as a button handler the argument is the click event: a normal logout.)
+  const handleLogout = (reason?: unknown) => {
+    const token = session?.token;
+    const logReason = reason === false ? null : typeof reason === "string" ? reason : "Logged out";
     setSession(null);
     setActiveTab("leads");
     setSelectedLeadIds(new Set());
@@ -1868,8 +1881,33 @@ function AdminPage() {
       localStorage.removeItem("ai_studio_auth_session");
       localStorage.removeItem("crm_last_active");
     } catch {}
-    window.location.replace("/crm/login");
+    const go = () => window.location.replace("/crm/login");
+    if (token && logReason) {
+      Promise.race([
+        endSessionServerFn({ data: { token, reason: logReason, userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "" } }),
+        new Promise((r) => setTimeout(r, 1500)),
+      ]).finally(go);
+    } else {
+      go();
+    }
   };
+
+  // Presence check-in: tells the server this CRM is open and when the user was last active.
+  useEffect(() => {
+    if (!session?.token) return;
+    const token = session.token;
+    const beat = () => {
+      let lastActive = Date.now();
+      try {
+        const v = Number(sessionStorage.getItem("crm_last_active") || localStorage.getItem("crm_last_active"));
+        if (v) lastActive = v;
+      } catch {}
+      sessionHeartbeatServerFn({ data: { token, lastActive } }).catch(() => {});
+    };
+    beat();
+    const id = setInterval(beat, PRESENCE_CHECKIN_MS);
+    return () => clearInterval(id);
+  }, [session?.token]);
 
   // Lead Actions
   const handleUpdateLeadStatus = async (
@@ -2636,7 +2674,14 @@ function AdminPage() {
   // live-session entry is kept and can't be selected or deleted (the server enforces this too).
   // Only accounts that still exist and are active can have a live session.
   const liveSessionLoginLogIds = useMemo(() => {
-    const live = getLiveSessionLoginLogIds(loginLogs);
+    const now = Date.now() + presenceClockSkew;
+    // Live = signed in, CRM open (checked in recently) and used within the inactivity timeout
+    const live = new Set(
+      [...getLiveSessionLoginLogIds(loginLogs, now)].filter((id) => {
+        const log = loginLogs.find((l) => l.id === id);
+        return !!log && isSessionPresent(sessionPresence, log.email, appliedInactivityTimeout, now);
+      })
+    );
     if (adminUsers.length === 0) return live; // user list not loaded yet: stay on the safe side
     const activeEmails = new Set(
       adminUsers.filter((u) => u.status !== "inactive").map((u) => (u.email || "").toLowerCase().trim())
@@ -2647,7 +2692,7 @@ function AdminPage() {
         return !!log && activeEmails.has((log.email || "").toLowerCase().trim());
       })
     );
-  }, [loginLogs, adminUsers]);
+  }, [loginLogs, adminUsers, sessionPresence, presenceClockSkew, appliedInactivityTimeout]);
   const deletableLoginLogs = useMemo(
     () => loginLogs.filter((l) => !liveSessionLoginLogIds.has(l.id)),
     [loginLogs, liveSessionLoginLogIds]
@@ -7104,11 +7149,23 @@ function AdminPage() {
                           </td>
                           <td className="px-4 py-3">
                             <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                              ll.status === "failed"
+                              ll.status === "failed" || ll.status === "blocked_location"
                                 ? "bg-red-100 text-red-700"
-                                : "bg-emerald-100 text-emerald-700"
+                                : ll.status === "session_terminated"
+                                ? "bg-slate-100 text-slate-600"
+                                : liveSessionLoginLogIds.has(ll.id)
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-blue-50 text-blue-700"
                             }`}>
-                              {ll.status === "failed" ? "Failed" : "Success"}
+                              {ll.status === "failed"
+                                ? "Failed"
+                                : ll.status === "blocked_location"
+                                ? "Blocked (Location)"
+                                : ll.status === "session_terminated"
+                                ? `Logged out${ll.location ? ` · ${ll.location}` : ""}`
+                                : liveSessionLoginLogIds.has(ll.id)
+                                ? "Live now"
+                                : "Signed in"}
                             </span>
                           </td>
                           <td className="px-4 py-3 font-mono text-slate-500 text-[11px]">{ll.ip_address || "127.0.0.1"}</td>

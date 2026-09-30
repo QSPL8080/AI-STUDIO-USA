@@ -70,7 +70,71 @@ import {
 } from "./email";
 import { evaluateLocationAccess, getOfficeGeoConfig, DEFAULT_OFFICE_CONFIG } from "./geo-config";
 import { createCrmSessionToken, verifySessionWithLocation, decodeAndVerifySessionToken } from "./crm-session";
-import { getLiveSessionLoginLogIds } from "./login-sessions";
+import { getLiveSessionLoginLogIds, isSessionPresent, PRESENCE_STALE_MS, type SessionPresence } from "./login-sessions";
+
+// ── Session presence (who has the CRM open and is active right now) ─────────
+const PRESENCE_KEY = "session_presence";
+async function readPresence(): Promise<SessionPresence> {
+  try {
+    const st = await getCrmSettingsFromDb();
+    const parsed = JSON.parse(st[PRESENCE_KEY] || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+async function writePresence(p: SessionPresence): Promise<void> {
+  const now = Date.now();
+  const clean: SessionPresence = {};
+  for (const [k, v] of Object.entries(p)) if (v && now - v.seen < 24 * 3600_000) clean[k] = v;
+  await saveCrmSettingsToDb({ [PRESENCE_KEY]: JSON.stringify(clean) });
+}
+async function getInactivityMinutes(): Promise<number> {
+  try {
+    const n = Number((await getCrmSettingsFromDb())["inactivity_timeout"]);
+    return [5, 10, 15, 30].includes(n) ? n : 10;
+  } catch {
+    return 10;
+  }
+}
+
+/** Open CRM check-in: "I'm here, and the user was last active at <lastActive>". */
+export const sessionHeartbeatServerFn = createServerFn({ method: "POST" })
+  .validator((data: { token?: string | undefined; lastActive?: number | undefined }) => data)
+  .handler(async ({ data }) => {
+    const who = decodeAndVerifySessionToken(data.token || "");
+    if (!who.valid || !who.payload) return { success: false };
+    const now = Date.now();
+    const lastActive = Math.min(Number(data.lastActive) || now, now);
+    const p = await readPresence();
+    p[who.payload.email.toLowerCase()] = { seen: now, active: lastActive };
+    await writePresence(p);
+    return { success: true };
+  });
+
+/** Any logout (button, inactivity, account removed): record it and clear presence. */
+export const endSessionServerFn = createServerFn({ method: "POST" })
+  .validator((data: { token?: string | undefined; reason?: string | undefined; userAgent?: string | undefined }) => data)
+  .handler(async ({ data }) => {
+    // An expired token still identifies who is logging out (signature is checked).
+    const who = decodeAndVerifySessionToken(data.token || "");
+    const email = who.payload?.email;
+    if (!email || (!who.valid && who.error !== "Session token expired")) return { success: false };
+    try {
+      await addLoginLogInDb({
+        email,
+        role: who.payload?.role || "unknown",
+        ip_address: "Unknown IP",
+        location: (data.reason || "Logged out").slice(0, 120),
+        user_agent: data.userAgent || "Web Browser",
+        status: "session_terminated",
+      });
+    } catch {}
+    const p = await readPresence();
+    delete p[email.toLowerCase()];
+    await writePresence(p);
+    return { success: true };
+  });
 
 function sanitizeLeadPhone(phone: string, _isUsa: boolean = true): string {
   const trimmed = phone.trim();
@@ -730,8 +794,17 @@ export const deleteLoginLogsServerFn = createServerFn({ method: "POST" })
         return { success: false, count: 0, error: "Only Super Admin can delete login logs." };
       }
       // Never delete the entry of a session that may still be live (anyone's, not just the caller's).
-      const recentLogs = await getLoginLogsFromDb(1000);
+      const [recentLogs, presence, inactivityMinutes] = await Promise.all([
+        getLoginLogsFromDb(1000),
+        readPresence(),
+        getInactivityMinutes(),
+      ]);
       const live = getLiveSessionLoginLogIds(recentLogs);
+      // Only sessions whose CRM is open and in use right now are protected.
+      for (const id of [...live]) {
+        const email = recentLogs.find((l) => l.id === id)?.email || "";
+        if (!isSessionPresent(presence, email, inactivityMinutes)) live.delete(id);
+      }
       // A deleted or deactivated account has no live session, so its rows can be deleted.
       for (const id of [...live]) {
         const email = recentLogs.find((l) => l.id === id)?.email || "";
@@ -761,8 +834,12 @@ export const fetchLoginLogsServerFn = createServerFn({ method: "GET" })
   .validator((limit?: number) => limit || 100)
   .handler(async ({ data }) => {
     try {
-      const logs = await getLoginLogsFromDb(data);
-      return { success: true, logs };
+      const [logs, presence, inactivityMinutes] = await Promise.all([
+        getLoginLogsFromDb(data),
+        readPresence(),
+        getInactivityMinutes(),
+      ]);
+      return { success: true, logs, presence, inactivityMinutes, serverNow: Date.now() };
     } catch (error: any) {
       return { success: false, logs: [] as LoginLog[], error: error.message };
     }
