@@ -4702,6 +4702,24 @@ export function CreativeScalingCta() {
             <span>View Pricing</span>
             <ArrowRight className="h-3.5 w-3.5 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-purple-600" />
           </a>
+
+          <a
+            href={whatsAppUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md transition-all hover:scale-105 hover:brightness-105 active:scale-95 cursor-pointer"
+          >
+            <MessageCircle className="h-4 w-4" />
+            <span>Chat on WhatsApp</span>
+          </a>
+
+          <a
+            href="#pricing"
+            className="inline-flex items-center gap-2 rounded-full border border-purple-400/80 bg-slate-900 px-6 py-2.5 text-xs sm:text-sm font-bold text-white shadow-xs transition-all hover:border-purple-300 hover:bg-slate-800 hover:scale-105 active:scale-95 group cursor-pointer"
+          >
+            <Zap className="h-4 w-4 text-white shrink-0 group-hover:scale-110" />
+            <span>Buy Plan</span>
+          </a>
         </div>
 
         {/* Supporting Lines */}

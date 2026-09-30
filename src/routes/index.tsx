@@ -97,7 +97,6 @@ function Index() {
         <DigitalTwin />
         <UseCases />
         <WhyUs />
-        <WhatsAppCtaSection />
         <CreativeScalingCta />
       </main>
       <Footer />
