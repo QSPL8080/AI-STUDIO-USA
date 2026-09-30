@@ -700,54 +700,84 @@ export const whyUs = [
 
 export const faqs = [
   {
-    question: "What AI video production services does Quickupp AI Studio offer?",
+    question: "What are AI video ads?",
     answer:
-      "Quickupp AI Studio offers AI UGC videos, AI cartoon animations, AI avatar videos, hyper-realistic AI videos and AI digital twin or clone videos for businesses.",
+      "AI video ads are advertising creatives produced using artificial intelligence for elements such as presenters, UGC-style characters, voiceovers, environments, animation, product visuals, and video production workflows.",
   },
   {
-    question: "How much does AI video production cost?",
+    question: "How much does an AI video ad cost?",
     answer:
-      "Our AI video production services start from $79 per reel. Pricing depends on the selected video format, production requirements and package size.",
+      "Quickupp AI Studio offers AI video ads starting at $79 per video. AI hyper-realistic videos start at $149, while AI digital twin videos start at $179.",
   },
   {
-    question: "What is included in an AI video?",
+    question: "Do you create UGC videos without real creators?",
     answer:
-      "Depending on the selected service, the package can include scripting, AI-generated visuals, voiceover, lip-sync, expressions, captions, music, sound effects, motion graphics and final 9:16 editing.",
+      "Yes. We create AI UGC-style videos using AI-generated creators and production workflows, allowing brands to produce creator-style advertising without coordinating a traditional creator shoot.",
   },
   {
-    question: "How long does AI video production take?",
+    question: "Can you create videos for e-commerce brands?",
     answer:
-      "Our standard delivery timeline is 48–72 working hours after script approval and receipt of all required materials.",
+      "Yes. E-commerce and DTC brands are a primary focus. We create product demonstrations, testimonials, UGC-style ads, problem/solution videos, unboxing concepts, lifestyle ads, and other social-first creatives.",
   },
   {
-    question: "Can you create AI UGC videos for my product?",
+    question: "Can you create SaaS and AI startup videos?",
     answer:
-      "Yes. We create AI UGC videos featuring AI-generated creators for product demonstrations, reviews, recommendations, testimonials and promotional content.",
+      "Yes. We create AI avatar videos, product explainers, feature videos, problem/solution ads, educational content, and social creatives for SaaS, AI, mobile apps, and B2B software companies.",
   },
   {
-    question: "Can you create an AI avatar of me?",
+    question: "Do you work with real estate companies?",
     answer:
-      "Yes. We can create an appropriately authorized AI avatar or digital twin for clients who want to produce recurring videos using their approved appearance and voice.",
+      "Yes. We create video ads for realtors, brokerages, teams, developers, luxury agents, new construction projects, and apartment communities.",
   },
   {
-    question: "What is an AI digital twin?",
+    question: "Do you work with agencies?",
     answer:
-      "An AI digital twin is a reusable digital representation of a person that can be used to create AI-powered videos using an appropriately authorized avatar and voice configuration.",
+      "Yes. Quickupp AI Studio offers white-label AI video production for marketing, performance, social media, e-commerce, creative, SEO/PPC, influencer, branding, web development, and lead-generation agencies.",
   },
   {
-    question: "Can I use AI videos for Instagram Reels?",
+    question: "What video format do I receive?",
     answer:
-      "Yes. Our standard videos are delivered in vertical 9:16 format suitable for Instagram Reels, Facebook and YouTube Shorts.",
+      "Our standard social video format is 9:16, suitable for Instagram Reels, TikTok, and YouTube Shorts.",
   },
   {
-    question: "How many revisions are included?",
+    question: "How long can the video be?",
     answer:
-      "One revision is included with the standard package, based on the approved script and concept.",
+      "Every standard video service includes videos of up to 60 seconds.",
   },
   {
-    question: "Can I order multiple AI videos every month?",
+    question: "Do you write the script?",
     answer:
-      "Yes. We offer 5, 10 and 15-reel packages and can also create customized monthly AI video production plans.",
+      "Yes. Script writing or adaptation is included as part of the video production process.",
+  },
+  {
+    question: "Do you create storyboards?",
+    answer:
+      "Yes. Storyboarding is part of the creative production workflow and helps define the visual direction of each scene before AI production begins.",
+  },
+  {
+    question: "Do you provide voiceover?",
+    answer:
+      "Yes. AI voiceover is included in the standard video service.",
+  },
+  {
+    question: "Can I order multiple videos?",
+    answer:
+      "Yes. We offer 1, 5, 10, 15, and 30-video packages, with custom pricing available for 30+ videos.",
+  },
+  {
+    question: "What is a Digital Twin?",
+    answer:
+      "A digital twin is an AI-powered digital representation of a person that can be used to create repeatable video content.",
+  },
+  {
+    question: "How much does Digital Twin setup cost?",
+    answer:
+      "Digital Twin Setup is $499 one-time.",
+  },
+  {
+    question: "Can you create custom video packages?",
+    answer:
+      "Yes. Brands and agencies requiring larger creative volumes can request a custom quote.",
   },
 ];
 

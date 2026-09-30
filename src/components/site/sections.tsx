@@ -4339,10 +4339,53 @@ export function WhatsAppCtaSection() {
 }
 
 export function Faq() {
-  const [open, setOpen] = useState<number | null>(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const leftFaqs = faqs.slice(0, 8);
+  const rightFaqs = faqs.slice(8, 16);
+
+  const toggleFaq = (idx: number) => {
+    setOpenIndex(openIndex === idx ? null : idx);
+  };
+
+  const renderFaqItem = (faq: (typeof faqs)[number], i: number) => {
+    const isOpen = openIndex === i;
+    return (
+      <div
+        key={faq.question}
+        className={`overflow-hidden rounded-xl border border-slate-200/90 bg-white transition-all duration-200 shadow-xs hover:border-purple-300 ${
+          isOpen ? "bg-purple-50/40 border-purple-300/80 shadow-sm" : "hover:bg-slate-50/60"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={() => toggleFaq(i)}
+          className="flex w-full items-center justify-between gap-3 px-4 sm:px-5 py-3.5 text-left text-xs sm:text-sm font-semibold text-slate-900 transition-colors hover:text-purple-700 cursor-pointer"
+          aria-expanded={isOpen}
+        >
+          <span className={isOpen ? "text-purple-700 font-bold" : "text-slate-800"}>
+            {faq.question}
+          </span>
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-300 ${
+              isOpen ? "rotate-180 text-purple-600" : ""
+            }`}
+          />
+        </button>
+        {isOpen && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="animate-in fade-in slide-in-from-top-1 duration-200 px-4 sm:px-5 pb-4 pt-1 text-xs sm:text-sm leading-relaxed text-slate-600 border-t border-purple-100/60 select-text"
+          >
+            {faq.answer}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <Section id="faq" className="relative overflow-hidden bg-aura-diagonal-soft border-y border-purple-100/70">
+    <Section id="faq" className="relative overflow-hidden bg-aura-diagonal-soft border-y border-purple-100/70 py-14 sm:py-18">
       {/* Giant left-scrolling 'FAQ' watermark */}
       <div
         aria-hidden="true"
@@ -4361,43 +4404,25 @@ export function Faq() {
         </div>
       </div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 mx-auto max-w-6xl">
         <SectionHeading
-          eyebrow="AI Video Production"
-          title="Frequently Asked Questions About AI Video Production"
+          eyebrow="21. FAQ"
+          title="Frequently Asked"
+          highlight="Questions"
           center={true}
         />
-        <div className="panel mx-auto max-w-4xl divide-y divide-slate-200 border border-slate-200 bg-white overflow-hidden shadow-md">
-          {faqs.map((faq, i) => (
-            <div
-              key={faq.question}
-              className={`transition-colors duration-200 ${
-                open === i ? "bg-purple-50/40" : "hover:bg-slate-50/60"
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => setOpen(open === i ? null : i)}
-                className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left text-sm font-semibold text-slate-900 transition-colors hover:text-purple-700 md:text-base cursor-pointer"
-                aria-expanded={open === i}
-              >
-                <span className={open === i ? "text-purple-700 font-bold" : ""}>{faq.question}</span>
-                <ChevronDown
-                  className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-300 ${
-                    open === i ? "rotate-180 text-purple-600" : ""
-                  }`}
-                />
-              </button>
-              {open === i ? (
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  className="animate-in fade-in slide-in-from-top-1 duration-200 px-6 pb-5 pt-1 text-sm leading-relaxed text-slate-600 select-text"
-                >
-                  {faq.answer}
-                </div>
-              ) : null}
-            </div>
-          ))}
+
+        {/* 8 - 8 Two-Column Layout */}
+        <div className="mt-8 sm:mt-10 grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 items-start">
+          {/* Left Column (0 - 7) */}
+          <div className="flex flex-col gap-3 sm:gap-3.5">
+            {leftFaqs.map((faq, i) => renderFaqItem(faq, i))}
+          </div>
+
+          {/* Right Column (8 - 15) */}
+          <div className="flex flex-col gap-3 sm:gap-3.5">
+            {rightFaqs.map((faq, i) => renderFaqItem(faq, i + 8))}
+          </div>
         </div>
       </div>
     </Section>

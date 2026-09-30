@@ -90,11 +90,11 @@ function Index() {
         <Pricing />
         <PackageInclusions />
         <Process />
+        <Faq />
         <DigitalTwin />
         <UseCases />
         <StrategyCall />
         <WhyUs />
-        <Faq />
         <WhatsAppCtaSection />
         <LeadFormSection />
         <Contact />
