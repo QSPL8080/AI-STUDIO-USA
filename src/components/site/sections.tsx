@@ -4967,29 +4967,30 @@ export function Contact() {
 }
 
 export function Footer() {
-  const footerGroups = [
-    {
-      title: "AI Video Services",
-      links: [
-        { label: "AI UGC Videos", href: "#services" },
-        { label: "AI Cartoon Animation", href: "#services" },
-        { label: "AI Avatar Videos", href: "#services" },
-        { label: "Hyper-Realistic AI Videos", href: "#services" },
-        { label: "AI Digital Twin Videos", href: "#services" },
-        { label: "Bulk Reels Packages", href: "#pricing" },
-      ],
-    },
-    {
-      title: "Company & Links",
-      links: [
-        { label: "About Us", href: "#top" },
-        { label: "Video Portfolio", href: "#portfolio" },
-        { label: "Pricing Tiers", href: "#pricing" },
-        { label: "Our Process", href: "#process" },
-        { label: "FAQs", href: "#faq" },
-        { label: "Get a Quote", href: "#contact" },
-      ],
-    },
+  const serviceLinks = [
+    { label: "AI UGC Video Ads", href: "#pricing" },
+    { label: "AI Avatar Video Ads", href: "#pricing" },
+    { label: "AI Cartoon Video Ads", href: "#pricing" },
+    { label: "AI Hyper-Realistic Video Ads", href: "#pricing" },
+    { label: "AI Digital Twin Video", href: "#pricing" },
+    { label: "Digital Twin Setup", href: "#pricing" },
+  ];
+
+  const industryLinks = [
+    { label: "DTC / E-Commerce", href: "#contact" },
+    { label: "SaaS / AI", href: "#contact" },
+    { label: "Real Estate", href: "#contact" },
+    { label: "Med Spa / Aesthetics", href: "#contact" },
+    { label: "Agencies", href: "#contact" },
+  ];
+
+  const companyLinks = [
+    { label: "About", href: "#top" },
+    { label: "Portfolio", href: "#samples" },
+    { label: "Pricing", href: "#pricing" },
+    { label: "How It Works", href: "#process" },
+    { label: "FAQ", href: "#faq" },
+    { label: "Contact", href: "#contact" },
   ];
 
   return (
@@ -5005,10 +5006,10 @@ export function Footer() {
       />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl flex flex-col">
-        {/* Main Footer Grid: 4 Clean Columns across full width */}
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8 items-start">
-          {/* Col 1: Brand & Bio ONLY */}
-          <div className="flex flex-col items-start gap-3.5">
+        {/* Main Footer Grid: 5 Columns across full width */}
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-12 lg:gap-6 items-start">
+          {/* Col 1: Brand & Tagline & CTA (lg:col-span-4) */}
+          <div className="flex flex-col items-start gap-3.5 lg:col-span-4">
             <a href="#top" className="-ml-1 flex items-center transition-opacity hover:opacity-90">
               <img
                 src="/images/logo.png"
@@ -5019,19 +5020,37 @@ export function Footer() {
                 height={40}
               />
             </a>
-            <p className="text-sm font-semibold text-neon">{footerTagline}</p>
-            <p className="text-xs leading-relaxed text-slate-400 sm:text-sm">
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-300">
+                QUICKUPP AI STUDIO
+              </h4>
+              <p className="text-sm font-semibold text-neon">{footerTagline}</p>
+            </div>
+            <p className="text-xs leading-relaxed text-slate-400 sm:text-sm max-w-sm">
               {footerDescription}
             </p>
+
+            {/* CTA Button */}
+            <div className="pt-2">
+              <a
+                href={calendlyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-brand px-5 py-2 text-xs font-semibold text-white shadow-md glow-neon transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                <span>Book a Strategy Call</span>
+              </a>
+            </div>
           </div>
 
-          {/* Col 2: AI Video Services */}
-          <div className="flex flex-col gap-3">
+          {/* Col 2: SERVICES (lg:col-span-2) */}
+          <div className="flex flex-col gap-3 lg:col-span-2">
             <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-white sm:text-sm">
-              {footerGroups[0].title}
+              SERVICES
             </h3>
-            <ul className="space-y-2.5">
-              {footerGroups[0].links.map((link) => (
+            <ul className="space-y-2">
+              {serviceLinks.map((link) => (
                 <li key={link.label}>
                   <a
                     href={link.href}
@@ -5044,13 +5063,13 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Col 3: Company & Quick Links */}
-          <div className="flex flex-col gap-3">
+          {/* Col 3: INDUSTRIES (lg:col-span-2) */}
+          <div className="flex flex-col gap-3 lg:col-span-2">
             <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-white sm:text-sm">
-              {footerGroups[1].title}
+              INDUSTRIES
             </h3>
-            <ul className="space-y-2.5">
-              {footerGroups[1].links.map((link) => (
+            <ul className="space-y-2">
+              {industryLinks.map((link) => (
                 <li key={link.label}>
                   <a
                     href={link.href}
@@ -5063,104 +5082,89 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Col 4: Locations & Contact */}
-          <div className="flex flex-col gap-4">
-            <div>
-              <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-white sm:text-sm">
-                Our Locations
-              </h3>
-              <div className="mt-2.5 flex flex-col gap-2 text-xs sm:text-sm">
-                <a
-                  href={footerUsaMapUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-start gap-2 text-slate-400 hover:text-[#60a5fa] transition-colors"
-                >
-                  <MapPin className="h-4 w-4 text-[#60a5fa] shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-semibold text-white group-hover:text-[#60a5fa]">
-                      USA Office:{" "}
-                    </span>
-                    <span>{footerUsaAddress}</span>
-                  </div>
-                </a>
+          {/* Col 4: COMPANY (lg:col-span-2) */}
+          <div className="flex flex-col gap-3 lg:col-span-2">
+            <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-white sm:text-sm">
+              COMPANY
+            </h3>
+            <ul className="space-y-2">
+              {companyLinks.map((link) => (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    className="text-xs text-slate-400 transition-colors hover:text-neon sm:text-sm"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-                <a
-                  href={footerCanadaMapUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-start gap-2 text-slate-400 hover:text-red-400 transition-colors"
-                >
-                  <MapPin className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-semibold text-white group-hover:text-red-400">
-                      Canada Office:{" "}
-                    </span>
-                    <span>{footerCanadaAddress}</span>
-                  </div>
-                </a>
-              </div>
+          {/* Col 5: Locations & Contact (lg:col-span-2) */}
+          <div className="flex flex-col gap-3.5 lg:col-span-2">
+            <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-white sm:text-sm">
+              OUR LOCATIONS
+            </h3>
+            <div className="flex flex-col gap-2.5 text-xs">
+              <a
+                href={footerUsaMapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-start gap-1.5 text-slate-400 hover:text-[#60a5fa] transition-colors"
+              >
+                <MapPin className="h-3.5 w-3.5 text-[#60a5fa] shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold text-white group-hover:text-[#60a5fa]">
+                    USA Office:{" "}
+                  </span>
+                  <span className="leading-tight block text-[11px] text-slate-400 mt-0.5">{footerUsaAddress}</span>
+                </div>
+              </a>
+
+              <a
+                href={footerCanadaMapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-start gap-1.5 text-slate-400 hover:text-red-400 transition-colors"
+              >
+                <MapPin className="h-3.5 w-3.5 text-red-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold text-white group-hover:text-red-400">
+                    Canada Office:{" "}
+                  </span>
+                  <span className="leading-tight block text-[11px] text-slate-400 mt-0.5">{footerCanadaAddress}</span>
+                </div>
+              </a>
             </div>
 
             {/* Direct Email and Phone Contact Links */}
-            <div className="border-t border-slate-800 pt-3 flex flex-col gap-2 text-xs sm:text-sm">
+            <div className="border-t border-slate-800/80 pt-2.5 flex flex-col gap-1.5 text-xs">
               <a
                 href={`https://mail.google.com/mail/?view=cm&fs=1&to=${footerEmail}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-slate-400 transition-colors hover:text-neon"
+                className="inline-flex items-center gap-1.5 text-slate-400 transition-colors hover:text-neon"
                 title="Send email via Gmail"
               >
-                <Mail className="h-4 w-4 text-neon shrink-0" />
-                <span>{footerEmail}</span>
+                <Mail className="h-3.5 w-3.5 text-neon shrink-0" />
+                <span className="truncate text-[11px]">{footerEmail}</span>
               </a>
 
               <a
                 href={`tel:${footerPhone.replace(/[^0-9+]/g, "")}`}
-                className="inline-flex items-center gap-2 text-slate-400 transition-colors hover:text-emerald-400"
+                className="inline-flex items-center gap-1.5 text-slate-400 transition-colors hover:text-emerald-400"
                 title="Call Quickupp AI Studio"
               >
-                <Phone className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span className="font-mono">{footerPhone}</span>
+                <Phone className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                <span className="font-mono text-[11px]">{footerPhone}</span>
               </a>
             </div>
           </div>
         </div>
 
-        {/* Footer Action CTA Buttons: 30 min call, Quote, Buy Now */}
-        <div className="mt-10 pt-8 border-t border-slate-800/80 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-          <NeonButton
-            href={calendlyUrl}
-            variant="call"
-            size="sm"
-            className="inline-flex items-center gap-1.5 whitespace-nowrap group"
-          >
-            <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-            <span>Book a 30 min call</span>
-          </NeonButton>
-
-          <NeonButton
-            href="/#contact"
-            variant="primary"
-            size="sm"
-            className="inline-flex items-center gap-1.5 whitespace-nowrap"
-          >
-            <span>Get AI Video Quote</span>
-          </NeonButton>
-
-          <NeonButton
-            href="/#pricing"
-            variant="buy"
-            size="sm"
-            className="inline-flex items-center gap-1.5 whitespace-nowrap"
-          >
-            <Zap className="h-3.5 w-3.5 text-white shrink-0" />
-            <span>Buy Now</span>
-          </NeonButton>
-        </div>
-
         {/* Brand Giant Logo seamlessly integrated inside the footer */}
-        <div className="mt-8 mb-6 md:mt-10 md:mb-8 flex items-center justify-center select-none">
+        <div className="mt-10 mb-6 md:mt-12 md:mb-8 flex items-center justify-center select-none">
           <img
             src="/images/footer logo.png"
             alt="Quickupp AI Studio"
@@ -5178,7 +5182,7 @@ export function Footer() {
             </a>
             <span>•</span>
             <a href="/terms" className="hover:text-neon transition-colors">
-              Terms & Conditions
+              Terms &amp; Conditions
             </a>
             <span>•</span>
             <a href="/cookie-policy" className="hover:text-neon transition-colors">
