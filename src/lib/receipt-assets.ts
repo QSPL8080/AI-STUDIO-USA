@@ -1,3 +1,6 @@
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 // Inlined font and brand assets for zero-dependency PDF and Email generation
 // Guarantees 100% reliability in bundled SSR, Docker, serverless, and production environments.
 
@@ -26,15 +29,18 @@ export function getReceiptBoldFont(): Buffer {
 export function getCompanyLogoBuffer(): Buffer {
   if (!cachedLogo) {
     try {
-      const fs = require("fs");
-      const path = require("path");
+      // Use the live images/PDF LOGO.png (so a new logo applies without code changes).
+      // `require` doesn't exist in the ESM server build, so use node:fs imports.
+      const cwd = process.cwd();
       const candidates = [
-        path.resolve(process.cwd(), "public", "images", "PDF LOGO.png"),
-        path.resolve(process.cwd(), "public", "images", "logo.png"),
+        resolve(cwd, "public", "images", "PDF LOGO.png"),
+        resolve(cwd, ".output", "public", "images", "PDF LOGO.png"),
+        resolve(cwd, "dist", "client", "images", "PDF LOGO.png"),
+        resolve(cwd, "..", "public", "images", "PDF LOGO.png"),
       ];
       for (const p of candidates) {
-        if (fs.existsSync(p)) {
-          cachedLogo = fs.readFileSync(p);
+        if (existsSync(p)) {
+          cachedLogo = readFileSync(p);
           return cachedLogo;
         }
       }

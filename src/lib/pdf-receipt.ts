@@ -158,7 +158,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .font("ReceiptBold")
         .fontSize(9)
         .fillColor("#16a34a")
-        .text("Payment Status: PAID ✓", rightColX, rightY, { width: rightColWidth, align: "right" });
+        .text("Payment Status: PAID", rightColX, rightY, { width: rightColWidth, align: "right" });
 
       rightY += 14;
 
@@ -420,7 +420,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .text("Payment Status: ", infoLeftX, cardY, { continued: true })
         .font("ReceiptBold")
         .fillColor("#16a34a")
-        .text("PAID ✓");
+        .text("PAID");
 
       currentY += 88;
 
