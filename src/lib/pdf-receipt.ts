@@ -167,35 +167,45 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       doc.font("ReceiptBold").fontSize(11);
       const descH = doc.heightOfString(itemDesc, { width: col1Width });
       const rowHeight = Math.max(44, descH + 24);
-      doc.rect(margin, y, contentWidth, rowHeight).fillAndStroke("#ffffff", "#e2e8f0");
+      const tableTop = y - 30; // top of the purple header row
       const rowTextY = y + (rowHeight - 13) / 2;
       doc.font("ReceiptBold").fontSize(11).fillColor("#0f172a").text(itemDesc, col1X, y + (rowHeight - descH) / 2, { width: col1Width });
       doc.font("ReceiptRegular").fontSize(11).fillColor("#0f172a").text(String(data.qty || 1), col2X, rowTextY, { width: col2Width, align: "center" });
       doc.font("ReceiptBold").fontSize(11).fillColor("#0f172a").text(`$${data.amount.toFixed(2)}`, col3X, rowTextY, { width: col3Width, align: "right" });
-      y += rowHeight + 16;
+      y += rowHeight;
 
-      // Totals
-      const totalsWidth = 250;
-      const totalsX = right - totalsWidth;
-      const tLabelX = totalsX + 16;
-      const tValX = totalsX + 110;
-      const tValW = totalsWidth - 110 - 16;
+      // Subtotal / Tax / Total as rows of the same table (labels under Qty, values under Amount)
       const subtotalVal = data.subtotal !== undefined ? data.subtotal : data.amount;
       const taxVal = data.tax !== undefined ? data.tax : 0;
       const totalVal = data.total !== undefined ? data.total : data.amount;
       const currencyStr = data.currency || "USD";
+      const sumLabelX = col2X - 90;
+      const sumLabelW = col3X - sumLabelX - 10;
+      const hLine = (yy: number, x1 = margin) =>
+        doc.strokeColor("#e2e8f0").lineWidth(1).moveTo(x1, yy).lineTo(right, yy).stroke();
 
-      doc.font("ReceiptRegular").fontSize(10.5).fillColor("#64748b").text("Subtotal:", tLabelX, y, { lineBreak: false });
-      doc.font("ReceiptBold").fillColor("#0f172a").text(`$${subtotalVal.toFixed(2)}`, tValX, y, { width: tValW, align: "right" });
-      y += 20;
-      doc.font("ReceiptRegular").fontSize(10.5).fillColor("#64748b").text("Tax (0%):", tLabelX, y, { lineBreak: false });
-      doc.font("ReceiptBold").fillColor("#0f172a").text(`$${taxVal.toFixed(2)}`, tValX, y, { width: tValW, align: "right" });
-      y += 22;
-      doc.roundedRect(totalsX, y, totalsWidth, 36, 8).fillAndStroke("#f5f3ff", "#ddd6fe");
+      hLine(y);
+      const sumRowH = 28;
+      const sumRow = (lbl: string, val: string) => {
+        doc.font("ReceiptRegular").fontSize(10.5).fillColor("#64748b").text(lbl, sumLabelX, y + 9, { width: sumLabelW, align: "right" });
+        doc.font("ReceiptBold").fontSize(10.5).fillColor("#0f172a").text(val, col3X, y + 9, { width: col3Width, align: "right" });
+        y += sumRowH;
+      };
+      sumRow("Subtotal", `$${subtotalVal.toFixed(2)}`);
+      hLine(y, sumLabelX - 10);
+      sumRow("Tax (0%)", `$${taxVal.toFixed(2)}`);
+
+      const totalRowH = 38;
+      doc.rect(margin, y, contentWidth, totalRowH).fill("#f5f3ff");
+      hLine(y);
       doc.font("ReceiptBold").fontSize(13).fillColor("#6d28d9")
-        .text("Total:", tLabelX, y + 11, { lineBreak: false })
-        .text(`$${totalVal.toFixed(2)} ${currencyStr}`, tValX - 20, y + 11, { width: tValW + 20, align: "right" });
-      y += 36 + 20;
+        .text("Total", sumLabelX, y + 12, { width: sumLabelW, align: "right" })
+        .text(`$${totalVal.toFixed(2)} ${currencyStr}`, col3X - 30, y + 12, { width: col3Width + 30, align: "right" });
+      y += totalRowH;
+
+      // One border around the whole table
+      doc.rect(margin, tableTop, contentWidth, y - tableTop).lineWidth(1).strokeColor("#ddd6fe").stroke();
+      y += 22;
 
       // ── 4. PAYMENT INFORMATION CARD ─────────────────────────────
       const payCardH = 106;
