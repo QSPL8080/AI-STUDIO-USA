@@ -3821,49 +3821,45 @@ export function WhoWeServe() {
   };
 
   return (
-    <Section id="who-we-serve" className="relative overflow-hidden bg-slate-950 text-slate-100 py-14 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8 border-y border-purple-900/40 shadow-2xl">
-      {/* Dynamic ambient backdrop glowing meshes */}
+    <Section id="who-we-serve" className="relative overflow-hidden bg-gradient-to-b from-slate-50/50 via-purple-50/20 to-white py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 border-y border-purple-100/80 shadow-inner">
+      {/* Light atmospheric ambient background glows */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -left-20 top-1/4 h-[450px] w-[450px] rounded-full opacity-30 blur-3xl"
-        style={{ background: "radial-gradient(circle, #9333ea 0%, transparent 70%)" }}
+        className="pointer-events-none absolute -left-20 top-1/4 h-96 w-96 rounded-full opacity-20 blur-3xl"
+        style={{ background: "radial-gradient(circle, #a855f7 0%, transparent 70%)" }}
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -right-20 bottom-1/4 h-[450px] w-[450px] rounded-full opacity-25 blur-3xl"
-        style={{ background: "radial-gradient(circle, #db2777 0%, transparent 70%)" }}
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(#a855f7_1px,transparent_1px)] [background-size:24px_24px] opacity-10"
+        className="pointer-events-none absolute -right-20 bottom-1/4 h-96 w-96 rounded-full opacity-20 blur-3xl"
+        style={{ background: "radial-gradient(circle, #ec4899 0%, transparent 70%)" }}
       />
 
       <div ref={sectionRef} className="mx-auto w-full max-w-7xl relative z-10">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
-          <span className="inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-950/60 px-3.5 py-1 text-[11px] font-bold uppercase tracking-widest text-purple-300 backdrop-blur-md shadow-sm">
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
+          <span className="eyebrow">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.8)]"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.6)]"></span>
             </span>
             WHO WE SERVE
           </span>
 
-          <h2 className="mt-3.5 font-heading text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-white">
+          <h2 className="mt-3.5 font-heading text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-slate-900">
             Built for Brands That Need{" "}
             <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5 whitespace-nowrap">
               More Creative Output
             </span>
           </h2>
 
-          <p className="mt-3 text-sm sm:text-base md:text-lg leading-relaxed text-slate-300 max-w-2xl mx-auto">
+          <p className="mt-3 text-sm sm:text-base md:text-lg leading-relaxed text-slate-600 max-w-2xl mx-auto">
             Quickupp AI Studio works across product-led, service-led, and technology businesses.
           </p>
         </div>
 
-        {/* Interactive Segment Navigation Pill Tabs */}
-        <div className="mb-8 overflow-x-auto scrollbar-none pb-2">
-          <div className="flex items-center justify-between min-w-[660px] lg:min-w-0 gap-2 p-1.5 rounded-2xl border border-purple-500/20 bg-slate-900/80 backdrop-blur-xl shadow-lg">
+        {/* Minimalist Tab Navigation Bar (No Boxed Card) */}
+        <div className="mb-8 sm:mb-10 overflow-x-auto scrollbar-none pb-2 border-b border-purple-100/90">
+          <div className="flex items-center justify-start sm:justify-center min-w-[620px] gap-2 sm:gap-3 py-1.5">
             {audienceSegments.map((segment, idx) => {
               const isSelected = activeIdx === idx;
               return (
@@ -3871,13 +3867,13 @@ export function WhoWeServe() {
                   key={segment.id}
                   type="button"
                   onClick={() => setActiveIdx(idx)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl transition-all duration-300 cursor-pointer text-xs sm:text-sm font-bold ${
+                  className={`flex items-center gap-2 py-2 px-3.5 rounded-xl transition-all duration-200 cursor-pointer text-xs sm:text-sm font-bold ${
                     isSelected
-                      ? "bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white shadow-md shadow-purple-500/30 scale-[1.02]"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+                      ? "bg-purple-900 text-white shadow-md shadow-purple-900/15 scale-[1.02]"
+                      : "text-slate-600 hover:text-purple-700 hover:bg-purple-50"
                   }`}
                 >
-                  <span className={isSelected ? "text-white" : "text-purple-400"}>
+                  <span className={isSelected ? "text-purple-200" : "text-purple-600"}>
                     {renderIcon(segment.icon, "h-4 w-4")}
                   </span>
                   <span className="whitespace-nowrap">{segment.badge}</span>
@@ -3887,156 +3883,137 @@ export function WhoWeServe() {
           </div>
         </div>
 
-        {/* Active Segment Showcase Bento Card */}
+        {/* Cardless Open Editorial Flow */}
         <div
           key={current.id}
-          className="animate-step-transition relative rounded-3xl border border-purple-500/30 bg-gradient-to-b from-slate-900/95 via-purple-950/20 to-slate-900/95 p-6 sm:p-8 md:p-10 backdrop-blur-2xl shadow-2xl shadow-purple-950/60 transition-all duration-300"
+          className="animate-step-transition grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start text-left"
         >
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-            {/* Left Main Content Column */}
-            <div className="lg:col-span-7 flex flex-col space-y-5 text-left">
-              {/* Category Tag Header */}
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="inline-flex items-center gap-2 rounded-lg bg-purple-900/50 border border-purple-400/30 px-3 py-1 text-xs font-mono font-bold text-purple-200">
-                  {renderIcon(current.icon, "h-3.5 w-3.5 text-purple-300")}
-                  <span>{current.tag}</span>
-                </span>
-                <span className="text-xs font-mono text-purple-400/80">
-                  0{activeIdx + 1} / 0{audienceSegments.length}
-                </span>
-              </div>
+          {/* Left Column: Core Narrative, Niches, Pitch & CTAs */}
+          <div className="lg:col-span-7 flex flex-col space-y-4 sm:space-y-5">
+            {/* Meta Line */}
+            <div className="flex items-center gap-2.5">
+              <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-purple-100 text-purple-900 border border-purple-200 shadow-2xs">
+                {current.tag}
+              </span>
+              <span className="text-xs font-mono text-slate-400">
+                0{activeIdx + 1} / 0{audienceSegments.length}
+              </span>
+            </div>
 
-              {/* Title & Subheading */}
-              <div>
-                <h3 className="font-heading text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight">
-                  {current.title}
-                </h3>
-                {current.subheading && (
-                  <p className="mt-1.5 text-sm sm:text-base font-semibold text-purple-300">
-                    {current.subheading}
-                  </p>
-                )}
-                <p className="mt-2 text-xs sm:text-sm md:text-base leading-relaxed text-slate-300">
-                  {current.description}
+            {/* Title & Description */}
+            <div>
+              <h3 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                {current.title}
+              </h3>
+              {current.subheading && (
+                <p className="mt-1 text-sm sm:text-base font-bold text-purple-700">
+                  {current.subheading}
                 </p>
-              </div>
-
-              {/* Pitch Points for Agency / White-label */}
-              {current.pitchPoints && current.pitchPoints.length > 0 && (
-                <div className="rounded-xl border border-purple-500/30 bg-purple-950/40 p-4 space-y-2">
-                  {current.pitchPoints.map((point, i) => (
-                    <div key={i} className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-purple-100">
-                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-purple-500 text-white text-[10px] font-bold">
-                        ✓
-                      </span>
-                      <span>{point}</span>
-                    </div>
-                  ))}
-                </div>
               )}
+              <p className="mt-2.5 text-xs sm:text-sm md:text-base text-slate-600 leading-relaxed">
+                {current.description}
+              </p>
+            </div>
 
-              {/* Industries / Built For / Ideal For Tags Cloud */}
-              <div>
-                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-purple-300 block mb-2.5">
-                  {current.industriesLabel}
-                </span>
-                <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                  {current.industries.map((ind, i) => (
-                    <span
-                      key={i}
-                      className="rounded-lg border border-purple-500/20 bg-slate-800/80 px-2.5 py-1 text-xs font-medium text-slate-200 hover:border-purple-400/50 hover:bg-purple-950/60 transition-colors shadow-2xs"
-                    >
-                      {ind}
+            {/* Pitch Points if any */}
+            {current.pitchPoints && current.pitchPoints.length > 0 && (
+              <div className="space-y-2 pt-1">
+                {current.pitchPoints.map((point, i) => (
+                  <div key={i} className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-800">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-700 text-xs font-bold shadow-2xs">
+                      ✓
                     </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Positioning Note if exists */}
-              {current.positioning && (
-                <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-3.5 text-xs sm:text-sm font-medium text-emerald-200 flex items-start gap-2.5">
-                  <Sparkles className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>
-                    <strong className="text-white font-semibold">Positioning: </strong>
-                    {current.positioning}
-                  </span>
-                </div>
-              )}
-
-              {/* Medical Compliance Note if exists */}
-              {current.complianceNote && (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 p-3.5 text-xs text-amber-200/90 leading-relaxed flex items-start gap-2.5">
-                  <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                  <div>
-                    <strong className="block font-bold text-amber-300 mb-0.5 font-mono uppercase text-[10px] tracking-wider">
-                      Compliance Note
-                    </strong>
-                    {current.complianceNote}
+                    <span>{point}</span>
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
+            )}
 
-              {/* Action Buttons */}
-              <div className="pt-2 flex flex-wrap items-center gap-3">
-                <a
-                  href="#contact"
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all duration-300 hover:scale-105 hover:shadow-purple-500/40 cursor-pointer"
-                >
-                  <span>{current.ctaText}</span>
-                  <ArrowRight className="h-4 w-4" />
-                </a>
-
-                {current.ctaSecondaryText && (
-                  <a
-                    href="#contact"
-                    className="inline-flex items-center gap-2 rounded-xl border border-purple-500/40 bg-slate-900/80 px-5 py-3 text-xs sm:text-sm font-bold text-purple-200 hover:text-white hover:bg-purple-900/40 hover:border-purple-400 transition-all cursor-pointer"
+            {/* Industries open pill cloud */}
+            <div className="pt-1">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-purple-900 block mb-2.5">
+                {current.industriesLabel}
+              </span>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                {current.industries.map((ind, i) => (
+                  <span
+                    key={i}
+                    className="rounded-full bg-white border border-purple-100/90 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-purple-50 hover:text-purple-900 hover:border-purple-300 transition-colors shadow-2xs"
                   >
-                    <span>{current.ctaSecondaryText}</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </a>
-                )}
+                    {ind}
+                  </span>
+                ))}
               </div>
             </div>
 
-            {/* Right Formats / Capability Matrix Column */}
-            <div className="lg:col-span-5 flex flex-col justify-between h-full space-y-4">
-              <div className="rounded-2xl border border-purple-500/30 bg-slate-900/90 p-5 sm:p-6 backdrop-blur-xl shadow-xl">
-                <div className="flex items-center justify-between pb-3.5 border-b border-purple-500/20 mb-4">
-                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-purple-300">
-                    {current.formatsLabel}
-                  </span>
-                  <span className="text-[11px] font-mono text-slate-400 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-500/20">
-                    {current.formats.length} Deliverables
-                  </span>
-                </div>
+            {/* Positioning Callout with Clean Left Accent */}
+            {current.positioning && (
+              <div className="border-l-3 border-purple-600 pl-4 py-1.5 text-xs sm:text-sm font-medium text-slate-800 italic bg-purple-50/40 rounded-r-lg">
+                <strong className="text-purple-950 not-italic font-bold">Positioning: </strong>
+                {current.positioning}
+              </div>
+            )}
 
-                <div className="grid grid-cols-1 gap-2.5">
-                  {current.formats.map((fmt, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-950/60 border border-slate-800/80 hover:border-purple-500/30 transition-all"
-                    >
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/20 text-purple-400 text-xs font-bold border border-purple-500/30">
-                        ✓
-                      </span>
-                      <span className="text-xs sm:text-sm font-medium text-slate-200">
-                        {fmt}
-                      </span>
-                    </div>
-                  ))}
+            {/* Compliance Callout with Clean Left Accent */}
+            {current.complianceNote && (
+              <div className="border-l-3 border-amber-500 bg-amber-50/70 p-3.5 rounded-r-xl text-xs text-amber-950 leading-relaxed flex items-start gap-2.5">
+                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block font-bold text-amber-950 mb-0.5 font-mono uppercase text-[10px] tracking-wider">
+                    Compliance Note
+                  </strong>
+                  {current.complianceNote}
                 </div>
               </div>
+            )}
 
-              {/* Bottom Feature Pill Banner */}
-              <div className="rounded-xl border border-purple-500/20 bg-purple-950/20 p-3.5 flex items-center justify-between text-xs text-purple-200">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-3.5 w-3.5 text-pink-400 shrink-0" />
-                  <span>High-Volume Creative Pipeline</span>
+            {/* Action Buttons */}
+            <div className="pt-2 flex flex-wrap items-center gap-3.5">
+              <a
+                href="#contact"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-purple-500/20 transition-all duration-300 hover:scale-105 hover:shadow-purple-500/35 cursor-pointer"
+              >
+                <span>{current.ctaText}</span>
+                <ArrowRight className="h-4 w-4" />
+              </a>
+
+              {current.ctaSecondaryText && (
+                <a
+                  href="#contact"
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-purple-700 hover:text-purple-900 transition-colors px-2 py-2"
+                >
+                  <span>{current.ctaSecondaryText}</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Creative Formats & Deliverables Matrix */}
+          <div className="lg:col-span-5 flex flex-col space-y-3 pt-1">
+            <div className="flex items-center justify-between pb-2.5 border-b border-purple-100">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-purple-900">
+                {current.formatsLabel}
+              </span>
+              <span className="text-[11px] font-mono font-semibold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200/80">
+                {current.formats.length} Deliverables
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
+              {current.formats.map((fmt, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 py-2 px-3 rounded-xl bg-white border border-slate-200/80 shadow-2xs hover:border-purple-300 hover:shadow-xs transition-all"
+                >
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-700 text-xs font-bold">
+                    ✓
+                  </span>
+                  <span className="text-xs sm:text-sm font-medium text-slate-800">
+                    {fmt}
+                  </span>
                 </div>
-                <span className="font-mono text-[10px] text-purple-400 uppercase font-bold">
-                  Ready to Deploy
-                </span>
-              </div>
+              ))}
             </div>
           </div>
         </div>
