@@ -4408,7 +4408,7 @@ export function Faq() {
 
       <div className="relative z-10 mx-auto max-w-6xl">
         <SectionHeading
-          eyebrow="21. FAQ"
+          eyebrow="FAQ"
           title="Frequently Asked"
           highlight="Questions"
           center={true}
