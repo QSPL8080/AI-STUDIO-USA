@@ -185,6 +185,33 @@ async function supabaseRest(endpoint: string, options: RequestInit = {}) {
   }
 }
 
+// Write through Supabase REST, tolerating columns the live table doesn't have yet.
+// PostgREST rejects the whole row ("Could not find the 'x' column") when one field is
+// unknown; instead of losing the lead, drop that field and retry. Values of dropped
+// fields are reported back so callers can keep them elsewhere (e.g. in notes).
+async function supabaseWriteTolerant(
+  endpoint: string,
+  method: "POST" | "PATCH",
+  body: Record<string, unknown>
+): Promise<{ result: any; dropped: Record<string, unknown> }> {
+  const payload: Record<string, unknown> = { ...body };
+  const dropped: Record<string, unknown> = {};
+  for (let attempt = 0; attempt < 10; attempt++) {
+    try {
+      const result = await supabaseRest(endpoint, { method, body: JSON.stringify(payload) });
+      return { result, dropped };
+    } catch (err: any) {
+      const m = /Could not find the '([^']+)' column/i.exec(String(err?.message || ""));
+      const col = m?.[1];
+      if (!col || !(col in payload)) throw err;
+      console.error(`Supabase table is missing column "${col}" (${endpoint}); saving without it. Add the column in Supabase.`);
+      dropped[col] = payload[col];
+      delete payload[col];
+    }
+  }
+  throw new Error("Supabase write failed: too many missing columns");
+}
+
 // 2. Direct PostgreSQL Pool (For localhost development or direct pg connection)
 async function getPool() {
   if (!pgPool) {
@@ -545,8 +572,19 @@ export async function saveLead(data: {
     };
     const newIsIndia = isIndiaRegion(data.source, data.location, data.phone);
 
+    // Which CRM tab a lead lives in. A website inquiry must never be merged into a
+    // Calendly or Meta lead, or it would disappear from Leads Management.
+    const bucket = (src?: string | undefined) => {
+      const s = (src || "").toLowerCase();
+      if (s.includes("calendly")) return "calendly";
+      if (s.includes("meta") || s.includes("facebook") || s.includes("instagram") || s.includes("fb_") || s.includes("ig_")) return "meta";
+      return "website";
+    };
+    const newBucket = bucket(data.source);
+
     const matchedLead = existingLeads.find((l) => {
       if (isIndiaRegion(l.source, l.location, l.phone) !== newIsIndia) return false;
+      if (bucket(l.source) !== newBucket) return false;
       if (metaId && l.meta_lead_id === metaId) return true;
       if (cleanEmail && l.email && l.email.trim().toLowerCase() === cleanEmail) return true;
       if (cleanDigits.length >= 10 && l.phone) {
@@ -642,9 +680,7 @@ export async function saveLead(data: {
   // Strategy A: Supabase REST
   if (getSupabaseConfig()) {
     try {
-      const result = await supabaseRest("leads", {
-        method: "POST",
-        body: JSON.stringify({
+      const { result, dropped } = await supabaseWriteTolerant("leads", "POST", {
           id: record.id,
           source: record.source,
           name: record.name,
@@ -675,8 +711,19 @@ export async function saveLead(data: {
           meta_lead_id: record.meta_lead_id || null,
           is_duplicate: record.is_duplicate || false,
           created_at: record.created_at,
-        }),
       });
+      const lost = Object.entries(dropped).filter(([, v]) => v !== null && v !== undefined && v !== "");
+      if (lost.length > 0 && !("notes" in dropped)) {
+        // Keep the values of fields the table can't store yet, so nothing the visitor typed is lost.
+        const extra = lost.map(([k, v]) => `${k}: ${String(v)}`).join("\n");
+        const saved: any = Array.isArray(result) && result.length > 0 ? result[0] : record;
+        const notes = saved.notes ? `${saved.notes}\n\n${extra}` : extra;
+        try {
+          await supabaseWriteTolerant(`leads?id=eq.${record.id}`, "PATCH", { notes });
+          saved.notes = notes;
+        } catch {}
+        return { ...record, ...saved };
+      }
       if (Array.isArray(result) && result.length > 0) {
         return result[0];
       }
@@ -729,7 +776,9 @@ export async function saveLead(data: {
     return res.rows[0];
   }
 
-  // Resilient in-memory fallback so leads are never lost even if external DB is temporarily unreachable
+  // Last resort: keep it in this server process's memory. This does NOT survive a restart,
+  // so shout about it in the logs.
+  console.error(`LEAD NOT SAVED TO DATABASE (kept in memory only): ${record.id} from ${record.source}`);
   const existingIdx = inMemoryLeads.findIndex((l) => l.id === record.id);
   if (existingIdx >= 0) {
     inMemoryLeads[existingIdx] = record;
@@ -790,11 +839,9 @@ export async function updateLead(id: string, updates: Partial<Lead>): Promise<bo
   let ok = false;
   if (getSupabaseConfig()) {
     try {
-      await supabaseRest(`leads?id=eq.${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(updates),
-      });
-      ok = true;
+      const { result } = await supabaseWriteTolerant(`leads?id=eq.${id}`, "PATCH", updates as Record<string, unknown>);
+      // PostgREST answers 200 with [] when no row matched (or a policy blocked it).
+      if (!Array.isArray(result) || result.length > 0) ok = true;
     } catch (err) {
       console.warn("Supabase REST updateLead fallback:", err);
     }
