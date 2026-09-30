@@ -2898,15 +2898,8 @@ export function Pricing() {
       <div ref={tableRef} className="mx-auto max-w-6xl space-y-10">
         {/* 1. Main Pricing Matrix (Service vs Video Volume) */}
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 border-b border-slate-200 pb-3">
-            <div>
-              <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                Simple Pricing. Built for Creative Volume.
-              </h3>
-              <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-                Choose individual video production or volume bundles with fast turnaround times.
-              </p>
-            </div>
+          {/* (Title and subtitle live in the section heading above) */}
+          <div className="flex justify-end">
             <button
               type="button"
               onClick={() => openCheckoutModal({ itemType: "package" })}
