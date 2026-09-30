@@ -27,11 +27,9 @@ function PrivacyPolicyPage() {
             className="-ml-3 sm:-ml-5 flex items-center transition-opacity hover:opacity-90"
           >
             <img
-              src="/images/logo.png"
+              src="/images/LOGO 1.png"
               alt="Quickupp AI Studio logo"
-              className="h-9 md:h-10 w-auto object-contain"
-              width={125}
-              height={40}
+              className="h-8 sm:h-9 md:h-10 w-auto object-contain"
             />
           </Link>
           <div className="flex items-center gap-3">

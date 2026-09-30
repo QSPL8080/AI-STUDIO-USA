@@ -157,9 +157,9 @@ function OrderConfirmationPage() {
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-5 py-3.5">
           <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
             <img
-              src="/images/logo.png"
+              src="/images/LOGO 1.png"
               alt="Quickupp AI Studio"
-              className="h-8 sm:h-9 w-auto object-contain"
+              className="h-8 sm:h-9 md:h-10 w-auto object-contain"
             />
           </Link>
           <Link
