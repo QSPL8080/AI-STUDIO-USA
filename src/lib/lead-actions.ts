@@ -15,6 +15,9 @@ import {
   emptyRecycleBin as emptyRecycleBinInDb,
   addActivityLog as addActivityLogInDb,
   getActivityLogs as getActivityLogsFromDb,
+  deleteActivityLog as deleteActivityLogInDb,
+  deleteActivityLogsBulk as deleteActivityLogsBulkInDb,
+  clearAllActivityLogs as clearAllActivityLogsInDb,
   addLoginLog as addLoginLogInDb,
   getLoginLogs as getLoginLogsFromDb,
   getAdminUsers as getAdminUsersFromDb,
@@ -588,6 +591,51 @@ export const addActivityLogServerFn = createServerFn({ method: "POST" })
     try {
       const log = await addActivityLogInDb(data);
       return { success: true, log };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+export const deleteActivityLogServerFn = createServerFn({ method: "POST" })
+  .validator((data: { id: string; userRole?: string; performedBy?: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      if (data.userRole !== "super_admin") {
+        return { success: false, error: "Only Super Admin has permission to delete activity logs." };
+      }
+      await deleteActivityLogInDb(data.id);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+export const deleteActivityLogsBulkServerFn = createServerFn({ method: "POST" })
+  .validator((data: { ids: string[]; userRole?: string; performedBy?: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      if (data.userRole !== "super_admin") {
+        return { success: false, error: "Only Super Admin has permission to delete activity logs." };
+      }
+      if (!data.ids || data.ids.length === 0) {
+        return { success: true, count: 0 };
+      }
+      await deleteActivityLogsBulkInDb(data.ids);
+      return { success: true, count: data.ids.length };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+export const clearAllActivityLogsServerFn = createServerFn({ method: "POST" })
+  .validator((data: { userRole?: string; performedBy?: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      if (data.userRole !== "super_admin") {
+        return { success: false, error: "Only Super Admin has permission to clear activity logs." };
+      }
+      await clearAllActivityLogsInDb();
+      return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
     }

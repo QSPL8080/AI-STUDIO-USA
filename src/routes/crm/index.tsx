@@ -78,6 +78,9 @@ import {
   emptyRecycleBinServerFn,
   fetchActivityLogsServerFn,
   addActivityLogServerFn,
+  deleteActivityLogServerFn,
+  deleteActivityLogsBulkServerFn,
+  clearAllActivityLogsServerFn,
   recordLoginLogServerFn,
   fetchLoginLogsServerFn,
   fetchAdminUsersServerFn,
@@ -230,7 +233,7 @@ const DEFAULT_ROLE_PERMISSIONS: RolePermissions = {
     recycle_bin: true,
     purge: false,
     orders: true,
-    activity: true,
+    activity: false,
     export_data: true,
     export_backup: false,
     manage_users: false,
@@ -412,6 +415,7 @@ function AdminPage() {
   // Selection & Bulk Actions
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
   const [selectedRecycleBinIds, setSelectedRecycleBinIds] = useState<Set<string>>(new Set());
+  const [selectedActivityLogIds, setSelectedActivityLogIds] = useState<Set<string>>(new Set());
 
   // Orders State
   const [orders, setOrders] = useState<Order[]>([]);
@@ -830,6 +834,8 @@ function AdminPage() {
     if (!session) return false;
     if (session.role === "super_admin") return true;
     if (key === "purge") return false; // Permanent delete strictly exclusive to Super Admin
+    if (key === "activity") return false; // Activity logs strictly exclusive to Super Admin
+    if (key === "security_logs") return false; // Login / Security logs strictly exclusive to Super Admin
     if (key === "delete_leads") return true; // Admin and Super Admin can ALWAYS soft-delete leads to Recycle Bin!
     if (session.role === "leads_manager") return key === "meta_leads" || key === "delete_leads";
     const perms = rolePermissions[session.role as ConfigurableRole];
@@ -848,13 +854,13 @@ function AdminPage() {
       case "orders":
         return can("orders");
       case "activity":
-        return can("activity");
+        return isSuperAdmin;
       case "recycle_bin":
         return can("recycle_bin");
       case "users":
         return can("manage_users");
       case "security":
-        return can("security_logs");
+        return isSuperAdmin;
       case "settings":
         return can("crm_settings");
       case "calendly":
@@ -1505,6 +1511,7 @@ function AdminPage() {
   };
 
   const fetchLogsList = async () => {
+    if (session?.role !== "super_admin") return;
     try {
       const [actRes, logRes] = await Promise.all([
         fetchActivityLogsServerFn({ data: 100 }),
@@ -2537,9 +2544,115 @@ function AdminPage() {
     showToast(`Exported ${meetings.length} scheduled meetings`);
   };
 
+  // Activity Logs Bulk & Single Deletion Handlers (Super Admin Only)
+  const handleSelectAllActivityLogs = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(filteredActivityLogs.map((l) => l.id));
+      setSelectedActivityLogIds(allIds);
+    } else {
+      setSelectedActivityLogIds(new Set());
+    }
+  };
+
+  const handleToggleSelectActivityLog = (id: string) => {
+    setSelectedActivityLogIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleDeleteSelectedActivityLogs = async () => {
+    if (!isSuperAdmin) {
+      showToast("Only Super Admin can delete activity logs.");
+      return;
+    }
+    if (selectedActivityLogIds.size === 0) return;
+    const count = selectedActivityLogIds.size;
+    if (confirm(`Are you sure you want to permanently delete ${count} selected activity log(s)?`)) {
+      const idsToDelete = Array.from(selectedActivityLogIds);
+      try {
+        const res = await deleteActivityLogsBulkServerFn({
+          data: {
+            ids: idsToDelete,
+            userRole: session?.role || "super_admin",
+            performedBy: session?.email || "Super Admin",
+          },
+        });
+        if (res.success) {
+          setActivityLogs((prev) => prev.filter((l) => !selectedActivityLogIds.has(l.id)));
+          setSelectedActivityLogIds(new Set());
+          showToast(`Deleted ${count} activity log(s)`);
+        } else {
+          showToast(res.error || "Failed to delete activity logs");
+        }
+      } catch (err: any) {
+        showToast("Error deleting activity logs: " + (err?.message || "Unknown error"));
+      }
+    }
+  };
+
+  const handleDeleteSingleActivityLog = async (id: string) => {
+    if (!isSuperAdmin) {
+      showToast("Only Super Admin can delete activity logs.");
+      return;
+    }
+    if (confirm("Are you sure you want to permanently delete this activity log?")) {
+      try {
+        const res = await deleteActivityLogServerFn({
+          data: {
+            id,
+            userRole: session?.role || "super_admin",
+            performedBy: session?.email || "Super Admin",
+          },
+        });
+        if (res.success) {
+          setActivityLogs((prev) => prev.filter((l) => l.id !== id));
+          setSelectedActivityLogIds((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
+          showToast("Activity log deleted");
+        } else {
+          showToast(res.error || "Failed to delete activity log");
+        }
+      } catch (err: any) {
+        showToast("Error deleting activity log: " + (err?.message || "Unknown error"));
+      }
+    }
+  };
+
+  const handleClearAllActivityLogs = async () => {
+    if (!isSuperAdmin) {
+      showToast("Only Super Admin can clear activity logs.");
+      return;
+    }
+    if (confirm("WARNING: Are you sure you want to permanently delete ALL activity logs? This action cannot be undone.")) {
+      try {
+        const res = await clearAllActivityLogsServerFn({
+          data: {
+            userRole: session?.role || "super_admin",
+            performedBy: session?.email || "Super Admin",
+          },
+        });
+        if (res.success) {
+          setActivityLogs([]);
+          setSelectedActivityLogIds(new Set());
+          showToast("All activity logs cleared");
+        } else {
+          showToast(res.error || "Failed to clear activity logs");
+        }
+      } catch (err: any) {
+        showToast("Error clearing activity logs: " + (err?.message || "Unknown error"));
+      }
+    }
+  };
+
   const exportActivityCSV = () => {
-    if (!can("export_data")) {
-      showToast("You don't have permission to export data.");
+    if (!isSuperAdmin) {
+      showToast("Only Super Admin can export activity audit logs.");
       return;
     }
     if (!activityLogs.length) return alert("No activity history logs found to export.");
@@ -2555,9 +2668,9 @@ function AdminPage() {
       `"${log.id}"`,
       `"${log.action || ""}"`,
       `"${(log.details || "").replace(/"/g, '""')}"`,
-      `"${log.performed_by || log.admin_email || ""}"`,
-      `"${log.ip_address || ""}"`,
-      `"${new Date(log.timestamp).toLocaleString()}"`,
+      `"${log.performed_by || (log as any).admin_email || ""}"`,
+      `"${(log as any).ip_address || ""}"`,
+      `"${new Date(log.created_at || (log as any).timestamp).toLocaleString()}"`,
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
@@ -6551,37 +6664,66 @@ function AdminPage() {
         {/* ========================================================================= */}
         {/* TAB 4: ACTIVITY HISTORY / AUDIT LOG (CALENDLY, LEADS, USER ACTIVITY) */}
         {/* ========================================================================= */}
-        {activeTab === "activity" && (
+        {/* ========================================================================= */}
+        {/* TAB 4: ACTIVITY HISTORY / AUDIT LOG (SUPER ADMIN ONLY) */}
+        {/* ========================================================================= */}
+        {activeTab === "activity" && isSuperAdmin && (
           <div className="space-y-5 animate-in fade-in duration-200">
-            {/* Header Card with Category Pills & Search */}
+            {/* Header Card with Category Pills, Search & Actions */}
             <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm space-y-4">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div>
                   <h3 className="text-base sm:text-lg font-bold flex items-center gap-2 text-slate-900">
                     <Clock className="h-5 w-5 text-blue-600" />
                     <span>Activity History & Audit Logs</span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                      Super Admin Only
+                    </span>
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Real-time audit log categorized across Calendly bookings, Leads lifecycle, and User administrative actions.
                   </p>
                 </div>
 
-                {/* Search Input */}
-                <div className="relative w-full md:w-72">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    value={activitySearchTerm}
-                    onChange={(e) => setActivitySearchTerm(e.target.value)}
-                    placeholder="Search logs, actions, users..."
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-8 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
-                  />
-                  {activitySearchTerm && (
+                {/* Right controls: Search, Export & Clear */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={activitySearchTerm}
+                      onChange={(e) => setActivitySearchTerm(e.target.value)}
+                      placeholder="Search logs, actions, users..."
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-8 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition-colors"
+                    />
+                    {activitySearchTerm && (
+                      <button
+                        onClick={() => setActivitySearchTerm("")}
+                        className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={exportActivityCSV}
+                    disabled={activityLogs.length === 0}
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer shadow-xs transition-colors"
+                    title="Export Activity Logs CSV"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Export</span>
+                  </button>
+
+                  {activityLogs.length > 0 && (
                     <button
-                      onClick={() => setActivitySearchTerm("")}
-                      className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      onClick={handleClearAllActivityLogs}
+                      className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50/60 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-100 cursor-pointer shadow-xs transition-colors"
+                      title="Clear All Activity Logs"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Clear All</span>
                     </button>
                   )}
                 </div>
@@ -6732,8 +6874,51 @@ function AdminPage() {
               )}
             </div>
 
+            {/* Multi-Select Floating Bulk Action Bar */}
+            {selectedActivityLogIds.size > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-red-50 border border-red-200 rounded-2xl p-3.5 text-xs text-red-900 shadow-sm animate-in fade-in">
+                <div className="flex items-center gap-2 font-bold">
+                  <Trash2 className="h-4 w-4 text-red-600" />
+                  <span>{selectedActivityLogIds.size} activity log(s) selected</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSelectedActivityLogIds(new Set())}
+                    className="rounded-xl bg-white border border-slate-200 px-3 py-1.5 font-bold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-xs"
+                  >
+                    Deselect All
+                  </button>
+                  <button
+                    onClick={handleDeleteSelectedActivityLogs}
+                    className="flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-1.5 font-bold text-white hover:bg-red-700 cursor-pointer shadow-xs transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Delete Selected ({selectedActivityLogIds.size})</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Activity Feed List */}
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              {/* Table Header with Select All */}
+              {filteredActivityLogs.length > 0 && (
+                <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-xs">
+                  <label className="flex items-center gap-2.5 font-bold text-slate-700 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={filteredActivityLogs.length > 0 && selectedActivityLogIds.size === filteredActivityLogs.length}
+                      onChange={(e) => handleSelectAllActivityLogs(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span>Select All Filtered ({filteredActivityLogs.length})</span>
+                  </label>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Showing {filteredActivityLogs.length} of {activityLogs.length} entries
+                  </span>
+                </div>
+              )}
+
               <div className="divide-y divide-slate-100">
                 {filteredActivityLogs.length === 0 ? (
                   <div className="py-16 text-center text-xs text-slate-500 space-y-2">
@@ -6763,13 +6948,24 @@ function AdminPage() {
                     const isCalendly = calendlyActivityLogs.some((c) => c.id === log.id);
                     const isUserAct = !isCalendly && userActivityLogs.some((u) => u.id === log.id);
                     const isMetaLead = !isCalendly && !isUserAct && metaLeadsActivityLogs.some((m) => m.id === log.id);
+                    const isSelected = selectedActivityLogIds.has(log.id);
 
                     return (
                       <div
                         key={log.id}
-                        className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 transition-colors"
+                        className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                          isSelected ? "bg-blue-50/70" : "hover:bg-slate-50/80"
+                        }`}
                       >
                         <div className="flex items-start gap-3 min-w-0">
+                          {/* Selection Checkbox */}
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectActivityLog(log.id)}
+                            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0 mt-2"
+                          />
+
                           {/* Category Icon Badge */}
                           <div className="mt-0.5 shrink-0">
                             {isCalendly ? (
@@ -6822,10 +7018,21 @@ function AdminPage() {
                           </div>
                         </div>
 
-                        {/* Timestamp */}
-                        <div className="text-[11px] text-slate-400 font-mono shrink-0 pl-11 sm:pl-0 sm:text-right">
-                          <div>{new Date(log.created_at).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}</div>
-                          <div className="text-[10px] text-slate-400">{new Date(log.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                        {/* Timestamp & Actions */}
+                        <div className="flex items-center gap-3 shrink-0 pl-14 sm:pl-0 self-end sm:self-center">
+                          <div className="text-[11px] text-slate-400 font-mono sm:text-right">
+                            <div>{new Date(log.created_at).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}</div>
+                            <div className="text-[10px] text-slate-400">{new Date(log.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                          </div>
+
+                          {/* Row Delete Button */}
+                          <button
+                            onClick={() => handleDeleteSingleActivityLog(log.id)}
+                            title="Delete this activity log"
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
                     );
@@ -7895,6 +8102,18 @@ function AdminPage() {
                                     >
                                       <Lock className="h-3 w-3" />
                                       {lmAllowed ? (def.key === "delete_leads" ? "Soft-delete only" : "Allowed") : "No access"}
+                                    </span>
+                                  </td>
+                                );
+                              }
+                              if (def.key === "purge" || def.key === "activity" || def.key === "security_logs") {
+                                return (
+                                  <td key={role} className="px-4 py-3">
+                                    <span
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border font-bold bg-slate-100 text-slate-500 border-slate-200"
+                                      title="Strictly exclusive to Super Admin"
+                                    >
+                                      <Lock className="h-3 w-3" /> Super Admin Only
                                     </span>
                                   </td>
                                 );

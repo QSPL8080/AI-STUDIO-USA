@@ -1003,6 +1003,83 @@ export async function getActivityLogs(limit = 100): Promise<ActivityLog[]> {
   return [];
 }
 
+export async function deleteActivityLog(id: string): Promise<boolean> {
+  if (getSupabaseConfig()) {
+    try {
+      await supabaseRest(`activity_logs?id=eq.${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      return true;
+    } catch (e) {
+      console.warn("Supabase deleteActivityLog fallback:", e);
+    }
+  }
+
+  await initDb();
+  try {
+    const pool = await getPool();
+    if (pool) {
+      await pool.query("DELETE FROM activity_logs WHERE id = $1", [id]);
+      return true;
+    }
+  } catch (err) {
+    console.error("PostgreSQL deleteActivityLog error:", err);
+  }
+  return true;
+}
+
+export async function deleteActivityLogsBulk(ids: string[]): Promise<boolean> {
+  if (!ids || ids.length === 0) return true;
+  if (getSupabaseConfig()) {
+    try {
+      const inQuery = ids.map((id) => `"${id}"`).join(",");
+      await supabaseRest(`activity_logs?id=in.(${inQuery})`, {
+        method: "DELETE",
+      });
+      return true;
+    } catch (e) {
+      console.warn("Supabase deleteActivityLogsBulk fallback:", e);
+    }
+  }
+
+  await initDb();
+  try {
+    const pool = await getPool();
+    if (pool) {
+      await pool.query("DELETE FROM activity_logs WHERE id = ANY($1)", [ids]);
+      return true;
+    }
+  } catch (err) {
+    console.error("PostgreSQL deleteActivityLogsBulk error:", err);
+  }
+  return true;
+}
+
+export async function clearAllActivityLogs(): Promise<boolean> {
+  if (getSupabaseConfig()) {
+    try {
+      await supabaseRest("activity_logs?id=neq.__none__", {
+        method: "DELETE",
+      });
+      return true;
+    } catch (e) {
+      console.warn("Supabase clearAllActivityLogs fallback:", e);
+    }
+  }
+
+  await initDb();
+  try {
+    const pool = await getPool();
+    if (pool) {
+      await pool.query("DELETE FROM activity_logs");
+      return true;
+    }
+  } catch (err) {
+    console.error("PostgreSQL clearAllActivityLogs error:", err);
+  }
+  return true;
+}
+
 // ==========================================
 // LOGIN & SECURITY LOGS
 // ==========================================
