@@ -3588,7 +3588,6 @@ interface AudienceSegment {
   industries: string[];
   formatsLabel: string;
   formats: string[];
-  complianceNote?: string;
   positioning?: string;
   ctaText: string;
   ctaSecondaryText?: string;
@@ -3727,8 +3726,6 @@ const audienceSegments: AudienceSegment[] = [
       "Social ads",
       "Promotional creatives",
     ],
-    complianceNote:
-      "Do not make unsupported medical claims or guaranteed-result claims. Client-provided claims, disclaimers, before/after imagery, testimonials, and treatment information should be reviewed and approved by the client before publication.",
     ctaText: "Create Aesthetic AI Video Ads",
   },
   {
@@ -3981,19 +3978,6 @@ export function WhoWeServe() {
               <div className="border-l-3 border-purple-600 pl-4 py-1.5 text-xs sm:text-sm font-medium text-slate-800 italic bg-purple-50/40 rounded-r-lg">
                 <strong className="text-purple-950 not-italic font-bold">Positioning: </strong>
                 {current.positioning}
-              </div>
-            )}
-
-            {/* Compliance Callout with Clean Left Accent */}
-            {current.complianceNote && (
-              <div className="border-l-3 border-amber-500 bg-amber-50/70 p-3.5 rounded-r-xl text-xs text-amber-950 leading-relaxed flex items-start gap-2.5">
-                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                <div>
-                  <strong className="block font-bold text-amber-950 mb-0.5 font-mono uppercase text-[10px] tracking-wider">
-                    Compliance Note
-                  </strong>
-                  {current.complianceNote}
-                </div>
               </div>
             )}
 
