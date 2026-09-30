@@ -28,7 +28,7 @@ export function SectionHeading({
   className = "",
   descriptionClassName = "",
 }: {
-  eyebrow: string;
+  eyebrow?: string | undefined;
   title: string;
   highlight?: string;
   description?: string;
@@ -38,13 +38,15 @@ export function SectionHeading({
 }) {
   return (
     <div className={`mb-8 sm:mb-10 max-w-4xl ${center ? "mx-auto text-center" : ""} ${className}`}>
-      <span className="eyebrow">
-        <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.6)]"></span>
+      {eyebrow ? (
+        <span className="eyebrow">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.6)]"></span>
+          </span>
+          {eyebrow}
         </span>
-        {eyebrow}
-      </span>
+      ) : null}
       <h2 className="mt-3.5 font-heading text-2xl font-bold leading-tight tracking-tight sm:text-3xl md:text-4xl text-slate-900">
         {title}{" "}
         {highlight ? (
