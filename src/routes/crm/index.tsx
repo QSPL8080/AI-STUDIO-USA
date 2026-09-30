@@ -592,6 +592,7 @@ function AdminPage() {
     }
     return 10;
   });
+  const [appliedLoginAttempts, setAppliedLoginAttempts] = useState<number>(3);
   const [appliedInactivityTimeout, setAppliedInactivityTimeout] = useState<number>(() => {
     if (typeof window !== "undefined") {
       return Number(localStorage.getItem("crm_inactivity_timeout")) || 10;
@@ -1536,7 +1537,28 @@ function AdminPage() {
   };
 
   // Apply server-stored settings that must be live for every admin
+  // Last server values seen. A form field that still shows the last server value
+  // (i.e. nobody is editing it) follows live changes made by another admin, so
+  // "Save All Settings" can never put an old value back.
+  const lastServerSettingsRef = useRef<{ title?: string; sync?: number; inactivity?: number; attempts?: number }>({});
+  const followServer = <T,>(key: "title" | "sync" | "inactivity" | "attempts", next: T, setForm: (fn: (cur: T) => T) => void) => {
+    const prev = lastServerSettingsRef.current[key] as T | undefined;
+    setForm((cur) => (prev === undefined || cur === prev ? next : cur));
+    (lastServerSettingsRef.current as Record<string, unknown>)[key] = next;
+  };
+
   const applySharedSettings = (st: Record<string, string>) => {
+    if (st["platform_title"]) followServer("title", st["platform_title"], setCrmPlatformTitle);
+    if (st["sync_interval"]) followServer("sync", Number(st["sync_interval"]) === 20 ? 20 : 10, setCrmSyncInterval);
+    if (st["inactivity_timeout"]) {
+      followServer("inactivity", [5, 10, 15, 30].includes(Number(st["inactivity_timeout"])) ? Number(st["inactivity_timeout"]) : 10, setCrmInactivityTimeout);
+    }
+    if (st["login_attempts"]) {
+      const n = Number(st["login_attempts"]);
+      const v = [3, 5, 10].includes(n) ? n : 3;
+      followServer("attempts", v, setCrmLoginAttempts);
+      setAppliedLoginAttempts(v);
+    }
     if (st["platform_title"]) {
       setAppliedPlatformTitle(st["platform_title"]);
       try { localStorage.setItem("crm_platform_title", st["platform_title"]); } catch {}
@@ -8253,8 +8275,9 @@ function AdminPage() {
                         <option value={30}>30 Minutes (Maximum Permitted)</option>
                       </select>
                       <p className="text-[11px] text-slate-400">
-                        Automatically terminates the authenticated session if no keyboard, mouse, or touch events are detected within the selected timeframe.
+                        Signs out any user (all roles) with no keyboard, mouse, touch or scroll activity for this long. Applies to every open CRM within one auto-sync after saving.
                       </p>
+                      <p className="text-[11px] font-semibold text-emerald-700">Currently in effect: {appliedInactivityTimeout} minutes</p>
                     </div>
 
                     {/* Maximum Failed Login Lockout */}
@@ -8268,13 +8291,14 @@ function AdminPage() {
                         onChange={(e) => setCrmLoginAttempts(Number(e.target.value))}
                         className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer"
                       >
-                        <option value={3}>3 Failed Attempts (Strict IP Lockout)</option>
+                        <option value={3}>3 Failed Attempts (Strict)</option>
                         <option value={5}>5 Failed Attempts (Standard Recommended)</option>
                         <option value={10}>10 Failed Attempts (Relaxed)</option>
                       </select>
                       <p className="text-[11px] text-slate-400">
-                        After this many failed logins the account is locked, and each new lockout is longer: 5, 10, 20, 45 min, then 1, 2, 4, 8, 16 and 24 hours. A successful login resets it. The Super Admin is never locked. Every lockout emails a security alert to {crmNotificationEmail}.
+                        After this many failed logins the account is locked, and each new lockout is longer: 5, 10, 20, 45 min, then 1, 2, 4, 8, 16 and 24 hours. A successful login resets it. The Super Admin is never locked. Every lockout emails a security alert to info@quickuppaistudio.us. Applies to the very next login attempt after saving.
                       </p>
+                      <p className="text-[11px] font-semibold text-emerald-700">Currently in effect: {appliedLoginAttempts} failed attempts</p>
                     </div>
                   </div>
 
