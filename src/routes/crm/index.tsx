@@ -223,7 +223,6 @@ const PERMISSION_DEFS: { key: PermissionKey; label: string; hint: string }[] = [
   { key: "orders", label: "Orders & Financial Revenue Access", hint: "Orders tab (still needs the security PIN)" },
   { key: "activity", label: "Activity History / Audit Log", hint: "Activity History tab" },
   { key: "export_data", label: "Export Leads & Campaign Data (CSV)", hint: "Export CSV buttons" },
-  { key: "export_backup", label: "Export Master JSON Disaster Backup", hint: "Full database backup download" },
   { key: "manage_users", label: "Create, Suspend & Delete Users", hint: "User Management tab" },
   { key: "security_logs", label: "View Live IP Tracking & Login Audit Logs", hint: "Login / IP Tracking tab" },
   { key: "crm_settings", label: "Modify CRM Settings & Theme Preferences", hint: "CRM Settings tab (not Permissions)" },
@@ -605,7 +604,7 @@ function AdminPage() {
   });
   const [crmSettingsSaved, setCrmSettingsSaved] = useState(false);
   const [crmSettingsSubTab, setCrmSettingsSubTab] = useState<
-    "crm_config" | "export" | "permissions" | "records" | "security"
+    "crm_config" | "permissions" | "records" | "security"
   >("crm_config");
 
   // Strict Mutually Exclusive Classification for Activity Logs
@@ -2534,92 +2533,7 @@ function AdminPage() {
   };
 
   // 1-Click Complete System Export Center Handlers
-  const exportOrdersCSV = () => {
-    if (!can("export_data")) {
-      showToast("You don't have permission to export data.");
-      return;
-    }
-    if (!orders.length) return alert("No payment orders found to export.");
-    const headers = [
-      "Order ID",
-      "Customer Name",
-      "Customer Email",
-      "Customer Phone",
-      "Service Name",
-      "Amount",
-      "Currency",
-      "Payment Status",
-      "PayPal Order ID",
-      "Created At",
-    ];
-    const rows = orders.map((o) => [
-      `"${o.id}"`,
-      `"${o.customer_name || ""}"`,
-      `"${o.customer_email || ""}"`,
-      `"${o.customer_phone || ""}"`,
-      `"${o.item_name || ""}"`,
-      o.amount,
-      `"${o.currency || "USD"}"`,
-      `"${o.payment_status || ""}"`,
-      `"${o.paypal_order_id || ""}"`,
-      `"${new Date(o.created_at).toLocaleString()}"`,
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `ai_studio_orders_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast(`Exported ${orders.length} orders to CSV`);
-  };
 
-  const exportMeetingsCSV = () => {
-    if (!can("export_data")) {
-      showToast("You don't have permission to export data.");
-      return;
-    }
-    if (!meetings.length) return alert("No Calendly meetings found to export.");
-    const csvCell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const headers = [
-      "Meeting ID",
-      "Meeting Type",
-      "Client Name",
-      "Client Email",
-      "Phone",
-      "Meeting Date",
-      "Meeting Time",
-      "Status",
-      "Assigned Admin",
-      "Meeting Link",
-      "Notes",
-      "Created At",
-    ];
-    const rows = meetings.map((m) => [
-      csvCell(m.id),
-      csvCell(m.meeting_type || "Strategy Call"),
-      csvCell(m.client_name),
-      csvCell(m.email),
-      csvCell(m.phone),
-      csvCell(m.meeting_date),
-      csvCell(m.meeting_time),
-      csvCell(meetingStatusLabel(m.meeting_status)),
-      csvCell(m.assigned_admin),
-      csvCell(m.meeting_link),
-      csvCell(m.notes),
-      csvCell(m.created_at ? new Date(m.created_at).toLocaleString() : ""),
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `calendly_meetings_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast(`Exported ${meetings.length} scheduled meetings`);
-  };
 
   // Activity Logs Bulk & Single Deletion Handlers (Super Admin Only)
   const handleSelectAllActivityLogs = (checked: boolean) => {
@@ -2831,108 +2745,7 @@ function AdminPage() {
     showToast(`Exported ${activityLogs.length} audit trail logs`);
   };
 
-  const exportAllLeadsMasterCSV = () => {
-    if (!can("export_data")) {
-      showToast("You don't have permission to export data.");
-      return;
-    }
-    if (!leads.length) return alert("No leads found in database to export.");
-    const headers = [
-      "ID",
-      "Source",
-      "Client Name",
-      "Business Name",
-      "Phone",
-      "Email",
-      "Video Type",
-      "Video Quantity",
-      "Location",
-      "Lead Status",
-      "Project Status",
-      "Closed By",
-      "Closed Date",
-      "Delivery Date",
-      "Meeting Date",
-      "Internal Notes",
-      "Created At",
-    ];
-    const rows = leads.map((l) => [
-      l.id,
-      `"${l.source}"`,
-      `"${l.name}"`,
-      `"${l.business}"`,
-      `"${l.phone}"`,
-      `"${l.email || ""}"`,
-      `"${l.video_type}"`,
-      `"${l.video_quantity || 1}"`,
-      `"${l.location || ""}"`,
-      l.status,
-      l.project_status || "In Progress",
-      `"${l.closed_by || ""}"`,
-      `"${l.closed_at ? new Date(l.closed_at).toLocaleDateString() : ""}"`,
-      `"${l.delivery_date || ""}"`,
-      `"${l.meeting_date || ""}"`,
-      `"${(l.notes || "").replace(/"/g, '""')}"`,
-      new Date(l.created_at).toLocaleString(),
-    ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `all_inbound_leads_master_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast(`Exported all ${leads.length} master leads`);
-  };
-
-  const exportFullBackupJSON = () => {
-    if (!can("export_backup")) {
-      showToast("You don't have permission to export the master backup.");
-      return;
-    }
-    const backupData = {
-      system: `${appliedPlatformTitle} - Production Database Snapshot`,
-      exported_at: new Date().toISOString(),
-      exported_by: session?.email || "Super Admin",
-      version: "2.4.0",
-      database_engine: "SQLite Enterprise Local DB",
-      counts: {
-        total_active_leads: leads.length,
-        recycle_bin_leads: recycleBinLeads.length,
-        total_payment_orders: orders.length,
-        total_calendly_meetings: meetings.length,
-        total_activity_logs: activityLogs.length,
-        total_login_logs: loginLogs.length,
-        admin_users: adminUsers.length,
-      },
-      collections: {
-        leads,
-        recycle_bin: recycleBinLeads,
-        orders,
-        meetings,
-        activity_logs: activityLogs,
-        login_logs: loginLogs,
-        admin_users: adminUsers.map((u) => ({
-          id: u.id,
-          email: u.email,
-          role: u.role,
-          status: u.status,
-          created_at: u.created_at,
-        })),
-      },
-    };
-
-    const jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-    const link = document.createElement("a");
-    link.setAttribute("href", jsonStr);
-    link.setAttribute("download", `ai_studio_master_backup_${new Date().toISOString().slice(0, 10)}.json`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast("Master Database JSON Backup downloaded successfully");
-  };
 
   const playTestChime = () => {
     try {
@@ -7774,17 +7587,6 @@ function AdminPage() {
                 <span>1. CRM Settings</span>
               </button>
 
-              <button
-                onClick={() => setCrmSettingsSubTab("export")}
-                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                  crmSettingsSubTab === "export"
-                    ? "bg-slate-900 text-white shadow-xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
-                }`}
-              >
-                <Download className="h-4 w-4" />
-                <span>2. Export CRM Data</span>
-              </button>
 
               {isSuperAdmin && (
               <button
@@ -7796,7 +7598,7 @@ function AdminPage() {
                 }`}
               >
                 <ShieldCheck className="h-4 w-4" />
-                <span>3. Permissions Matrix</span>
+                <span>2. Permissions Matrix</span>
               </button>
               )}
 
@@ -7809,7 +7611,7 @@ function AdminPage() {
                 }`}
               >
                 <Database className="h-4 w-4" />
-                <span>4. Access All Records</span>
+                <span>3. Access All Records</span>
               </button>
 
               <button
@@ -7821,7 +7623,7 @@ function AdminPage() {
                 }`}
               >
                 <Lock className="h-4 w-4" />
-                <span>5. Security Settings</span>
+                <span>4. Security Settings</span>
               </button>
             </div>
 
@@ -7913,147 +7715,6 @@ function AdminPage() {
                       <Volume2 className="h-3.5 w-3.5" />
                       <span>Test Audio Chime</span>
                     </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ========================================================================= */}
-            {/* MODULE 2: CHANGE CRM / INTERFACE COLORS */}
-            {/* ========================================================================= */}
-            {crmSettingsSubTab === "export" && (
-              <div className="space-y-5 animate-in fade-in">
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-5">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                      <Download className="h-4 w-4 text-slate-800" />
-                      <span>1-Click Complete System Export Center</span>
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Export individual data collections as structured CSV spreadsheets or trigger a full master database backup in JSON format.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2 border-t border-slate-100">
-                    {/* Card 1: All Inbound Leads */}
-                    <div className="rounded-xl border border-slate-200 p-4 space-y-3 flex flex-col justify-between hover:border-slate-300 transition-colors">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <FileSpreadsheet className="h-4 w-4 text-slate-700" />
-                          <h4 className="text-xs font-bold text-slate-900">All Inbound Leads (Master)</h4>
-                        </div>
-                        <p className="text-[11px] text-slate-500">
-                          Complete list of all inbound leads across USA Website, Meta Ads, and Manual sources ({leads.length} total records).
-                        </p>
-                      </div>
-                      <button
-                        onClick={exportAllLeadsMasterCSV}
-                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        <span>Export All Leads CSV</span>
-                      </button>
-                    </div>
-
-                    {/* Card 2: Meta Ads Leads */}
-                    <div className="rounded-xl border border-slate-200 p-4 space-y-3 flex flex-col justify-between hover:border-slate-300 transition-colors">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Megaphone className="h-4 w-4 text-slate-700" />
-                          <h4 className="text-xs font-bold text-slate-900">Meta Ads Campaign Leads</h4>
-                        </div>
-                        <p className="text-[11px] text-slate-500">
-                          Isolated export of leads generated via Facebook & Instagram advertising campaigns ({metaLeads.length} total records).
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => exportMetaCSV(false)}
-                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        <span>Export Meta Leads CSV</span>
-                      </button>
-                    </div>
-
-                    {/* Card 3: Orders & Financial Transactions */}
-                    <div className="rounded-xl border border-slate-200 p-4 space-y-3 flex flex-col justify-between hover:border-slate-300 transition-colors">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <DollarSign className="h-4 w-4 text-slate-700" />
-                          <h4 className="text-xs font-bold text-slate-900">Orders & Payment Transactions</h4>
-                        </div>
-                        <p className="text-[11px] text-slate-500">
-                          Financial records, customer emails, order values, currency, and PayPal transaction IDs ({orders.length} total records).
-                        </p>
-                      </div>
-                      <button
-                        onClick={exportOrdersCSV}
-                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        <span>Export Orders CSV</span>
-                      </button>
-                    </div>
-
-                    {/* Card 4: Calendly Meetings */}
-                    <div className="rounded-xl border border-slate-200 p-4 space-y-3 flex flex-col justify-between hover:border-slate-300 transition-colors">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Calendar className="h-4 w-4 text-slate-700" />
-                          <h4 className="text-xs font-bold text-slate-900">Calendly Strategy Meetings</h4>
-                        </div>
-                        <p className="text-[11px] text-slate-500">
-                          Scheduled client consultation calls, invitee emails, assigned admins, and meeting timestamps ({meetings.length} total records).
-                        </p>
-                      </div>
-                      <button
-                        onClick={exportMeetingsCSV}
-                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        <span>Export Meetings CSV</span>
-                      </button>
-                    </div>
-
-                    {/* Card 5: Audit Activity History */}
-                    <div className="rounded-xl border border-slate-200 p-4 space-y-3 flex flex-col justify-between hover:border-slate-300 transition-colors">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Clock className="h-4 w-4 text-slate-700" />
-                          <h4 className="text-xs font-bold text-slate-900">System Activity Audit Trail</h4>
-                        </div>
-                        <p className="text-[11px] text-slate-500">
-                          Comprehensive security audit history containing user actions, status modifications, and timestamps ({activityLogs.length} total records).
-                        </p>
-                      </div>
-                      <button
-                        onClick={exportActivityCSV}
-                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        <span>Export Audit Trail CSV</span>
-                      </button>
-                    </div>
-
-                    {/* Card 6: Master Database JSON Snapshot */}
-                    <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-4 space-y-3 flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Database className="h-4 w-4 text-slate-900" />
-                          <h4 className="text-xs font-bold text-slate-900">Master Database JSON Backup</h4>
-                        </div>
-                        <p className="text-[11px] text-slate-500">
-                          Complete raw snapshot of all collections, schema definitions, settings, and user entries for full disaster recovery.
-                        </p>
-                      </div>
-                      <button
-                        onClick={exportFullBackupJSON}
-                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-2 text-xs font-bold text-white hover:bg-black transition-colors cursor-pointer shadow-xs"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        <span>Download Master JSON Snapshot</span>
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
