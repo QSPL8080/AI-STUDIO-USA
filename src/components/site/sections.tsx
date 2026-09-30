@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  AlertTriangle,
   ArrowRight,
   ArrowUp,
   BadgeCheck,
   BarChart3,
   Bot,
+  Briefcase,
+  Building2,
   Camera,
   Check,
   Calendar,
@@ -12,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Cpu,
   DollarSign,
   ExternalLink,
   FileText,
@@ -33,6 +37,7 @@ import {
   Scissors,
   Search,
   ShieldCheck,
+  ShoppingBag,
   Smartphone,
   Sparkles,
   Target,
@@ -3544,6 +3549,474 @@ export function DigitalTwin() {
                     </p>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+interface AudienceSegment {
+  id: string;
+  tag: string;
+  badge: string;
+  icon: "shopping-bag" | "cpu" | "building" | "sparkles" | "briefcase";
+  title: string;
+  subheading?: string;
+  description: string;
+  pitchPoints?: string[];
+  industriesLabel: string;
+  industries: string[];
+  formatsLabel: string;
+  formats: string[];
+  complianceNote?: string;
+  positioning?: string;
+  ctaText: string;
+  ctaSecondaryText?: string;
+}
+
+const audienceSegments: AudienceSegment[] = [
+  {
+    id: "dtc-ecommerce",
+    tag: "DTC / E-COMMERCE",
+    badge: "DTC & E-Commerce",
+    icon: "shopping-bag",
+    title: "AI Video Ads for DTC & E-Commerce Brands",
+    description:
+      "Turn your products into scroll-stopping video creatives designed for social media, paid advertising, and product marketing.",
+    industriesLabel: "INDUSTRIES",
+    industries: [
+      "Skincare",
+      "Cosmetics",
+      "Haircare",
+      "Jewelry",
+      "Fashion",
+      "Apparel",
+      "Fitness",
+      "Supplements",
+      "Pet Products",
+      "Home Products",
+      "Food & Beverage",
+      "Accessories",
+      "Wellness",
+    ],
+    formatsLabel: "CREATIVE FORMATS",
+    formats: [
+      "AI UGC testimonials",
+      "Product demonstrations",
+      "Before-and-after storytelling",
+      "Problem/solution ads",
+      "Unboxing videos",
+      "Lifestyle product videos",
+      "Founder-style videos",
+      "Product explainers",
+      "Social-first ads",
+    ],
+    ctaText: "Create E-Commerce AI Video Ads",
+  },
+  {
+    id: "saas-technology",
+    tag: "SAAS / AI / TECHNOLOGY",
+    badge: "SaaS & Tech",
+    icon: "cpu",
+    title: "AI Video Ads for SaaS & Technology Companies",
+    description:
+      "Explain complex products simply and turn software features into engaging video content.",
+    industriesLabel: "IDEAL FOR",
+    industries: [
+      "SaaS",
+      "AI Startups",
+      "MarTech",
+      "FinTech",
+      "HR Tech",
+      "Sales Software",
+      "Productivity Software",
+      "Mobile Apps",
+      "B2B Software",
+    ],
+    formatsLabel: "CREATIVE FORMATS",
+    formats: [
+      "Product explainers",
+      "Feature demonstrations",
+      "AI avatar videos",
+      "Problem/solution ads",
+      "Product walkthroughs",
+      "Social ads",
+      "Customer pain-point videos",
+      "Educational videos",
+    ],
+    ctaText: "Create SaaS AI Video Ads",
+  },
+  {
+    id: "real-estate",
+    tag: "REAL ESTATE",
+    badge: "Real Estate",
+    icon: "building",
+    title: "AI Video Ads for Real Estate",
+    description:
+      "Turn properties, developments, and real estate services into compelling video creatives.",
+    industriesLabel: "BUILT FOR",
+    industries: [
+      "Realtors",
+      "Brokerages",
+      "Real Estate Teams",
+      "Developers",
+      "Luxury Agents",
+      "New Construction",
+      "Apartment Communities",
+    ],
+    formatsLabel: "CREATIVE FORMATS",
+    formats: [
+      "Property promotional videos",
+      "Listing ads",
+      "Neighbourhood videos",
+      "Agent personal-brand videos",
+      "Luxury property storytelling",
+      "New-development campaigns",
+      "Apartment community ads",
+      "AI avatar explainers",
+    ],
+    ctaText: "Create Real Estate AI Video Ads",
+  },
+  {
+    id: "med-spa-aesthetics",
+    tag: "MED SPA / AESTHETICS",
+    badge: "Med Spa & Aesthetics",
+    icon: "sparkles",
+    title: "AI Video Ads for Med Spas & Aesthetic Brands",
+    description:
+      "Create educational, promotional, and social-first video content for aesthetic and wellness businesses.",
+    industriesLabel: "IDEAL FOR",
+    industries: [
+      "Botox",
+      "Fillers",
+      "Laser Treatments",
+      "Skincare",
+      "Body Contouring",
+      "Hair Restoration",
+      "Wellness Clinics",
+      "Aesthetic Clinics",
+    ],
+    formatsLabel: "CREATIVE FORMATS",
+    formats: [
+      "Educational videos",
+      "Treatment explainers",
+      "AI avatar videos",
+      "Problem/solution ads",
+      "Service awareness videos",
+      "FAQ videos",
+      "Social ads",
+      "Promotional creatives",
+    ],
+    complianceNote:
+      "Do not make unsupported medical claims or guaranteed-result claims. Client-provided claims, disclaimers, before/after imagery, testimonials, and treatment information should be reviewed and approved by the client before publication.",
+    ctaText: "Create Aesthetic AI Video Ads",
+  },
+  {
+    id: "agency-partners",
+    tag: "AGENCY PARTNERS / WHITE LABEL",
+    badge: "Agency White-Label",
+    icon: "briefcase",
+    title: "Your AI Creative Production Partner",
+    subheading: "White-Label AI Video Production for Agencies",
+    description:
+      "Quickupp AI Studio provides white-label AI video production for agencies that want to expand their creative offering without increasing internal production overhead.",
+    pitchPoints: [
+      "Your clients need more creative.",
+      "Your team doesn't necessarily need another production department.",
+    ],
+    industriesLabel: "BUILT FOR",
+    industries: [
+      "Performance Marketing Agencies",
+      "Meta Advertising Agencies",
+      "Social Media Agencies",
+      "E-commerce Agencies",
+      "Branding Agencies",
+      "Creative Agencies",
+      "Web Development Agencies",
+      "SEO/PPC Agencies",
+      "Influencer Agencies",
+      "Lead Generation Agencies",
+    ],
+    formatsLabel: "WHAT AGENCIES CAN OUTSOURCE",
+    formats: [
+      "Research",
+      "Strategy",
+      "Hooks",
+      "Concepts",
+      "Scripts",
+      "Storyboards",
+      "AI Production",
+      "Editing",
+      "Captions",
+      "Voiceover",
+      "Sound Design",
+      "Final Ad Creatives",
+    ],
+    positioning:
+      "You manage the client relationship. We help power the creative production behind the scenes.",
+    ctaText: "Become an Agency Partner",
+    ctaSecondaryText: "Discuss White-Label Production",
+  },
+];
+
+export function WhoWeServe() {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = useState(false);
+  const current = audienceSegments[activeIdx];
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setIsInView(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.08, rootMargin: "50px 0px 50px 0px" },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const renderIcon = (type: AudienceSegment["icon"], className = "h-4 w-4") => {
+    switch (type) {
+      case "shopping-bag":
+        return <ShoppingBag className={className} />;
+      case "cpu":
+        return <Cpu className={className} />;
+      case "building":
+        return <Building2 className={className} />;
+      case "sparkles":
+        return <Sparkles className={className} />;
+      case "briefcase":
+        return <Briefcase className={className} />;
+    }
+  };
+
+  return (
+    <Section id="who-we-serve" className="relative overflow-hidden bg-slate-950 text-slate-100 py-14 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8 border-y border-purple-900/40 shadow-2xl">
+      {/* Dynamic ambient backdrop glowing meshes */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-20 top-1/4 h-[450px] w-[450px] rounded-full opacity-30 blur-3xl"
+        style={{ background: "radial-gradient(circle, #9333ea 0%, transparent 70%)" }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-20 bottom-1/4 h-[450px] w-[450px] rounded-full opacity-25 blur-3xl"
+        style={{ background: "radial-gradient(circle, #db2777 0%, transparent 70%)" }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(#a855f7_1px,transparent_1px)] [background-size:24px_24px] opacity-10"
+      />
+
+      <div ref={sectionRef} className="mx-auto w-full max-w-7xl relative z-10">
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
+          <span className="inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-950/60 px-3.5 py-1 text-[11px] font-bold uppercase tracking-widest text-purple-300 backdrop-blur-md shadow-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.8)]"></span>
+            </span>
+            WHO WE SERVE
+          </span>
+
+          <h2 className="mt-3.5 font-heading text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-white">
+            Built for Brands That Need{" "}
+            <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5 whitespace-nowrap">
+              More Creative Output
+            </span>
+          </h2>
+
+          <p className="mt-3 text-sm sm:text-base md:text-lg leading-relaxed text-slate-300 max-w-2xl mx-auto">
+            Quickupp AI Studio works across product-led, service-led, and technology businesses.
+          </p>
+        </div>
+
+        {/* Interactive Segment Navigation Pill Tabs */}
+        <div className="mb-8 overflow-x-auto scrollbar-none pb-2">
+          <div className="flex items-center justify-between min-w-[660px] lg:min-w-0 gap-2 p-1.5 rounded-2xl border border-purple-500/20 bg-slate-900/80 backdrop-blur-xl shadow-lg">
+            {audienceSegments.map((segment, idx) => {
+              const isSelected = activeIdx === idx;
+              return (
+                <button
+                  key={segment.id}
+                  type="button"
+                  onClick={() => setActiveIdx(idx)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl transition-all duration-300 cursor-pointer text-xs sm:text-sm font-bold ${
+                    isSelected
+                      ? "bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white shadow-md shadow-purple-500/30 scale-[1.02]"
+                      : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+                  }`}
+                >
+                  <span className={isSelected ? "text-white" : "text-purple-400"}>
+                    {renderIcon(segment.icon, "h-4 w-4")}
+                  </span>
+                  <span className="whitespace-nowrap">{segment.badge}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Active Segment Showcase Bento Card */}
+        <div
+          key={current.id}
+          className="animate-step-transition relative rounded-3xl border border-purple-500/30 bg-gradient-to-b from-slate-900/95 via-purple-950/20 to-slate-900/95 p-6 sm:p-8 md:p-10 backdrop-blur-2xl shadow-2xl shadow-purple-950/60 transition-all duration-300"
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+            {/* Left Main Content Column */}
+            <div className="lg:col-span-7 flex flex-col space-y-5 text-left">
+              {/* Category Tag Header */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-2 rounded-lg bg-purple-900/50 border border-purple-400/30 px-3 py-1 text-xs font-mono font-bold text-purple-200">
+                  {renderIcon(current.icon, "h-3.5 w-3.5 text-purple-300")}
+                  <span>{current.tag}</span>
+                </span>
+                <span className="text-xs font-mono text-purple-400/80">
+                  0{activeIdx + 1} / 0{audienceSegments.length}
+                </span>
+              </div>
+
+              {/* Title & Subheading */}
+              <div>
+                <h3 className="font-heading text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight">
+                  {current.title}
+                </h3>
+                {current.subheading && (
+                  <p className="mt-1.5 text-sm sm:text-base font-semibold text-purple-300">
+                    {current.subheading}
+                  </p>
+                )}
+                <p className="mt-2 text-xs sm:text-sm md:text-base leading-relaxed text-slate-300">
+                  {current.description}
+                </p>
+              </div>
+
+              {/* Pitch Points for Agency / White-label */}
+              {current.pitchPoints && current.pitchPoints.length > 0 && (
+                <div className="rounded-xl border border-purple-500/30 bg-purple-950/40 p-4 space-y-2">
+                  {current.pitchPoints.map((point, i) => (
+                    <div key={i} className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-purple-100">
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-purple-500 text-white text-[10px] font-bold">
+                        ✓
+                      </span>
+                      <span>{point}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Industries / Built For / Ideal For Tags Cloud */}
+              <div>
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-purple-300 block mb-2.5">
+                  {current.industriesLabel}
+                </span>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  {current.industries.map((ind, i) => (
+                    <span
+                      key={i}
+                      className="rounded-lg border border-purple-500/20 bg-slate-800/80 px-2.5 py-1 text-xs font-medium text-slate-200 hover:border-purple-400/50 hover:bg-purple-950/60 transition-colors shadow-2xs"
+                    >
+                      {ind}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Positioning Note if exists */}
+              {current.positioning && (
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-3.5 text-xs sm:text-sm font-medium text-emerald-200 flex items-start gap-2.5">
+                  <Sparkles className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>
+                    <strong className="text-white font-semibold">Positioning: </strong>
+                    {current.positioning}
+                  </span>
+                </div>
+              )}
+
+              {/* Medical Compliance Note if exists */}
+              {current.complianceNote && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 p-3.5 text-xs text-amber-200/90 leading-relaxed flex items-start gap-2.5">
+                  <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block font-bold text-amber-300 mb-0.5 font-mono uppercase text-[10px] tracking-wider">
+                      Compliance Note
+                    </strong>
+                    {current.complianceNote}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex flex-wrap items-center gap-3">
+                <a
+                  href="#contact"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all duration-300 hover:scale-105 hover:shadow-purple-500/40 cursor-pointer"
+                >
+                  <span>{current.ctaText}</span>
+                  <ArrowRight className="h-4 w-4" />
+                </a>
+
+                {current.ctaSecondaryText && (
+                  <a
+                    href="#contact"
+                    className="inline-flex items-center gap-2 rounded-xl border border-purple-500/40 bg-slate-900/80 px-5 py-3 text-xs sm:text-sm font-bold text-purple-200 hover:text-white hover:bg-purple-900/40 hover:border-purple-400 transition-all cursor-pointer"
+                  >
+                    <span>{current.ctaSecondaryText}</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Right Formats / Capability Matrix Column */}
+            <div className="lg:col-span-5 flex flex-col justify-between h-full space-y-4">
+              <div className="rounded-2xl border border-purple-500/30 bg-slate-900/90 p-5 sm:p-6 backdrop-blur-xl shadow-xl">
+                <div className="flex items-center justify-between pb-3.5 border-b border-purple-500/20 mb-4">
+                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-purple-300">
+                    {current.formatsLabel}
+                  </span>
+                  <span className="text-[11px] font-mono text-slate-400 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-500/20">
+                    {current.formats.length} Deliverables
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2.5">
+                  {current.formats.map((fmt, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-950/60 border border-slate-800/80 hover:border-purple-500/30 transition-all"
+                    >
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/20 text-purple-400 text-xs font-bold border border-purple-500/30">
+                        ✓
+                      </span>
+                      <span className="text-xs sm:text-sm font-medium text-slate-200">
+                        {fmt}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bottom Feature Pill Banner */}
+              <div className="rounded-xl border border-purple-500/20 bg-purple-950/20 p-3.5 flex items-center justify-between text-xs text-purple-200">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-3.5 w-3.5 text-pink-400 shrink-0" />
+                  <span>High-Volume Creative Pipeline</span>
+                </div>
+                <span className="font-mono text-[10px] text-purple-400 uppercase font-bold">
+                  Ready to Deploy
+                </span>
               </div>
             </div>
           </div>

@@ -19,6 +19,7 @@ import {
   Samples,
   Services,
   DigitalTwin,
+  WhoWeServe,
   StrategyCall,
   TrustStrip,
   WhyAiVideo,
@@ -85,6 +86,7 @@ function Index() {
         <Samples />
         <Services />
         <DigitalTwin />
+        <WhoWeServe />
         <WhyAiVideo />
         <Pricing />
         <PackageInclusions />
