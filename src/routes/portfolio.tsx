@@ -315,40 +315,37 @@ function PortfolioPage() {
             </p>
           </div>
 
-          {/* Bottom Call to Action Section */}
-          <div className="mt-14 sm:mt-16 overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white p-8 sm:p-12 md:p-14 text-center shadow-2xl relative">
-            <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-purple-500/20 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-pink-500/20 blur-3xl pointer-events-none" />
-
-            <div className="relative z-10 max-w-2xl mx-auto space-y-3.5">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1 text-xs font-semibold text-purple-300 border border-white/10">
-                <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+          {/* Bottom Call to Action Section (Light Theme) */}
+          <div className="mt-12 sm:mt-14 overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50/90 via-white to-pink-50/60 border border-purple-200/80 p-6 sm:p-8 md:p-10 text-center shadow-md relative">
+            <div className="relative z-10 max-w-xl mx-auto space-y-2.5">
+              <span className="eyebrow text-[11px] py-0.5 px-3">
+                <Sparkles className="h-3 w-3 text-purple-600" />
                 Start Creating Today
               </span>
-              <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-white">
+              <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
                 Want Something Like This for Your Brand?
               </h2>
-              <p className="text-slate-300 text-xs sm:text-sm md:text-base leading-relaxed">
+              <p className="text-slate-600 text-xs sm:text-sm leading-relaxed max-w-lg mx-auto">
                 Get custom high-converting AI creator videos, avatar ads, and 3D product visuals produced in 48–72 hours.
               </p>
 
-              <div className="pt-3 flex flex-wrap justify-center gap-3 sm:gap-4">
+              <div className="pt-2.5 flex flex-wrap justify-center gap-2.5 sm:gap-3">
                 <NeonButton
                   variant="primary"
-                  size="lg"
+                  size="md"
                   onClick={() => openCheckoutModal({ itemType: "package" })}
-                  className="!rounded-full px-7 sm:px-8 py-3 sm:py-3.5 shadow-lg shadow-purple-500/30"
+                  className="!rounded-full px-6 py-2.5 text-xs sm:text-sm font-semibold shadow-md glow-neon"
                 >
-                  <Zap className="mr-2 h-4 w-4" />
+                  <Zap className="mr-1.5 h-3.5 w-3.5" />
                   <span>Start Your AI Video Project</span>
                 </NeonButton>
                 <NeonButton
                   href={calendlyUrl}
                   variant="ghost"
-                  size="lg"
-                  className="!rounded-full px-7 sm:px-8 py-3 sm:py-3.5 bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white"
+                  size="md"
+                  className="!rounded-full px-6 py-2.5 text-xs sm:text-sm font-semibold bg-white border-slate-200 text-slate-700 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300 shadow-xs"
                 >
-                  <Calendar className="mr-2 h-4 w-4 text-purple-300" />
+                  <Calendar className="mr-1.5 h-3.5 w-3.5 text-purple-600" />
                   <span>Book a Strategy Call</span>
                 </NeonButton>
               </div>
