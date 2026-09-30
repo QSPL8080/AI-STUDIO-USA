@@ -1339,13 +1339,12 @@ function AdminPage() {
     try {
       const res = await fetchLeadsServerFn({ data: { includeDeleted: false } });
       if (res.success && Array.isArray(res.leads)) {
-        const local = localStorage.getItem("ai_studio_local_leads");
-        const localLeads: Lead[] = local ? JSON.parse(local) : [];
-        const dbLeadIds = new Set(res.leads.map((l) => l.id));
-        const unsynced = localLeads.filter((l) => !dbLeadIds.has(l.id));
-        const combined = [...unsynced, ...res.leads];
-        setLeads(combined);
-        localStorage.setItem("ai_studio_local_leads", JSON.stringify(combined));
+        // The server is the single source of truth. Never merge in leads from the
+        // browser cache: that re-added every deleted lead on the next refresh.
+        setLeads(res.leads);
+        try {
+          localStorage.setItem("ai_studio_local_leads", JSON.stringify(res.leads));
+        } catch {}
       } else {
         const local = localStorage.getItem("ai_studio_local_leads");
         if (local) setLeads(JSON.parse(local));

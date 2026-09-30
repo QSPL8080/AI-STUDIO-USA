@@ -4976,14 +4976,7 @@ export function LeadFormSection() {
                   created_at: new Date().toISOString(),
                 };
 
-                try {
-                  const existing = JSON.parse(localStorage.getItem("ai_studio_local_leads") || "[]");
-                  const filtered = existing.filter((l: any) => l.id !== newLead.id);
-                  filtered.unshift(newLead);
-                  localStorage.setItem("ai_studio_local_leads", JSON.stringify(filtered));
-                } catch (err) {
-                  console.error(err);
-                }
+                // (Leads are stored on the server only; the CRM reads them from there.)
 
                 // 3. Broadcast instant real-time push to open Admin panel tabs
                 broadcastLeadEvent({ type: "NEW_LEAD", lead: newLead });
@@ -6005,16 +5998,7 @@ export function QuotePopupModal() {
                   created_at: new Date().toISOString(),
                 };
 
-                try {
-                  const existing = JSON.parse(
-                    localStorage.getItem("ai_studio_local_leads") || "[]",
-                  );
-                  const filtered = existing.filter((l: any) => l.id !== newLead.id);
-                  filtered.unshift(newLead);
-                  localStorage.setItem("ai_studio_local_leads", JSON.stringify(filtered));
-                } catch (err) {
-                  console.error(err);
-                }
+                // (Leads are stored on the server only; the CRM reads them from there.)
 
                 // 3. Broadcast instant real-time push to open Admin panel tabs
                 broadcastLeadEvent({ type: "NEW_LEAD", lead: newLead });
