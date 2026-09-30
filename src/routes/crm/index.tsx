@@ -91,7 +91,6 @@ import {
   fetchCrmSettingsServerFn,
   saveCrmSettingsServerFn,
   saveAccessControlServerFn,
-  saveBroadcastServerFn,
   checkLoginLockoutServerFn,
   recordFailedLoginServerFn,
   authenticateAdminServerFn,
@@ -226,7 +225,6 @@ const PERMISSION_DEFS: { key: PermissionKey; label: string; hint: string }[] = [
   { key: "manage_users", label: "Create, Suspend & Delete Users", hint: "User Management tab" },
   { key: "security_logs", label: "View Live IP Tracking & Login Audit Logs", hint: "Login / IP Tracking tab" },
   { key: "crm_settings", label: "Modify CRM Settings & Theme Preferences", hint: "CRM Settings tab (not Permissions)" },
-  { key: "broadcast", label: "Broadcast Operational System Notice", hint: "Publish / clear the banner" },
 ];
 
 const DEFAULT_ROLE_PERMISSIONS: RolePermissions = {
@@ -600,13 +598,6 @@ function AdminPage() {
     }
     return 10;
   });
-  const [crmBroadcastBanner, setCrmBroadcastBanner] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("crm_broadcast_banner") || "";
-    }
-    return "";
-  });
-  const [crmBroadcastDraft, setCrmBroadcastDraft] = useState("");
   const [crmSettingsSaved, setCrmSettingsSaved] = useState(false);
   const [crmSettingsSubTab, setCrmSettingsSubTab] = useState<
     "crm_config" | "export" | "permissions" | "records" | "security"
@@ -1560,10 +1551,6 @@ function AdminPage() {
       const v = [5, 10, 15, 30].includes(Number(st["inactivity_timeout"])) ? Number(st["inactivity_timeout"]) : 10;
       setAppliedInactivityTimeout(v);
       try { localStorage.setItem("crm_inactivity_timeout", String(v)); } catch {}
-    }
-    if (st["broadcast_banner"] !== undefined) {
-      setCrmBroadcastBanner(st["broadcast_banner"] || "");
-      try { localStorage.setItem("crm_broadcast_banner", st["broadcast_banner"] || ""); } catch {}
     }
     if (st["settings_updated_at"]) {
       setSettingsLastSaved({ at: st["settings_updated_at"], by: st["settings_updated_by"] || "Super Admin" });
@@ -2951,31 +2938,6 @@ function AdminPage() {
     showToast("CRM Settings saved successfully");
   };
 
-  const handlePublishBroadcastBanner = async (clear = false) => {
-    if (!can("broadcast")) {
-      showToast("You don't have permission to broadcast notices.");
-      return;
-    }
-    const message = clear ? "" : crmBroadcastDraft.trim();
-    if (!clear && !message) {
-      showToast("Type a notice before publishing.");
-      return;
-    }
-    try {
-      const res = await saveBroadcastServerFn({ data: { message, performedBy: session?.name || "Super Admin" } });
-      if (!res.success) {
-        showToast(res.error || "Failed to update the broadcast");
-        return;
-      }
-      setCrmBroadcastBanner(message);
-      if (clear) setCrmBroadcastDraft("");
-      try { localStorage.setItem("crm_broadcast_banner", message); } catch {}
-      showToast(message ? "Broadcast published to all admins" : "Broadcast banner cleared for all admins");
-    } catch {
-      showToast("Failed to update the broadcast");
-    }
-  };
-
   const isToday = (dateStr?: string) => {
     if (!dateStr) return false;
     const d = new Date(dateStr);
@@ -4073,25 +4035,6 @@ function AdminPage() {
 
       {/* Main Content Area */}
       <main className="w-full max-w-[1750px] mx-auto flex-1 p-3 sm:p-5 lg:p-6 space-y-5 sm:space-y-6">
-        {/* System-Wide Operational Broadcast Banner (Super Admin Controlled) */}
-        {crmBroadcastBanner && session?.role !== "leads_manager" && (
-          <div className="rounded-xl border border-amber-300 bg-amber-50/90 px-3.5 py-2 text-xs text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs animate-in fade-in">
-            <div className="flex items-center gap-2">
-              <Megaphone className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-              <span className="font-bold text-amber-900 uppercase tracking-wider text-[9px] bg-amber-200/80 px-1.5 py-0.2 rounded">System Notice</span>
-              <span className="font-semibold text-[11px]">{crmBroadcastBanner}</span>
-            </div>
-            {can("broadcast") && (
-              <button
-                onClick={() => handlePublishBroadcastBanner(true)}
-                className="text-[10px] font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer shrink-0 self-end sm:self-center"
-              >
-                Dismiss Notice
-              </button>
-            )}
-          </div>
-        )}
-
         {/* ========================================================================= */}
         {/* TAB 0: EXECUTIVE DASHBOARD & CRM OVERVIEW */}
         {/* ========================================================================= */}
@@ -8339,45 +8282,6 @@ function AdminPage() {
                     </div>
                   </div>
 
-                  {/* System Broadcast Alert Banner Manager */}
-                  <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 space-y-3 text-xs">
-                    <div className="flex items-center gap-2">
-                      <Megaphone className="h-4 w-4 text-amber-700" />
-                      <span className="font-bold text-amber-950">System-Wide Operational Notice Broadcast</span>
-                    </div>
-                    <p className="text-[11px] text-amber-900/80">
-                      Publish a banner that appears at the top of every logged-in admin's screen (within one auto-sync cycle). Clearing it removes it for everyone.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <input
-                        type="text"
-                        value={crmBroadcastDraft}
-                        onChange={(e) => setCrmBroadcastDraft(e.target.value)}
-                        placeholder="e.g. Scheduled server maintenance tonight at 11:00 PM EST..."
-                        className="flex-1 rounded-xl border border-amber-300 bg-white p-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900"
-                      />
-                      <button
-                        onClick={() => handlePublishBroadcastBanner(false)}
-                        className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-black transition-colors cursor-pointer shrink-0"
-                      >
-                        Publish Broadcast
-                      </button>
-                      {crmBroadcastBanner && (
-                        <button
-                          onClick={() => handlePublishBroadcastBanner(true)}
-                          className="rounded-xl border border-red-300 bg-white px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 transition-colors cursor-pointer shrink-0"
-                        >
-                          Clear Banner
-                        </button>
-                      )}
-                    </div>
-                    {crmBroadcastBanner && (
-                      <div className="text-[11px] text-emerald-800 font-semibold flex items-center gap-1.5 pt-1">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        <span>Active Broadcast: &ldquo;{crmBroadcastBanner}&rdquo;</span>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
             )}
