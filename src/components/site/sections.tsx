@@ -3707,7 +3707,7 @@ export function Process() {
           observer.unobserve(el);
         }
       },
-      { threshold: 0.08, rootMargin: "0px 0px -30px 0px" },
+      { threshold: 0.05, rootMargin: "0px 0px -20px 0px" },
     );
 
     observer.observe(el);
@@ -3715,61 +3715,70 @@ export function Process() {
   }, []);
 
   return (
-    <Section id="process" className="overflow-hidden bg-aura-diagonal border-y border-purple-100/70">
+    <Section id="process" className="relative overflow-hidden bg-gradient-to-b from-purple-50/40 via-white to-purple-50/20 border-y border-purple-100/70 py-16 sm:py-20">
       <SectionHeading
-        eyebrow="How It Works"
-        title="How Our AI Video Production"
-        highlight="Process Works"
-        description="A streamlined 6-step production pipeline engineered for rapid turnaround and pristine quality."
+        eyebrow="HOW IT WORKS"
+        title="From Brief to"
+        highlight="Ready-to-Run Creative"
+        center={true}
       />
-      <div ref={containerRef} className="relative">
-        <ol className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+
+      <div ref={containerRef} className="mx-auto max-w-6xl mt-10 sm:mt-12">
+        {/* 11 Steps Process Grid */}
+        <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {processSteps.map((step, i) => {
-            const delay = `${i * 0.12}s`;
+            const delay = `${i * 0.06}s`;
             const animClass = isInView
               ? "animate-step-card"
-              : "opacity-0 [transform:perspective(800px)_rotateX(-20deg)_translateY(25px)]";
+              : "opacity-0 [transform:perspective(800px)_rotateX(-15deg)_translateY(20px)]";
 
             return (
-              <li
-                key={step.title}
+              <div
+                key={step.step}
                 style={{ animationDelay: delay }}
-                className={`panel group relative overflow-hidden rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-lg backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 hover:border-purple-300 hover:shadow-xl ${animClass}`}
+                className={`group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-purple-300 hover:shadow-lg backdrop-blur-md ${animClass}`}
               >
-                {/* Step Top Bar Scanner Line */}
-                <div className="absolute left-0 top-0 h-1 w-0 bg-gradient-brand transition-all duration-500 group-hover:w-full" />
+                {/* Step Top Bar Accent Line */}
+                <div className="absolute left-0 top-0 h-1 w-0 bg-gradient-brand transition-all duration-400 group-hover:w-full rounded-t-2xl" />
 
                 {/* Ambient Step Number Watermark */}
-                <span className="pointer-events-none absolute right-4 top-2 text-5xl font-black text-slate-900/[0.04] transition-all duration-300 group-hover:text-purple-600/15 group-hover:scale-110">
-                  0{i + 1}
+                <span className="pointer-events-none absolute right-4 top-2 text-4xl font-black text-slate-900/[0.04] transition-all duration-300 group-hover:text-purple-600/15">
+                  {step.step}
                 </span>
 
-                <div className="flex items-center justify-between">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-brand text-xs font-black text-neon-foreground shadow-md transition-transform duration-300 group-hover:scale-110">
-                    {i + 1}
-                  </span>
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-purple-600">
-                    Step {i + 1} of 6
-                  </span>
-                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-purple-100 text-xs font-black text-purple-700 group-hover:bg-gradient-brand group-hover:text-white transition-colors duration-200">
+                      {step.step}
+                    </span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-purple-600 transition-colors duration-200">
+                      Step {step.step}
+                    </span>
+                  </div>
 
-                <h3 className="mt-4 text-base font-bold text-slate-900 transition-colors duration-200 group-hover:text-purple-600 sm:text-lg">
-                  {step.title}
-                </h3>
-                <p className="mt-2 text-xs leading-relaxed text-slate-600 sm:text-sm">
-                  {step.description}
-                </p>
-              </li>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-purple-700 transition-colors duration-200">
+                    {step.step} — {step.title}
+                  </h3>
+
+                  <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
             );
           })}
-        </ol>
+        </div>
 
-        {/* Turnaround Time Pill */}
-        <div className="mx-auto mt-8 flex max-w-fit items-center justify-center gap-2 rounded-full border border-amber-300 bg-amber-50/90 px-6 py-3 text-center shadow-sm transition-all duration-700">
-          <div className="flex items-center gap-2 text-xs font-bold text-amber-800 sm:text-sm whitespace-nowrap">
-            <Clock className="h-4 w-4 text-amber-600 shrink-0" />
-            <span>48–72 Working Hours Delivery</span>
-          </div>
+        {/* CTA Button */}
+        <div className="mt-10 sm:mt-12 flex flex-col items-center justify-center text-center">
+          <button
+            type="button"
+            onClick={() => openCheckoutModal({ itemType: "package" })}
+            className="inline-flex items-center justify-center rounded-full bg-gradient-brand px-8 py-3.5 text-xs sm:text-sm font-bold text-neon-foreground shadow-lg glow-neon transition-all duration-200 hover:scale-105 hover:brightness-110 cursor-pointer"
+          >
+            <Zap className="mr-2 h-4 w-4" />
+            <span>Start Your Project</span>
+          </button>
         </div>
       </div>
     </Section>

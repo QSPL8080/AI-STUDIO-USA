@@ -89,10 +89,10 @@ function Index() {
         <WhyAiVideo />
         <Pricing />
         <PackageInclusions />
+        <Process />
         <DigitalTwin />
         <UseCases />
         <StrategyCall />
-        <Process />
         <WhyUs />
         <Faq />
         <WhatsAppCtaSection />

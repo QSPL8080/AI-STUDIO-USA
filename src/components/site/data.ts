@@ -603,29 +603,69 @@ export const useCases = [
 
 export const processSteps = [
   {
-    title: "Share Your Requirement",
-    description: "Tell us about your business, product/service, audience and video objective.",
-  },
-  {
-    title: "Script & Concept",
-    description: "Our team prepares the video script and creative concept.",
-  },
-  {
-    title: "Approve the Script",
-    description: "Review and approve the script/concept before production begins.",
-  },
-  {
-    title: "AI Video Production",
+    step: "01",
+    title: "Tell Us About Your Brand",
     description:
-      "We create the AI visuals, voiceover, lip-sync, animation, captions, music and editing.",
+      "Share your product, offer, target audience, brand guidelines, and campaign objective.",
   },
   {
-    title: "Review & Revision",
-    description: "Review the completed video and use the included revision where applicable.",
+    step: "02",
+    title: "Research",
+    description:
+      "We review your market, competitors, messaging, and creative opportunities.",
   },
   {
-    title: "Final Delivery",
-    description: "After completion of the balance payment, the final video is delivered.",
+    step: "03",
+    title: "Strategy & Creative Direction",
+    description:
+      "We identify the strongest messaging, hooks, angles, concepts, and creative direction.",
+  },
+  {
+    step: "04",
+    title: "Script",
+    description:
+      "We develop the script around the selected concept, audience, offer, and CTA.",
+  },
+  {
+    step: "05",
+    title: "Storyboard",
+    description:
+      "We convert the script into a scene-by-scene visual plan covering visuals, actions, framing, text, timing, and transitions.",
+  },
+  {
+    step: "06",
+    title: "AI Production",
+    description:
+      "We create the visual scenes using the appropriate AI production format.",
+  },
+  {
+    step: "07",
+    title: "Editing",
+    description:
+      "We assemble and refine the scenes with pacing, captions, transitions, and visual elements.",
+  },
+  {
+    step: "08",
+    title: "Sound Design",
+    description:
+      "We add voiceover, music, sound effects, and audio transitions.",
+  },
+  {
+    step: "09",
+    title: "Quality Control",
+    description:
+      "We review the final creative for accuracy, consistency, branding, audio, captions, and overall quality.",
+  },
+  {
+    step: "10",
+    title: "Delivery",
+    description: "You receive the final ad-ready creative.",
+  },
+  {
+    step: "11",
+    title: "Launch & Test",
+    description:
+      "Use the creative across your advertising and social channels and test it against other creative variations.",
   },
 ];
 
