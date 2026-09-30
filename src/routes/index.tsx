@@ -1,9 +1,7 @@
 import { useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  Contact,
   CreativeScalingCta,
-  DigitalTwin,
   Faq,
   Footer,
   FloatingWhatsAppButton,
@@ -21,11 +19,8 @@ import {
   Services,
   StrategyCall,
   TrustStrip,
-  UseCases,
-  WhatsAppCtaSection,
   WhyAiVideo,
   WhyQuickuppAiStudio,
-  WhyUs,
 } from "@/components/site/sections";
 
 const title = "Quickupp AI Studio | AI Video Production, UGC & Digital Avatars";
@@ -94,9 +89,6 @@ function Index() {
         <Faq />
         <LeadFormSection />
         <StrategyCall />
-        <DigitalTwin />
-        <UseCases />
-        <WhyUs />
         <CreativeScalingCta />
       </main>
       <Footer />
