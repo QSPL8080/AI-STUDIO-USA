@@ -317,8 +317,8 @@ export const updateOrderStatusServerFn = createServerFn({ method: "POST" })
   });
 
 /**
- * Delete an order record. Super Admin only, and only while the payment is still PENDING:
- * paid / failed / refunded orders are financial records and are never deleted.
+ * Delete an order record. Super Admin only, and only for unpaid orders (PENDING, FAILED,
+ * CANCELLED): paid (COMPLETED) and REFUNDED orders are financial records and are never deleted.
  */
 export const deleteOrderServerFn = createServerFn({ method: "POST" })
   .validator((data: { id: string; token?: string | undefined }) => data)
@@ -332,8 +332,8 @@ export const deleteOrderServerFn = createServerFn({ method: "POST" })
       if (!order) {
         return { success: false, error: "Order not found." };
       }
-      if (String(order.payment_status).toUpperCase() !== "PENDING") {
-        return { success: false, error: "Only PENDING orders can be deleted." };
+      if (!["PENDING", "FAILED", "CANCELLED"].includes(String(order.payment_status).toUpperCase())) {
+        return { success: false, error: "Only Pending, Failed or Cancelled orders can be deleted." };
       }
       const ok = await deleteOrderFromDb(data.id);
       await bumpDataVersion();

@@ -2633,15 +2633,17 @@ function AdminPage() {
     }
   };
 
-  // Orders: Super Admin can delete PENDING (unpaid) orders only. The server enforces this too.
+  // Orders: Super Admin can delete unpaid orders only (Pending / Failed / Cancelled).
+  // Paid and refunded orders are kept. The server enforces this too.
+  const isDeletableOrder = (o: Order) => ["PENDING", "FAILED", "CANCELLED"].includes(String(o.payment_status).toUpperCase());
   const handleDeletePendingOrder = async (order: Order) => {
-    if (!isSuperAdmin || order.payment_status !== "PENDING") return;
-    if (!confirm(`Delete pending order from ${order.customer_name} ($${Number(order.amount).toFixed(2)})? This cannot be undone.`)) return;
+    if (!isSuperAdmin || !isDeletableOrder(order)) return;
+    if (!confirm(`Delete ${String(order.payment_status).toLowerCase()} order from ${order.customer_name} ($${Number(order.amount).toFixed(2)})? This cannot be undone.`)) return;
     try {
       const res = await deleteOrderServerFn({ data: { id: order.id, token: session?.token } });
       if (res.success) {
         setOrders((prev) => prev.filter((o) => o.id !== order.id));
-        showToast("Pending order deleted");
+        showToast("Order deleted");
       } else {
         showToast(res.error || "Failed to delete order");
       }
@@ -6232,10 +6234,10 @@ function AdminPage() {
                             >
                               Details
                             </button>
-                            {isSuperAdmin && order.payment_status === "PENDING" && (
+                            {isSuperAdmin && isDeletableOrder(order) && (
                               <button
                                 onClick={() => handleDeletePendingOrder(order)}
-                                title="Delete this pending order"
+                                title="Delete this unpaid order"
                                 className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 cursor-pointer"
                               >
                                 <Trash2 className="h-4 w-4" />
