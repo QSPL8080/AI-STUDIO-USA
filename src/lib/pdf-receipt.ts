@@ -120,47 +120,29 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       doc.strokeColor("#e2e8f0").lineWidth(1).moveTo(margin, y).lineTo(right, y).stroke();
       y += 16;
 
-      // ── 2. BILL TO + RECEIPT SUMMARY (two cards) ────────────────
-      const gap = 16;
-      const halfW = (contentWidth - gap) / 2;
-      const infoCardH = 122;
-      card(margin, y, halfW, infoCardH);
-      card(margin + halfW + gap, y, halfW, infoCardH);
-
+      // ── 2. BILL TO (full width, two columns) ────────────────────
       const pad = 16;
+      const infoCardH = 96;
+      card(margin, y, contentWidth, infoCardH);
+      const billLeftX = margin + pad;
+      const billRightX = margin + contentWidth / 2 + 8;
       let by = y + pad;
-      sectionTitle("BILL TO", margin + pad, by);
-      by += 22;
-      label("Name: ", margin + pad, by);
-      doc.font("ReceiptBold").fillColor("#0f172a").text(data.customerName, { width: halfW - pad * 2 - 40, lineBreak: false, ellipsis: true });
-      by += 18;
-      label("Email: ", margin + pad, by);
+      sectionTitle("BILL TO", billLeftX, by);
+      by += 24;
+      label("Name: ", billLeftX, by);
+      doc.font("ReceiptBold").fillColor("#0f172a").text(data.customerName, { lineBreak: false });
+      label("Email: ", billRightX, by);
       doc.fillColor("#2563eb").text(data.customerEmail, { link: `mailto:${data.customerEmail}`, underline: true, lineBreak: false });
-      if (data.customerCompany && data.customerCompany.trim()) {
-        by += 18;
-        label("Company: ", margin + pad, by);
-        doc.font("ReceiptBold").fillColor("#0f172a").text(data.customerCompany, { lineBreak: false });
-      }
+      by += 20;
       const formattedAddress = (data.billingAddress || "United States").replace(/[\r\n]+/g, ", ").trim();
-      by += 18;
-      label("Address: ", margin + pad, by);
-      doc.font("ReceiptRegular").fillColor("#0f172a").text(formattedAddress, { lineBreak: false });
-
-      const sx = margin + halfW + gap + pad;
-      let sy = y + pad;
-      sectionTitle("RECEIPT SUMMARY", sx, sy);
-      sy += 22;
-      label("Receipt No: ", sx, sy);
-      doc.font("ReceiptBold").fillColor("#0f172a").text(data.orderNumber, { lineBreak: false });
-      sy += 18;
-      label("Issue Date: ", sx, sy);
-      doc.font("ReceiptBold").fillColor("#0f172a").text(issueDateStr, { lineBreak: false });
-      sy += 18;
-      label("Amount Paid: ", sx, sy);
-      doc.font("ReceiptBold").fillColor("#6d28d9").text(`$${(data.total ?? data.amount).toFixed(2)} ${data.currency || "USD"}`, { lineBreak: false });
-      sy += 18;
-      label("Status: ", sx, sy);
-      doc.font("ReceiptBold").fillColor("#16a34a").text("PAID", { lineBreak: false });
+      if (data.customerCompany && data.customerCompany.trim()) {
+        label("Company: ", billLeftX, by);
+        doc.font("ReceiptBold").fillColor("#0f172a").text(data.customerCompany, { lineBreak: false });
+        label("Address: ", billRightX, by);
+      } else {
+        label("Address: ", billLeftX, by);
+      }
+      doc.font("ReceiptRegular").fillColor("#0f172a").text(formattedAddress, { underline: false, lineBreak: false });
 
       y += infoCardH + 20;
 
@@ -240,7 +222,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
 
       // ── 5. THANK YOU (anchored near the bottom of the page) ─────
       const footerY = pageHeight - 8 - 34;
-      const thanksH = 116;
+      const thanksH = 140;
       const thanksY = Math.max(y + 20, footerY - 20 - thanksH);
       doc.roundedRect(margin, thanksY, contentWidth, thanksH, 8).fillAndStroke("#faf5ff", "#e9d5ff");
       doc.roundedRect(margin + 14, thanksY + 18, 4, 20, 2).fill("#7c3aed");
@@ -252,11 +234,13 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       ty += 32;
       doc.font("ReceiptBold").fontSize(10).fillColor("#475569").text("For questions regarding your order or payment:", margin + 22, ty, { lineBreak: false });
       ty += 17;
-      doc.font("ReceiptBold").fontSize(10.5).fillColor("#6d28d9").text("Quickupp AI Studio", margin + 22, ty, { continued: true, lineBreak: false })
-        .font("ReceiptRegular").fillColor("#475569").text("   ·   Email: ", { continued: true })
-        .fillColor("#2563eb").text("info@quickuppaistudio.us", { link: "mailto:info@quickuppaistudio.us", underline: true, continued: true })
-        .fillColor("#475569").text("   ·   Website: ", { underline: false, continued: true })
-        .fillColor("#2563eb").text("quickuppaistudio.us", { link: "https://quickuppaistudio.us", underline: true });
+      doc.font("ReceiptBold").fontSize(10.5).fillColor("#6d28d9").text("Quickupp AI Studio", margin + 22, ty, { lineBreak: false });
+      ty += 16;
+      label("Email: ", margin + 22, ty, 10, "#475569");
+      doc.fillColor("#2563eb").text("info@quickuppaistudio.us", { link: "mailto:info@quickuppaistudio.us", underline: true, lineBreak: false });
+      ty += 15;
+      label("Website: ", margin + 22, ty, 10, "#475569");
+      doc.fillColor("#2563eb").text("quickuppaistudio.us", { link: "https://quickuppaistudio.us", underline: true, lineBreak: false });
 
       // ── 6. FOOTER ───────────────────────────────────────────────
       doc.strokeColor("#e2e8f0").lineWidth(1).moveTo(margin, footerY - 6).lineTo(right, footerY - 6).stroke();
