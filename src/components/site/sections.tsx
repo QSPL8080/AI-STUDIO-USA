@@ -3693,26 +3693,7 @@ export function StrategyCall() {
 }
 
 export function Process() {
-  const [isInView, setIsInView] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setIsInView(true);
-          observer.unobserve(el);
-        }
-      },
-      { threshold: 0.05, rootMargin: "0px 0px -20px 0px" },
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const doubledSteps = [...processSteps, ...processSteps];
 
   return (
     <Section id="process" className="relative overflow-hidden bg-gradient-to-b from-purple-50/40 via-white to-purple-50/20 border-y border-purple-100/70 py-16 sm:py-20">
@@ -3723,20 +3704,19 @@ export function Process() {
         center={true}
       />
 
-      <div ref={containerRef} className="mx-auto max-w-6xl mt-10 sm:mt-12">
-        {/* 11 Steps Process Grid */}
-        <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {processSteps.map((step, i) => {
-            const delay = `${i * 0.06}s`;
-            const animClass = isInView
-              ? "animate-step-card"
-              : "opacity-0 [transform:perspective(800px)_rotateX(-15deg)_translateY(20px)]";
+      {/* Infinite Smooth Looping Track (Left to Right, Readable Speed, Pause on Hover) */}
+      <div className="relative mt-10 sm:mt-12 w-full overflow-hidden">
+        {/* Left & Right Soft Fade Gradients */}
+        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 sm:w-24 bg-gradient-to-r from-white via-white/80 to-transparent z-10" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 sm:w-24 bg-gradient-to-l from-white via-white/80 to-transparent z-10" />
 
+        {/* Marquee Row */}
+        <div className="flex gap-4 sm:gap-5 py-3 animate-marquee-ltr hover:[animation-play-state:paused]">
+          {doubledSteps.map((step, i) => {
             return (
               <div
-                key={step.step}
-                style={{ animationDelay: delay }}
-                className={`group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-purple-300 hover:shadow-lg backdrop-blur-md ${animClass}`}
+                key={`${step.step}-${i}`}
+                className="group relative flex w-[280px] sm:w-[320px] md:w-[340px] shrink-0 flex-col justify-between rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-purple-300 hover:shadow-lg backdrop-blur-md"
               >
                 {/* Step Top Bar Accent Line */}
                 <div className="absolute left-0 top-0 h-1 w-0 bg-gradient-brand transition-all duration-400 group-hover:w-full rounded-t-2xl" />
@@ -3768,18 +3748,18 @@ export function Process() {
             );
           })}
         </div>
+      </div>
 
-        {/* CTA Button */}
-        <div className="mt-10 sm:mt-12 flex flex-col items-center justify-center text-center">
-          <button
-            type="button"
-            onClick={() => openCheckoutModal({ itemType: "package" })}
-            className="inline-flex items-center justify-center rounded-full bg-gradient-brand px-8 py-3.5 text-xs sm:text-sm font-bold text-neon-foreground shadow-lg glow-neon transition-all duration-200 hover:scale-105 hover:brightness-110 cursor-pointer"
-          >
-            <Zap className="mr-2 h-4 w-4" />
-            <span>Start Your Project</span>
-          </button>
-        </div>
+      {/* CTA Button */}
+      <div className="mt-10 sm:mt-12 flex flex-col items-center justify-center text-center">
+        <button
+          type="button"
+          onClick={() => openCheckoutModal({ itemType: "package" })}
+          className="inline-flex items-center justify-center rounded-full bg-gradient-brand px-8 py-3.5 text-xs sm:text-sm font-bold text-neon-foreground shadow-lg glow-neon transition-all duration-200 hover:scale-105 hover:brightness-110 cursor-pointer"
+        >
+          <Zap className="mr-2 h-4 w-4" />
+          <span>Start Your Project</span>
+        </button>
       </div>
     </Section>
   );
