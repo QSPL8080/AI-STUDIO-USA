@@ -3556,10 +3556,10 @@ export function StrategyCall() {
               <iframe
                 src="${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed"
                 width="100%"
-                height="760"
+                height="560"
                 frameborder="0"
                 title="Select a Date & Time - Strategy Call"
-                style="width: 100%; height: 760px; border: 0;"
+                style="width: 100%; height: 560px; border: 0;"
               ></iframe>
             `;
           }
@@ -3625,7 +3625,7 @@ export function StrategyCall() {
   }, []);
 
   return (
-    <Section id="book-call" className="py-12 md:py-18 relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-y border-slate-200/80">
+    <Section id="book-call" className="py-14 md:py-20 lg:py-24 my-4 md:my-8 relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-y border-slate-200/80">
       <SectionHeading
         eyebrow="CALENDLY + PAYMENT FLOW"
         title="Treat This as a Core"
@@ -3634,10 +3634,10 @@ export function StrategyCall() {
         center={true}
       />
 
-      {/* Two-Column Split Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-        {/* LEFT COLUMN: Calendly Booking */}
-        <div className="lg:col-span-7 flex flex-col">
+      {/* Two-Column Split Layout with Spacious Gap */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 xl:gap-20 items-start">
+        {/* LEFT COLUMN: Calendly Booking (Compact Height) */}
+        <div className="lg:col-span-6 flex flex-col">
           {/* Header & Quick Action Pill */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 pb-3 border-b border-slate-200/80">
             <div className="flex items-center gap-2">
@@ -3645,7 +3645,7 @@ export function StrategyCall() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
               </span>
-              <h3 className="font-heading text-base sm:text-lg font-bold text-slate-900">
+              <h3 className="font-heading text-sm sm:text-base font-bold text-slate-900">
                 Book a Strategy Call
               </h3>
             </div>
@@ -3653,28 +3653,28 @@ export function StrategyCall() {
               href={calendlyUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-white px-3.5 py-1 text-xs font-semibold text-purple-700 shadow-2xs hover:border-purple-300 hover:bg-purple-50 transition-all cursor-pointer self-start sm:self-auto"
+              className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-white px-3 py-1 text-[11px] sm:text-xs font-semibold text-purple-700 shadow-2xs hover:border-purple-300 hover:bg-purple-50 transition-all cursor-pointer self-start sm:self-auto"
             >
-              <Calendar className="h-3.5 w-3.5 text-purple-600" />
+              <Calendar className="h-3 w-3 text-purple-600" />
               <span>Open in New Tab</span>
               <ExternalLink className="h-3 w-3 text-slate-400" />
             </a>
           </div>
 
-          <p className="text-xs text-slate-600 mb-4">
+          <p className="text-xs text-slate-600 mb-3.5 leading-relaxed">
             Select an open date &amp; time on our calendar. Real 30-minute conversation about your brand, creative hooks, and format recommendations.
           </p>
 
-          {/* Embedded Calendly Container */}
-          <div className="relative w-full overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-md">
-            <div className="w-full overflow-hidden" style={{ height: "720px" }}>
+          {/* Embedded Calendly Container (Compact Size) */}
+          <div className="relative w-full overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
+            <div className="w-full overflow-hidden" style={{ height: "560px" }}>
               <div
                 ref={calendlyContainerRef}
                 className="calendly-inline-widget"
                 data-url={`${calendlyUrl}?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
                 style={{
-                  width: "calc(100% + 22px)",
-                  height: "720px",
+                  width: "calc(100% + 20px)",
+                  height: "560px",
                   overflowY: "scroll",
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
@@ -3683,13 +3683,13 @@ export function StrategyCall() {
                 <iframe
                   src={`${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
                   width="100%"
-                  height="720"
+                  height="560"
                   frameBorder="0"
                   title="Select a Date & Time - Strategy Call"
                   className="border-0"
                   style={{
                     width: "100%",
-                    height: "720px",
+                    height: "560px",
                     overflowY: "auto",
                   }}
                 />
@@ -3698,14 +3698,14 @@ export function StrategyCall() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Website CTA Routing Points */}
-        <div className="lg:col-span-5 flex flex-col">
+        {/* RIGHT COLUMN: Website CTA Routing Points with clear space and left border on desktop */}
+        <div className="lg:col-span-6 flex flex-col lg:pl-8 xl:pl-12 lg:border-l lg:border-slate-200/80">
           {/* Header */}
           <div className="mb-4 pb-3 border-b border-purple-100/90">
             <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-700">
               WEBSITE CTA ROUTING
             </span>
-            <h3 className="font-heading text-lg sm:text-xl font-bold text-slate-900 mt-1">
+            <h3 className="font-heading text-base sm:text-lg font-bold text-slate-900 mt-1">
               Direct Action &amp; Conversion Flow
             </h3>
             <p className="mt-1 text-xs text-slate-500 leading-relaxed">
