@@ -21,8 +21,6 @@ import {
 import { NeonButton } from "@/components/site/ui";
 import {
   portfolioItems,
-  portfolioFilters,
-  type PortfolioCategory,
   calendlyUrl,
 } from "@/components/site/data";
 
@@ -229,13 +227,6 @@ function VideoCard({ item }: { item: (typeof portfolioItems)[number] }) {
 }
 
 function PortfolioPage() {
-  const [selectedFilter, setSelectedFilter] = useState<PortfolioCategory>("All");
-
-  const filteredItems = portfolioItems.filter((item) => {
-    if (selectedFilter === "All") return true;
-    return item.format === selectedFilter;
-  });
-
   return (
     <div id="top" className="min-h-screen w-full overflow-x-clip bg-background text-foreground flex flex-col justify-between">
       <Header />
@@ -264,35 +255,14 @@ function PortfolioPage() {
             <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
               Explore AI-powered video concepts created across e-commerce, beauty, fashion, fitness, technology, food, lifestyle, and other high-growth categories.
             </p>
-
-            {/* Filter Buttons */}
-            <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
-              {portfolioFilters.map((filter) => {
-                const isActive = selectedFilter === filter;
-                return (
-                  <button
-                    key={filter}
-                    type="button"
-                    onClick={() => setSelectedFilter(filter)}
-                    className={`rounded-full px-4 sm:px-5 py-2 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
-                      isActive
-                        ? "bg-gradient-brand text-white shadow-md glow-neon scale-105"
-                        : "bg-white text-slate-700 border border-slate-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
-                    }`}
-                  >
-                    {filter}
-                  </button>
-                );
-              })}
-            </div>
           </div>
         </div>
 
         {/* Portfolio Cards Grid */}
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6 sm:gap-7 lg:gap-8 justify-items-center">
-            {filteredItems.map((item, idx) => (
-              <VideoCard key={`${item.format}-${item.title}-${idx}`} item={item} />
+            {portfolioItems.map((item, idx) => (
+              <VideoCard key={`${item.title}-${idx}`} item={item} />
             ))}
           </div>
 
