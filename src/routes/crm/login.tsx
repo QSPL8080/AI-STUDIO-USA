@@ -13,7 +13,7 @@ import {
   Send,
   Loader2,
 } from "lucide-react";
-import { authenticateAdminServerFn, sendAccountActivationRequestServerFn } from "@/lib/lead-actions";
+import { authenticateAdminServerFn, sendAccountActivationRequestServerFn, fetchCrmSettingsServerFn } from "@/lib/lead-actions";
 
 export const Route = createFileRoute("/crm/login")({
   ssr: false,
@@ -25,6 +25,28 @@ export const Route = createFileRoute("/crm/login")({
 
 function CrmLoginPage() {
   const [emailInput, setEmailInput] = useState("");
+  // Platform / CRM Title from CRM Settings (same for every user)
+  const [platformTitle, setPlatformTitle] = useState(() => {
+    try {
+      return localStorage.getItem("crm_platform_title") || "CRM Admin Portal";
+    } catch {
+      return "CRM Admin Portal";
+    }
+  });
+  useEffect(() => {
+    fetchCrmSettingsServerFn()
+      .then((res) => {
+        const t = String((res?.settings as Record<string, string> | undefined)?.["platform_title"] || "").trim();
+        if (t) {
+          setPlatformTitle(t);
+          try { localStorage.setItem("crm_platform_title", t); } catch {}
+        }
+      })
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (platformTitle) document.title = `Login | ${platformTitle}`;
+  }, [platformTitle]);
   const [passwordInput, setPasswordInput] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -210,7 +232,7 @@ function CrmLoginPage() {
               height={44}
             />
           </div>
-          <h2 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">CRM Admin Portal</h2>
+          <h2 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">{platformTitle}</h2>
           <p className="mt-1 text-xs text-slate-500">
             Quickupp AI Studio Leads Management & CRM
           </p>

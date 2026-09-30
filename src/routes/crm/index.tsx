@@ -1566,6 +1566,7 @@ function AdminPage() {
     if (st["sync_interval"]) {
       const v = Number(st["sync_interval"]) === 20 ? 20 : 10;
       setAppliedSyncInterval(v);
+      setRefreshCountdown((prev) => (prev > v ? v : prev));
       try { localStorage.setItem("crm_sync_interval", String(v)); } catch {}
     }
     if (st["inactivity_timeout"]) {
@@ -2851,7 +2852,7 @@ function AdminPage() {
       return;
     }
     const backupData = {
-      system: "AI STUDIO USA CRM - Enterprise Production Database Snapshot",
+      system: `${appliedPlatformTitle} - Production Database Snapshot`,
       exported_at: new Date().toISOString(),
       exported_by: session?.email || "Super Admin",
       version: "2.4.0",
@@ -2924,7 +2925,8 @@ function AdminPage() {
       const res = await saveCrmSettingsServerFn({
         data: {
           platformTitle: crmPlatformTitle,
-          notificationEmail: crmNotificationEmail,
+          notificationEmail: "info@quickuppaistudio.us",
+          token: session?.token,
           syncInterval: crmSyncInterval,
           inactivityTimeout: crmInactivityTimeout,
           loginAttempts: crmLoginAttempts,
@@ -7879,19 +7881,20 @@ function AdminPage() {
                         className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900"
                         placeholder="AI STUDIO USA - Enterprise CRM"
                       />
-                      <p className="text-[11px] text-slate-400 mt-1">Displayed on the admin portal navigation header and page title.</p>
+                      <p className="text-[11px] text-slate-400 mt-1">Shown in the CRM header, browser tab, login page and alert email subjects for every user after saving.</p>
                     </div>
 
                     <div>
                       <label className="block font-bold text-slate-700 mb-1">System Alert Notification Email</label>
                       <input
                         type="email"
-                        value={crmNotificationEmail}
-                        onChange={(e) => setCrmNotificationEmail(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900"
-                        placeholder="info@quickuppaistudio.us"
+                        value="info@quickuppaistudio.us"
+                        readOnly
+                        disabled
+                        title="This address is fixed and cannot be changed"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-100 p-2.5 text-xs font-medium text-slate-500 cursor-not-allowed"
                       />
-                      <p className="text-[11px] text-slate-400 mt-1">New lead and payment alert emails are sent to this address.</p>
+                      <p className="text-[11px] text-slate-400 mt-1">New lead and payment alert emails are sent to this address. This address is fixed.</p>
                     </div>
 
                     <div>
@@ -7904,7 +7907,7 @@ function AdminPage() {
                         <option value={10}>10 Seconds (Recommended • Real-Time High Precision)</option>
                         <option value={20}>20 Seconds</option>
                       </select>
-                      <p className="text-[11px] text-slate-400 mt-1">Background polling cycle for incoming website leads, Meta leads, and meetings.</p>
+                      <p className="text-[11px] text-slate-400 mt-1">How often every open CRM refreshes leads, Meta leads, orders and meetings. Applies to all signed-in users after saving.</p>
                     </div>
                   </div>
 

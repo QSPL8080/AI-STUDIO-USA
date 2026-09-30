@@ -28,13 +28,7 @@ const DEFAULT_PLATFORM_TITLE = "Quickupp AI Studio USA";
  * info@quickuppaistudio.us when nothing valid is saved.
  */
 export async function resolveNotificationEmail(): Promise<string> {
-  try {
-    const settings = await getCrmSettings();
-    const saved = (settings["notification_email"] || "").trim();
-    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(saved)) return saved;
-  } catch (err) {
-    console.warn("Could not load CRM notification email, using default:", err);
-  }
+  // Fixed recipient: the alert email can no longer be changed from CRM Settings.
   return DEFAULT_NOTIFICATION_EMAIL;
 }
 

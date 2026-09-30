@@ -1454,7 +1454,8 @@ export const fetchCrmSettingsServerFn = createServerFn({ method: "GET" }).handle
 export const saveCrmSettingsServerFn = createServerFn({ method: "POST" })
   .validator((data: {
     platformTitle: string;
-    notificationEmail: string;
+    notificationEmail?: string | undefined;
+    token?: string | undefined;
     syncInterval: number;
     inactivityTimeout?: number | undefined;
     loginAttempts?: number | undefined;
@@ -1462,8 +1463,13 @@ export const saveCrmSettingsServerFn = createServerFn({ method: "POST" })
   }) => data)
   .handler(async ({ data }) => {
     try {
+      const who = decodeAndVerifySessionToken(data.token || "");
+      if (!who.valid || !who.payload || who.payload.role === "leads_manager") {
+        return { success: false, error: "Only Super Admin / Admin can change CRM settings." };
+      }
       const title = (data.platformTitle || "").trim().slice(0, 120);
-      const email = (data.notificationEmail || "").trim();
+      // The alert email is fixed and can't be changed from the CRM.
+      const email = DEFAULT_CRM_SETTINGS.notification_email;
       const interval = Number(data.syncInterval) === 20 ? 20 : 10;
       const inactivity = [5, 10, 15, 30].includes(Number(data.inactivityTimeout)) ? Number(data.inactivityTimeout) : 10;
       const attempts = [3, 5, 10].includes(Number(data.loginAttempts)) ? Number(data.loginAttempts) : 3;
