@@ -121,12 +121,12 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       y += 16;
 
       // ── 2. BILL TO (full width, two columns) ────────────────────
+      // Plain section (no card)
       const pad = 16;
-      const infoCardH = 96;
-      card(margin, y, contentWidth, infoCardH);
-      const billLeftX = margin + pad;
+      const infoCardH = 64;
+      const billLeftX = margin;
       const billRightX = margin + contentWidth / 2 + 8;
-      let by = y + pad;
+      let by = y + 4;
       sectionTitle("BILL TO", billLeftX, by);
       by += 24;
       label("Name: ", billLeftX, by);
@@ -144,7 +144,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       }
       doc.font("ReceiptRegular").fillColor("#0f172a").text(formattedAddress, { underline: false, lineBreak: false });
 
-      y += infoCardH + 20;
+      y += infoCardH + 22;
 
       // ── 3. PAYMENT DETAILS TABLE ────────────────────────────────
       sectionTitle("PAYMENT DETAILS", margin, y);
@@ -222,24 +222,25 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
 
       // ── 5. THANK YOU (anchored near the bottom of the page) ─────
       const footerY = pageHeight - 8 - 34;
-      const thanksH = 140;
-      const thanksY = Math.max(y + 20, footerY - 20 - thanksH);
-      doc.roundedRect(margin, thanksY, contentWidth, thanksH, 8).fillAndStroke("#faf5ff", "#e9d5ff");
-      doc.roundedRect(margin + 14, thanksY + 18, 4, 20, 2).fill("#7c3aed");
+      // Plain section (no card), with room to breathe
+      const thanksH = 176;
+      const thanksY = Math.max(y + 24, footerY - 22 - thanksH);
+      doc.strokeColor("#e9d5ff").lineWidth(1).moveTo(margin, thanksY).lineTo(right, thanksY).stroke();
       let ty = thanksY + 20;
-      doc.font("ReceiptBold").fontSize(15).fillColor("#0f172a").text("Thank You For Your Purchase!", margin + 22, ty, { lineBreak: false });
-      ty += 24;
-      doc.font("ReceiptRegular").fontSize(10.5).fillColor("#334155")
-        .text("Your payment has been successfully received. Your order is now being processed by the Quickupp AI Studio team.", margin + 22, ty, { width: contentWidth - 44 });
-      ty += 32;
-      doc.font("ReceiptBold").fontSize(10).fillColor("#475569").text("For questions regarding your order or payment:", margin + 22, ty, { lineBreak: false });
-      ty += 17;
-      doc.font("ReceiptBold").fontSize(10.5).fillColor("#6d28d9").text("Quickupp AI Studio", margin + 22, ty, { lineBreak: false });
+      doc.font("ReceiptBold").fontSize(16).fillColor("#6d28d9").text("Thank You For Your Purchase!", margin, ty, { lineBreak: false });
+      ty += 28;
+      doc.font("ReceiptRegular").fontSize(10.5).fillColor("#334155").text("Your payment has been successfully received.", margin, ty, { lineBreak: false });
       ty += 16;
-      label("Email: ", margin + 22, ty, 10, "#475569");
+      doc.font("ReceiptRegular").fontSize(10.5).fillColor("#334155").text("Your order is now being processed by the Quickupp AI Studio team.", margin, ty, { lineBreak: false });
+      ty += 28;
+      doc.font("ReceiptBold").fontSize(10).fillColor("#475569").text("For questions regarding your order or payment:", margin, ty, { lineBreak: false });
+      ty += 20;
+      doc.font("ReceiptBold").fontSize(10.5).fillColor("#0f172a").text("Quickupp AI Studio", margin, ty, { lineBreak: false });
+      ty += 17;
+      label("Email: ", margin, ty, 10, "#64748b");
       doc.fillColor("#2563eb").text("info@quickuppaistudio.us", { link: "mailto:info@quickuppaistudio.us", underline: true, lineBreak: false });
-      ty += 15;
-      label("Website: ", margin + 22, ty, 10, "#475569");
+      ty += 17;
+      label("Website: ", margin, ty, 10, "#64748b");
       doc.fillColor("#2563eb").text("quickuppaistudio.us", { link: "https://quickuppaistudio.us", underline: true, lineBreak: false });
 
       // ── 6. FOOTER ───────────────────────────────────────────────
