@@ -136,9 +136,9 @@ export const submitLeadServerFn = createServerFn({ method: "POST" })
       try {
         await addActivityLogInDb({
           lead_id: saved.id,
-          action: saved.is_duplicate ? "Duplicate Lead Merged" : "Lead Submitted",
+          action: saved.is_duplicate ? "Duplicate Lead Merged (Same Email)" : "Lead Submitted",
           details: saved.is_duplicate
-            ? `Repeat submission from ${normalizedData.source} merged into existing lead ${saved.name} (${saved.phone})`
+            ? `Repeat inquiry from ${normalizedData.source} (same email: ${normalizedData.email || 'N/A'}) merged into existing lead ${saved.name}. Notes updated.`
             : `New lead received from ${saved.source} for ${saved.name} (${saved.phone})`,
           performed_by: "System / Website",
           user_role: "system",
@@ -147,10 +147,15 @@ export const submitLeadServerFn = createServerFn({ method: "POST" })
 
       // Create CRM Notification
       try {
+        const notifTitle = saved.is_duplicate ? "Duplicate Lead Received (Same Email)" : "New Website Lead Submitted";
+        const notifMessage = saved.is_duplicate
+          ? `Duplicate email inquiry from ${saved.name} (${saved.email || saved.phone}) - [Notes updated with new requirements]`
+          : `${saved.name} (${saved.phone}) submitted from ${saved.source} - ${saved.video_type || "AI Video"}`;
+
         const notif = await saveCRMNotificationInDb({
           type: "lead_new",
-          title: "New Website Lead Submitted",
-          message: `${saved.name} (${saved.phone}) submitted from ${saved.source} - ${saved.video_type || "AI Video"}`,
+          title: notifTitle,
+          message: notifMessage,
           entity_id: saved.id,
           actor: saved.name,
         });

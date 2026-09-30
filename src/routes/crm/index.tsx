@@ -830,7 +830,7 @@ function AdminPage() {
     if (!session) return false;
     if (session.role === "super_admin") return true;
     if (key === "purge") return false; // Permanent delete strictly exclusive to Super Admin
-    // Leads Manager: fixed access — Leads + Meta Leads tabs; add, edit, update, soft-delete only
+    if (key === "delete_leads") return true; // Admin and Super Admin can ALWAYS soft-delete leads to Recycle Bin!
     if (session.role === "leads_manager") return key === "meta_leads" || key === "delete_leads";
     const perms = rolePermissions[session.role as ConfigurableRole];
     return Boolean(perms?.[key]);
@@ -4819,6 +4819,13 @@ function AdminPage() {
                                 </a>
                               )}
                               {lead.email && <div className="text-[11px] text-slate-400 font-mono">{lead.email}</div>}
+                              {lead.is_duplicate && (
+                                <div className="mt-1">
+                                  <span className="inline-flex items-center gap-1 rounded bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
+                                    Duplicate Lead (Notes Appended)
+                                  </span>
+                                </div>
+                              )}
                             </td>
 
                             {/* WhatsApp / Phone */}
@@ -8777,9 +8784,25 @@ function AdminPage() {
                 <div>
                   <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Project Details / Campaign Goals</span>
                   <div className="text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200">
-                    {viewLeadDetails.requirement || viewLeadDetails.notes || viewLeadDetails.additional || "No specific project notes recorded."}
+                    {viewLeadDetails.requirement || viewLeadDetails.additional || "No specific project requirements recorded."}
                   </div>
                 </div>
+
+                {viewLeadDetails.notes && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-bold uppercase text-slate-400">Activity Notes & Duplicate Inquiries</span>
+                      {viewLeadDetails.is_duplicate && (
+                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                          Repeat Submissions Merged
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-slate-800 font-mono text-xs whitespace-pre-wrap leading-relaxed bg-amber-50/40 p-3 rounded-xl border border-amber-200/80">
+                      {viewLeadDetails.notes}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 4. Meta Information (For Meta leads) */}

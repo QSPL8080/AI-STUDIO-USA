@@ -557,9 +557,25 @@ export async function saveLead(data: {
     });
 
     if (matchedLead) {
-      // Update existing lead instead of duplicate
-      const appendNote = `[Duplicate Import on ${new Date().toLocaleDateString()}]: ${data.source} submission consolidated.`;
-      const updatedNotes = matchedLead.notes ? `${matchedLead.notes}\n${appendNote}` : appendNote;
+      const isSameEmail = Boolean(cleanEmail && matchedLead.email && matchedLead.email.trim().toLowerCase() === cleanEmail);
+      const isSamePhone = Boolean(cleanDigits.length >= 10 && matchedLead.phone && matchedLead.phone.replace(/\D/g, "").slice(-10) === cleanDigits);
+
+      const nowFormatted = new Date().toLocaleString("en-US", {
+        timeZone: "America/New_York",
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+
+      const duplicateType = isSameEmail ? "Same Email" : isSamePhone ? "Same Phone" : "Duplicate Lead";
+
+      const appendNote = `[Duplicate Lead - ${duplicateType} on ${nowFormatted} EST]:
+• Form Source: ${data.source}
+• Video Format: ${data.videoType || "N/A"}
+• Video Quantity: ${data.videoQuantity || "N/A"}
+• Business: ${data.business || "N/A"}
+• Requirement: ${data.requirement || "None provided"}`;
+
+      const updatedNotes = matchedLead.notes ? `${matchedLead.notes}\n\n${appendNote}` : appendNote;
       
       const updates: Partial<Lead> = {
         is_duplicate: true,
@@ -771,13 +787,14 @@ export async function getLeads(includeDeleted = false): Promise<Lead[]> {
 }
 
 export async function updateLead(id: string, updates: Partial<Lead>): Promise<boolean> {
+  let ok = false;
   if (getSupabaseConfig()) {
     try {
       await supabaseRest(`leads?id=eq.${id}`, {
         method: "PATCH",
         body: JSON.stringify(updates),
       });
-      return true;
+      ok = true;
     } catch (err) {
       console.warn("Supabase REST updateLead fallback:", err);
     }
@@ -795,12 +812,20 @@ export async function updateLead(id: string, updates: Partial<Lead>): Promise<bo
         ...values,
         id,
       ]);
-      return (res.rowCount ?? 0) > 0;
+      if ((res.rowCount ?? 0) > 0) ok = true;
     }
   } catch (error) {
     console.error("PostgreSQL updateLead error:", error);
   }
-  return false;
+
+  // Synchronize in-memory store
+  const memIdx = inMemoryLeads.findIndex((l) => l.id === id);
+  if (memIdx >= 0) {
+    inMemoryLeads[memIdx] = { ...inMemoryLeads[memIdx], ...updates };
+    ok = true;
+  }
+
+  return ok;
 }
 
 export async function updateLeadStatus(
@@ -865,6 +890,13 @@ export async function permanentDeleteLead(id: string): Promise<boolean> {
   } catch (error) {
     console.error("PostgreSQL Delete error:", error);
   }
+
+  const memIdx = inMemoryLeads.findIndex((l) => l.id === id);
+  if (memIdx >= 0) {
+    inMemoryLeads.splice(memIdx, 1);
+    ok = true;
+  }
+
   return ok;
 }
 
@@ -888,6 +920,14 @@ export async function emptyRecycleBin(): Promise<number> {
   } catch (error) {
     console.error("PostgreSQL emptyRecycleBin error:", error);
   }
+
+  for (let i = inMemoryLeads.length - 1; i >= 0; i--) {
+    if (inMemoryLeads[i].deleted_at) {
+      inMemoryLeads.splice(i, 1);
+      deletedCount++;
+    }
+  }
+
   return deletedCount;
 }
 
