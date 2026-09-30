@@ -23,7 +23,7 @@ export const Route = createFileRoute("/crm/login")({
   component: CrmLoginPage,
 });
 
-export function CrmLoginPage() {
+function CrmLoginPage() {
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [showPassword, setShowPassword] = useState(false);

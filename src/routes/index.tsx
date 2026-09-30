@@ -12,6 +12,7 @@ import {
   LeadFormSection,
   Portfolio,
   Pricing,
+  PackageInclusions,
   Process,
   QuotePopupModal,
   CheckoutModal,
@@ -88,6 +89,7 @@ function Index() {
         <Services />
         <WhyAiVideo />
         <Pricing />
+        <PackageInclusions />
         <DigitalTwin />
         <UseCases />
         <StrategyCall />

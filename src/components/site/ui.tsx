@@ -25,15 +25,19 @@ export function SectionHeading({
   highlight,
   description,
   center = true,
+  className = "",
+  descriptionClassName = "",
 }: {
   eyebrow: string;
   title: string;
   highlight?: string;
   description?: string;
   center?: boolean;
+  className?: string;
+  descriptionClassName?: string;
 }) {
   return (
-    <div className={`mb-8 sm:mb-10 max-w-3xl ${center ? "mx-auto text-center" : ""}`}>
+    <div className={`mb-8 sm:mb-10 max-w-3xl ${center ? "mx-auto text-center" : ""} ${className}`}>
       <span className="eyebrow">
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75"></span>
@@ -44,13 +48,13 @@ export function SectionHeading({
       <h2 className="mt-3.5 font-heading text-2xl font-bold leading-tight tracking-tight sm:text-3xl md:text-4xl text-slate-900">
         {title}{" "}
         {highlight ? (
-          <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5">
+          <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5 whitespace-nowrap">
             {highlight}
           </span>
         ) : null}
       </h2>
       {description ? (
-        <p className="mt-3 text-base leading-relaxed text-slate-600 md:text-lg">
+        <p className={`mt-3 text-base leading-relaxed text-slate-600 md:text-lg ${descriptionClassName}`}>
           {description}
         </p>
       ) : null}

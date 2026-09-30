@@ -16,7 +16,7 @@ export const Route = createFileRoute("/cookie-policy")({
   component: CookiePolicyPage,
 });
 
-export function CookiePolicyPage() {
+function CookiePolicyPage() {
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-neon selection:text-black">
       {/* Top Header */}

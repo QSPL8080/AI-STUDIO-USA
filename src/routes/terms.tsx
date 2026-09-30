@@ -16,7 +16,7 @@ export const Route = createFileRoute("/terms")({
   component: TermsPage,
 });
 
-export function TermsPage() {
+function TermsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-neon selection:text-black">
       {/* Top Header */}

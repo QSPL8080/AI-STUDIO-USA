@@ -16,7 +16,7 @@ export const Route = createFileRoute("/privacy-policy")({
   component: PrivacyPolicyPage,
 });
 
-export function PrivacyPolicyPage() {
+function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-neon selection:text-black">
       {/* Top Header */}

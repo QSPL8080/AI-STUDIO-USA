@@ -739,9 +739,7 @@ export function Hero() {
               preload="metadata"
               onClick={toggleAudio}
               className="h-full w-full object-cover object-center cursor-pointer"
-            >
-              <track kind="captions" src="" label="English" default />
-            </video>
+            />
 
             {/* Audio Voice Toggle Button */}
             <div className="absolute top-2.5 left-2.5 z-30">
@@ -885,9 +883,7 @@ export function Hero() {
                 preload="metadata"
                 onClick={toggleAudio}
                 className="h-full w-full object-cover object-center cursor-pointer"
-              >
-                <track kind="captions" src="" label="English" default />
-              </video>
+              />
 
               {/* Audio Voice Toggle Button */}
               <div className="absolute top-2.5 left-2.5 sm:top-3 sm:right-auto z-30">
@@ -2056,9 +2052,7 @@ function PortfolioCard({ sample }: { sample: (typeof portfolioItems)[number] }) 
           playsInline
           preload="none"
           className="absolute inset-0 h-full w-full object-cover pointer-events-none"
-        >
-          <track kind="captions" src="" label="English" default />
-        </video>
+        />
       )}
 
       {/* Loading shimmer shown until video src is assigned */}
@@ -2187,235 +2181,377 @@ export function Portfolio() {
   );
 }
 
-const serviceIcons: Record<string, typeof Sparkles> = {
-  "AI UGC Video Production": Video,
-  "AI Cartoon Animation Services": Palette,
-  "AI Avatar Video Production": Bot,
-  "Hyper-Realistic AI Video Production": Wand2,
-  "AI Digital Twin & Clone Video Services": UserCheck,
-};
+function ServiceVideoCard({
+  service,
+  onEnded,
+  isActive,
+}: {
+  service: (typeof services)[0];
+  onEnded: () => void;
+  isActive: boolean;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
 
-export function Services() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const [isInView, setIsInView] = useState(false);
-
+  // Play video on mount / active
   useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
+    if (!videoRef.current || !service.videoUrl) return;
+    videoRef.current.currentTime = 0;
+    videoRef.current
+      .play()
+      .then(() => setIsPlaying(true))
+      .catch(() => {});
+  }, [service.videoUrl, isActive]);
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setIsInView(true);
-          observer.unobserve(el);
-        }
-      },
-      { threshold: 0.08, rootMargin: "0px 0px -30px 0px" },
-    );
+  // For image-only service (Digital Twin), auto-advance after 6.5s
+  useEffect(() => {
+    if (service.videoUrl || !isActive) return;
+    const timer = setTimeout(() => {
+      onEnded();
+    }, 6500);
+    return () => clearTimeout(timer);
+  }, [service.videoUrl, isActive, onEnded]);
 
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => {});
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    const nextMuted = !isMuted;
+    videoRef.current.muted = nextMuted;
+    videoRef.current.volume = nextMuted ? 0 : 1;
+    setIsMuted(nextMuted);
+    if (!nextMuted && videoRef.current.paused) {
+      videoRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => {});
+    }
+  };
 
   return (
-    <Section id="services" className="relative overflow-hidden bg-aura-diagonal border-y border-purple-100/80 shadow-inner">
-      {/* Left Half-Cut Geometric Orbital Watermark */}
-      <div className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-[520px] sm:w-[650px] lg:w-[780px] h-[520px] sm:h-[650px] lg:h-[780px] select-none z-0">
-        <svg
-          className="w-full h-full"
-          viewBox="0 0 600 600"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <radialGradient id="servicesLeftGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#9333ea" stopOpacity="0.22" />
-              <stop offset="60%" stopColor="#3b82f6" stopOpacity="0.08" />
-              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-
-          {/* Ambient Center Glow */}
-          <circle cx="300" cy="300" r="260" fill="url(#servicesLeftGlow)" className="animate-aura-pulse" />
-
-          {/* Outer Orbit Ring with smooth continuous rotation */}
-          <g className="animate-orbit-spin-slow">
-            <circle
-              cx="300"
-              cy="300"
-              r="270"
-              stroke="rgba(147, 51, 234, 0.28)"
-              strokeWidth="1.6"
-              strokeDasharray="8 12"
-            />
-            <circle cx="570" cy="300" r="4" fill="#f472b6" className="drop-shadow-[0_0_8px_#f472b6]" />
-            <circle cx="30" cy="300" r="3.5" fill="#38bdf8" className="drop-shadow-[0_0_8px_#38bdf8]" />
-          </g>
-
-          {/* Middle Breathing Cyan/Blue Orbit Ring */}
-          <circle
-            cx="300"
-            cy="300"
-            r="200"
-            stroke="rgba(79, 70, 229, 0.30)"
-            strokeWidth="1.8"
-            className="animate-orbit-breath"
+    <div
+      ref={containerRef}
+      className="group relative w-full max-w-[240px] sm:max-w-[260px] md:max-w-[275px] aspect-[9/16] rounded-2xl border-2 border-purple-200/90 bg-slate-950 overflow-hidden shadow-xl shadow-purple-500/10 hover:shadow-2xl hover:shadow-purple-500/20 hover:border-purple-400 transition-all duration-500 mx-auto"
+    >
+      {service.videoUrl ? (
+        <>
+          <video
+            ref={videoRef}
+            src={service.videoUrl}
+            muted={isMuted}
+            playsInline
+            preload="auto"
+            onEnded={onEnded}
+            className="h-full w-full object-cover cursor-pointer"
+            onClick={togglePlay}
           />
 
-          {/* S-Curve Contours */}
-          <path
-            d="M 0 300 C 180 180, 420 420, 600 300"
-            stroke="rgba(147, 51, 234, 0.26)"
-            strokeWidth="1.8"
-            className="animate-wave-float-1"
-          />
-          <path
-            d="M 0 360 C 220 440, 380 160, 600 240"
-            stroke="rgba(244, 63, 158, 0.28)"
-            strokeWidth="1.6"
-            className="animate-wave-float-2"
-          />
-        </svg>
-      </div>
+          {/* Sound Toggle Button (Top Right) */}
+          <button
+            type="button"
+            onClick={toggleMute}
+            className="absolute top-3 right-3 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/65 text-white border border-white/20 backdrop-blur-md transition-all hover:scale-110 hover:bg-purple-600 shadow-md cursor-pointer"
+            title={isMuted ? "Unmute audio" : "Mute audio"}
+            aria-label={isMuted ? "Unmute video" : "Mute video"}
+          >
+            {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+          </button>
 
-      {/* Right Half-Cut Geometric Orbital Watermark */}
-      <div className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-[520px] sm:w-[650px] lg:w-[780px] h-[520px] sm:h-[650px] lg:h-[780px] select-none z-0">
-        <svg
-          className="w-full h-full"
-          viewBox="0 0 600 600"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <radialGradient id="servicesRightGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#ec4899" stopOpacity="0.20" />
-              <stop offset="60%" stopColor="#8b5cf6" stopOpacity="0.08" />
-              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-
-          {/* Ambient Center Glow */}
-          <circle cx="300" cy="300" r="260" fill="url(#servicesRightGlow)" className="animate-aura-pulse" />
-
-          {/* Outer Orbit Ring with smooth counter-clockwise rotation */}
-          <g className="animate-orbit-spin-reverse">
-            <circle
-              cx="300"
-              cy="300"
-              r="270"
-              stroke="rgba(147, 51, 234, 0.28)"
-              strokeWidth="1.6"
-              strokeDasharray="8 12"
-            />
-            <circle cx="570" cy="300" r="4" fill="#a855f7" className="drop-shadow-[0_0_8px_#a855f7]" />
-            <circle cx="30" cy="300" r="3.5" fill="#ec4899" className="drop-shadow-[0_0_8px_#ec4899]" />
-          </g>
-
-          {/* Middle Breathing Magenta/Violet Orbit Ring */}
-          <circle
-            cx="300"
-            cy="300"
-            r="200"
-            stroke="rgba(168, 85, 247, 0.30)"
-            strokeWidth="1.8"
-            className="animate-orbit-breath"
+          {/* Center Play/Pause indicator on hover or when paused */}
+          <div
+            onClick={togglePlay}
+            className={`absolute inset-0 flex items-center justify-center cursor-pointer transition-opacity duration-200 z-10 ${
+              !isPlaying ? "opacity-100 bg-black/30" : "opacity-0 group-hover:opacity-100"
+            }`}
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white shadow-md backdrop-blur-md border border-white/20">
+              {isPlaying ? (
+                <Pause className="h-4 w-4 text-white" />
+              ) : (
+                <Play className="ml-0.5 h-4 w-4 fill-white text-white" />
+              )}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="relative h-full w-full bg-gradient-to-br from-[#120b24] via-[#1a0f35] to-[#0c0618] flex flex-col justify-between p-5 text-center overflow-hidden">
+          {/* Subtle tech background grid pattern */}
+          <div
+            className="absolute inset-0 opacity-15 pointer-events-none"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.2) 1px, transparent 0)",
+              backgroundSize: "20px 20px",
+            }}
           />
 
-          {/* S-Curve Contours (mirrored flow) */}
-          <path
-            d="M 0 300 C 180 420, 420 180, 600 300"
-            stroke="rgba(147, 51, 234, 0.26)"
-            strokeWidth="1.8"
-            className="animate-wave-float-2"
-          />
-          <path
-            d="M 0 240 C 220 160, 380 440, 600 360"
-            stroke="rgba(56, 189, 248, 0.28)"
-            strokeWidth="1.6"
-            className="animate-wave-float-1"
-          />
-        </svg>
-      </div>
+          {/* Top badge */}
+          <div className="relative z-10 flex justify-center">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-950/80 border border-purple-500/30 text-[10px] font-bold text-purple-300 shadow-sm backdrop-blur-md">
+              <Sparkles className="h-3 w-3 text-neon animate-pulse" />
+              Digital Clone Model
+            </span>
+          </div>
 
-      <div className="relative z-10">
-        <SectionHeading
-          eyebrow="AI Video Creation Services"
-          title="Our AI Video Production"
-          highlight="Services"
-          description="Choose the AI video format that best fits your business and marketing goals."
-        />
-        <div
-          ref={sectionRef}
-          className="mx-auto flex max-w-6xl flex-wrap justify-center gap-6 lg:gap-7"
-        >
-        {services.map((service, idx) => {
-          const Icon = serviceIcons[service.title] || Sparkles;
-          const animationClass = isInView
-            ? "animate-service-card"
-            : "opacity-0 scale-90 translate-y-6";
-
-          return (
-            <article
-              key={service.title}
-              style={{ animationDelay: `${idx * 0.1}s` }}
-              className={`group relative flex w-full max-w-[350px] flex-col justify-between overflow-hidden rounded-[26px] border border-slate-200 bg-white/95 p-6 shadow-lg backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 hover:border-purple-300 hover:shadow-xl sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.25rem)] ${animationClass}`}
-            >
-              <div className="relative z-10">
-                {/* Header: Sparkle Icon + Full Service Title Heading */}
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4.5 w-4.5 text-purple-600" />
-                  </div>
-                  <h3 className="mt-3 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
-                    {service.title}
-                  </h3>
-                </div>
-
-                <p className="mt-3 text-xs leading-relaxed text-slate-600 sm:text-sm">
-                  {service.description}
-                </p>
-
-                {/* Distinct Highlighted Text (No Background) */}
-                <div className="mt-4 pt-1">
-                  <div className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-widest text-purple-700">
-                    <Sparkles className="h-3.5 w-3.5 text-purple-700" />
-                    <span>Best For</span>
-                  </div>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-800 font-medium">
-                    {service.bestFor}
-                  </p>
-                </div>
-
-                {/* Bullet Points Checklist */}
-                <div className="mt-4 space-y-2">
-                  {service.items.map((item) => (
-                    <div
-                      key={item}
-                      className="flex items-center gap-2.5 text-xs text-slate-700"
-                    >
-                      <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-purple-100 text-[9px] font-bold text-purple-700">
-                        ✓
-                      </span>
-                      <span className="truncate">{item}</span>
-                    </div>
-                  ))}
-                </div>
+          {/* Center visual: Cybernetic Avatar Placeholder with pulse */}
+          <div className="relative z-10 flex flex-col items-center justify-center my-auto py-6">
+            <div className="relative flex items-center justify-center">
+              {/* Outer pulsing ring */}
+              <div className="absolute h-24 w-24 rounded-full border border-purple-500/30 animate-ping opacity-30" />
+              <div className="absolute h-20 w-20 rounded-full bg-gradient-to-tr from-purple-600/30 to-pink-600/30 blur-md" />
+              
+              {/* Center icon avatar box */}
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-purple-400/40 bg-purple-900/60 shadow-[0_0_25px_rgba(200,80,255,0.4)] backdrop-blur-md">
+                <Sparkles className="h-7 w-7 text-neon" />
               </div>
+            </div>
 
-              {/* Clean Gradient Button with Only Pricing */}
-              <div className="relative z-10 mt-6 border-t border-slate-100 pt-4">
+            <div className="mt-4">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/75 border border-purple-400/40 text-[11px] font-bold uppercase tracking-wider text-purple-200 shadow-lg backdrop-blur-md">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-neon shadow-[0_0_6px_#c850ff]"></span>
+                </span>
+                Coming Soon
+              </span>
+            </div>
+          </div>
+
+          {/* Bottom description */}
+          <div className="relative z-10 pb-4">
+            <p className="text-[11px] text-purple-200/90 font-medium leading-relaxed max-w-[220px] mx-auto">
+              High-fidelity digital twin with authorized voice cloning & custom likeness.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function Services() {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const currentService = services[activeIdx];
+  const isReversed = activeIdx % 2 === 1;
+
+  const handleNext = () => {
+    setActiveIdx((prev) => (prev + 1) % services.length);
+  };
+
+  const handlePrev = () => {
+    setActiveIdx((prev) => (prev - 1 + services.length) % services.length);
+  };
+
+  return (
+    <Section id="services" className="relative overflow-hidden bg-gradient-to-b from-slate-50/50 via-purple-50/20 to-white py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 border-y border-purple-100/80 shadow-inner">
+      {/* Light atmospheric ambient background glows */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-20 top-1/4 h-96 w-96 rounded-full opacity-20 blur-3xl"
+        style={{ background: "radial-gradient(circle, #a855f7 0%, transparent 70%)" }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-20 bottom-1/4 h-96 w-96 rounded-full opacity-20 blur-3xl"
+        style={{ background: "radial-gradient(circle, #ec4899 0%, transparent 70%)" }}
+      />
+
+      <div className="mx-auto w-full max-w-7xl relative z-10" ref={sectionRef}>
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
+          <div className="inline-flex items-center gap-2 rounded-full border border-purple-200/80 bg-white/95 px-3.5 py-1 text-[11px] font-bold text-purple-950 shadow-sm backdrop-blur-md mb-2.5">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-neon shadow-[0_0_6px_#c850ff]"></span>
+            </span>
+            <span className="tracking-wide">AI Video Services</span>
+          </div>
+
+          <h2 className="font-[var(--font-google-sans)] text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight mb-2.5">
+            AI Video Ad{" "}
+            <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1">
+              Services
+            </span>
+          </h2>
+
+          <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            Choose the video format that fits your brand, audience, product, and campaign objective.
+          </p>
+        </div>
+
+        {/* Interactive Services Tab Bar */}
+        <div className="mb-6 sm:mb-8 overflow-x-auto scrollbar-none pb-2">
+          <div className="flex items-center justify-between min-w-[620px] lg:min-w-0 gap-1.5 p-1.5 rounded-2xl border border-purple-100/80 bg-white/80 backdrop-blur-md shadow-sm">
+            {services.map((srv, idx) => {
+              const isSelected = activeIdx === idx;
+              return (
                 <button
+                  key={srv.num}
                   type="button"
-                  onClick={() => openCheckoutModal({ itemType: "individual", itemId: service.title })}
-                  className="flex w-full items-center justify-center rounded-lg bg-gradient-brand py-2.5 text-sm font-bold tracking-wide text-neon-foreground shadow-md transition-all duration-200 hover:scale-[1.02] hover:brightness-110 active:scale-95 sm:text-base cursor-pointer"
+                  onClick={() => setActiveIdx(idx)}
+                  className={`flex-1 flex flex-col items-center py-2 px-2 rounded-xl transition-all duration-300 cursor-pointer ${
+                    isSelected
+                      ? "bg-purple-900 text-white shadow-md shadow-purple-900/20 scale-[1.02]"
+                      : "text-slate-600 hover:text-purple-700 hover:bg-purple-50/70"
+                  }`}
                 >
-                  {service.price}
+                  <span className={`font-mono text-[10px] font-bold ${isSelected ? "text-purple-200" : "text-slate-400"}`}>
+                    {srv.num}
+                  </span>
+                  <span className="text-[11px] font-bold tracking-tight truncate max-w-[120px] flex items-center justify-center">
+                    <span>{srv.title.replace("AI ", "")}</span>
+                  </span>
                 </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Active Service Slide Card (Alternates Left/Right by Index) */}
+        <div
+          key={activeIdx}
+          className="animate-step-transition relative overflow-hidden rounded-3xl border border-purple-200/80 bg-white/90 backdrop-blur-xl p-5 sm:p-7 md:p-8 shadow-xl shadow-purple-500/10 transition-all duration-300 max-w-5xl mx-auto"
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+            {/* Content Column */}
+            <div
+              className={`lg:col-span-7 flex flex-col space-y-3.5 text-left ${
+                isReversed ? "lg:order-2" : "lg:order-1"
+              }`}
+            >
+              {/* Meta Line */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-purple-100 text-purple-900 border border-purple-200 shadow-2xs">
+                    {currentService.tag}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-purple-600">
+                    Production Format
+                  </span>
+                </div>
+                <span className="font-mono text-xs font-bold text-slate-400">
+                  {activeIdx + 1} / {services.length}
+                </span>
               </div>
-            </article>
-          );
-        })}
-      </div>
+
+              {/* Title & Tagline & Description Block */}
+              <div>
+                <h3 className="font-[var(--font-google-sans)] text-lg sm:text-xl md:text-2xl font-bold text-slate-900 tracking-tight mb-1">
+                  {currentService.title}
+                </h3>
+                <p className="text-xs sm:text-sm font-semibold text-slate-800 leading-snug mb-1.5">
+                  {currentService.tagline}
+                </p>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {currentService.description}
+                </p>
+              </div>
+
+              {/* Clean Two-Column Info Cards for Ideal For & Great For with item-by-item points */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 flex flex-col">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-purple-900/70 block mb-2 font-mono">
+                    Ideal For
+                  </span>
+                  <ul className="space-y-1.5 flex-1">
+                    {currentService.idealFor.map((item, i) => (
+                      <li key={i} className="flex items-center gap-2 text-xs text-slate-800 font-medium leading-tight">
+                        <span className="h-1.5 w-1.5 rounded-full bg-purple-500 shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 flex flex-col">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-purple-900/70 block mb-2 font-mono">
+                    Great For
+                  </span>
+                  <ul className="space-y-1.5 flex-1">
+                    {currentService.greatFor.map((item, i) => (
+                      <li key={i} className="flex items-center gap-2 text-xs text-slate-800 font-medium leading-tight">
+                        <span className="h-1.5 w-1.5 rounded-full bg-pink-500 shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Price & CTA Row + Navigation Controls */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3.5 border-t border-purple-100/80">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Starting At
+                  </span>
+                  <span className="text-sm sm:text-base md:text-lg font-bold text-slate-900 font-mono">
+                    {currentService.startingAt}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2.5 ml-auto sm:ml-0">
+                  <a
+                    href="#contact"
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-purple-500/20 transition-all duration-300 hover:scale-105 hover:shadow-purple-500/35 cursor-pointer"
+                  >
+                    <span>{currentService.cta}</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </a>
+
+                  {/* Prev / Next Mini Controls */}
+                  <div className="flex items-center gap-1 pl-2 border-l border-purple-200/80">
+                    <button
+                      type="button"
+                      onClick={handlePrev}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-purple-200 bg-white text-purple-900 hover:bg-purple-50 transition-all cursor-pointer shadow-2xs"
+                      title="Previous service"
+                      aria-label="Previous service"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-purple-200 bg-white text-purple-900 hover:bg-purple-50 transition-all cursor-pointer shadow-2xs"
+                      title="Next service"
+                      aria-label="Next service"
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Video / Media Card Column */}
+            <div
+              className={`lg:col-span-5 flex justify-center items-center ${
+                isReversed ? "lg:order-1" : "lg:order-2"
+              }`}
+            >
+              <ServiceVideoCard
+                service={currentService}
+                onEnded={handleNext}
+                isActive={true}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </Section>
   );
@@ -2523,48 +2659,73 @@ export function WhyAiVideo() {
 
       <div className="relative z-10">
         <SectionHeading
-          eyebrow="Why AI Video"
-          title="Why Businesses Are Choosing AI Video"
-          highlight="Production"
-          description="Traditional video production can involve actors, locations, equipment and repeated shooting requirements. AI video production gives businesses a flexible way to create engaging content at scale while reducing production complexity."
+          eyebrow="WHY AI VIDEO ADS"
+          title="Why Brands Are Building More Creative With"
+          highlight="AI"
+          className="!max-w-5xl"
+          description="Modern paid media requires creative volume. Instead of depending on one ad concept, brands can develop multiple creative directions around the same product or offer."
+          descriptionClassName="!text-xs sm:!text-sm text-slate-600 max-w-2xl mx-auto leading-relaxed !mt-2.5"
         />
-        <div ref={sectionRef} className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+
+        {/* Variations Eyebrow */}
+        <div className="text-center mb-5">
+          <span className="inline-flex items-center gap-2 rounded-full border border-purple-200/90 bg-white/90 px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-purple-950 shadow-xs backdrop-blur-md font-mono">
+            <span className="h-1.5 w-1.5 rounded-full bg-neon animate-ping" />
+            CREATE VARIATIONS ACROSS
+          </span>
+        </div>
+
+        <div ref={sectionRef} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
           {whyAiVideo.map((item, i) => {
             const animationClass = isInView ? "animate-cyber-wave" : "opacity-0 translate-y-8";
 
             return (
               <article
                 key={item.title}
-                style={{ animationDelay: `${i * 0.12}s` }}
-                className={`group relative overflow-hidden rounded-2xl border border-slate-200 bg-white/95 p-7 shadow-lg backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 hover:border-purple-300 hover:shadow-xl ${animationClass}`}
+                style={{ animationDelay: `${i * 0.08}s` }}
+                className={`group relative overflow-hidden rounded-xl border border-slate-200/90 bg-white/95 p-4 sm:p-5 shadow-sm backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-purple-300 hover:shadow-md flex flex-col justify-start h-full min-h-[116px] sm:min-h-[122px] ${animationClass}`}
               >
                 {/* Top Neon Scanner Accent Bar on Hover */}
-                <div className="absolute left-0 top-0 h-1 w-0 bg-gradient-brand transition-all duration-500 group-hover:w-full" />
+                <div className="absolute left-0 top-0 h-0.5 w-0 bg-gradient-brand transition-all duration-500 group-hover:w-full" />
 
                 {/* Ambient Glowing Watermark Number */}
-                <span className="pointer-events-none absolute right-4 top-2 text-5xl font-black text-slate-900/[0.04] transition-all duration-300 group-hover:text-purple-600/15 group-hover:scale-110">
+                <span className="pointer-events-none absolute right-3 top-1 text-4xl font-black text-slate-900/[0.04] transition-all duration-300 group-hover:text-purple-600/15">
                   {String(i + 1).padStart(2, "0")}
                 </span>
 
-                {/* Number Pill Badge */}
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-purple-200 bg-purple-50 text-xs font-bold text-purple-700 shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white">
-                  {String(i + 1).padStart(2, "0")}
+                <div className="w-full">
+                  <div className="flex items-center gap-2.5">
+                    {/* Number Pill Badge */}
+                    <div className="flex h-6 w-6 items-center justify-center rounded-md border border-purple-200 bg-purple-50 text-[11px] font-bold text-purple-700 shadow-2xs transition-transform duration-300 group-hover:scale-105 group-hover:bg-purple-600 group-hover:text-white shrink-0">
+                      {String(i + 1).padStart(2, "0")}
+                    </div>
+
+                    <h3 className="text-sm sm:text-base font-bold uppercase tracking-tight text-slate-900 transition-colors duration-200 group-hover:text-purple-600">
+                      {item.title}
+                    </h3>
+                  </div>
+
+                  <p className="mt-2 text-xs leading-relaxed text-slate-600 font-normal">
+                    {item.description}
+                  </p>
                 </div>
-
-                <h3 className="mt-4 text-lg font-bold text-slate-900 transition-colors duration-200 group-hover:text-purple-600">
-                  {item.title}
-                </h3>
-
-                <p className="mt-2.5 text-xs leading-relaxed text-slate-600 sm:text-sm">
-                  {item.description}
-                </p>
               </article>
             );
           })}
         </div>
 
+        {/* Closing Callout Block */}
+        <div className="mt-6 max-w-2xl mx-auto rounded-xl border border-purple-200/80 bg-gradient-to-r from-purple-50/70 via-white to-pink-50/50 p-4 sm:p-5 text-center shadow-xs backdrop-blur-md">
+          <p className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">
+            The goal isn't simply to make more videos.
+          </p>
+          <p className="mt-1 text-xs font-semibold text-purple-900">
+            It's to give your marketing team more creative opportunities to test.
+          </p>
+        </div>
+
         {/* Action Buttons */}
-        <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <NeonButton
             href="#book-call"
             variant="call"
@@ -2608,276 +2769,429 @@ export function Pricing() {
   return (
     <Section id="pricing" className="relative overflow-hidden bg-aura-diagonal border-y border-purple-100/80">
       <SectionHeading
-        eyebrow="AI Video Production Services"
-        title="AI Video Production Packages &"
-        highlight="Pricing"
-        description="Transparent rates for individual reels and high-volume monthly content bundles."
+        eyebrow="16. PRICING"
+        title="Simple Pricing."
+        highlight="Built for Creative Volume."
+        description="Choose the package that fits your volume and production needs with instant checkout."
       />
 
-      <div ref={tableRef} className="mx-auto max-w-6xl space-y-12">
-        {/* 1. Individual Service Pricing */}
-        <div className="space-y-3.5">
-          <div className="border-b border-slate-200 pb-2.5">
-            <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-              Individual Service Pricing
-            </h3>
-            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-              Per-video rate for each service, billed individually.
-            </p>
+      <div ref={tableRef} className="mx-auto max-w-6xl space-y-10">
+        {/* 1. Main Pricing Matrix (Service vs Video Volume) */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 border-b border-slate-200 pb-3">
+            <div>
+              <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                Simple Pricing. Built for Creative Volume.
+              </h3>
+              <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+                Choose individual video production or volume bundles with fast turnaround times.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openCheckoutModal({ itemType: "package" })}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-purple-500/20 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer self-start sm:self-auto"
+            >
+              <span>Choose Your Package</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm backdrop-blur-xl">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/90 text-xs font-bold uppercase tracking-wider text-slate-700">
-                  <th className="px-5 py-3.5 sm:px-6">Service</th>
-                  <th className="px-5 py-3.5 text-right sm:px-6 sm:text-left">Price</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {individualPricingList.map((item, idx) => {
-                  const isSetup = item.service.toLowerCase().includes("setup");
-                  return (
-                    <tr
-                      key={item.service}
-                      onClick={() =>
-                        openCheckoutModal({
-                          itemType: isSetup ? "setup" : "individual",
-                          itemId: item.service,
-                        })
-                      }
-                      className={`group cursor-pointer transition-colors hover:bg-purple-50/70 ${
-                        isSetup
-                          ? "bg-purple-50/30 font-semibold"
-                          : idx % 2 === 1
-                          ? "bg-slate-50/40"
-                          : "bg-white"
-                      }`}
-                    >
-                      <td className="px-5 py-3.5 sm:px-6">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
-                          <span className="font-bold text-slate-900 group-hover:text-purple-700 transition-colors">
-                            {item.service}
-                          </span>
-                          {item.description ? (
-                            <span className="text-xs text-slate-500 font-normal hidden md:inline">
-                              — {item.description}
-                            </span>
-                          ) : null}
-                          {item.badge ? (
-                            <span className="w-fit rounded-full border border-purple-200 bg-purple-100/90 px-2.5 py-0.5 text-[10px] font-bold text-purple-800 shadow-xs">
-                              {item.badge}
-                            </span>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5 text-right font-bold sm:px-6 sm:text-left text-base whitespace-nowrap">
-                        <div className="flex items-center justify-end sm:justify-between gap-2">
-                          {isSetup ? (
-                            <span className="inline-flex items-center rounded-xl bg-amber-400 text-slate-950 font-black text-sm sm:text-base px-3.5 py-1.5 shadow-md border border-amber-500 ring-2 ring-amber-300/70">
-                              {item.price}
-                            </span>
-                          ) : (
-                            <span className="font-black text-slate-900">{item.price}</span>
-                          )}
-                          <span className="hidden sm:inline-flex items-center rounded-lg bg-purple-100/80 px-2.5 py-1 text-[11px] font-bold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-all">
-                            Buy Plan →
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* 2. Package Pricing */}
-        <div className="space-y-3.5">
-          <div className="border-b border-slate-200 pb-2.5">
-            <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-              Package Pricing
-            </h3>
-            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-              Bundle pricing by video volume and turnaround time. Prices shown are for the full package.
-            </p>
-          </div>
-
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm backdrop-blur-xl">
+          <div className="relative overflow-hidden rounded-2xl border border-purple-200/80 bg-white shadow-md backdrop-blur-xl">
             {/* Horizontal Scroll Hint for Mobile */}
-            <div className="flex items-center justify-between bg-slate-50/90 px-4 py-2 text-[11px] font-medium text-slate-500 md:hidden border-b border-slate-200">
-              <span>← Swipe horizontally to view all services & order →</span>
+            <div className="flex items-center justify-between bg-purple-50/70 px-4 py-2 text-[11px] font-medium text-purple-900 md:hidden border-b border-purple-100">
+              <span>← Swipe horizontally to see all tiers & order →</span>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold uppercase tracking-wider text-slate-700 sm:text-xs">
-                    <th className="px-4 py-3.5 sm:px-5">Package</th>
-                    <th className="px-4 py-3.5 sm:px-5">Delivery</th>
-                    <th className="px-3 py-3.5 text-center sm:px-4 text-purple-700">Videos</th>
-                    <th className="px-4 py-3.5 text-center sm:px-5">AI UGC</th>
-                    <th className="px-4 py-3.5 text-center sm:px-5">AI Avatar</th>
-                    <th className="px-4 py-3.5 text-center sm:px-5">AI Cartoon</th>
-                    <th className="px-4 py-3.5 text-center sm:px-5">Hyper-Realistic</th>
-                    <th className="px-4 py-3.5 text-center sm:px-5">Digital Twin</th>
+                    <th className="px-4 py-4 sm:px-5 font-extrabold text-slate-900 min-w-[200px]">Service</th>
+                    <th className="px-3 py-4 text-center sm:px-4 font-bold min-w-[85px]">1 Video</th>
+                    <th className="px-3 py-4 text-center sm:px-4 font-bold min-w-[85px]">5 Videos</th>
+                    <th className="px-3 py-4 text-center sm:px-4 font-bold min-w-[85px] bg-purple-100/50 text-purple-900 border-x border-purple-200/50">
+                      10 Videos
+                    </th>
+                    <th className="px-3 py-4 text-center sm:px-4 font-bold min-w-[85px]">15 Videos</th>
+                    <th className="px-3 py-4 text-center sm:px-4 font-bold min-w-[85px]">30 Videos</th>
+                    <th className="px-3 py-4 text-center sm:px-4 font-bold min-w-[85px]">30+</th>
+                    <th className="px-4 py-4 text-center sm:px-5 font-bold min-w-[120px]">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {packagePricingTiers.map((tier, idx) => {
-                    const isEven = idx % 2 === 1;
-                    const rowBg = tier.popular
-                      ? "bg-purple-50/30 hover:bg-purple-50/60"
-                      : isEven
-                      ? "bg-slate-50/40 hover:bg-purple-50/30"
-                      : "bg-white hover:bg-purple-50/30";
+                  {/* Row 1: AI UGC Video Ads */}
+                  <tr className="transition-colors hover:bg-purple-50/40">
+                    <td className="px-4 py-4 font-bold text-slate-900 sm:px-5">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900">AI UGC Video Ads</span>
+                        <span className="text-[11px] text-slate-500 font-normal">Real creator-style content</span>
+                      </div>
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "single-video", format: "ai-ugc" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 1 Video - AI UGC"
+                    >
+                      $79
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "starter", format: "ai-ugc" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 5 Videos - AI UGC"
+                    >
+                      $359
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "growth", format: "ai-ugc" })}
+                      className="px-3 py-4 text-center font-bold text-purple-950 bg-purple-50/40 border-x border-purple-200/50 cursor-pointer hover:text-purple-600 hover:bg-purple-100/70 transition-colors"
+                      title="Order 10 Videos - AI UGC (Popular)"
+                    >
+                      $649
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "scale", format: "ai-ugc" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 15 Videos - AI UGC"
+                    >
+                      $899
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "pro", format: "ai-ugc" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 30 Videos - AI UGC"
+                    >
+                      $1,549
+                    </td>
+                    <td className="px-3 py-4 text-center font-semibold text-purple-700">
+                      <a
+                        href="#contact"
+                        className="inline-flex items-center text-purple-700 hover:text-purple-900 hover:underline font-bold transition-all cursor-pointer"
+                        title="Contact us for Custom volume"
+                      >
+                        Custom
+                      </a>
+                    </td>
+                    <td className="px-4 py-4 text-center sm:px-5">
+                      <button
+                        type="button"
+                        onClick={() => openCheckoutModal({ itemType: "package", tierId: "growth", format: "ai-ugc" })}
+                        className="inline-flex items-center gap-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 text-[11px] font-bold shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                      >
+                        <span>Buy Now</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                    </td>
+                  </tr>
 
-                    const tierKeyMap: Record<string, any> = {
-                      "Single Video": "single-video",
-                      "Starter": "starter",
-                      "Growth": "growth",
-                      "Scale": "scale",
-                      "Pro": "pro",
-                      "Enterprise": "enterprise",
-                    };
-                    const tierId = tierKeyMap[tier.package] || "growth";
+                  {/* Row 2: AI Avatar Video Ads */}
+                  <tr className="transition-colors hover:bg-purple-50/40 bg-slate-50/30">
+                    <td className="px-4 py-4 font-bold text-slate-900 sm:px-5">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900">AI Avatar Video Ads</span>
+                        <span className="text-[11px] text-slate-500 font-normal">On-camera spokesperson video</span>
+                      </div>
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "single-video", format: "ai-avatar" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 1 Video - AI Avatar"
+                    >
+                      $79
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "starter", format: "ai-avatar" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 5 Videos - AI Avatar"
+                    >
+                      $359
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "growth", format: "ai-avatar" })}
+                      className="px-3 py-4 text-center font-bold text-purple-950 bg-purple-50/40 border-x border-purple-200/50 cursor-pointer hover:text-purple-600 hover:bg-purple-100/70 transition-colors"
+                      title="Order 10 Videos - AI Avatar"
+                    >
+                      $649
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "scale", format: "ai-avatar" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 15 Videos - AI Avatar"
+                    >
+                      $899
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "pro", format: "ai-avatar" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 30 Videos - AI Avatar"
+                    >
+                      $1,549
+                    </td>
+                    <td className="px-3 py-4 text-center font-semibold text-purple-700">
+                      <a
+                        href="#contact"
+                        className="inline-flex items-center text-purple-700 hover:text-purple-900 hover:underline font-bold transition-all cursor-pointer"
+                        title="Contact us for Custom volume"
+                      >
+                        Custom
+                      </a>
+                    </td>
+                    <td className="px-4 py-4 text-center sm:px-5">
+                      <button
+                        type="button"
+                        onClick={() => openCheckoutModal({ itemType: "package", tierId: "growth", format: "ai-avatar" })}
+                        className="inline-flex items-center gap-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 text-[11px] font-bold shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                      >
+                        <span>Buy Now</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                    </td>
+                  </tr>
 
-                    return (
-                      <tr key={tier.package} className={`transition-colors ${rowBg}`}>
-                        {/* Package Name & Badge */}
-                        <td
-                          onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "ai-ugc" })}
-                          className="px-4 py-3.5 font-bold text-slate-900 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-700"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span>{tier.package}</span>
-                            {tier.badge ? (
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-                                  tier.popular
-                                    ? "bg-purple-600 text-white shadow-xs"
-                                    : "border border-purple-200 bg-purple-50 text-purple-700"
-                                }`}
-                              >
-                                {tier.badge}
-                              </span>
-                            ) : null}
-                          </div>
-                        </td>
+                  {/* Row 3: AI Cartoon Video Ads */}
+                  <tr className="transition-colors hover:bg-purple-50/40">
+                    <td className="px-4 py-4 font-bold text-slate-900 sm:px-5">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900">AI Cartoon Video Ads</span>
+                        <span className="text-[11px] text-slate-500 font-normal">Animated character storytelling</span>
+                      </div>
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "single-video", format: "ai-cartoon" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 1 Video - AI Cartoon"
+                    >
+                      $79
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "starter", format: "ai-cartoon" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 5 Videos - AI Cartoon"
+                    >
+                      $359
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "growth", format: "ai-cartoon" })}
+                      className="px-3 py-4 text-center font-bold text-purple-950 bg-purple-50/40 border-x border-purple-200/50 cursor-pointer hover:text-purple-600 hover:bg-purple-100/70 transition-colors"
+                      title="Order 10 Videos - AI Cartoon"
+                    >
+                      $649
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "scale", format: "ai-cartoon" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 15 Videos - AI Cartoon"
+                    >
+                      $899
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "pro", format: "ai-cartoon" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 30 Videos - AI Cartoon"
+                    >
+                      $1,549
+                    </td>
+                    <td className="px-3 py-4 text-center font-semibold text-purple-700">
+                      <a
+                        href="#contact"
+                        className="inline-flex items-center text-purple-700 hover:text-purple-900 hover:underline font-bold transition-all cursor-pointer"
+                        title="Contact us for Custom volume"
+                      >
+                        Custom
+                      </a>
+                    </td>
+                    <td className="px-4 py-4 text-center sm:px-5">
+                      <button
+                        type="button"
+                        onClick={() => openCheckoutModal({ itemType: "package", tierId: "growth", format: "ai-cartoon" })}
+                        className="inline-flex items-center gap-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 text-[11px] font-bold shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                      >
+                        <span>Buy Now</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                    </td>
+                  </tr>
 
-                        {/* Delivery */}
-                        <td className="px-4 py-3.5 text-slate-600 sm:px-5 whitespace-nowrap font-medium text-xs sm:text-sm">
-                          {tier.delivery}
-                        </td>
+                  {/* Row 4: AI Hyper-Realistic Video Ads */}
+                  <tr className="transition-colors hover:bg-purple-50/40 bg-slate-50/30">
+                    <td className="px-4 py-4 font-bold text-slate-900 sm:px-5">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900">AI Hyper-Realistic Video Ads</span>
+                        <span className="text-[11px] text-slate-500 font-normal">Cinematic high-impact visuals</span>
+                      </div>
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "single-video", format: "hyper-realistic" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 1 Video - Hyper-Realistic"
+                    >
+                      $149
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "starter", format: "hyper-realistic" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 5 Videos - Hyper-Realistic"
+                    >
+                      $699
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "growth", format: "hyper-realistic" })}
+                      className="px-3 py-4 text-center font-bold text-purple-950 bg-purple-50/40 border-x border-purple-200/50 cursor-pointer hover:text-purple-600 hover:bg-purple-100/70 transition-colors"
+                      title="Order 10 Videos - Hyper-Realistic"
+                    >
+                      $1,249
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "scale", format: "hyper-realistic" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 15 Videos - Hyper-Realistic"
+                    >
+                      $1,699
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "pro", format: "hyper-realistic" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 30 Videos - Hyper-Realistic"
+                    >
+                      $2,949
+                    </td>
+                    <td className="px-3 py-4 text-center font-semibold text-purple-700">
+                      <a
+                        href="#contact"
+                        className="inline-flex items-center text-purple-700 hover:text-purple-900 hover:underline font-bold transition-all cursor-pointer"
+                        title="Contact us for Custom volume"
+                      >
+                        Custom
+                      </a>
+                    </td>
+                    <td className="px-4 py-4 text-center sm:px-5">
+                      <button
+                        type="button"
+                        onClick={() => openCheckoutModal({ itemType: "package", tierId: "growth", format: "hyper-realistic" })}
+                        className="inline-flex items-center gap-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 text-[11px] font-bold shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                      >
+                        <span>Buy Now</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                    </td>
+                  </tr>
 
-                        {/* Videos Count (in PURPLE) */}
-                        <td className="px-3 py-3.5 text-center font-bold sm:px-4 whitespace-nowrap">
-                          <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full border border-purple-200/90 bg-purple-50 px-2 text-xs font-bold text-purple-700">
-                            {tier.videos}
-                          </span>
-                        </td>
-
-                        {/* AI UGC */}
-                        <td
-                          onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "ai-ugc" })}
-                          className="px-4 py-3.5 text-center font-bold text-slate-900 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
-                          title={`Order ${tier.package} for AI UGC (${tier.aiUgc})`}
-                        >
-                          {tier.aiUgc}
-                        </td>
-
-                        {/* AI Avatar */}
-                        <td
-                          onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "ai-avatar" })}
-                          className="px-4 py-3.5 text-center font-bold text-slate-900 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
-                          title={`Order ${tier.package} for AI Avatar (${tier.aiAvatar})`}
-                        >
-                          {tier.aiAvatar}
-                        </td>
-
-                        {/* AI Cartoon */}
-                        <td
-                          onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "ai-cartoon" })}
-                          className="px-4 py-3.5 text-center font-bold text-slate-900 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
-                          title={`Order ${tier.package} for AI Cartoon (${tier.aiCartoon})`}
-                        >
-                          {tier.aiCartoon}
-                        </td>
-
-                        {/* Hyper-Realistic */}
-                        <td
-                          onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "hyper-realistic" })}
-                          className="px-4 py-3.5 text-center font-bold text-slate-900 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
-                          title={`Order ${tier.package} for Hyper-Realistic (${tier.hyperRealistic})`}
-                        >
-                          {tier.hyperRealistic}
-                        </td>
-
-                        {/* Digital Twin */}
-                        <td
-                          onClick={() => openCheckoutModal({ itemType: "package", tierId, format: "digital-twin" })}
-                          className="px-4 py-3.5 text-center font-bold text-slate-900 sm:px-5 whitespace-nowrap cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
-                          title={`Order ${tier.package} for Digital Twin (${tier.digitalTwin})`}
-                        >
-                          {tier.digitalTwin}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {/* Row 5: AI Digital Twin Video */}
+                  <tr className="transition-colors hover:bg-purple-50/40">
+                    <td className="px-4 py-4 font-bold text-slate-900 sm:px-5">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900">AI Digital Twin Video</span>
+                        <span className="text-[11px] text-slate-500 font-normal">Custom likeness & voice model</span>
+                      </div>
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "single-video", format: "digital-twin" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 1 Video - Digital Twin"
+                    >
+                      $179
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "starter", format: "digital-twin" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 5 Videos - Digital Twin"
+                    >
+                      $849
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "growth", format: "digital-twin" })}
+                      className="px-3 py-4 text-center font-bold text-purple-950 bg-purple-50/40 border-x border-purple-200/50 cursor-pointer hover:text-purple-600 hover:bg-purple-100/70 transition-colors"
+                      title="Order 10 Videos - Digital Twin"
+                    >
+                      $1,499
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "scale", format: "digital-twin" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 15 Videos - Digital Twin"
+                    >
+                      $2,049
+                    </td>
+                    <td
+                      onClick={() => openCheckoutModal({ itemType: "package", tierId: "pro", format: "digital-twin" })}
+                      className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
+                      title="Order 30 Videos - Digital Twin"
+                    >
+                      $3,499
+                    </td>
+                    <td className="px-3 py-4 text-center font-semibold text-purple-700">
+                      <a
+                        href="#contact"
+                        className="inline-flex items-center text-purple-700 hover:text-purple-900 hover:underline font-bold transition-all cursor-pointer"
+                        title="Contact us for Custom volume"
+                      >
+                        Custom
+                      </a>
+                    </td>
+                    <td className="px-4 py-4 text-center sm:px-5">
+                      <button
+                        type="button"
+                        onClick={() => openCheckoutModal({ itemType: "package", tierId: "growth", format: "digital-twin" })}
+                        className="inline-flex items-center gap-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 text-[11px] font-bold shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                      >
+                        <span>Buy Now</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
 
-        {/* 3. Digital Twin Setup */}
+        {/* 2. Digital Twin Setup Card */}
         <div className="space-y-3.5">
           <div className="border-b border-slate-200 pb-2.5">
-            <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-              Digital Twin Setup
+            <h3 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+              DIGITAL TWIN SETUP
             </h3>
             <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-              One-time fee to build your Digital Twin before ordering Digital Twin videos.
+              One-time setup fee to configure your digital twin and clone your voice model.
             </p>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm backdrop-blur-xl">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/90 text-xs font-bold uppercase tracking-wider text-slate-700">
-                  <th className="px-5 py-3.5 sm:px-6">Service</th>
-                  <th className="px-5 py-3.5 text-center sm:px-6">Delivery</th>
-                  <th className="px-5 py-3.5 text-right sm:px-6 text-purple-700">Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  onClick={() => openCheckoutModal({ itemType: "setup" })}
-                  className="bg-white transition-colors hover:bg-purple-50/70 cursor-pointer group"
-                >
-                  <td className="px-5 py-4 sm:px-6 font-bold text-slate-900 group-hover:text-purple-700 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-purple-600" />
-                      <span>{digitalTwinSetupItem.service}</span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 text-center text-slate-600 sm:px-6 font-medium">
-                    {digitalTwinSetupItem.delivery}
-                  </td>
-                  <td className="px-5 py-4 text-right font-bold text-slate-900 sm:px-6 text-base sm:text-lg whitespace-nowrap">
-                    <div className="flex items-center justify-end gap-2.5">
-                      <span className="inline-flex items-center rounded-xl bg-amber-400 text-slate-950 font-black text-sm sm:text-base px-3.5 py-1.5 shadow-md border border-amber-500 ring-2 ring-amber-300/70">
-                        {digitalTwinSetupItem.price}
-                      </span>
-                      <span className="hidden sm:inline-flex items-center rounded-lg bg-purple-100/80 px-2.5 py-1 text-[11px] font-bold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-all">
-                        Buy Plan →
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div className="overflow-hidden rounded-2xl border border-purple-200/80 bg-white shadow-sm backdrop-blur-xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-900 text-base sm:text-lg">
+                  Digital Twin Avatar & Voice Model Setup
+                </span>
+                <span className="rounded-full border border-purple-200 bg-purple-100/90 px-2.5 py-0.5 text-[10px] font-bold text-purple-800 shadow-xs">
+                  One-Time
+                </span>
+              </div>
+              <p className="text-xs text-slate-600">
+                Full avatar training, high-fidelity voice clone calibration, and speaking model setup.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+              <div className="text-right flex flex-col items-end">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 block font-mono">
+                  Setup Fee
+                </span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl sm:text-3xl font-extrabold text-slate-950 font-mono tracking-tight text-gradient-brand">
+                    $499
+                  </span>
+                  <span className="text-xs font-bold text-slate-600">One-Time</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => openCheckoutModal({ itemType: "setup" })}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 text-xs sm:text-sm font-bold shadow-md shadow-purple-500/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <span>Buy Now</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -2923,8 +3237,7 @@ export function Pricing() {
   );
 }
 
-export function Deliverables() {
-  const [open, setOpen] = useState<number | null>(null);
+export function PackageInclusions() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isInView, setIsInView] = useState(false);
 
@@ -2946,61 +3259,77 @@ export function Deliverables() {
     return () => observer.disconnect();
   }, []);
 
+  const inclusions = [
+    "Content & competitor research",
+    "Creative strategy",
+    "Creative concept development",
+    "Hooks & angles",
+    "Script writing / adaptation",
+    "Storyboard",
+    "Up to 60-second video",
+    "AI voiceover",
+    "Character expressions & movements",
+    "Backgrounds & visual elements",
+    "Captions / subtitles",
+    "Background music & sound effects",
+    "9:16 Reel / TikTok / Shorts format",
+    "End-to-end AI production",
+    "Quality control",
+    "Ad-ready final video",
+  ];
+
   return (
-    <Section id="deliverables">
+    <Section id="package-inclusions" className="relative overflow-hidden bg-gradient-to-b from-white via-purple-50/15 to-white py-10 sm:py-12 md:py-14 border-b border-purple-100/80">
       <SectionHeading
-        eyebrow="Deliverables"
-        title="What's Included in Your"
-        highlight="AI Video?"
-        description="Complete AI video production from script to final 9:16 reel."
+        eyebrow="PACKAGE INCLUSIONS"
+        title="Every Video"
+        highlight="Includes"
+        description="Comprehensive end-to-end production included in every single AI video we deliver."
+        descriptionClassName="!text-xs sm:!text-sm text-slate-600 max-w-2xl mx-auto leading-relaxed !mt-2"
         center={true}
       />
-      <div ref={containerRef} className="mx-auto max-w-4xl space-y-3 overflow-hidden">
-        {deliverables.map((item, i) => {
-          const isLeft = i % 2 === 0;
-          const animationClass = isInView
-            ? isLeft
-              ? "animate-item-left"
-              : "animate-item-right"
-            : `opacity-0 ${isLeft ? "-translate-x-10" : "translate-x-10"}`;
 
-          return (
-            <div
-              key={item.title}
-              style={{ animationDelay: `${i * 0.14}s` }}
-              className={`panel overflow-hidden transition-all duration-300 ${animationClass}`}
-            >
-              <button
-                onClick={() => setOpen(open === i ? null : i)}
-                className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left text-base font-semibold text-slate-900 transition-colors hover:bg-slate-50/80"
-                aria-expanded={open === i}
-              >
-                <span>{item.title}</span>
-                <span className="text-purple-600 font-bold transition-transform duration-200">
-                  {open === i ? "−" : "+"}
-                </span>
-              </button>
-              {open === i ? (
+      <div ref={containerRef} className="mx-auto max-w-5xl">
+        <div className="overflow-hidden rounded-2xl border border-purple-200/80 bg-white/95 p-5 sm:p-7 md:p-8 shadow-md shadow-purple-500/5 backdrop-blur-xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-x-8 gap-y-2.5">
+            {inclusions.map((item, idx) => {
+              const animationClass = isInView ? "animate-inclusion-item" : "opacity-0 translate-y-3";
+              return (
                 <div
-                  onClick={(e) => e.stopPropagation()}
-                  className="border-t border-slate-200 bg-slate-50/80 px-6 py-5 select-text"
+                  key={item}
+                  style={{ animationDelay: `${idx * 0.08}s` }}
+                  className={`flex items-center gap-2.5 py-1.5 px-2 rounded-lg transition-all hover:bg-slate-50 ${animationClass}`}
                 >
-                  <ul className="grid gap-3 sm:grid-cols-2">
-                    {item.items.map((line) => (
-                      <li
-                        key={line}
-                        className="flex items-start gap-2.5 text-sm text-slate-600"
-                      >
-                        <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-purple-600" />
-                        <span>{line}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white shadow-2xs">
+                    <Check className="h-3 w-3 stroke-[3]" />
+                  </div>
+                  <span className="text-xs sm:text-sm font-semibold text-slate-800 leading-snug">
+                    {item}
+                  </span>
                 </div>
-              ) : null}
+              );
+            })}
+          </div>
+
+          {/* CTA Row */}
+          <div className="mt-6 pt-5 border-t border-purple-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+            <div>
+              <span className="text-xs font-bold text-slate-900 block">
+                Ready to scale your video ads?
+              </span>
+              <p className="text-xs text-slate-500">
+                Launch high-converting creator, avatar, and animation ads in 48–72 hours.
+              </p>
             </div>
-          );
-        })}
+            <a
+              href="#contact"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 px-6 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-purple-500/25 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+            >
+              <span>Start Your AI Video Project</span>
+              <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+        </div>
       </div>
     </Section>
   );

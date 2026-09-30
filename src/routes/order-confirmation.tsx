@@ -27,7 +27,7 @@ export const Route = createFileRoute("/order-confirmation")({
   component: OrderConfirmationPage,
 });
 
-export function OrderConfirmationPage() {
+function OrderConfirmationPage() {
   const [loading, setLoading] = useState(true);
   const [orderData, setOrderData] = useState<{
     orderNumber: string;

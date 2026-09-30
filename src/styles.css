@@ -926,3 +926,24 @@
   animation: stepCardFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes inclusionItemPop {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-inclusion-item {
+  opacity: 0;
+  animation: inclusionItemPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+
