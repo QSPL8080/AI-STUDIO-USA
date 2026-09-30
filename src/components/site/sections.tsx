@@ -102,11 +102,11 @@ export function Header() {
             href="/#top"
             id="navbar-logo-anchor"
             className="flex items-center shrink-0 transition-opacity hover:opacity-90"
-            aria-label="Quickupp AI Studio Home"
+            aria-label="QUICKUPP AI STUDIO"
           >
             <img
               src="/images/LOGO 1.png"
-              alt="Quickupp AI Studio logo"
+              alt="QUICKUPP AI STUDIO"
               className="h-7 sm:h-8 md:h-9 lg:h-10 w-auto object-contain shrink-0"
               width={125}
               height={40}
@@ -116,50 +116,43 @@ export function Header() {
           {/* Desktop Navigation Links (>=1024px) */}
           <nav
             aria-label="Main Navigation"
-            className="hidden items-center gap-1 xl:gap-1.5 rounded-full border border-slate-200 bg-slate-100/70 px-2.5 xl:px-3 py-1.5 lg:flex shadow-xs relative shrink-0"
+            className="hidden items-center gap-1 xl:gap-1.5 rounded-lg border border-slate-200 bg-slate-100/70 px-2.5 xl:px-3 py-1.5 lg:flex shadow-xs relative shrink-0"
           >
             <a
-              href="/#samples"
-              className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
-            >
-              Samples
-            </a>
-            <a
               href="/#services"
-              className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
             >
               Services
             </a>
-
             <a
-              href="/#pricing"
-              className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              href="/#industries"
+              className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
             >
-              Pricing
+              Industries
             </a>
             <a
               href="/#portfolio"
-              className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
             >
               Portfolio
             </a>
             <a
+              href="/#pricing"
+              className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+            >
+              Pricing
+            </a>
+            <a
               href="/#process"
-              className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
             >
               How It Works
             </a>
             <a
               href="/#faq"
-              className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
+              className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
             >
               FAQ
-            </a>
-            <a
-              href="/#contact"
-              className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-purple-600 hover:shadow-xs active:scale-95"
-            >
-              Contact
             </a>
           </nav>
 
@@ -169,17 +162,17 @@ export function Header() {
               href={calendlyUrl}
               variant="call"
               size="sm"
-              className="hidden xl:inline-flex items-center gap-1.5 whitespace-nowrap group"
+              className="hidden xl:inline-flex items-center gap-1.5 whitespace-nowrap group !rounded-lg"
             >
               <Calendar className="h-3.5 w-3.5 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-              <span>Book a 30 min call</span>
+              <span>Book a Strategy Call</span>
             </NeonButton>
 
             <NeonButton
               href="/#contact"
               variant="primary"
               size="sm"
-              className="whitespace-nowrap text-xs py-2 px-3.5"
+              className="whitespace-nowrap text-xs py-2 px-3.5 !rounded-lg"
             >
               Get AI Video Quote
             </NeonButton>
@@ -188,10 +181,10 @@ export function Header() {
               variant="buy"
               size="sm"
               onClick={() => openCheckoutModal({ itemType: "package" })}
-              className="inline-flex items-center gap-1.5 whitespace-nowrap group"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap group !rounded-lg"
             >
               <Zap className="h-3.5 w-3.5 text-white shrink-0 transition-transform duration-200 group-hover:scale-110" />
-              <span>Buy Plan</span>
+              <span>Buy Now</span>
             </NeonButton>
           </div>
 
@@ -200,7 +193,7 @@ export function Header() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex h-10 w-10 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-200/90 bg-slate-100/90 text-slate-800 transition-colors hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 active:scale-95 cursor-pointer shadow-xs shrink-0"
+              className="flex h-10 w-10 min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-slate-200/90 bg-slate-100/90 text-slate-800 transition-colors hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 active:scale-95 cursor-pointer shadow-xs shrink-0"
               aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
               aria-expanded={mobileMenuOpen}
             >
@@ -219,47 +212,57 @@ export function Header() {
             aria-label="Mobile Navigation"
             className="absolute top-full left-0 right-0 w-full border-b border-slate-200 bg-white/98 px-5 py-6 shadow-2xl backdrop-blur-2xl lg:hidden animate-in fade-in slide-in-from-top-2 duration-200 max-h-[calc(100dvh-4.5rem)] overflow-y-auto z-50"
           >
-            <div className="mx-auto flex max-w-md flex-col gap-1">
+            <div className="mx-auto flex max-w-md flex-col gap-1.5">
+              {/* Highlighted Primary CTA at the top for immediate mobile visibility */}
               <a
-                href="/#samples"
+                href={calendlyUrl}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex min-h-[44px] items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
+                className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-lg border border-purple-300 bg-gradient-to-r from-violet-100 via-purple-100 to-pink-100 py-3 px-4 text-sm font-bold text-purple-950 shadow-sm transition-all hover:from-violet-200 hover:via-purple-200 hover:to-pink-200 hover:border-purple-400 active:scale-95 mb-2"
               >
-                <span>Samples</span>
-                <span className="text-xs text-purple-600 font-bold">→</span>
+                <Calendar className="h-4 w-4 text-purple-700 shrink-0" />
+                <span>Book a Strategy Call</span>
               </a>
 
               <a
                 href="/#services"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex min-h-[44px] items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
+                className="flex min-h-[44px] items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
               >
                 <span>Services</span>
                 <span className="text-xs text-purple-600 font-bold">→</span>
               </a>
 
               <a
-                href="/#pricing"
+                href="/#industries"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex min-h-[44px] items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
+                className="flex min-h-[44px] items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
               >
-                <span>Pricing</span>
+                <span>Industries</span>
                 <span className="text-xs text-purple-600 font-bold">→</span>
               </a>
 
               <a
                 href="/#portfolio"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex min-h-[44px] items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
+                className="flex min-h-[44px] items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
               >
                 <span>Portfolio</span>
                 <span className="text-xs text-purple-600 font-bold">→</span>
               </a>
 
               <a
+                href="/#pricing"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex min-h-[44px] items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
+              >
+                <span>Pricing</span>
+                <span className="text-xs text-purple-600 font-bold">→</span>
+              </a>
+
+              <a
                 href="/#process"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex min-h-[44px] items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
+                className="flex min-h-[44px] items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
               >
                 <span>How It Works</span>
                 <span className="text-xs text-purple-600 font-bold">→</span>
@@ -268,35 +271,18 @@ export function Header() {
               <a
                 href="/#faq"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex min-h-[44px] items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
+                className="flex min-h-[44px] items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
               >
                 <span>FAQ</span>
-                <span className="text-xs text-purple-600 font-bold">→</span>
-              </a>
-
-              <a
-                href="/#contact"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex min-h-[44px] items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
-              >
-                <span>Contact</span>
                 <span className="text-xs text-purple-600 font-bold">→</span>
               </a>
 
               {/* All Action Buttons grouped cleanly inside the 3-lines menu */}
               <div className="mt-3 flex flex-col gap-2.5 border-t border-slate-200 pt-4">
                 <a
-                  href={calendlyUrl}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-purple-200/90 bg-gradient-to-r from-violet-100 via-purple-100 to-pink-100 py-3 text-sm font-bold text-purple-900 shadow-xs transition-all hover:from-violet-200 hover:via-purple-200 hover:to-pink-200 hover:border-purple-400 active:scale-95"
-                >
-                  <Calendar className="h-4 w-4 text-purple-700 shrink-0" />
-                  <span>Book a 30 min call</span>
-                </a>
-                <a
                   href="/#contact"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex min-h-[44px] w-full items-center justify-center rounded-xl bg-gradient-brand py-3 text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95"
+                  className="flex min-h-[44px] w-full items-center justify-center rounded-lg bg-gradient-brand py-3 text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95"
                 >
                   Get AI Video Quote
                 </a>
@@ -306,17 +292,17 @@ export function Header() {
                     setMobileMenuOpen(false);
                     openCheckoutModal({ itemType: "package" });
                   }}
-                  className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-purple-400/80 bg-slate-900 py-3 text-sm font-bold text-white shadow-xs hover:bg-slate-800 transition-colors cursor-pointer active:scale-95"
+                  className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-purple-400/80 bg-slate-900 py-3 text-sm font-bold text-white shadow-xs hover:bg-slate-800 transition-colors cursor-pointer active:scale-95"
                 >
                   <Zap className="h-4 w-4 text-white shrink-0" />
-                  <span>Buy Plan</span>
+                  <span>Buy Now</span>
                 </button>
                 <a
                   href={whatsAppUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 py-3 text-sm font-semibold text-slate-800 transition-colors hover:border-purple-400 hover:text-purple-700 active:scale-95"
+                  className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 py-3 text-sm font-semibold text-slate-800 transition-colors hover:border-purple-400 hover:text-purple-700 active:scale-95"
                 >
                   <MessageCircle className="h-4 w-4 text-[#25D366]" />
                   Chat on WhatsApp
@@ -2831,7 +2817,7 @@ export function UseCases() {
   }, []);
 
   return (
-    <Section className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/60 to-slate-100/60 border-b border-slate-200/70">
+    <Section id="industries" className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/60 to-slate-100/60 border-b border-slate-200/70">
       <SectionHeading
         eyebrow="Use Cases"
         title="What Can You Create With"
