@@ -1201,6 +1201,33 @@ export async function addLoginLog(data: {
   return record;
 }
 
+export async function deleteLoginLogs(ids: string[]): Promise<boolean> {
+  if (!ids || ids.length === 0) return true;
+  let ok = false;
+  if (getSupabaseConfig()) {
+    try {
+      const inQuery = ids.map((id) => `"${String(id).replace(/"/g, "")}"`).join(",");
+      await supabaseRest(`login_logs?id=in.(${inQuery})`, { method: "DELETE" });
+      ok = true;
+    } catch (e) {
+      console.warn("Supabase deleteLoginLogs fallback:", e);
+    }
+  }
+  if (!ok) {
+    await initDb();
+    try {
+      const pool = await getPool();
+      if (pool) {
+        await pool.query("DELETE FROM login_logs WHERE id = ANY($1)", [ids]);
+        ok = true;
+      }
+    } catch (err) {
+      console.error("PostgreSQL deleteLoginLogs error:", err);
+    }
+  }
+  return ok;
+}
+
 export async function getLoginLogs(limit = 100): Promise<LoginLog[]> {
   if (getSupabaseConfig()) {
     try {

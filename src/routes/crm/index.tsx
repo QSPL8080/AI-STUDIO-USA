@@ -83,6 +83,7 @@ import {
   clearAllActivityLogsServerFn,
   recordLoginLogServerFn,
   fetchLoginLogsServerFn,
+  deleteLoginLogsServerFn,
   fetchAdminUsersServerFn,
   fetchDataVersionServerFn,
   fetchCrmSettingsServerFn,
@@ -531,6 +532,7 @@ function AdminPage() {
   // Activity & Login Logs State
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loginLogs, setLoginLogs] = useState<LoginLog[]>([]);
+  const [selectedLoginLogIds, setSelectedLoginLogIds] = useState<Set<string>>(new Set());
   const [activityCategoryFilter, setActivityCategoryFilter] = useState<"all" | "calendly" | "leads" | "user_activity">("all");
   const [leadsActivitySubTab, setLeadsActivitySubTab] = useState<"website_manual" | "meta" | "all">("website_manual");
   const [activitySearchTerm, setActivitySearchTerm] = useState<string>("");
@@ -2595,6 +2597,41 @@ function AdminPage() {
       } catch (err: any) {
         showToast("Error deleting activity logs: " + (err?.message || "Unknown error"));
       }
+    }
+  };
+
+  // Login / IP Tracking: the newest successful login of the signed-in user is the live
+  // session, so it is kept and can't be selected or deleted.
+  const currentSessionLoginLogId = useMemo(() => {
+    const me = (session?.email || "").toLowerCase();
+    return loginLogs.find((l) => (l.email || "").toLowerCase() === me && l.status === "success")?.id;
+  }, [loginLogs, session?.email]);
+  const deletableLoginLogs = useMemo(
+    () => loginLogs.filter((l) => l.id !== currentSessionLoginLogId),
+    [loginLogs, currentSessionLoginLogId]
+  );
+
+  const deleteLoginLogs = async (ids: string[]) => {
+    if (!isSuperAdmin) {
+      showToast("Only Super Admin can delete login logs.");
+      return;
+    }
+    const toDelete = ids.filter((id) => id !== currentSessionLoginLogId);
+    if (toDelete.length === 0) return;
+    const label = toDelete.length === 1 ? "this login log" : `${toDelete.length} login logs`;
+    if (!confirm(`Permanently delete ${label}? Your current live session is kept.`)) return;
+    try {
+      const res = await deleteLoginLogsServerFn({ data: { ids: toDelete, token: session?.token } });
+      if (res.success) {
+        const gone = new Set(toDelete);
+        setLoginLogs((prev) => prev.filter((l) => !gone.has(l.id)));
+        setSelectedLoginLogIds((prev) => new Set([...prev].filter((id) => !gone.has(id))));
+        showToast(`Deleted ${toDelete.length} login log(s)`);
+      } else {
+        showToast(res.error || "Failed to delete login logs");
+      }
+    } catch (err: any) {
+      showToast("Error deleting login logs: " + (err?.message || "Unknown error"));
     }
   };
 
@@ -7217,10 +7254,59 @@ function AdminPage() {
               </p>
             </div>
 
+            {isSuperAdmin && deletableLoginLogs.length > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-xs shadow-sm">
+                <span className="font-semibold text-slate-600">
+                  {selectedLoginLogIds.size > 0
+                    ? `${selectedLoginLogIds.size} login log(s) selected`
+                    : "Select entries to delete. Your current live session is always kept."}
+                </span>
+                <div className="flex items-center gap-2">
+                  {selectedLoginLogIds.size > 0 && (
+                    <>
+                      <button
+                        onClick={() => setSelectedLoginLogIds(new Set())}
+                        className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 font-bold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-xs"
+                      >
+                        Deselect All
+                      </button>
+                      <button
+                        onClick={() => deleteLoginLogs([...selectedLoginLogIds])}
+                        className="flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-1.5 font-bold text-white hover:bg-red-700 cursor-pointer shadow-xs"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Delete Selected ({selectedLoginLogIds.size})</span>
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => deleteLoginLogs(deletableLoginLogs.map((l) => l.id))}
+                    className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 font-bold text-red-700 hover:bg-red-100 cursor-pointer shadow-xs"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Delete All Except Live Session</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="overflow-x-auto w-full rounded-2xl border border-slate-200 bg-white shadow-sm">
               <table className="w-full min-w-[1050px] text-left text-xs">
                 <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-600">
                   <tr>
+                    {isSuperAdmin && (
+                      <th className="px-4 py-3.5 w-10">
+                        <input
+                          type="checkbox"
+                          title="Select all (except your live session)"
+                          checked={deletableLoginLogs.length > 0 && selectedLoginLogIds.size === deletableLoginLogs.length}
+                          onChange={(e) =>
+                            setSelectedLoginLogIds(e.target.checked ? new Set(deletableLoginLogs.map((l) => l.id)) : new Set())
+                          }
+                          className="h-4 w-4 rounded border-slate-300 cursor-pointer"
+                        />
+                      </th>
+                    )}
                     <th className="px-4 py-3.5">Timestamp</th>
                     <th className="px-4 py-3.5">User Email</th>
                     <th className="px-4 py-3.5">Role</th>
@@ -7229,27 +7315,52 @@ function AdminPage() {
                     <th className="px-4 py-3.5">Office Proximity ({DEFAULT_OFFICE_CONFIG.allowedRadiusMeters}m)</th>
                     <th className="px-4 py-3.5">Browser & Device</th>
                     <th className="px-4 py-3.5">Access Status</th>
+                    {isSuperAdmin && <th className="px-4 py-3.5 text-right">Delete</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loginLogs.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-xs text-slate-500">
+                      <td colSpan={isSuperAdmin ? 10 : 8} className="py-12 text-center text-xs text-slate-500">
                         No login attempts recorded yet.
                       </td>
                     </tr>
                   ) : (
                     loginLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-slate-50/75 transition-colors">
+                      <tr key={log.id} className={`transition-colors ${selectedLoginLogIds.has(log.id) ? "bg-red-50/60" : "hover:bg-slate-50/75"}`}>
+                        {isSuperAdmin && (
+                          <td className="px-4 py-3.5">
+                            {log.id === currentSessionLoginLogId ? null : (
+                              <input
+                                type="checkbox"
+                                checked={selectedLoginLogIds.has(log.id)}
+                                onChange={(e) =>
+                                  setSelectedLoginLogIds((prev) => {
+                                    const next = new Set(prev);
+                                    if (e.target.checked) next.add(log.id);
+                                    else next.delete(log.id);
+                                    return next;
+                                  })
+                                }
+                                className="h-4 w-4 rounded border-slate-300 cursor-pointer"
+                              />
+                            )}
+                          </td>
+                        )}
                         <td className="px-4 py-3.5 text-slate-500 font-mono">
-                          {new Date(log.created_at).toLocaleString([], {
+                          {log.id === currentSessionLoginLogId && (
+                            <span className="mb-1 inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-700 font-sans">
+                              Live session
+                            </span>
+                          )}
+                          <div>{new Date(log.created_at).toLocaleString([], {
                             month: "short",
                             day: "numeric",
                             year: "numeric",
                             hour: "2-digit",
                             minute: "2-digit",
                             second: "2-digit"
-                          })}
+                          })}</div>
                         </td>
                         <td className="px-4 py-3.5 font-bold text-slate-900">{log.email}</td>
                         <td className="px-4 py-3.5">
@@ -7329,6 +7440,21 @@ function AdminPage() {
                               : log.status}
                           </span>
                         </td>
+                        {isSuperAdmin && (
+                          <td className="px-4 py-3.5 text-right">
+                            {log.id === currentSessionLoginLogId ? (
+                              <span className="text-[10px] text-slate-400">Kept</span>
+                            ) : (
+                              <button
+                                onClick={() => deleteLoginLogs([log.id])}
+                                title="Delete this login log"
+                                className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))
                   )}

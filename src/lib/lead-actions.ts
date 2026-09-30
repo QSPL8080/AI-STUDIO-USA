@@ -17,6 +17,7 @@ import {
   getActivityLogs as getActivityLogsFromDb,
   deleteActivityLog as deleteActivityLogInDb,
   deleteActivityLogsBulk as deleteActivityLogsBulkInDb,
+  deleteLoginLogs as deleteLoginLogsInDb,
   clearAllActivityLogs as clearAllActivityLogsInDb,
   addLoginLog as addLoginLogInDb,
   getLoginLogs as getLoginLogsFromDb,
@@ -662,6 +663,34 @@ export const recordLoginLogServerFn = createServerFn({ method: "POST" })
       return { success: true, log };
     } catch (error: any) {
       return { success: false, error: error.message };
+    }
+  });
+
+// Delete Login / IP tracking entries (Super Admin only, checked against the signed session).
+export const deleteLoginLogsServerFn = createServerFn({ method: "POST" })
+  .validator((data: { ids: string[]; token?: string | undefined }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const check = decodeAndVerifySessionToken(data.token || "");
+      if (!check.valid || check.payload?.role !== "super_admin") {
+        return { success: false, count: 0, error: "Only Super Admin can delete login logs." };
+      }
+      const ids = Array.isArray(data.ids) ? data.ids.filter((id) => typeof id === "string" && id) : [];
+      if (ids.length === 0) return { success: true, count: 0 };
+      const ok = await deleteLoginLogsInDb(ids);
+      if (!ok) return { success: false, count: 0, error: "Could not delete login logs from the database." };
+      try {
+        await addActivityLogInDb({
+          lead_id: "system",
+          action: "Login Logs Deleted",
+          details: `${ids.length} login / IP tracking entr${ids.length === 1 ? "y" : "ies"} deleted`,
+          performed_by: check.payload.email,
+          user_role: "super_admin",
+        });
+      } catch {}
+      return { success: true, count: ids.length };
+    } catch (error: any) {
+      return { success: false, count: 0, error: error.message };
     }
   });
 
