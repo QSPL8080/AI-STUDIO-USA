@@ -14,6 +14,7 @@ import {
   Process,
   QuotePopupModal,
   CheckoutModal,
+  RecommendedConversionFlows,
   ResearchToAdStrip,
   Samples,
   Services,
@@ -89,6 +90,7 @@ function Index() {
         <Faq />
         <LeadFormSection />
         <StrategyCall />
+        <RecommendedConversionFlows />
         <CreativeScalingCta />
       </main>
       <Footer />

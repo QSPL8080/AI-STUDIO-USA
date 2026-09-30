@@ -3919,6 +3919,148 @@ export function StrategyCall() {
   );
 }
 
+export function RecommendedConversionFlows() {
+  const flows = [
+    {
+      badge: "FLOW A",
+      badgeColor: "bg-purple-100 text-purple-800 border-purple-200",
+      accentBorder: "border-purple-200/90 hover:border-purple-400",
+      title: "STRATEGY CALL",
+      subtitle: "For brands seeking strategic creative direction, format guidance, and customized campaign recommendations.",
+      steps: [
+        "Website",
+        "Book a Strategy Call",
+        "Calendly",
+        "Strategy Call",
+        "Recommended Service / Package",
+        "Payment",
+        "Project Onboarding",
+      ],
+      ctaText: "Book Strategy Call",
+      ctaAction: () => {
+        document.getElementById("book-call")?.scrollIntoView({ behavior: "smooth" });
+      },
+      ctaIcon: Calendar,
+      ctaStyle: "bg-purple-600 hover:bg-purple-700 text-white shadow-xs",
+    },
+    {
+      badge: "FLOW B",
+      badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
+      accentBorder: "border-emerald-300 hover:border-emerald-400",
+      popular: true,
+      title: "DIRECT $79 PURCHASE",
+      subtitle: "Fast-track self-serve checkout to start testing high-converting AI video creatives immediately.",
+      steps: [
+        "Website",
+        "Select Video Type",
+        "Select $79 Package",
+        "Project Information",
+        "Payment",
+        "Order Confirmation",
+        "Production",
+      ],
+      ctaText: "Start at $79",
+      ctaAction: () => {
+        openCheckoutModal({ itemType: "individual", itemId: "ai_ugc_video" });
+      },
+      ctaIcon: Zap,
+      ctaStyle: "bg-gradient-brand text-white shadow-md hover:brightness-110",
+    },
+    {
+      badge: "FLOW C",
+      badgeColor: "bg-indigo-100 text-indigo-800 border-indigo-200",
+      accentBorder: "border-indigo-200/90 hover:border-indigo-400",
+      title: "HIGH-VOLUME CLIENT",
+      subtitle: "Enterprise scale and monthly creative volume (30+ ads) with dedicated production workflows.",
+      steps: [
+        "Website",
+        "Pricing",
+        "30 / 30+ Videos",
+        "Custom Requirement",
+        "Strategy Call",
+        "Custom Proposal",
+        "Payment",
+        "Project Onboarding",
+      ],
+      ctaText: "Custom Volume Inquiry",
+      ctaAction: () => {
+        document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
+      },
+      ctaIcon: ArrowRight,
+      ctaStyle: "bg-slate-900 hover:bg-slate-800 text-white shadow-xs",
+    },
+  ];
+
+  return (
+    <Section id="conversion-flows" className="py-10 sm:py-14 md:py-16 relative overflow-hidden bg-gradient-to-b from-slate-100/95 via-purple-50/20 to-white border-b border-slate-200/80">
+      <SectionHeading
+        eyebrow="RECOMMENDED CONVERSION FLOWS"
+        title="Clear &amp; Seamless Paths to"
+        highlight="Your Next Ad Creative"
+        description="Choose the ideal workflow that matches your campaign scale, timeline, and production requirements."
+        center={true}
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch max-w-6xl mx-auto">
+        {flows.map((flow) => (
+          <div
+            key={flow.badge}
+            className={`relative flex flex-col justify-between rounded-2xl border ${flow.accentBorder} bg-white/95 p-6 sm:p-7 shadow-sm hover:shadow-md transition-all duration-300 ${
+              flow.popular ? "ring-2 ring-purple-500/30" : ""
+            }`}
+          >
+            {flow.popular && (
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-brand px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-xs">
+                Most Popular
+              </div>
+            )}
+
+            <div>
+              {/* Header */}
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${flow.badgeColor}`}>
+                  {flow.badge}
+                </span>
+              </div>
+
+              <h3 className="font-heading text-base sm:text-lg font-bold text-slate-900 mb-1.5">
+                {flow.title}
+              </h3>
+              <p className="text-xs text-slate-600 mb-5 leading-relaxed min-h-[36px]">
+                {flow.subtitle}
+              </p>
+
+              {/* Step by Step Flow Sequence */}
+              <div className="space-y-2 border-t border-slate-100 pt-4 mb-6">
+                {flow.steps.map((step, idx) => (
+                  <div key={idx} className="flex items-center gap-2.5 text-xs text-slate-700 font-medium">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-50 text-[11px] font-bold text-purple-700 border border-purple-200/70">
+                      {idx === 0 ? "•" : "→"}
+                    </span>
+                    <span className={idx === flow.steps.length - 1 ? "font-semibold text-purple-950" : ""}>
+                      {step}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* CTA Button */}
+            <button
+              type="button"
+              onClick={flow.ctaAction}
+              className={`w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer ${flow.ctaStyle}`}
+            >
+              <flow.ctaIcon className="h-4 w-4" />
+              <span>{flow.ctaText}</span>
+            </button>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 export function Process() {
   const doubledSteps = [...processSteps, ...processSteps];
 
