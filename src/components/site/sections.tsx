@@ -1082,6 +1082,7 @@ export function HeroOverview() {
 export function TrustStrip() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isInView, setIsInView] = useState(false);
+  const [visibleStepCount, setVisibleStepCount] = useState(0);
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -1091,6 +1092,8 @@ export function TrustStrip() {
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsInView(true);
+        } else {
+          setIsInView(false);
         }
       },
       { threshold: 0.15 }
@@ -1100,10 +1103,32 @@ export function TrustStrip() {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (!isInView) {
+      setVisibleStepCount(0);
+      return;
+    }
+
+    // Reveal step 1, then step 2..11 one by one at a smooth, balanced pace
+    setVisibleStepCount(1);
+    let count = 1;
+
+    const timer = setInterval(() => {
+      count += 1;
+      setVisibleStepCount(count);
+      if (count >= 11) {
+        clearInterval(timer);
+      }
+    }, 280);
+
+    return () => clearInterval(timer);
+  }, [isInView]);
+
   const phases = [
     {
       phaseId: "PHASE 01",
       phaseTitle: "Strategy & Creative Foundation",
+      startIdx: 0,
       steps: [
         { num: "01", name: "Research", icon: Search, tag: "Market Intel" },
         { num: "02", name: "Strategy", icon: Target, tag: "Angle & Positioning" },
@@ -1114,6 +1139,7 @@ export function TrustStrip() {
     {
       phaseId: "PHASE 02",
       phaseTitle: "Scripting & AI Production Engine",
+      startIdx: 4,
       steps: [
         { num: "05", name: "Scripts", icon: FileText, tag: "Direct Response" },
         { num: "06", name: "Storyboard", icon: Film, tag: "Visual Flow" },
@@ -1123,6 +1149,7 @@ export function TrustStrip() {
     {
       phaseId: "PHASE 03",
       phaseTitle: "Post-Production, QC & Scaling",
+      startIdx: 7,
       steps: [
         { num: "08", name: "Editing", icon: Scissors, tag: "Pacing & Motion" },
         { num: "09", name: "Sound Design", icon: Music, tag: "SFX & Voiceover" },
@@ -1176,118 +1203,128 @@ export function TrustStrip() {
 
         {/* 3-Phase Interconnected Pipeline Track */}
         <div className="space-y-4 sm:space-y-5">
-          {phases.map((phase, pIdx) => (
-            <div key={phase.phaseId} className="relative">
-              {/* Phase Header Strip */}
-              <div
-                className={`flex items-center gap-2.5 mb-2.5 sm:mb-3 transition-all duration-700 ${
-                  isInView ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
-                }`}
-                style={{ transitionDelay: `${pIdx * 180}ms` }}
-              >
-                <span className="font-mono text-[11px] font-black tracking-widest text-purple-700 bg-purple-100/90 border border-purple-200/90 px-2 py-0.5 rounded-md uppercase">
-                  {phase.phaseId}
-                </span>
-                <span className="text-xs font-bold tracking-wide uppercase text-slate-500">
-                  {phase.phaseTitle}
-                </span>
-                <div className="flex-1 h-[1px] bg-gradient-to-r from-purple-200/80 via-slate-200/60 to-transparent" />
-              </div>
+          {phases.map((phase, pIdx) => {
+            const isPhaseActive = visibleStepCount > phase.startIdx;
 
-              {/* Steps Flow Line for this Phase */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-                {phase.steps.map((step, sIdx) => {
-                  const IconComp = step.icon;
-                  const globalIdx = globalStepCounter++;
+            return (
+              <div key={phase.phaseId} className="relative">
+                {/* Phase Header Strip */}
+                <div
+                  className={`flex items-center gap-2.5 mb-2.5 sm:mb-3 transition-all duration-500 ${
+                    isPhaseActive
+                      ? "opacity-100 translate-x-0"
+                      : "opacity-0 -translate-x-4"
+                  }`}
+                >
+                  <span className="font-mono text-[11px] font-black tracking-widest text-purple-700 bg-purple-100/90 border border-purple-200/90 px-2 py-0.5 rounded-md uppercase">
+                    {phase.phaseId}
+                  </span>
+                  <span className="text-xs font-bold tracking-wide uppercase text-slate-500">
+                    {phase.phaseTitle}
+                  </span>
+                  <div className="flex-1 h-[1px] bg-gradient-to-r from-purple-200/80 via-slate-200/60 to-transparent" />
+                </div>
 
-                  return (
-                    <div
-                      key={step.name}
-                      style={{
-                        transitionDelay: `${globalIdx * 120}ms`,
-                      }}
-                      className={`group relative flex items-center justify-between p-2.5 sm:p-3 rounded-xl transition-all duration-600 ease-out cursor-default ${
-                        isInView
-                          ? "opacity-100 translate-y-0 scale-100"
-                          : "opacity-0 translate-y-6 scale-95"
-                      } hover:-translate-y-0.5`}
-                    >
-                      {/* Ambient step hover background glow */}
+                {/* Steps Flow Line for this Phase */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+                  {phase.steps.map((step, sIdx) => {
+                    const IconComp = step.icon;
+                    const globalIdx = globalStepCounter++;
+                    const isRevealed = globalIdx < visibleStepCount;
+                    const isJustRevealed = globalIdx === visibleStepCount - 1 && visibleStepCount <= 11;
+
+                    return (
                       <div
-                        className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${
-                          step.highlight
-                            ? "bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-transparent border border-purple-300/60 opacity-100"
-                            : step.isFinal
-                            ? "bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-emerald-500/10 border border-emerald-300/60 opacity-100"
-                            : "bg-slate-50/80 border border-slate-200/60 group-hover:border-purple-200 group-hover:bg-purple-50/40"
-                        }`}
-                      />
+                        key={step.name}
+                        className={`group relative flex items-center justify-between p-2.5 sm:p-3 rounded-xl transition-all duration-500 ease-out cursor-default ${
+                          isRevealed
+                            ? "opacity-100 translate-y-0 scale-100"
+                            : "opacity-0 translate-y-4 scale-95 pointer-events-none"
+                        } ${isJustRevealed ? "ring-2 ring-purple-400/50 shadow-md shadow-purple-500/20" : ""} hover:-translate-y-0.5`}
+                      >
+                        {/* Ambient step hover background glow */}
+                        <div
+                          className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${
+                            step.highlight
+                              ? "bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-transparent border border-purple-300/60 opacity-100"
+                              : step.isFinal
+                              ? "bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-emerald-500/10 border border-emerald-300/60 opacity-100"
+                              : "bg-slate-50/80 border border-slate-200/60 group-hover:border-purple-200 group-hover:bg-purple-50/40"
+                          }`}
+                        />
 
-                      {/* Content inside step */}
-                      <div className="relative z-10 flex items-center gap-2.5 min-w-0">
-                        {/* Number & Icon cluster */}
-                        <div className="relative shrink-0">
-                          <div
-                            className={`h-9 w-9 sm:h-9.5 sm:w-9.5 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-105 ${
-                              step.highlight
-                                ? "bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-sm shadow-purple-500/25"
-                                : step.isFinal
-                                ? "bg-gradient-to-br from-purple-600 via-pink-600 to-emerald-500 text-white shadow-sm shadow-purple-500/30"
-                                : "bg-white text-purple-700 border border-purple-100 shadow-2xs group-hover:text-purple-900 group-hover:border-purple-200"
-                            }`}
-                          >
-                            <IconComp className="h-4.5 w-4.5 stroke-[2.2]" />
-                          </div>
-                        </div>
-
-                        {/* Title and Tag */}
-                        <div className="flex flex-col min-w-0 text-left">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-mono text-[10px] font-bold text-slate-400">
-                              {step.num}
-                            </span>
-                            <span
-                              className={`text-xs sm:text-sm font-bold tracking-tight truncate ${
-                                step.highlight || step.isFinal
-                                  ? "text-purple-950 font-extrabold"
-                                  : "text-slate-800 group-hover:text-purple-700"
+                        {/* Content inside step */}
+                        <div className="relative z-10 flex items-center gap-2.5 min-w-0">
+                          {/* Number & Icon cluster */}
+                          <div className="relative shrink-0">
+                            <div
+                              className={`h-9 w-9 sm:h-9.5 sm:w-9.5 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-105 ${
+                                step.highlight
+                                  ? "bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-sm shadow-purple-500/25"
+                                  : step.isFinal
+                                  ? "bg-gradient-to-br from-purple-600 via-pink-600 to-emerald-500 text-white shadow-sm shadow-purple-500/30"
+                                  : "bg-white text-purple-700 border border-purple-100 shadow-2xs group-hover:text-purple-900 group-hover:border-purple-200"
                               }`}
                             >
-                              {step.name}
+                              <IconComp className="h-4.5 w-4.5 stroke-[2.2]" />
+                            </div>
+                          </div>
+
+                          {/* Title and Tag */}
+                          <div className="flex flex-col min-w-0 text-left">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-[10px] font-bold text-slate-400">
+                                {step.num}
+                              </span>
+                              <span
+                                className={`text-xs sm:text-sm font-bold tracking-tight truncate ${
+                                  step.highlight || step.isFinal
+                                    ? "text-purple-950 font-extrabold"
+                                    : "text-slate-800 group-hover:text-purple-700"
+                                }`}
+                              >
+                                {step.name}
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-medium text-slate-500 truncate">
+                              {step.tag}
                             </span>
                           </div>
-                          <span className="text-[10px] font-medium text-slate-500 truncate">
-                            {step.tag}
-                          </span>
+                        </div>
+
+                        {/* Forward connector arrow */}
+                        <div className="relative z-10 shrink-0 text-slate-300 group-hover:text-purple-500 transition-colors pl-2">
+                          {step.isFinal ? (
+                            <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full bg-emerald-100 border border-emerald-300 text-[9px] font-black text-emerald-800 uppercase tracking-wider">
+                              Ready ✓
+                            </span>
+                          ) : (
+                            <ArrowRight className="h-3.5 w-3.5 stroke-[2.2] group-hover:translate-x-0.5 transition-transform" />
+                          )}
                         </div>
                       </div>
-
-                      {/* Forward connector arrow */}
-                      <div className="relative z-10 shrink-0 text-slate-300 group-hover:text-purple-500 transition-colors pl-2">
-                        {step.isFinal ? (
-                          <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full bg-emerald-100 border border-emerald-300 text-[9px] font-black text-emerald-800 uppercase tracking-wider">
-                            Ready ✓
-                          </span>
-                        ) : (
-                          <ArrowRight className="h-3.5 w-3.5 stroke-[2.2] group-hover:translate-x-0.5 transition-transform" />
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Seamless phase connecting indicator between phases */}
-              {pIdx < phases.length - 1 && (
-                <div className="hidden lg:flex items-center justify-center my-1.5">
-                  <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-50/80 border border-purple-200/60 text-[9px] font-bold text-purple-600">
-                    <span>Flows to next stage</span>
-                    <ArrowRight className="h-2.5 w-2.5" />
-                  </div>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
-          ))}
+
+                {/* Seamless phase connecting indicator between phases */}
+                {pIdx < phases.length - 1 && (
+                  <div
+                    className={`hidden lg:flex items-center justify-center my-1.5 transition-all duration-500 ${
+                      visibleStepCount > phase.startIdx + 3
+                        ? "opacity-100 translate-y-0"
+                        : "opacity-0 -translate-y-2"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-50/80 border border-purple-200/60 text-[9px] font-bold text-purple-600">
+                      <span>Flows to next stage</span>
+                      <ArrowRight className="h-2.5 w-2.5" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
