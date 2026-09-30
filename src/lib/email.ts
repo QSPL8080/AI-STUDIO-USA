@@ -10,6 +10,8 @@ export interface LeadEmailPayload {
   email?: string;
   videoType: string;
   business: string;
+  website?: string;
+  videoQuantity?: number | string;
   location?: string;
   industry?: string;
   requirement?: string;
@@ -258,9 +260,11 @@ export async function sendLeadNotificationEmail(lead: LeadEmailPayload): Promise
           <th>Business / Brand</th>
           <td style="font-weight: 600;">${lead.business}</td>
         </tr>
+        ${lead.website ? `<tr><th>Website</th><td><a href="${lead.website.startsWith('http') ? lead.website : 'https://' + lead.website}" target="_blank" style="color: #2563eb; text-decoration: underline;">${lead.website}</a></td></tr>` : ''}
+        ${lead.videoQuantity ? `<tr><th>Monthly Requirement</th><td>${lead.videoQuantity}</td></tr>` : ''}
         ${lead.industry ? `<tr><th>Industry</th><td>${lead.industry}</td></tr>` : ''}
         ${lead.location ? `<tr><th>City / Location</th><td>${lead.location}</td></tr>` : ''}
-        ${lead.requirement ? `<tr><th>Requirement</th><td>${lead.requirement}</td></tr>` : ''}
+        ${lead.requirement ? `<tr><th>Project Details / Requirement</th><td>${lead.requirement}</td></tr>` : ''}
         ${lead.additional ? `<tr><th>Additional Message</th><td>${lead.additional}</td></tr>` : ''}
       </table>
 
@@ -285,11 +289,13 @@ Source: ${lead.source}
 Name: ${lead.name}
 Phone: ${lead.phone}
 Email: ${lead.email || "Not provided"}
-Video Service: ${lead.videoType}
-Business: ${lead.business}
+Video Service / Requirement: ${lead.videoType}
+Monthly Requirement: ${lead.videoQuantity || "N/A"}
+Business / Brand: ${lead.business}
+Website: ${lead.website || "N/A"}
 Industry: ${lead.industry || "N/A"}
 Location: ${lead.location || "N/A"}
-Requirement: ${lead.requirement || "N/A"}
+Project Details: ${lead.requirement || "N/A"}
 Additional Notes: ${lead.additional || "N/A"}
 Received At: ${timestamp}
 ------------------------------------------

@@ -10,6 +10,7 @@ export interface Lead {
   video_type: string;
   video_quantity?: number | string;
   business: string;
+  website?: string;
   location?: string;
   industry?: string;
   requirement?: string;
@@ -235,6 +236,7 @@ export async function initDb() {
             video_type VARCHAR(128) NOT NULL,
             video_quantity VARCHAR(64),
             business VARCHAR(255) NOT NULL,
+            website VARCHAR(255),
             location VARCHAR(255),
             industry VARCHAR(128),
             requirement TEXT,
@@ -256,6 +258,7 @@ export async function initDb() {
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
           );
 
+          ALTER TABLE leads ADD COLUMN IF NOT EXISTS website VARCHAR(255);
           ALTER TABLE leads ADD COLUMN IF NOT EXISTS video_quantity VARCHAR(64);
           ALTER TABLE leads ADD COLUMN IF NOT EXISTS project_status VARCHAR(32) DEFAULT 'In Progress';
           ALTER TABLE leads ADD COLUMN IF NOT EXISTS notes TEXT;
@@ -485,6 +488,7 @@ export async function saveLead(data: {
   videoType: string;
   videoQuantity?: number | string;
   business: string;
+  website?: string;
   location?: string;
   industry?: string;
   requirement?: string;
@@ -560,6 +564,9 @@ export async function saveLead(data: {
         is_duplicate: true,
         notes: updatedNotes,
         video_type: data.videoType || matchedLead.video_type,
+        video_quantity: data.videoQuantity ? String(data.videoQuantity) : matchedLead.video_quantity,
+        website: data.website || matchedLead.website,
+        industry: data.industry || matchedLead.industry,
         campaign_name: data.campaignName || matchedLead.campaign_name,
         adset_name: data.adsetName || matchedLead.adset_name,
         ad_name: data.adName || matchedLead.ad_name,
@@ -591,6 +598,7 @@ export async function saveLead(data: {
     video_type: data.videoType,
     video_quantity: data.videoQuantity || undefined,
     business: data.business,
+    website: data.website || undefined,
     location: data.location || undefined,
     industry: data.industry || undefined,
     requirement: data.requirement || undefined,
@@ -628,6 +636,7 @@ export async function saveLead(data: {
           video_type: record.video_type,
           video_quantity: record.video_quantity || null,
           business: record.business,
+          website: record.website || null,
           location: record.location || null,
           industry: record.industry || null,
           requirement: record.requirement || null,
@@ -665,8 +674,8 @@ export async function saveLead(data: {
   const pool = await getPool();
   if (pool) {
     const res = await pool.query(
-      `INSERT INTO leads (id, source, name, phone, email, video_type, video_quantity, business, location, industry, requirement, additional, status, project_status, notes, delivery_date, meeting_date, meeting_time, meeting_link, meeting_status, meeting_type, assigned_admin, campaign_name, adset_name, ad_name, form_name, meta_lead_id, is_duplicate, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, NOW())
+      `INSERT INTO leads (id, source, name, phone, email, video_type, video_quantity, business, website, location, industry, requirement, additional, status, project_status, notes, delivery_date, meeting_date, meeting_time, meeting_link, meeting_status, meeting_type, assigned_admin, campaign_name, adset_name, ad_name, form_name, meta_lead_id, is_duplicate, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, NOW())
        RETURNING *`,
       [
         id,
@@ -677,6 +686,7 @@ export async function saveLead(data: {
         data.videoType,
         data.videoQuantity ? String(data.videoQuantity) : null,
         data.business,
+        data.website || null,
         data.location || null,
         data.industry || null,
         data.requirement || null,

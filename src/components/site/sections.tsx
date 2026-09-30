@@ -3876,7 +3876,7 @@ export function LeadFormSection() {
   const [loading, setLoading] = useState(false);
 
   return (
-    <Section id="contact" className="relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-t border-slate-200/80">
+    <Section id="contact" className="relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-t border-slate-200/80 py-16 sm:py-20">
       {/* Light Shade Dynamic Fluid Ribbon Wave Background */}
       <div className="pointer-events-none absolute inset-0 select-none overflow-hidden z-0">
         <svg
@@ -3930,374 +3930,364 @@ export function LeadFormSection() {
             fill="url(#leadRibbonLight2)"
             className="animate-wave-float-2"
           />
-
-          {/* Subtle delicate accent contour strokes */}
-          <path
-            d="M -60 180 C 280 40, 560 390, 920 240 C 1180 130, 1370 310, 1500 220"
-            stroke="rgba(219, 39, 119, 0.45)"
-            strokeWidth="2.2"
-            strokeDasharray="6 8"
-            fill="none"
-            className="animate-wave-float-1"
-          />
-          <path
-            d="M -60 560 C 310 710, 620 410, 950 580 C 1210 690, 1390 480, 1500 590"
-            stroke="rgba(56, 189, 248, 0.45)"
-            strokeWidth="2.2"
-            strokeDasharray="8 10"
-            fill="none"
-            className="animate-wave-float-2"
-          />
         </svg>
       </div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6">
         <SectionHeading
-          eyebrow="Get a Quote"
+          eyebrow="CONTACT / BOOKING"
           title="Let's Create Your Next"
-          highlight="AI Video"
-          description="Tell us about your business and our team will prepare and share a tailored AI video proposal."
+          highlight="Ad"
+          description="Tell us what you're selling, who you're targeting, and what you're trying to achieve. We'll help determine the right AI video format and creative direction for your project."
           center={true}
         />
-        <div className="panel mx-auto max-w-3xl p-6 sm:p-10">
-        {submitted ? (
-          <div className="py-8 text-center space-y-3 animate-in fade-in zoom-in-95 duration-300">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 border border-emerald-500/40 shadow-[0_0_25px_rgba(16,185,129,0.3)]">
-              <BadgeCheck className="h-7 w-7" />
-            </div>
-            <h3 className="font-heading text-xl sm:text-2xl font-bold text-slate-900">
-              Thank You! Requirement Submitted
-            </h3>
-            <p className="max-w-md mx-auto text-xs sm:text-sm text-slate-600">
-              We have received your project details. Our production team will review your
-              requirements and contact you directly shortly.
-            </p>
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => setSubmitted(false)}
-                className="rounded-full border border-slate-200 bg-slate-100 px-5 py-2 text-xs font-semibold text-slate-800 hover:border-purple-300 hover:text-purple-700 transition-colors cursor-pointer"
-              >
-                Submit Another Requirement
-              </button>
-            </div>
-          </div>
-        ) : (
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setLoading(true);
-              const form = e.currentTarget;
-              const data = new FormData(form);
-              const name = String(data.get("name") || "");
-              const phone = formatUsaPhoneInput(String(data.get("phone") || ""));
-              const email = String(data.get("email") || "");
-              const business = String(data.get("business") || "");
-              const industry = String(data.get("industry") || "");
-              const videoType = String(data.get("videoType") || "");
-              const location = String(data.get("location") || "");
-              const requirement = String(data.get("requirement") || "");
 
-              // 1. Send directly to PostgreSQL Database
-              let savedLead: any = null;
-              try {
-                const res = await submitLeadServerFn({
-                  data: {
-                    source: "USA - Contact Form",
-                    name,
-                    phone,
-                    email,
-                    business,
-                    industry,
-                    videoType,
-                    location,
-                    requirement,
-                  },
-                });
-                if (res?.success && res.lead) {
-                  savedLead = res.lead;
+        <div className="panel mx-auto mt-8 max-w-3xl p-6 sm:p-10 shadow-lg border border-slate-200/90 bg-white/95 backdrop-blur-sm rounded-3xl">
+          {submitted ? (
+            <div className="py-8 text-center space-y-3 animate-in fade-in zoom-in-95 duration-300">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 border border-emerald-500/40 shadow-[0_0_25px_rgba(16,185,129,0.3)]">
+                <BadgeCheck className="h-7 w-7" />
+              </div>
+              <h3 className="font-heading text-xl sm:text-2xl font-bold text-slate-900">
+                Inquiry Submitted Successfully!
+              </h3>
+              <p className="max-w-md mx-auto text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Thank you for sharing your project details. Our creative strategy team is reviewing your requirement and will get back to you shortly.
+              </p>
+              <div className="pt-3">
+                <button
+                  type="button"
+                  onClick={() => setSubmitted(false)}
+                  className="rounded-full border border-slate-200 bg-slate-100 px-5 py-2 text-xs font-semibold text-slate-800 hover:border-purple-300 hover:text-purple-700 transition-colors cursor-pointer"
+                >
+                  Submit Another Inquiry
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                const form = e.currentTarget;
+                const data = new FormData(form);
+                const name = String(data.get("name") || "");
+                const email = String(data.get("email") || "");
+                const phone = formatUsaPhoneInput(String(data.get("phone") || ""));
+                const business = String(data.get("business") || "");
+                const website = String(data.get("website") || "");
+                const industry = String(data.get("industry") || "");
+                const videoType = String(data.get("videoType") || "");
+                const videoQuantity = String(data.get("videoQuantity") || "");
+                const requirement = String(data.get("requirement") || "");
+
+                // 1. Send directly to PostgreSQL Database
+                let savedLead: any = null;
+                try {
+                  const res = await submitLeadServerFn({
+                    data: {
+                      source: "USA - Contact Form",
+                      name,
+                      email,
+                      phone,
+                      business,
+                      website,
+                      industry,
+                      videoType,
+                      videoQuantity,
+                      requirement,
+                    },
+                  });
+                  if (res?.success && res.lead) {
+                    savedLead = res.lead;
+                  }
+                } catch (err) {
+                  console.error("PostgreSQL submission error:", err);
                 }
-              } catch (err) {
-                console.error("PostgreSQL submission error:", err);
-              }
 
-              // 2. Also keep local sync for Admin fast-cache and instant real-time broadcast
-              const newLead = savedLead || {
-                id: `lead_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-                source: "USA - Contact Form",
-                name,
-                phone,
-                email: email || undefined,
-                business,
-                industry,
-                video_type: videoType,
-                location: location || undefined,
-                requirement,
-                status: "New" as const,
-                created_at: new Date().toISOString(),
-              };
+                // 2. Also keep local sync for Admin fast-cache and instant real-time broadcast
+                const newLead = savedLead || {
+                  id: `lead_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+                  source: "USA - Contact Form",
+                  name,
+                  phone,
+                  email: email || undefined,
+                  business,
+                  website: website || undefined,
+                  industry,
+                  video_type: videoType,
+                  video_quantity: videoQuantity || undefined,
+                  requirement,
+                  status: "New" as const,
+                  created_at: new Date().toISOString(),
+                };
 
-              try {
-                const existing = JSON.parse(localStorage.getItem("ai_studio_local_leads") || "[]");
-                const filtered = existing.filter((l: any) => l.id !== newLead.id);
-                filtered.unshift(newLead);
-                localStorage.setItem("ai_studio_local_leads", JSON.stringify(filtered));
-              } catch (err) {
-                console.error(err);
-              }
+                try {
+                  const existing = JSON.parse(localStorage.getItem("ai_studio_local_leads") || "[]");
+                  const filtered = existing.filter((l: any) => l.id !== newLead.id);
+                  filtered.unshift(newLead);
+                  localStorage.setItem("ai_studio_local_leads", JSON.stringify(filtered));
+                } catch (err) {
+                  console.error(err);
+                }
 
-              // 3. Broadcast instant real-time push to open Admin panel tabs
-              broadcastLeadEvent({ type: "NEW_LEAD", lead: newLead });
+                // 3. Broadcast instant real-time push to open Admin panel tabs
+                broadcastLeadEvent({ type: "NEW_LEAD", lead: newLead });
 
-              setLoading(false);
-              setSubmitted(true);
-              form.reset();
+                setLoading(false);
+                setSubmitted(true);
+                form.reset();
 
-              // Auto-revert form back to normal after 3 seconds
-              setTimeout(() => {
-                setSubmitted(false);
-              }, 3000);
-            }}
-            className="space-y-5"
-          >
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="contactFullName"
-                  className="block text-xs font-semibold text-slate-800"
-                >
-                  Full Name*
-                </label>
-                <input
-                  id="contactFullName"
-                  type="text"
-                  name="name"
-                  required
-                  placeholder="Your name"
-                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="contactBusinessName"
-                  className="block text-xs font-semibold text-slate-800"
-                >
-                  Business Name*
-                </label>
-                <input
-                  id="contactBusinessName"
-                  type="text"
-                  name="business"
-                  required
-                  placeholder="Your business"
-                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="contactPhone"
-                  className="block text-xs font-semibold text-slate-800"
-                >
-                  Phone / WhatsApp Number*
-                </label>
-                <input
-                  id="contactPhone"
-                  type="tel"
-                  name="phone"
-                  required
-                  placeholder="+1 (555) 000-0000"
-                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="contactEmail"
-                  className="block text-xs font-semibold text-slate-800"
-                >
-                  Email Address
-                </label>
-                <input
-                  id="contactEmail"
-                  type="email"
-                  name="email"
-                  placeholder="you@company.com"
-                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="contactIndustry"
-                  className="block text-xs font-semibold text-slate-800"
-                >
-                  Business Industry*
-                </label>
-                <div className="relative mt-1.5">
-                  <select
-                    id="contactIndustry"
-                    name="industry"
-                    required
-                    className="w-full appearance-none rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 pr-10 text-base sm:text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer"
-                  >
-                    <option value="">Select industry</option>
-                    <option value="Real Estate">Real Estate</option>
-                    <option value="Clinics & Doctors">Clinics & Doctors</option>
-                    <option value="D2C & E-commerce">D2C & E-commerce</option>
-                    <option value="Beauty & Skincare">Beauty & Skincare</option>
-                    <option value="Interior Design">Interior Design</option>
-                    <option value="Restaurants & Cafes">Restaurants & Cafes</option>
-                    <option value="Education & Coaching">Education & Coaching</option>
-                    <option value="IT & SaaS">IT & SaaS</option>
-                    <option value="Finance & Insurance">Finance & Insurance</option>
-                    <option value="Travel & Tourism">Travel & Tourism</option>
-                    <option value="Fitness & Wellness">Fitness & Wellness</option>
-                    <option value="Jewellery & Luxury">Jewellery & Luxury</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                </div>
-              </div>
-              <div>
-                <label
-                  htmlFor="contactVideoType"
-                  className="block text-xs font-semibold text-slate-800"
-                >
-                  Which AI Video Are You Interested In?*
-                </label>
-                <div className="relative mt-1.5">
-                  <select
-                    id="contactVideoType"
-                    name="videoType"
-                    required
-                    className="w-full appearance-none rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 pr-10 text-base sm:text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer"
-                  >
-                    <option value="">Select video type</option>
-                    <option value="AI UGC Video">AI UGC Video</option>
-                    <option value="AI Cartoon Animation">AI Cartoon Animation</option>
-                    <option value="AI Avatar Video">AI Avatar Video</option>
-                    <option value="Hyper-Realistic AI Video">Hyper-Realistic AI Video</option>
-                    <option value="AI Digital Twin / Clone">AI Digital Twin / Clone</option>
-                    <option value="Not Sure - Need Guidance">Not Sure - Need Guidance</option>
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="contactLocation"
-                  className="block text-xs font-semibold text-slate-800"
-                >
-                  Location / City*
-                </label>
-                <input
-                  id="contactLocation"
-                  type="text"
-                  name="location"
-                  required
-                  placeholder="e.g. New York, California, Delaware"
-                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="contactBudget"
-                  className="block text-xs font-semibold text-slate-800"
-                >
-                  Approximate Budget
-                </label>
-                <select
-                  id="contactBudget"
-                  name="budget"
-                  className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer"
-                >
-                  <option value="">Select budget</option>
-                  <option value="$100 - $300">$100 - $300</option>
-                  <option value="$300 - $700">$300 - $700</option>
-                  <option value="$700 - $1,500">$700 - $1,500</option>
-                  <option value="$1,500 - $3,000">$1,500 - $3,000</option>
-                  <option value="$3,000+">$3,000+</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="contactRequirement"
-                className="block text-xs font-semibold text-slate-800"
-              >
-                Tell Us About Your Requirement
-              </label>
-              <textarea
-                id="contactRequirement"
-                name="requirement"
-                rows={3}
-                placeholder="Product, service, audience or video idea"
-                className="mt-1.5 w-full rounded-lg border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none"
-              />
-            </div>
-
-            {/* Legal Terms & Consent Checkbox */}
-            <div className="flex items-start gap-2.5 pt-1 pb-1">
-              <input
-                type="checkbox"
-                id="contactConsent"
-                name="consent"
-                required
-                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer accent-purple-600 shrink-0"
-              />
-              <label
-                htmlFor="contactConsent"
-                className="text-xs text-slate-600 leading-snug cursor-pointer select-none"
-              >
-                I agree to the{" "}
-                <a
-                  href="/privacy-policy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-purple-600 font-medium underline hover:text-purple-800"
-                >
-                  Privacy Policy
-                </a>
-                ,{" "}
-                <a
-                  href="/terms"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-purple-600 font-medium underline hover:text-purple-800"
-                >
-                  Terms &amp; Conditions
-                </a>
-                , and{" "}
-                <a
-                  href="/cookie-policy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-purple-600 font-medium underline hover:text-purple-800"
-                >
-                  Cookie Policy
-                </a>
-                .
-              </label>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-full bg-gradient-brand py-3.5 text-sm font-semibold text-neon-foreground glow-neon transition-all hover:brightness-110 disabled:opacity-50"
+                // Auto-revert form back to normal after 3.5 seconds
+                setTimeout(() => {
+                  setSubmitted(false);
+                }, 3500);
+              }}
+              className="space-y-4 sm:space-y-5"
             >
-              {loading ? "Submitting..." : "Get My AI Video Quote"}
-            </button>
-          </form>
-        )}
-      </div>
+              {/* Row 1: Name & Work Email */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="bookingName"
+                    className="block text-xs font-bold text-slate-800"
+                  >
+                    Name*
+                  </label>
+                  <input
+                    id="bookingName"
+                    type="text"
+                    name="name"
+                    required
+                    placeholder="Your full name"
+                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="bookingEmail"
+                    className="block text-xs font-bold text-slate-800"
+                  >
+                    Work Email*
+                  </label>
+                  <input
+                    id="bookingEmail"
+                    type="email"
+                    name="email"
+                    required
+                    placeholder="you@company.com"
+                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Phone & Company / Brand */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="bookingPhone"
+                    className="block text-xs font-bold text-slate-800"
+                  >
+                    Phone*
+                  </label>
+                  <input
+                    id="bookingPhone"
+                    type="tel"
+                    name="phone"
+                    required
+                    placeholder="+1 (555) 000-0000"
+                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="bookingCompany"
+                    className="block text-xs font-bold text-slate-800"
+                  >
+                    Company / Brand*
+                  </label>
+                  <input
+                    id="bookingCompany"
+                    type="text"
+                    name="business"
+                    required
+                    placeholder="Company or brand name"
+                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: Website & Industry */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="bookingWebsite"
+                    className="block text-xs font-bold text-slate-800"
+                  >
+                    Website
+                  </label>
+                  <input
+                    id="bookingWebsite"
+                    type="text"
+                    name="website"
+                    placeholder="https://yourbrand.com or yourbrand.com"
+                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="bookingIndustry"
+                    className="block text-xs font-bold text-slate-800"
+                  >
+                    Industry*
+                  </label>
+                  <div className="relative mt-1.5">
+                    <select
+                      id="bookingIndustry"
+                      name="industry"
+                      required
+                      className="w-full appearance-none rounded-xl border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 pr-10 text-base sm:text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer shadow-2xs"
+                    >
+                      <option value="">Select industry</option>
+                      <option value="E-commerce / DTC">E-commerce / DTC</option>
+                      <option value="SaaS / AI">SaaS / AI</option>
+                      <option value="Real Estate">Real Estate</option>
+                      <option value="Med Spa / Aesthetics">Med Spa / Aesthetics</option>
+                      <option value="Agency">Agency</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 4: What do you need? & Monthly creative requirement */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="bookingWhatDoYouNeed"
+                    className="block text-xs font-bold text-slate-800"
+                  >
+                    What do you need?*
+                  </label>
+                  <div className="relative mt-1.5">
+                    <select
+                      id="bookingWhatDoYouNeed"
+                      name="videoType"
+                      required
+                      className="w-full appearance-none rounded-xl border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 pr-10 text-base sm:text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer shadow-2xs"
+                    >
+                      <option value="">Select video format / need</option>
+                      <option value="AI UGC Video Ads">AI UGC Video Ads</option>
+                      <option value="AI Avatar / Presenter Videos">AI Avatar / Presenter Videos</option>
+                      <option value="Hyper-Realistic AI Ads">Hyper-Realistic AI Ads</option>
+                      <option value="AI Cartoon Animation">AI Cartoon Animation</option>
+                      <option value="AI Digital Twin / Clone">AI Digital Twin / Clone</option>
+                      <option value="Full Creative Ad Package">Full Creative Ad Package</option>
+                      <option value="Not Sure - Need Guidance">Not Sure - Need Guidance</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                  </div>
+                </div>
+                <div>
+                  <label
+                    htmlFor="bookingMonthlyRequirement"
+                    className="block text-xs font-bold text-slate-800"
+                  >
+                    Monthly creative requirement*
+                  </label>
+                  <div className="relative mt-1.5">
+                    <select
+                      id="bookingMonthlyRequirement"
+                      name="videoQuantity"
+                      required
+                      className="w-full appearance-none rounded-xl border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 pr-10 text-base sm:text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer shadow-2xs"
+                    >
+                      <option value="">Select volume / requirement</option>
+                      <option value="1 – 3 Videos (Testing / One-off)">1 – 3 Videos (Testing / One-off)</option>
+                      <option value="4 – 8 Videos / month (Starter)">4 – 8 Videos / month (Starter)</option>
+                      <option value="9 – 15 Videos / month (Growth)">9 – 15 Videos / month (Growth)</option>
+                      <option value="16 – 30+ Videos / month (Scale / High Volume)">16 – 30+ Videos / month (Scale / High Volume)</option>
+                      <option value="Custom / Ongoing Retainer">Custom / Ongoing Retainer</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 5: Project details */}
+              <div>
+                <label
+                  htmlFor="bookingProjectDetails"
+                  className="block text-xs font-bold text-slate-800"
+                >
+                  Project details*
+                </label>
+                <textarea
+                  id="bookingProjectDetails"
+                  name="requirement"
+                  rows={4}
+                  required
+                  placeholder="Tell us what you're selling, who you're targeting, hooks/angles, and what you're trying to achieve..."
+                  className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                />
+              </div>
+
+              {/* Legal Terms & Consent Checkbox */}
+              <div className="flex items-start gap-2.5 pt-1 pb-1">
+                <input
+                  type="checkbox"
+                  id="bookingConsent"
+                  name="consent"
+                  required
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer accent-purple-600 shrink-0"
+                />
+                <label
+                  htmlFor="bookingConsent"
+                  className="text-xs text-slate-600 leading-snug cursor-pointer select-none"
+                >
+                  I agree to the{" "}
+                  <a
+                    href="/privacy-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-600 font-medium underline hover:text-purple-800"
+                  >
+                    Privacy Policy
+                  </a>
+                  ,{" "}
+                  <a
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-600 font-medium underline hover:text-purple-800"
+                  >
+                    Terms &amp; Conditions
+                  </a>
+                  , and{" "}
+                  <a
+                    href="/cookie-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-600 font-medium underline hover:text-purple-800"
+                  >
+                    Cookie Policy
+                  </a>
+                  .
+                </label>
+              </div>
+
+              {/* CTA Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-full bg-gradient-brand py-3.5 text-sm sm:text-base font-bold text-neon-foreground shadow-lg shadow-purple-500/25 transition-all hover:scale-[1.01] hover:brightness-110 active:scale-95 disabled:opacity-50 glow-neon cursor-pointer"
+              >
+                {loading ? "Submitting Inquiry..." : "SUBMIT INQUIRY"}
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </Section>
   );

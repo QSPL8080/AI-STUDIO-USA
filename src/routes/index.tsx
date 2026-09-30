@@ -93,12 +93,12 @@ function Index() {
         <Process />
         <Faq />
         <CreativeScalingCta />
+        <LeadFormSection />
         <DigitalTwin />
         <UseCases />
         <StrategyCall />
         <WhyUs />
         <WhatsAppCtaSection />
-        <LeadFormSection />
         <Contact />
       </main>
       <Footer />

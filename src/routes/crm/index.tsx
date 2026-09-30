@@ -2338,11 +2338,14 @@ function AdminPage() {
       "ID",
       "Source",
       "Client Name",
-      "Business Name",
+      "Company / Brand",
+      "Website",
       "Phone",
-      "Email",
-      "Video Type",
-      "Video Quantity",
+      "Work Email",
+      "Industry",
+      "What Do You Need (Video Type)",
+      "Monthly Creative Requirement",
+      "Project Details / Requirement",
       "Location",
       "Lead Status",
       "Project Status",
@@ -2358,10 +2361,13 @@ function AdminPage() {
       `"${l.source}"`,
       `"${l.name}"`,
       `"${l.business}"`,
+      `"${l.website || ""}"`,
       `"${l.phone}"`,
       `"${l.email || ""}"`,
+      `"${l.industry || ""}"`,
       `"${l.video_type}"`,
-      `"${l.video_quantity || 1}"`,
+      `"${l.video_quantity || "1 – 3 Videos"}"`,
+      `"${(l.requirement || "").replace(/"/g, '""')}"`,
       `"${l.location || ""}"`,
       l.status,
       l.project_status || "In Progress",
@@ -4782,10 +4788,27 @@ function AdminPage() {
                                   </span>
                                 )}
                               </button>
-                              <div className="text-xs text-slate-500 font-medium">
-                                {lead.business}
-                                {lead.location ? ` · ${lead.location}` : ""}
+                              <div className="text-xs text-slate-500 font-medium flex items-center gap-1.5 flex-wrap">
+                                <span>{lead.business}</span>
+                                {lead.industry && (
+                                  <span className="rounded bg-purple-50 text-purple-700 px-1.5 py-0.2 text-[10px] font-semibold border border-purple-200/60">
+                                    {lead.industry}
+                                  </span>
+                                )}
+                                {lead.location ? <span>· {lead.location}</span> : null}
                               </div>
+                              {lead.website && (
+                                <a
+                                  href={lead.website.startsWith("http") ? lead.website : `https://${lead.website}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[11px] text-blue-600 hover:underline flex items-center gap-0.5"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <span className="truncate max-w-[150px]">{lead.website.replace(/^https?:\/\//, "")}</span>
+                                  <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+                                </a>
+                              )}
                               {lead.email && <div className="text-[11px] text-slate-400 font-mono">{lead.email}</div>}
                             </td>
 
@@ -4948,9 +4971,27 @@ function AdminPage() {
                       </div>
 
                       {/* Business & Location */}
-                      <div className="text-slate-500">
-                        <span className="font-semibold text-slate-700 dark:text-slate-300">{lead.business}</span>
-                        {lead.location ? ` · ${lead.location}` : ""}
+                      <div className="text-slate-500 space-y-0.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">{lead.business}</span>
+                          {lead.industry && (
+                            <span className="rounded bg-purple-50 text-purple-700 px-1.5 py-0.2 text-[10px] font-semibold border border-purple-200/60">
+                              {lead.industry}
+                            </span>
+                          )}
+                          {lead.location ? <span>· {lead.location}</span> : null}
+                        </div>
+                        {lead.website && (
+                          <a
+                            href={lead.website.startsWith("http") ? lead.website : `https://${lead.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] text-blue-600 hover:underline flex items-center gap-0.5"
+                          >
+                            <span className="truncate max-w-[200px]">{lead.website.replace(/^https?:\/\//, "")}</span>
+                            <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+                          </a>
+                        )}
                         {lead.email && <div className="text-[11px] font-mono text-slate-400">{lead.email}</div>}
                       </div>
 
@@ -8240,6 +8281,8 @@ function AdminPage() {
                 const phone = formData.get("phone") as string;
                 const email = formData.get("email") as string;
                 const business = formData.get("business") as string;
+                const website = formData.get("website") as string;
+                const industry = formData.get("industry") as string;
                 const location = formData.get("location") as string;
                 const source = (formData.get("source") as string) || "Manual";
                 const videoType = formData.get("videoType") as string;
@@ -8257,6 +8300,8 @@ function AdminPage() {
                       phone,
                       email: email || undefined,
                       business,
+                      website: website || undefined,
+                      industry: industry || undefined,
                       location: location || undefined,
                       videoType,
                       videoQuantity: videoQuantity || 1,
@@ -8327,7 +8372,19 @@ function AdminPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-semibold mb-1">Website</label>
+                  <input
+                    name="website"
+                    defaultValue={prefillLeadFromMeeting?.website || ""}
+                    placeholder="https://brand.com"
+                    className={`w-full rounded-xl border p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                    }`}
+                  />
+                </div>
+
                 <div>
                   <label className="block font-semibold mb-1">WhatsApp / Phone *</label>
                   <input
@@ -8355,9 +8412,41 @@ function AdminPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold mb-1">Video Type *</label>
+                  <label className="block font-semibold mb-1">Industry</label>
+                  <select
+                    name="industry"
+                    defaultValue={prefillLeadFromMeeting?.industry || "E-commerce / DTC"}
+                    className={`w-full rounded-xl border p-2.5 focus:outline-none ${
+                      isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                    }`}
+                  >
+                    <option value="E-commerce / DTC">E-commerce / DTC</option>
+                    <option value="SaaS / AI">SaaS / AI</option>
+                    <option value="Real Estate">Real Estate</option>
+                    <option value="Med Spa / Aesthetics">Med Spa / Aesthetics</option>
+                    <option value="Agency">Agency</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold mb-1">Location / City</label>
+                  <input
+                    name="location"
+                    defaultValue={prefillLeadFromMeeting?.location || "United States"}
+                    placeholder="New York, USA"
+                    className={`w-full rounded-xl border p-2.5 focus:outline-none ${
+                      isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold mb-1">Video Type / Need *</label>
                   <select
                     name="videoType"
                     required
@@ -8373,24 +8462,12 @@ function AdminPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold mb-1">Video Quantity</label>
+                  <label className="block font-semibold mb-1">Video Quantity / Monthly Volume</label>
                   <input
-                    type="number"
+                    type="text"
                     name="videoQuantity"
-                    defaultValue="1"
-                    min="1"
-                    className={`w-full rounded-xl border p-2.5 focus:outline-none ${
-                      isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
-                    }`}
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold mb-1">Location / City</label>
-                  <input
-                    name="location"
-                    defaultValue={prefillLeadFromMeeting?.location || "United States"}
-                    placeholder="New York, USA"
+                    defaultValue="1 – 3 Videos"
+                    placeholder="e.g. 4 – 8 Videos / month"
                     className={`w-full rounded-xl border p-2.5 focus:outline-none ${
                       isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
                     }`}
@@ -8533,9 +8610,24 @@ function AdminPage() {
                     </div>
 
                     <div className="flex justify-between items-start">
-                      <span className="text-slate-500">Business Name:</span>
+                      <span className="text-slate-500">Company / Brand:</span>
                       <span className="font-semibold text-slate-800 text-right">{viewLeadDetails.business}</span>
                     </div>
+
+                    {viewLeadDetails.website && (
+                      <div className="flex justify-between items-start">
+                        <span className="text-slate-500">Website:</span>
+                        <a
+                          href={viewLeadDetails.website.startsWith("http") ? viewLeadDetails.website : `https://${viewLeadDetails.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold text-blue-600 hover:underline text-right flex items-center gap-1"
+                        >
+                          <span className="truncate max-w-[180px]">{viewLeadDetails.website}</span>
+                          <ExternalLink className="h-3 w-3 shrink-0" />
+                        </a>
+                      </div>
+                    )}
 
                     <div className="flex justify-between items-center">
                       <span className="text-slate-500">Phone:</span>
@@ -8561,11 +8653,20 @@ function AdminPage() {
                     </div>
 
                     <div className="flex justify-between items-start">
-                      <span className="text-slate-500">Email:</span>
+                      <span className="text-slate-500">Work Email:</span>
                       <span className="font-mono text-slate-700 text-right">
                         {viewLeadDetails.email || "Not provided"}
                       </span>
                     </div>
+
+                    {viewLeadDetails.industry && (
+                      <div className="flex justify-between items-start">
+                        <span className="text-slate-500">Industry:</span>
+                        <span className="font-semibold text-slate-800 text-right">
+                          {viewLeadDetails.industry}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="flex justify-between items-start">
                       <span className="text-slate-500">Business Location:</span>
@@ -8637,7 +8738,7 @@ function AdminPage() {
                   <div className="flex items-center gap-1.5">
                     <Video className="h-4 w-4 text-slate-800" />
                     <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-800">
-                      Project Information
+                      Project & Creative Requirement
                     </span>
                   </div>
                   <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${getProjectStatusBadge(viewLeadDetails.project_status)}`}>
@@ -8647,12 +8748,12 @@ function AdminPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-xl">
                   <div>
-                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Video Type</span>
+                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Requirement / Format</span>
                     <p className="font-bold text-slate-900 mt-0.5">{viewLeadDetails.video_type}</p>
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Video Quantity</span>
-                    <p className="font-bold text-slate-900 mt-0.5">x{viewLeadDetails.video_quantity || 1}</p>
+                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Monthly Volume</span>
+                    <p className="font-bold text-slate-900 mt-0.5">{viewLeadDetails.video_quantity || "1 – 3 Videos"}</p>
                   </div>
                   <div>
                     <span className="text-[10px] font-bold uppercase text-slate-400 block">Project Status</span>
@@ -8665,9 +8766,9 @@ function AdminPage() {
                 </div>
 
                 <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Project Notes</span>
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Project Details / Campaign Goals</span>
                   <div className="text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200">
-                    {viewLeadDetails.notes || viewLeadDetails.requirement || viewLeadDetails.additional || "No specific project notes recorded."}
+                    {viewLeadDetails.requirement || viewLeadDetails.notes || viewLeadDetails.additional || "No specific project notes recorded."}
                   </div>
                 </div>
               </div>

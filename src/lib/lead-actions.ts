@@ -114,7 +114,9 @@ export const submitLeadServerFn = createServerFn({ method: "POST" })
     phone: string;
     email?: string;
     videoType: string;
+    videoQuantity?: number | string;
     business: string;
+    website?: string;
     location?: string;
     industry?: string;
     requirement?: string;
@@ -202,6 +204,7 @@ export const addManualLeadServerFn = createServerFn({ method: "POST" })
     videoType: string;
     videoQuantity?: number | string;
     business: string;
+    website?: string;
     location?: string;
     industry?: string;
     requirement?: string;
