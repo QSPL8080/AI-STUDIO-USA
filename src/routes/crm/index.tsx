@@ -609,7 +609,7 @@ function AdminPage() {
   const [crmBroadcastDraft, setCrmBroadcastDraft] = useState("");
   const [crmSettingsSaved, setCrmSettingsSaved] = useState(false);
   const [crmSettingsSubTab, setCrmSettingsSubTab] = useState<
-    "crm_config" | "export" | "permissions" | "records" | "reports" | "security"
+    "crm_config" | "export" | "permissions" | "records" | "security"
   >("crm_config");
 
   // Strict Mutually Exclusive Classification for Activity Logs
@@ -7794,18 +7794,6 @@ function AdminPage() {
               </button>
 
               <button
-                onClick={() => setCrmSettingsSubTab("reports")}
-                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                  crmSettingsSubTab === "reports"
-                    ? "bg-slate-900 text-white shadow-xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
-                }`}
-              >
-                <BarChart3 className="h-4 w-4" />
-                <span>5. Dashboard Reports</span>
-              </button>
-
-              <button
                 onClick={() => setCrmSettingsSubTab("security")}
                 className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                   crmSettingsSubTab === "security"
@@ -7814,7 +7802,7 @@ function AdminPage() {
                 }`}
               >
                 <Lock className="h-4 w-4" />
-                <span>6. Security Settings</span>
+                <span>5. Security Settings</span>
               </button>
             </div>
 
@@ -8287,135 +8275,7 @@ function AdminPage() {
             )}
 
             {/* ========================================================================= */}
-            {/* MODULE 6: VIEW ALL DASHBOARD REPORTS */}
-            {/* ========================================================================= */}
-            {crmSettingsSubTab === "reports" && (
-              <div className="space-y-5 animate-in fade-in">
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-5">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-slate-800" />
-                      <span>Master Dashboard Reports & Performance Analytics</span>
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      In-depth breakdown of lead generation sources, video production pipeline velocity, and conversion ratios.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-slate-100">
-                    {/* Source Attribution Report */}
-                    <div className="rounded-xl border border-slate-200 p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold text-slate-900">1. Lead Acquisition Source Breakdown</h4>
-                        <span className="text-[11px] font-semibold text-slate-500">{allCrmLeads.length} Total</span>
-                      </div>
-                      <div className="space-y-2 text-xs">
-                        {[
-                          { label: "USA Website Direct", count: allCrmLeads.filter(l => { const s = (l.source || "").toLowerCase(); return s.includes("usa") || s === "website direct"; }).length, color: "bg-blue-600" },
-                          { label: "Meta Ads (FB/IG)", count: allCrmLeads.filter(l => (l.source || "").toLowerCase().includes("meta")).length, color: "bg-purple-600" },
-                          { label: "Calendly Strategy Calls", count: meetings.length, color: "bg-emerald-600" },
-                          { label: "Manual Direct Entry", count: allCrmLeads.filter(l => (l.source || "").toLowerCase().includes("manual")).length, color: "bg-amber-500" },
-                        ].map((src, idx) => {
-                          const pct = allCrmLeads.length > 0 ? Math.round((src.count / allCrmLeads.length) * 100) : 0;
-                          return (
-                            <div key={idx} className="space-y-1">
-                              <div className="flex justify-between text-[11px] font-medium text-slate-700">
-                                <span>{src.label}</span>
-                                <span className="font-bold">{src.count} ({pct}%)</span>
-                              </div>
-                              <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                                <div className={`h-full ${src.color} rounded-full`} style={{ width: `${pct}%` }} />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Production Pipeline Report */}
-                    <div className="rounded-xl border border-slate-200 p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold text-slate-900">2. Video Production Pipeline Velocity</h4>
-                        <span className="text-[11px] font-semibold text-slate-500">Live Stage Distribution</span>
-                      </div>
-                      <div className="space-y-2 text-xs">
-                        {[
-                          { label: "New / Not Started", count: allCrmLeads.filter(l => l.status === "New").length, color: "bg-blue-500" },
-                          { label: "In Production", count: allCrmLeads.filter(l => (l.project_status || "In Progress") === "In Progress" && l.status !== "New" && l.status !== "Closed").length, color: "bg-purple-500" },
-                          { label: "On Hold", count: allCrmLeads.filter(l => l.project_status === "Hold" || l.status === "Hold").length, color: "bg-amber-500" },
-                          { label: "Delivered / Closed", count: allCrmLeads.filter(l => l.project_status === "Delivered" || l.status === "Closed").length, color: "bg-emerald-500" },
-                        ].map((stage, idx) => {
-                          const pct = allCrmLeads.length > 0 ? Math.round((stage.count / allCrmLeads.length) * 100) : 0;
-                          return (
-                            <div key={idx} className="space-y-1">
-                              <div className="flex justify-between text-[11px] font-medium text-slate-700">
-                                <span>{stage.label}</span>
-                                <span className="font-bold">{stage.count} ({pct}%)</span>
-                              </div>
-                              <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                                <div className={`h-full ${stage.color} rounded-full`} style={{ width: `${pct}%` }} />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Funnel Conversion Metrics */}
-                    <div className="rounded-xl border border-slate-200 p-4 space-y-3">
-                      <h4 className="text-xs font-bold text-slate-900">3. Lead Conversion Funnel</h4>
-                      <div className="grid grid-cols-3 gap-2 text-center">
-                        <div className="rounded-lg bg-slate-50 p-2.5">
-                          <div className="text-[10px] text-slate-500 font-bold">TOTAL INBOUND</div>
-                          <div className="text-base font-black text-slate-900 mt-0.5">{allCrmLeads.length}</div>
-                        </div>
-                        <div className="rounded-lg bg-blue-50 p-2.5">
-                          <div className="text-[10px] text-blue-700 font-bold">CONTACTED</div>
-                          <div className="text-base font-black text-blue-900 mt-0.5">
-                            {allCrmLeads.filter(l => l.status === "Contacted" || l.status === "In Progress").length}
-                          </div>
-                        </div>
-                        <div className="rounded-lg bg-emerald-50 p-2.5">
-                          <div className="text-[10px] text-emerald-700 font-bold">WON / CLOSED</div>
-                          <div className="text-base font-black text-emerald-900 mt-0.5">
-                            {allCrmLeads.filter(l => l.status === "Closed").length}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-[11px] text-slate-500 font-medium text-center">
-                        Pipeline Conversion Rate:{" "}
-                        <span className="font-bold text-emerald-700">
-                          {allCrmLeads.length > 0
-                            ? ((allCrmLeads.filter(l => l.status === "Closed").length / allCrmLeads.length) * 100).toFixed(1)
-                            : "0.0"}%
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Popular Video Formats */}
-                    <div className="rounded-xl border border-slate-200 p-4 space-y-3">
-                      <h4 className="text-xs font-bold text-slate-900">4. Video Format Market Demand</h4>
-                      <div className="space-y-2 text-xs">
-                        {[
-                          { name: "Digital Twin Videos", count: leads.filter(l => (l.video_type || "").toLowerCase().includes("twin")).length },
-                          { name: "UGC Video Ads", count: leads.filter(l => (l.video_type || "").toLowerCase().includes("ugc")).length },
-                          { name: "3D Product Renders", count: leads.filter(l => (l.video_type || "").toLowerCase().includes("3d") || (l.video_type || "").toLowerCase().includes("product")).length },
-                          { name: "Explainer & Spokesperson", count: leads.filter(l => (l.video_type || "").toLowerCase().includes("explainer") || (l.video_type || "").toLowerCase().includes("spokesperson")).length },
-                        ].map((fmt, idx) => (
-                          <div key={idx} className="flex justify-between items-center py-1 border-b border-slate-100 last:border-b-0 text-[11px]">
-                            <span className="font-medium text-slate-700">{fmt.name}</span>
-                            <span className="font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md">{fmt.count} requested</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ========================================================================= */}
-            {/* MODULE 7: MANAGE SECURITY-RELATED SETTINGS */}
+            {/* MODULE: MANAGE SECURITY-RELATED SETTINGS */}
             {/* ========================================================================= */}
             {crmSettingsSubTab === "security" && (
               <div className="space-y-5 animate-in fade-in">
