@@ -15,6 +15,7 @@ import {
   Process,
   QuotePopupModal,
   CheckoutModal,
+  ResearchToAdStrip,
   Samples,
   Services,
   StrategyCall,
@@ -22,6 +23,7 @@ import {
   UseCases,
   WhatsAppCtaSection,
   WhyAiVideo,
+  WhyQuickuppAiStudio,
   WhyUs,
 } from "@/components/site/sections";
 
@@ -80,6 +82,8 @@ function Index() {
         <Hero />
         <HeroOverview />
         <TrustStrip />
+        <WhyQuickuppAiStudio />
+        <ResearchToAdStrip />
         <Samples />
         <Services />
         <WhyAiVideo />

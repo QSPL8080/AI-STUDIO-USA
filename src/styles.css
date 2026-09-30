@@ -719,6 +719,16 @@
   animation: watermarkScroll 18s linear infinite;
 }
 
+/* 3s Benefit Progress Bar Animation */
+@keyframes scaleProgress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
 /* Hero Orbital & Podcast-Style Geometric Contour Animations */
 @keyframes orbitSpinClockwise {
   from {
@@ -874,5 +884,45 @@
 
 .animate-number-train {
   animation: assurixNumberTrain 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes readingItemIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+    filter: blur(3px);
+    background-color: rgba(238, 242, 255, 0.95);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translateY(0) scale(1.015);
+    filter: blur(0);
+    background-color: rgba(243, 232, 255, 0.75);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.animate-reading-item {
+  opacity: 0;
+  animation: readingItemIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes stepCardFadeIn {
+  0% {
+    opacity: 0.2;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-step-transition {
+  animation: stepCardFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 

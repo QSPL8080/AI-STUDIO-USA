@@ -3,26 +3,41 @@ import {
   ArrowRight,
   ArrowUp,
   BadgeCheck,
+  BarChart3,
   Bot,
+  Camera,
   Check,
   Calendar,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Clock,
+  DollarSign,
   ExternalLink,
+  FileText,
   Film,
+  Layers,
+  Lightbulb,
   MapPin,
   Mail,
   Menu,
   MessageCircle,
   MessageSquare,
+  Music,
   Palette,
   Pause,
   Phone,
   Play,
+  Rocket,
   RotateCcw,
+  Scissors,
+  Search,
+  ShieldCheck,
   Smartphone,
   Sparkles,
+  Target,
   UserCheck,
+  Users,
   Video,
   Volume2,
   VolumeX,
@@ -1064,540 +1079,873 @@ export function HeroOverview() {
 }
 
 export function TrustStrip() {
-  const steps = [
-    { num: "01", name: "Research" },
-    { num: "02", name: "Strategy" },
-    { num: "03", name: "Hooks" },
-    { num: "04", name: "Concepts" },
-    { num: "05", name: "Scripts" },
-    { num: "06", name: "Storyboard" },
-    { num: "07", name: "AI Production" },
-    { num: "08", name: "Editing" },
-    { num: "09", name: "Sound Design" },
-    { num: "10", name: "Quality Control" },
-    { num: "11", name: "Delivery" },
+  const phases = [
+    {
+      phaseId: "PHASE 01",
+      phaseTitle: "Strategy & Creative Foundation",
+      steps: [
+        { num: "01", name: "Research", icon: Search, tag: "Market Intel" },
+        { num: "02", name: "Strategy", icon: Target, tag: "Angle & Positioning" },
+        { num: "03", name: "Hooks", icon: Zap, tag: "3s Retention" },
+        { num: "04", name: "Concepts", icon: Lightbulb, tag: "Angle Multipliers" },
+      ],
+    },
+    {
+      phaseId: "PHASE 02",
+      phaseTitle: "Scripting & AI Production Engine",
+      steps: [
+        { num: "05", name: "Scripts", icon: FileText, tag: "Direct Response" },
+        { num: "06", name: "Storyboard", icon: Film, tag: "Visual Flow" },
+        { num: "07", name: "AI Production", icon: Wand2, tag: "Hyper-Real Render", highlight: true },
+      ],
+    },
+    {
+      phaseId: "PHASE 03",
+      phaseTitle: "Post-Production, QC & Scaling",
+      steps: [
+        { num: "08", name: "Editing", icon: Scissors, tag: "Pacing & Motion" },
+        { num: "09", name: "Sound Design", icon: Music, tag: "SFX & Voiceover" },
+        { num: "10", name: "Quality Control", icon: ShieldCheck, tag: "Rigorous Polish" },
+        { num: "11", name: "Delivery", icon: Rocket, tag: "Ready to Run Ad", isFinal: true },
+      ],
+    },
   ];
 
   return (
-    <section className="border-y border-purple-100/80 bg-white/95 backdrop-blur-md shadow-xs py-8 sm:py-10 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-6xl flex flex-col items-center text-center gap-5">
+    <section className="relative overflow-hidden border-y border-purple-100/80 bg-gradient-to-b from-white via-purple-50/30 to-slate-50/50 py-8 sm:py-10 md:py-12 px-4 sm:px-6 lg:px-8">
+      {/* Dynamic atmospheric lighting */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-20 top-1/3 h-72 w-72 rounded-full opacity-20 blur-3xl"
+        style={{ background: "radial-gradient(circle, #8b5cf6 0%, transparent 70%)" }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-20 bottom-1/4 h-72 w-72 rounded-full opacity-20 blur-3xl"
+        style={{ background: "radial-gradient(circle, #ec4899 0%, transparent 70%)" }}
+      />
+
+      <div className="mx-auto w-full max-w-6xl relative z-10">
         {/* Purpose Header */}
-        <div className="flex flex-col items-center gap-2 max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-purple-100/80 px-3.5 py-1 text-xs font-bold text-purple-900 border border-purple-200 shadow-xs">
-            <Sparkles className="h-3.5 w-3.5 text-purple-600" />
-            <span>AI Creative Production Partner</span>
+        <div className="text-center max-w-3xl mx-auto mb-7 sm:mb-9">
+          <div className="inline-flex items-center gap-2 rounded-full border border-purple-200/80 bg-white/90 px-3.5 py-1 text-xs font-bold text-purple-950 shadow-sm backdrop-blur-md mb-2.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-neon shadow-[0_0_8px_#c850ff]"></span>
+            </span>
+            <span className="tracking-wide">Visual Process</span>
           </div>
-          <p className="text-sm sm:text-base font-semibold text-slate-800 leading-snug">
+
+          <h3 className="font-[var(--font-google-sans)] text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
+            AI Creative{" "}
+            <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1">
+              Production Partner
+            </span>
+          </h3>
+
+          <p className="mt-2 text-sm sm:text-base font-medium text-slate-600 max-w-2xl mx-auto leading-relaxed">
             Quickupp is an AI creative production partner, not simply an AI video-generation tool.
           </p>
         </div>
 
-        {/* Visual Process Flow (Responsive Centered Wrap with Arrows) */}
-        <div className="w-full max-w-5xl flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 pt-1">
-          {steps.map((step, idx) => {
-            const isLast = idx === steps.length - 1;
-            return (
-              <div key={step.name} className="flex items-center gap-2">
-                <div
-                  className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold shadow-xs transition-all duration-200 hover:scale-105 ${
-                    isLast
-                      ? "border-purple-300 bg-gradient-to-r from-violet-100 via-purple-100 to-pink-100 text-purple-950 font-bold shadow-sm"
-                      : "border-slate-200 bg-slate-50/90 text-slate-800 hover:border-purple-300 hover:bg-purple-50/70"
-                  }`}
-                >
-                  <span
-                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded text-[10px] font-bold font-mono ${
-                      isLast ? "bg-purple-600 text-white" : "bg-purple-100 text-purple-700"
-                    }`}
-                  >
-                    {step.num}
-                  </span>
-                  <span>{step.name}</span>
-                  {isLast && <Check className="h-3 w-3 text-purple-700 ml-0.5 stroke-[3]" />}
-                </div>
-                {!isLast && (
-                  <ArrowRight className="h-3 w-3 text-purple-400 shrink-0 hidden xs:inline-block" />
-                )}
+        {/* 3-Phase Interconnected Pipeline Track */}
+        <div className="space-y-4 sm:space-y-5">
+          {phases.map((phase, pIdx) => (
+            <div key={phase.phaseId} className="relative">
+              {/* Phase Header Strip */}
+              <div className="flex items-center gap-2.5 mb-2.5 sm:mb-3">
+                <span className="font-mono text-[11px] font-black tracking-widest text-purple-700 bg-purple-100/90 border border-purple-200/90 px-2 py-0.5 rounded-md uppercase">
+                  {phase.phaseId}
+                </span>
+                <span className="text-xs font-bold tracking-wide uppercase text-slate-500">
+                  {phase.phaseTitle}
+                </span>
+                <div className="flex-1 h-[1px] bg-gradient-to-r from-purple-200/80 via-slate-200/60 to-transparent" />
               </div>
-            );
-          })}
+
+              {/* Steps Flow Line for this Phase */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+                {phase.steps.map((step, sIdx) => {
+                  const IconComp = step.icon;
+                  const isLastInPhase = sIdx === phase.steps.length - 1;
+
+                  return (
+                    <div
+                      key={step.name}
+                      className="group relative flex items-center justify-between p-2.5 sm:p-3 rounded-xl transition-all duration-300 hover:-translate-y-0.5 cursor-default"
+                    >
+                      {/* Ambient step hover background glow */}
+                      <div
+                        className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${
+                          step.highlight
+                            ? "bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-transparent border border-purple-300/60 opacity-100"
+                            : step.isFinal
+                            ? "bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-emerald-500/10 border border-emerald-300/60 opacity-100"
+                            : "bg-slate-50/80 border border-slate-200/60 group-hover:border-purple-200 group-hover:bg-purple-50/40"
+                        }`}
+                      />
+
+                      {/* Content inside step */}
+                      <div className="relative z-10 flex items-center gap-2.5 min-w-0">
+                        {/* Number & Icon cluster */}
+                        <div className="relative shrink-0">
+                          <div
+                            className={`h-9 w-9 sm:h-9.5 sm:w-9.5 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-105 ${
+                              step.highlight
+                                ? "bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-sm shadow-purple-500/25"
+                                : step.isFinal
+                                ? "bg-gradient-to-br from-purple-600 via-pink-600 to-emerald-500 text-white shadow-sm shadow-purple-500/30"
+                                : "bg-white text-purple-700 border border-purple-100 shadow-2xs group-hover:text-purple-900 group-hover:border-purple-200"
+                            }`}
+                          >
+                            <IconComp className="h-4.5 w-4.5 stroke-[2.2]" />
+                          </div>
+                        </div>
+
+                        {/* Title and Tag */}
+                        <div className="flex flex-col min-w-0 text-left">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-[10px] font-bold text-slate-400">
+                              {step.num}
+                            </span>
+                            <span
+                              className={`text-xs sm:text-sm font-bold tracking-tight truncate ${
+                                step.highlight || step.isFinal
+                                  ? "text-purple-950 font-extrabold"
+                                  : "text-slate-800 group-hover:text-purple-700"
+                              }`}
+                            >
+                              {step.name}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-medium text-slate-500 truncate">
+                            {step.tag}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Forward connector arrow */}
+                      <div className="relative z-10 shrink-0 text-slate-300 group-hover:text-purple-500 transition-colors pl-2">
+                        {step.isFinal ? (
+                          <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full bg-emerald-100 border border-emerald-300 text-[9px] font-black text-emerald-800 uppercase tracking-wider">
+                            Ready ✓
+                          </span>
+                        ) : (
+                          <ArrowRight className="h-3.5 w-3.5 stroke-[2.2] group-hover:translate-x-0.5 transition-transform" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Seamless phase connecting indicator between phases */}
+              {pIdx < phases.length - 1 && (
+                <div className="hidden lg:flex items-center justify-center my-1.5">
+                  <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-50/80 border border-purple-200/60 text-[9px] font-bold text-purple-600">
+                    <span>Flows to next stage</span>
+                    <ArrowRight className="h-2.5 w-2.5" />
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-export function Samples() {
-  const [activeTab, setActiveTab] = useState("All");
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isInView, setIsInView] = useState(false);
+export function WhyQuickuppAiStudio() {
+  const [activeBenefit, setActiveBenefit] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [completedMap, setCompletedMap] = useState<Record<number, boolean>>({});
-  const [mutedMap, setMutedMap] = useState<Record<number, boolean>>({ 0: true, 1: true });
 
-  const cardsContainerRef = useRef<HTMLDivElement>(null);
-  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const traditionalFriction = [
+    { name: "Creators", icon: Users },
+    { name: "Locations", icon: MapPin },
+    { name: "Cameras", icon: Camera },
+    { name: "Production crews", icon: Film },
+    { name: "Multiple reshoots", icon: RotateCcw },
+    { name: "Long production timelines", icon: Clock },
+    { name: "Expensive post-production", icon: Scissors },
+  ];
 
-  const filters = ["All", ...formats];
-  const allFiltered = useMemo(() => {
-    return activeTab === "All"
-      ? samples
-      : samples.filter(
-          (s) =>
-            s.format.toLowerCase().trim() === activeTab.toLowerCase().trim() ||
-            (activeTab === "AI UGC" && s.format.includes("UGC")) ||
-            (activeTab === "AI Cartoon" && s.format.includes("Cartoon")) ||
-            (activeTab === "AI Avatar" && s.format.includes("Avatar")) ||
-            (activeTab === "Hyper-Realistic" && s.format.includes("Realistic")) ||
-            (activeTab === "Digital Twin" && s.format.includes("Twin")),
-        );
-  }, [activeTab]);
+  const benefits = [
+    {
+      num: "01",
+      title: "More Creative Variations",
+      desc: "Create different hooks, concepts, personas, angles, and visual treatments without organizing a new shoot every time.",
+      icon: Layers,
+      badgeColor: "text-purple-700 bg-purple-100/90 border-purple-200/90",
+      iconBg: "bg-purple-50 text-purple-600",
+      activeBorder: "border-purple-300/90 ring-1 ring-purple-400/30",
+    },
+    {
+      num: "02",
+      title: "Faster Creative Production",
+      desc: "Move from concept and script to finished ad creative through an AI-powered production workflow.",
+      icon: Zap,
+      badgeColor: "text-pink-700 bg-pink-100/90 border-pink-200/90",
+      iconBg: "bg-pink-50 text-pink-600",
+      activeBorder: "border-pink-300/90 ring-1 ring-pink-400/30",
+    },
+    {
+      num: "03",
+      title: "Lower Production Costs",
+      desc: "Create professional video content without the traditional overhead of creators, studios, locations, and large production teams.",
+      icon: DollarSign,
+      badgeColor: "text-emerald-700 bg-emerald-100/90 border-emerald-200/90",
+      iconBg: "bg-emerald-50 text-emerald-600",
+      activeBorder: "border-emerald-300/90 ring-1 ring-emerald-400/30",
+    },
+    {
+      num: "04",
+      title: "Built for Testing",
+      desc: "Create multiple creative directions so your marketing team has more variations to test across paid and organic channels.",
+      icon: BarChart3,
+      badgeColor: "text-blue-700 bg-blue-100/90 border-blue-200/90",
+      iconBg: "bg-blue-50 text-blue-600",
+      activeBorder: "border-blue-300/90 ring-1 ring-blue-400/30",
+    },
+  ];
 
-  // Group filtered samples into pairs of 2
-  const pairs = useMemo(() => {
-    const list: (typeof samples)[] = [];
-    for (let i = 0; i < allFiltered.length; i += 2) {
-      list.push(allFiltered.slice(i, i + 2));
-    }
-    return list;
-  }, [allFiltered]);
-
-  // Observe cards container directly so animation plays right when cards enter the viewport
+  // Auto-change active benefit card every 3 seconds
   useEffect(() => {
-    const el = cardsContainerRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setIsInView(true);
-        }
-      },
-      { threshold: 0.05, rootMargin: "60px 0px 60px 0px" },
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  // Advance to next video pair
-  const handleAdvance = () => {
-    if (pairs.length > 1) {
-      setCompletedMap({});
-      setCurrentIndex((prev) => (prev + 1) % pairs.length);
-    }
-  };
-
-  const handlePrev = () => {
-    if (pairs.length > 1) {
-      setCompletedMap({});
-      setCurrentIndex((prev) => (prev - 1 + pairs.length) % pairs.length);
-    }
-  };
-
-  // Reset index and completion state whenever tab changes so it always starts from first video(s)
-  useEffect(() => {
-    setCurrentIndex(0);
-    setCompletedMap({});
-  }, [activeTab]);
-
-  const currentPair = useMemo(() => pairs[currentIndex] || pairs[0] || [], [pairs, currentIndex]);
-
-  // Autoplay active video pair smoothly across mobile and desktop (default muted)
-  useEffect(() => {
-    if (!isInView) return;
-
-    currentPair.forEach((_, idx) => {
-      const video = videoRefs.current[idx];
-      if (video) {
-        const isMuted = mutedMap[idx] ?? true;
-        video.defaultMuted = true;
-        video.muted = isMuted;
-        video.volume = isMuted ? 0 : 1;
-        video.playsInline = true;
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(() => {
-            const onGesture = () => {
-              const v = videoRefs.current[idx];
-              if (v) {
-                v.defaultMuted = true;
-                v.muted = mutedMap[idx] ?? true;
-                v.play().catch(() => {});
-              }
-              window.removeEventListener("touchstart", onGesture);
-              window.removeEventListener("scroll", onGesture);
-            };
-            window.addEventListener("touchstart", onGesture, { once: true, passive: true });
-            window.addEventListener("scroll", onGesture, { once: true, passive: true });
-          });
-        }
-      }
-    });
-  }, [isInView, currentIndex, activeTab, currentPair, mutedMap]);
-
-  const toggleMute = (idx: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const video = videoRefs.current[idx];
-    if (!video) return;
-    const isCurrentlyMuted = mutedMap[idx] ?? true;
-    const nextMuted = !isCurrentlyMuted;
-    video.muted = nextMuted;
-    video.volume = nextMuted ? 0 : 1;
-    setMutedMap((prev) => ({ ...prev, [idx]: nextMuted }));
-    if (!nextMuted && video.paused) {
-      video.play().catch(() => {});
-    }
-  };
-
-  const handleVideoEnded = (idx: number) => {
-    setCompletedMap((prev) => {
-      const updated = { ...prev, [idx]: true };
-      return updated;
-    });
-  };
-
-  const handleReplay = (idx: number, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setCompletedMap((prev) => ({ ...prev, [idx]: false }));
-    const video = videoRefs.current[idx];
-    if (video) {
-      video.currentTime = 0;
-      video.play().catch(() => {});
-    }
-  };
-
-  const allPairCompleted =
-    currentPair.length > 0 && currentPair.every((_, i) => completedMap[i] === true);
+    if (isPaused) return;
+    const timer = setInterval(() => {
+      setActiveBenefit((prev) => (prev + 1) % benefits.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [isPaused, benefits.length]);
 
   return (
-    <Section id="samples" className="relative overflow-hidden bg-gradient-to-b from-slate-50/80 via-white to-slate-50/80">
-      {/* Giant scrolling 'SAMPLES' watermark — continuous left marquee loop */}
+    <section id="why-quickupp" className="relative overflow-hidden border-b border-purple-100/80 bg-gradient-to-b from-slate-50/50 via-white to-purple-50/20 py-8 sm:py-10 md:py-14 px-4 sm:px-6 lg:px-8">
+      {/* Dynamic atmospheric lighting */}
       <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden select-none z-0"
-      >
-        <div className="animate-watermark-scroll flex whitespace-nowrap">
-          {/* Duplicated for seamless infinite loop */}
-          {[0, 1].map((i) => (
-            <span
-              key={i}
-              className="flex shrink-0 items-center font-extrabold uppercase text-slate-900/[0.04]"
-              style={{ fontSize: "clamp(5rem, 18vw, 14rem)", letterSpacing: "0.2em" }}
-            >
-              SAMPLES&nbsp;&nbsp;•&nbsp;&nbsp;SAMPLES&nbsp;&nbsp;•&nbsp;&nbsp;SAMPLES&nbsp;&nbsp;•&nbsp;&nbsp;
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="relative z-10">
-        <SectionHeading
-          eyebrow="AI Video Samples"
-          title="Explore Our AI Video"
-          highlight="Samples"
-          description="See how different AI video formats can bring your brand, product or service to life."
-        />
-        <p className="mx-auto mb-8 -mt-6 max-w-3xl text-center text-sm leading-relaxed text-muted-foreground sm:text-base">
-          Not sure which AI video format is right for your business? Explore our video samples to
-          understand the difference between AI UGC videos, AI cartoon animation, AI avatar videos,
-          hyper-realistic AI videos and AI digital twin videos.
-        </p>
-
-        {/* Filter Tabs */}
-      <div className="mb-10 flex flex-wrap items-center justify-center gap-2">
-        {filters.map((filter) => (
-          <button
-            key={filter}
-            onClick={() => setActiveTab(filter)}
-            className={`rounded-full px-5 py-2 text-xs font-semibold tracking-wide transition-all duration-300 sm:text-sm ${
-              activeTab === filter
-                ? "bg-gradient-brand text-neon-foreground shadow-md glow-neon scale-105"
-                : "border border-slate-200 bg-white text-slate-600 hover:border-purple-300 hover:text-slate-900"
-            }`}
-          >
-            {filter}
-          </button>
-        ))}
-      </div>
-
-      {/* 2 at a time Diagonal Showcase Container */}
+        aria-hidden
+        className="pointer-events-none absolute -left-20 top-1/2 -translate-y-1/2 h-80 w-80 rounded-full opacity-20 blur-3xl"
+        style={{ background: "radial-gradient(circle, #ec4899 0%, transparent 70%)" }}
+      />
       <div
-        ref={cardsContainerRef}
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-        className="mx-auto max-w-5xl space-y-6 overflow-hidden py-2 min-h-[300px]"
-      >
-        {currentPair.map((item, idx) => {
-          const isSecond = idx === 1; // Card 1 is top (left entry), Card 2 is bottom (right entry)
-          const isReversed = idx % 2 === 1; // Diagonal layout: top card left-video/right-text, bottom card right-video/left-text
+        aria-hidden
+        className="pointer-events-none absolute right-0 top-1/4 h-80 w-80 rounded-full opacity-20 blur-3xl"
+        style={{ background: "radial-gradient(circle, #8b5cf6 0%, transparent 70%)" }}
+      />
 
-          const slideAnimationClass = isInView
-            ? isSecond
-              ? "animate-slide-in-right"
-              : "animate-slide-in-left"
-            : `opacity-0 ${isSecond ? "translate-x-10" : "-translate-x-10"}`;
+      <div className="mx-auto w-full max-w-7xl relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 xl:gap-16 items-center">
+          {/* Left Column: Heading, Traditional Overhead & Transition (6 cols) */}
+          <div className="lg:col-span-6 flex flex-col text-left">
+            {/* Eyebrow */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-purple-200/80 bg-white/90 px-3.5 py-1 text-xs font-bold text-purple-950 shadow-sm backdrop-blur-md mb-3 w-fit">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-neon shadow-[0_0_8px_#c850ff]"></span>
+              </span>
+              <span className="tracking-wide">Why Quickupp AI Studio</span>
+            </div>
 
-          const isEnded = Boolean(completedMap[idx]);
-          const isVideoMuted = mutedMap[idx] ?? true;
+            {/* Heading */}
+            <h2 className="font-[var(--font-google-sans)] text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
+              Your AI Creative Team —{" "}
+              <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1">
+                Without the Production Overhead
+              </span>
+            </h2>
 
-          return (
-            <div
-              key={`sample-card-${activeTab}-${currentIndex}-${idx}`}
-              className={`relative overflow-hidden rounded-[28px] border border-slate-200 bg-white/95 p-5 shadow-xl backdrop-blur-xl transition-all duration-500 hover:border-purple-300 hover:shadow-2xl sm:p-7 md:p-8 ${slideAnimationClass}`}
-            >
-              <div
-                className={`flex flex-col items-center gap-6 md:gap-10 ${
-                  isReversed ? "md:flex-row-reverse" : "md:flex-row"
-                }`}
-              >
-                {/* Authentic 9:16 Vertical Reel Player with dark stylish border */}
-                <div
-                  onClick={() => {
-                    const v = videoRefs.current[idx];
-                    if (v) {
-                      if (v.ended || completedMap[idx]) {
-                        handleReplay(idx);
-                      } else if (v.paused) {
-                        v.play().catch(() => {});
-                      } else {
-                        v.pause();
-                      }
-                    }
-                  }}
-                  className="relative aspect-[9/16] w-full max-w-[260px] sm:max-w-[280px] shrink-0 overflow-hidden rounded-2xl border-2 border-slate-800 bg-black shadow-lg transition-all duration-300 hover:border-neon cursor-pointer"
-                >
-                  {item.videoUrl ? (
-                    <>
-                      <video
-                        ref={(el) => {
-                          videoRefs.current[idx] = el;
-                          if (el) {
-                            el.defaultMuted = true;
-                            el.muted = isVideoMuted;
-                            el.volume = isVideoMuted ? 0 : 1;
-                            el.playsInline = true;
-                            // Lazy-set src only when element is mounted to avoid
-                            // browser pre-fetching all videos on page load
-                            if (item.videoUrl && !el.src) {
-                              el.src = item.videoUrl;
-                              el.load();
-                            }
-                          }
-                        }}
-                        key={item.videoUrl}
-                        muted={isVideoMuted}
-                        playsInline
-                        preload="none"
-                        onEnded={() => handleVideoEnded(idx)}
-                        className="h-full w-full object-cover"
-                      >
-                        <track kind="captions" src="" label="English" default />
-                      </video>
+            {/* Supporting Copy */}
+            <p className="mt-3 mb-4 text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-500">
+              Traditional video production can require:
+            </p>
 
-                      {/* Audio Unmute / Sound On Toggle Button (Default Muted) */}
-                      <div className="absolute top-2.5 left-2.5 z-30">
-                        <button
-                          type="button"
-                          onClick={(e) => toggleMute(idx, e)}
-                          className="group/mute inline-flex min-h-[34px] items-center gap-1.5 rounded-full border border-white/20 bg-black/80 px-3 py-1.5 text-[10px] sm:text-xs font-semibold text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:border-neon hover:bg-neon/20 hover:scale-105 active:scale-95 cursor-pointer"
-                          title={isVideoMuted ? "Click to Unmute Audio" : "Click to Mute Audio"}
-                          aria-label={isVideoMuted ? "Unmute sample video" : "Mute sample video"}
-                        >
-                          {isVideoMuted ? (
-                            <>
-                              <VolumeX className="h-3.5 w-3.5 text-red-400 group-hover/mute:text-neon" />
-                              <span className="text-white/90">Unmute</span>
-                            </>
-                          ) : (
-                            <>
-                              <Volume2 className="h-3.5 w-3.5 text-neon animate-pulse" />
-                              <span className="text-neon font-bold">Sound On</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-
-                      {/* "Watch Again" Overlay when video reaches end */}
-                      {isEnded && (
-                        <div
-                          onClick={(e) => handleReplay(idx, e)}
-                          className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/70 p-3 text-center backdrop-blur-[2px] animate-in fade-in duration-300 cursor-pointer"
-                        >
-                          <button
-                            type="button"
-                            onClick={(e) => handleReplay(idx, e)}
-                            className="group/btn inline-flex items-center gap-2 rounded-full bg-gradient-brand px-5 py-2.5 text-xs sm:text-sm font-bold text-neon-foreground shadow-xl transition-all hover:scale-105 active:scale-95 glow-neon cursor-pointer"
-                            aria-label={`Watch ${item.format} video again`}
-                          >
-                            <RotateCcw className="h-4 w-4 transition-transform duration-300 group-hover/btn:-rotate-45" />
-                            <span>Watch Again</span>
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  ) : item.imageUrl ? (
-                    <img
-                      src={item.imageUrl}
-                      alt={item.format}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-950 via-purple-950/60 to-slate-950 p-4 text-center pointer-events-none">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-purple-400/40 bg-purple-900/40 text-purple-300 shadow-lg">
-                        <Sparkles className="h-7 w-7 text-purple-300 animate-pulse" />
-                      </div>
-                      <span className="rounded-full border border-purple-300/30 bg-purple-500/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-purple-200">
-                        Coming Soon
-                      </span>
-                      <p className="text-[11px] text-slate-300 max-w-[190px]">
-                        Sample reel is currently in production.
-                      </p>
+            {/* 7 Traditional Friction Items */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5 mb-5">
+              {traditionalFriction.map((item) => {
+                const IconComp = item.icon;
+                return (
+                  <div
+                    key={item.name}
+                    className="group relative flex items-center gap-2 p-2 sm:p-2.5 rounded-xl border border-rose-100/90 bg-white/90 backdrop-blur-xs transition-all duration-200 hover:border-rose-200 shadow-2xs"
+                  >
+                    <div className="h-7 w-7 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
+                      <IconComp className="h-3.5 w-3.5 stroke-[2.2]" />
                     </div>
-                  )}
-
-                  <span className="absolute bottom-3 left-3 rounded-lg bg-black/80 border border-white/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md shadow-md z-10">
-                    {item.format}
-                  </span>
-                </div>
-
-                {/* Content Side */}
-                <div className="flex flex-1 flex-col justify-between self-stretch py-1 text-left">
-                  <div>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs font-bold uppercase tracking-widest text-purple-600">
-                        Industry: {item.industry}
-                      </span>
-                      <span className="rounded-md border border-purple-200 bg-purple-50 px-2.5 py-0.5 text-[11px] font-semibold text-purple-700">
-                        9:16 Vertical Reel
-                      </span>
-                    </div>
-
-                    <h3 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                      {item.format}
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
-                      {item.description}
-                    </p>
-
-                    {/* What's Included Deliverables Checklist */}
-                    {(() => {
-                      const matchedDeliverable =
-                        deliverables.find(
-                          (d) =>
-                            d.title
-                              .toLowerCase()
-                              .includes(item.format.toLowerCase().replace("video", "").trim()) ||
-                            item.format
-                              .toLowerCase()
-                              .includes(d.title.toLowerCase().replace("video", "").trim()),
-                        ) || deliverables[0];
-
-                      return (
-                        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 sm:p-5 backdrop-blur-sm">
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs font-bold uppercase tracking-wider text-purple-700 sm:text-sm">
-                              ✦ What's Included in This Package:
-                            </p>
-                            <span className="text-[11px] font-semibold text-slate-500">
-                              {matchedDeliverable.items.length} Deliverables
-                            </span>
-                          </div>
-
-                          <ul className="mt-3.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 text-xs sm:text-sm text-slate-700">
-                            {matchedDeliverable.items.map((point) => (
-                              <li key={point} className="flex items-center gap-2.5">
-                                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-purple-100 text-[10px] font-extrabold text-purple-700 shadow-sm">
-                                  ✓
-                                </span>
-                                <span className="leading-snug text-slate-800">{point}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      );
-                    })()}
+                    <span className="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight truncate">
+                      {item.name}
+                    </span>
+                    <span className="ml-auto text-rose-400 text-[10px] font-bold">✕</span>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Card Bottom Action & Turnaround Bar */}
-                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-purple-600">
-                        {item.format}
-                      </span>
-                      <span className="text-slate-300">•</span>
-                      <span className="text-xs text-slate-500">⚡ 48–72h Turnaround</span>
-                    </div>
-
-                    <a
-                      href="#contact"
-                      className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white transition-all hover:bg-gradient-brand hover:scale-105"
-                    >
-                      <span>Create Similar Video</span>
-                      <span>→</span>
-                    </a>
+            {/* Transition Solution Banner */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-900 via-indigo-950 to-slate-950 p-4 sm:p-5 text-white shadow-lg shadow-purple-950/15">
+              <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white shrink-0 shadow-md shadow-purple-500/30">
+                    <Sparkles className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-mono font-bold tracking-widest text-purple-300 uppercase">
+                      Streamlined Creative Engine
+                    </span>
+                    <p className="text-xs sm:text-sm font-bold text-white tracking-tight leading-snug mt-0.5">
+                      Quickupp AI Studio gives brands a streamlined AI-powered creative workflow.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
-          );
-        })}
-      </div>
-
-      {/* Pagination Indicators & Next/Prev Controls */}
-      {pairs.length > 1 && (
-        <div className="mt-8 flex items-center justify-center gap-3">
-          <button
-            onClick={handlePrev}
-            className="flex min-h-[44px] min-w-[44px] h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-sm text-slate-700 shadow-sm transition-all hover:bg-slate-100 hover:text-slate-900"
-            aria-label="Previous samples"
-          >
-            ←
-          </button>
-          <div className="flex items-center gap-1">
-            {pairs.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentIndex(i)}
-                className="flex min-h-[44px] min-w-[32px] items-center justify-center p-1 cursor-pointer"
-                aria-label={`Slide ${i + 1}`}
-              >
-                <span
-                  className={`h-2.5 rounded-full transition-all duration-300 block ${
-                    currentIndex === i
-                      ? "w-8 bg-gradient-brand shadow-sm glow-neon"
-                      : "w-2.5 bg-slate-200 hover:bg-slate-300"
-                  }`}
-                />
-              </button>
-            ))}
           </div>
-          <button
-            onClick={handleAdvance}
-            className="flex min-h-[44px] min-w-[44px] h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-sm text-slate-700 shadow-sm transition-all hover:bg-slate-100 hover:text-slate-900"
-            aria-label="Next samples"
-          >
-            →
-          </button>
-        </div>
-      )}
 
-      {/* Bottom CTA */}
-      <div className="mt-12 text-center">
-        <p className="mb-4 text-xl font-semibold text-slate-900">
-          Want a Similar Video for Your Business?
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <NeonButton href="#contact" variant="primary">
-            Get Your AI Video Quote
-          </NeonButton>
-          <NeonButton href="#pricing" variant="buy" className="inline-flex items-center gap-2">
-            <Zap className="h-4 w-4 text-white shrink-0 group-hover:scale-110" />
-            <span>Buy Now</span>
-          </NeonButton>
+          {/* Right Column: Single Rotating Benefit Card Showcase (6 cols) */}
+          <div
+            className="lg:col-span-6 flex flex-col gap-2.5"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+          >
+            {/* 4-Step Interactive Tabs */}
+            <div className="flex items-center justify-end px-1">
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                {benefits.map((b, bIdx) => {
+                  const isCurrent = activeBenefit === bIdx;
+                  return (
+                    <button
+                      key={b.num}
+                      type="button"
+                      onClick={() => setActiveBenefit(bIdx)}
+                      className={`font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-md transition-all duration-300 flex items-center gap-1 ${
+                        isCurrent
+                          ? "bg-purple-900 text-white shadow-xs scale-105"
+                          : "bg-purple-100/70 text-purple-700 hover:bg-purple-200/80"
+                      }`}
+                    >
+                      <span>{b.num}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Single Light & Transparent Benefit Card */}
+            {(() => {
+              const current = benefits[activeBenefit];
+              const IconComp = current.icon;
+
+              return (
+                <div
+                  key={activeBenefit}
+                  className="group relative overflow-hidden rounded-2xl p-6 sm:p-7 border border-purple-200/80 bg-white/70 backdrop-blur-xl shadow-xl shadow-purple-500/10 transition-all duration-500 text-left flex flex-col justify-between min-h-[220px] sm:min-h-[240px]"
+                >
+                  {/* Running 3-second progress indicator */}
+                  <div
+                    className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600"
+                    style={{
+                      animation: isPaused ? "none" : "scaleProgress 3s linear infinite",
+                    }}
+                  />
+
+                  <div>
+                    {/* Top Row: Number Badge & Glowing Icon */}
+                    <div className="flex items-center justify-between gap-3 mb-4">
+                      <div className="inline-flex items-center gap-2">
+                        <span className={`font-mono text-xs font-black tracking-wider px-2.5 py-1 rounded-md border ${current.badgeColor}`}>
+                          {current.num}
+                        </span>
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                          Benefit {activeBenefit + 1} of 4
+                        </span>
+                      </div>
+
+                      <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${current.iconBg} shadow-sm shadow-purple-500/20`}>
+                        <IconComp className="h-5 w-5 stroke-[2.2]" />
+                      </div>
+                    </div>
+
+                    {/* Benefit Title */}
+                    <h3 className="font-[var(--font-google-sans)] text-lg sm:text-xl font-bold tracking-tight text-slate-900 mb-2">
+                      {current.title}
+                    </h3>
+
+                    {/* Benefit Description */}
+                    <p className="text-xs sm:text-sm font-medium text-slate-600 leading-relaxed">
+                      {current.desc}
+                    </p>
+                  </div>
+
+                  {/* Card Bottom Controls */}
+                  <div className="flex items-center justify-end pt-3 mt-2 border-t border-purple-100/60">
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setActiveBenefit((prev) => (prev - 1 + benefits.length) % benefits.length)}
+                        className="h-7 w-7 rounded-lg bg-white border border-purple-100 text-slate-500 hover:text-purple-700 hover:border-purple-300 flex items-center justify-center transition-colors shadow-2xs"
+                        aria-label="Previous benefit"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveBenefit((prev) => (prev + 1) % benefits.length)}
+                        className="h-7 w-7 rounded-lg bg-white border border-purple-100 text-slate-500 hover:text-purple-700 hover:border-purple-300 flex items-center justify-center transition-colors shadow-2xs"
+                        aria-label="Next benefit"
+                      >
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
         </div>
       </div>
+    </section>
+  );
+}
+
+export function ResearchToAdStrip() {
+  return (
+    <section className="relative overflow-hidden border-y border-purple-100/90 bg-gradient-to-b from-purple-50/40 via-white to-purple-50/30 py-6 sm:py-7 px-4 sm:px-6 lg:px-8">
+      {/* Radiant ambient glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-36 rounded-full opacity-30 blur-3xl"
+        style={{ background: "radial-gradient(circle, #c084fc 0%, transparent 70%)" }}
+      />
+
+      <div className="mx-auto w-full max-w-3xl relative z-10 flex flex-col items-center text-center">
+        {/* Eyebrow / Heading Badge */}
+        <div className="inline-flex items-center gap-2 rounded-full border border-purple-200/90 bg-white/95 px-3.5 py-1 text-xs font-bold text-purple-950 shadow-2xs backdrop-blur-md mb-2.5">
+          <Sparkles className="h-3.5 w-3.5 text-purple-600" />
+          <span>From Research to Ready-to-Run Ad</span>
+        </div>
+
+        {/* Supporting Statement Headline */}
+        <p className="font-[var(--font-google-sans)] text-base sm:text-lg md:text-xl font-bold tracking-tight text-slate-900 leading-snug">
+          <span className="text-slate-500 font-medium">We don't simply generate AI videos. </span>
+          <span className="text-slate-900 font-bold block sm:inline">
+            We build ad creatives around a{" "}
+            <span className="font-serif italic font-bold text-gradient-brand">
+              strategy.
+            </span>
+          </span>
+        </p>
+      </div>
+    </section>
+  );
+}
+
+export function Samples() {
+  const [activeStep, setActiveStep] = useState(0);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const processSteps = [
+    {
+      num: "01",
+      title: "RESEARCH",
+      subtitle: "We research your:",
+      items: [
+        "Brand",
+        "Product/service",
+        "Target audience",
+        "Competitors",
+        "Market",
+        "Existing creative",
+        "Content landscape",
+      ],
+      footer: "The goal is to identify what your audience cares about and where creative opportunities exist.",
+      icon: Search,
+      tag: "Discovery & Intel",
+    },
+    {
+      num: "02",
+      title: "STRATEGY",
+      subtitle: "We turn research into a creative direction.",
+      subHeading: "We identify:",
+      items: [
+        "Customer pain points",
+        "Benefits",
+        "Positioning",
+        "Messaging opportunities",
+        "Creative angles",
+        "Campaign objectives",
+      ],
+      icon: Target,
+      tag: "Positioning & Angles",
+    },
+    {
+      num: "03",
+      title: "HOOKS",
+      subtitle: "We develop attention-grabbing hooks designed to capture attention within the first few seconds.",
+      subHeading: "Examples include:",
+      items: [
+        "Problem-based hooks",
+        "Benefit-driven hooks",
+        "Curiosity hooks",
+        "Pattern interrupts",
+        "Question hooks",
+        "Direct-response hooks",
+      ],
+      icon: Zap,
+      tag: "Attention Capture",
+    },
+    {
+      num: "04",
+      title: "CONCEPTS",
+      subtitle: "We turn the strongest hooks and angles into practical video concepts.",
+      footer: "Each concept defines the overall creative direction, storytelling approach, and intended audience response.",
+      items: [],
+      icon: Lightbulb,
+      tag: "Creative Direction",
+    },
+    {
+      num: "05",
+      title: "SCRIPTS",
+      subtitle: "We write or adapt the script around:",
+      items: [
+        "Selected concept",
+        "Target audience",
+        "Offer",
+        "Messaging",
+        "Hook",
+        "CTA",
+        "Video format",
+      ],
+      footer: "The final script becomes the foundation for production.",
+      icon: FileText,
+      tag: "Direct Response Copy",
+    },
+    {
+      num: "06",
+      title: "STORYBOARD",
+      subtitle: "We transform the approved script into a visual production plan before generating the final video.",
+      subHeading: "The storyboard defines:",
+      items: [
+        "Scene-by-scene structure",
+        "Visual direction",
+        "Camera framing",
+        "Character actions",
+        "Product placement",
+        "Background/environment",
+        "On-screen text",
+        "Transitions",
+        "Voiceover alignment",
+        "Scene timing",
+      ],
+      purpose: "Every scene is planned before AI production begins. This helps maintain visual consistency, storytelling flow, and alignment between the script and final video.",
+      icon: Film,
+      tag: "Visual Architecture",
+    },
+    {
+      num: "07",
+      title: "AI PRODUCTION",
+      subtitle: "We produce the video using the appropriate AI format:",
+      items: [
+        "AI UGC",
+        "AI Avatar",
+        "AI Cartoon",
+        "Hyper-Realistic",
+        "Digital Twin",
+      ],
+      footer: "Visuals, characters, environments, products, and scenes are generated according to the approved storyboard.",
+      icon: Wand2,
+      tag: "Generative Engine",
+    },
+    {
+      num: "08",
+      title: "EDITING",
+      subtitle: "We assemble the generated scenes into the final video.",
+      subHeading: "This includes:",
+      items: [
+        "Scene sequencing",
+        "Pacing",
+        "Transitions",
+        "Captions",
+        "Product shots",
+        "Visual elements",
+        "Text overlays",
+        "Storytelling flow",
+      ],
+      icon: Scissors,
+      tag: "Post & Motion",
+    },
+    {
+      num: "09",
+      title: "SOUND DESIGN",
+      subtitle: "We add and refine:",
+      items: [
+        "AI voiceover",
+        "Background music",
+        "Sound effects",
+        "Audio transitions",
+        "Voice/music balance",
+      ],
+      footer: "The objective is to make the final creative feel complete and engaging.",
+      icon: Music,
+      tag: "Audio & Voiceover",
+    },
+    {
+      num: "10",
+      title: "QUALITY CONTROL",
+      subtitle: "Every final creative goes through a quality-control review.",
+      subHeading: "We check:",
+      items: [
+        "Visual consistency",
+        "Script accuracy",
+        "Voiceover",
+        "Captions",
+        "Branding",
+        "Product representation",
+        "Audio",
+        "Scene transitions",
+        "CTA",
+        "Overall creative quality",
+      ],
+      icon: ShieldCheck,
+      tag: "10-Point QA Check",
+    },
+    {
+      num: "11",
+      title: "DELIVERY",
+      subtitle: "You receive an ad-ready final video designed for platforms such as:",
+      items: [
+        "Instagram Reels",
+        "Facebook Ads",
+        "TikTok",
+        "YouTube Shorts",
+        "Other vertical social placements",
+      ],
+      ctaText: "Start Your AI Video Project",
+      icon: Rocket,
+      tag: "Ad-Ready Scale",
+    },
+  ];
+
+  const current = processSteps[activeStep];
+  const IconComp = current.icon;
+
+  return (
+    <Section id="samples" className="relative overflow-hidden bg-gradient-to-b from-white via-purple-50/20 to-slate-50/40 py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8">
+      {/* Light atmospheric accents */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-20 top-1/4 h-96 w-96 rounded-full opacity-20 blur-3xl"
+        style={{ background: "radial-gradient(circle, #a855f7 0%, transparent 70%)" }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-20 bottom-1/4 h-96 w-96 rounded-full opacity-20 blur-3xl"
+        style={{ background: "radial-gradient(circle, #ec4899 0%, transparent 70%)" }}
+      />
+
+      <div className="mx-auto w-full max-w-7xl relative z-10">
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
+          <div className="inline-flex items-center gap-2 rounded-full border border-purple-200/80 bg-white/95 px-3.5 py-1 text-[11px] font-bold text-purple-950 shadow-sm backdrop-blur-md mb-2.5">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-neon shadow-[0_0_6px_#c850ff]"></span>
+            </span>
+            <span className="tracking-wide">Creative Workflow</span>
+          </div>
+
+          <h2 className="font-[var(--font-google-sans)] text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
+            11-Step Creative{" "}
+            <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1">
+              Production Process
+            </span>
+          </h2>
+        </div>
+
+        {/* Detailed Active Step Presentation Stage */}
+        <div 
+          ref={stageRef}
+          key={activeStep}
+          className={`${
+            isVisible || activeStep > 0 ? "animate-step-transition" : "opacity-0"
+          } relative overflow-hidden rounded-3xl border border-purple-200/80 bg-white/90 backdrop-blur-xl p-5 sm:p-7 md:p-8 shadow-xl shadow-purple-500/10 transition-all duration-300`}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-start">
+            {/* Left Stage Details (7 cols) */}
+            <div className="lg:col-span-7 flex flex-col text-left">
+              {/* Step Header */}
+              <div className="flex items-center gap-2.5 mb-3">
+                <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-purple-100 text-purple-900 border border-purple-200 shadow-2xs">
+                  {current.num}
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-purple-600">
+                  {current.tag}
+                </span>
+              </div>
+
+              <h3 className="font-[var(--font-google-sans)] text-lg sm:text-xl md:text-2xl font-bold text-slate-900 tracking-tight mb-2.5">
+                {current.num} — {current.title}
+              </h3>
+
+              {/* Subtitle statement */}
+              <p className="text-xs sm:text-sm font-semibold text-slate-700 leading-relaxed mb-3">
+                {current.subtitle}
+              </p>
+
+              {current.subHeading && (
+                <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">
+                  {current.subHeading}
+                </p>
+              )}
+
+              {/* Bullet Points Grid with Staggered Reading Animation */}
+              {current.items.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                  {current.items.map((item, idx) => (
+                    <div
+                      key={`${activeStep}-${item}-${idx}`}
+                      className={`${
+                        isVisible || activeStep > 0 ? "animate-reading-item" : "opacity-0"
+                      } flex items-center gap-2 p-2 rounded-lg border border-purple-100/80 bg-purple-50/30 hover:bg-purple-100/40 text-slate-800 text-xs font-medium transition-colors`}
+                      style={{ animationDelay: isVisible || activeStep > 0 ? `${idx * 160}ms` : "0ms" }}
+                    >
+                      <span className="h-4.5 w-4.5 rounded bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+                        ✓
+                      </span>
+                      <span className="truncate">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Purpose Box (if present) */}
+              {current.purpose && (
+                <div 
+                  className={`${
+                    isVisible || activeStep > 0 ? "animate-reading-item" : "opacity-0"
+                  } rounded-xl border border-purple-200/90 bg-purple-50/50 p-3.5 sm:p-4 mb-4`}
+                  style={{ animationDelay: isVisible || activeStep > 0 ? `${current.items.length * 160 + 100}ms` : "0ms" }}
+                >
+                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-purple-900 block mb-1">
+                    Purpose
+                  </span>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    {current.purpose}
+                  </p>
+                </div>
+              )}
+
+              {/* Footer Statement (if present) */}
+              {current.footer && (
+                <div 
+                  className={`${
+                    isVisible || activeStep > 0 ? "animate-reading-item" : "opacity-0"
+                  } rounded-xl border border-slate-200/80 bg-slate-50/80 p-3 sm:p-3.5 text-xs text-slate-700 leading-relaxed font-medium mb-4`}
+                  style={{ animationDelay: isVisible || activeStep > 0 ? `${current.items.length * 160 + 100}ms` : "0ms" }}
+                >
+                  {current.footer}
+                </div>
+              )}
+
+              {/* Delivery CTA (if step 11) */}
+              {current.ctaText && (
+                <div 
+                  className={`${
+                    isVisible || activeStep > 0 ? "animate-reading-item" : "opacity-0"
+                  } mt-2`}
+                  style={{ animationDelay: isVisible || activeStep > 0 ? `${current.items.length * 160 + 150}ms` : "0ms" }}
+                >
+                  <a
+                    href="#contact"
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-purple-500/20 transition-all duration-300 hover:scale-105 hover:shadow-purple-500/35"
+                  >
+                    <span>{current.ctaText}</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Right Stage Visual Card (5 cols) */}
+            <div className="lg:col-span-5 flex flex-col justify-between self-stretch rounded-2xl border border-purple-100/90 bg-gradient-to-br from-purple-50/40 via-white to-pink-50/30 p-5 sm:p-6 text-left">
+              <div>
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <span className="font-mono text-[11px] font-bold text-slate-400">
+                    Step {activeStep + 1} of 11
+                  </span>
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center shadow-md shadow-purple-500/20">
+                    <IconComp className="h-5 w-5 stroke-[2.2]" />
+                  </div>
+                </div>
+
+                <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1.5">
+                  Stage Overview
+                </h4>
+                <p className="text-xs text-slate-600 leading-relaxed mb-4">
+                  Every step is designed to optimize retention, engagement, and conversion for performance-driven ad campaigns.
+                </p>
+
+                {/* Mini Visual Pipeline Checklist */}
+                <div className="space-y-1.5 pt-2 border-t border-purple-100/80">
+                  <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500">
+                    <span>Workflow Progress</span>
+                    <span className="font-mono text-purple-700 font-bold">{Math.round(((activeStep + 1) / 11) * 100)}%</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-purple-100 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all duration-500 rounded-full"
+                      style={{ width: `${((activeStep + 1) / 11) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Step Navigation Controls */}
+              <div className="flex items-center justify-between gap-3 pt-4 mt-4 border-t border-purple-100/80">
+                <button
+                  type="button"
+                  disabled={activeStep === 0}
+                  onClick={() => setActiveStep((prev) => Math.max(0, prev - 1))}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    activeStep === 0
+                      ? "opacity-40 cursor-not-allowed bg-slate-100 text-slate-400"
+                      : "bg-white border border-purple-200 text-purple-900 hover:bg-purple-50 cursor-pointer shadow-2xs"
+                  }`}
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <span>Previous</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={activeStep === processSteps.length - 1}
+                  onClick={() => setActiveStep((prev) => Math.min(processSteps.length - 1, prev + 1))}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    activeStep === processSteps.length - 1
+                      ? "opacity-40 cursor-not-allowed bg-slate-100 text-slate-400"
+                      : "bg-purple-900 text-white hover:bg-purple-950 cursor-pointer shadow-md shadow-purple-900/20"
+                  }`}
+                >
+                  <span>Next Step</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </Section>
   );
