@@ -3625,65 +3625,292 @@ export function StrategyCall() {
   }, []);
 
   return (
-    <Section id="book-call" className="py-10 md:py-16 relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-y border-slate-200/80">
+    <Section id="book-call" className="py-12 md:py-18 relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-y border-slate-200/80">
       <SectionHeading
-        eyebrow="Get In Touch"
-        title="Book a free"
-        highlight="strategy call."
-        description="No commitment. No sales pitch. A real 30-minute conversation about your brand, your goals, and how we'd help you scale."
+        eyebrow="CALENDLY + PAYMENT FLOW"
+        title="Treat This as a Core"
+        highlight="Conversion System"
+        description="Book a direct strategy call with our creative team or choose your streamlined workflow to kick off your project."
+        center={true}
       />
 
-      <div className="mx-auto max-w-[620px]">
-        {/* Contact Action Pill */}
-        <div className="mb-6 flex items-center justify-center">
-          <a
-            href={calendlyUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 shadow-xs transition-all duration-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
-          >
-            <Calendar className="h-4 w-4 text-purple-600 transition-transform group-hover:scale-110" />
-            <span>Book a slot via Calendly</span>
-            <ExternalLink className="h-3.5 w-3.5 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </a>
-        </div>
-
-        {/* Schedule Subtitle */}
-        <div className="mb-3 flex items-center justify-center sm:justify-start gap-2 px-1">
-          <MessageSquare className="h-3.5 w-3.5 text-slate-500" />
-          <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
-            Schedule a Strategy Call
-          </span>
-        </div>
-
-        {/* Compact Calendly Container with Zero Visible Scrollbar UI */}
-        <div className="relative mx-auto w-full max-w-[620px] overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xl">
-          <div className="w-full overflow-hidden" style={{ height: "760px" }}>
-            <div
-              ref={calendlyContainerRef}
-              className="calendly-inline-widget"
-              data-url={`${calendlyUrl}?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
-              style={{
-                width: "calc(100% + 22px)",
-                height: "760px",
-                overflowY: "scroll",
-                scrollbarWidth: "none",
-                msOverflowStyle: "none",
-              }}
+      {/* Two-Column Split Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+        {/* LEFT COLUMN: Calendly Booking */}
+        <div className="lg:col-span-7 flex flex-col">
+          {/* Header & Quick Action Pill */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 pb-3 border-b border-slate-200/80">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+              </span>
+              <h3 className="font-heading text-base sm:text-lg font-bold text-slate-900">
+                Book a Strategy Call
+              </h3>
+            </div>
+            <a
+              href={calendlyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-white px-3.5 py-1 text-xs font-semibold text-purple-700 shadow-2xs hover:border-purple-300 hover:bg-purple-50 transition-all cursor-pointer self-start sm:self-auto"
             >
-              <iframe
-                src={`${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
-                width="100%"
-                height="760"
-                frameBorder="0"
-                title="Select a Date & Time - Strategy Call"
-                className="border-0"
+              <Calendar className="h-3.5 w-3.5 text-purple-600" />
+              <span>Open in New Tab</span>
+              <ExternalLink className="h-3 w-3 text-slate-400" />
+            </a>
+          </div>
+
+          <p className="text-xs text-slate-600 mb-4">
+            Select an open date &amp; time on our calendar. Real 30-minute conversation about your brand, creative hooks, and format recommendations.
+          </p>
+
+          {/* Embedded Calendly Container */}
+          <div className="relative w-full overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-md">
+            <div className="w-full overflow-hidden" style={{ height: "720px" }}>
+              <div
+                ref={calendlyContainerRef}
+                className="calendly-inline-widget"
+                data-url={`${calendlyUrl}?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
                 style={{
-                  width: "100%",
-                  height: "760px",
-                  overflowY: "auto",
+                  width: "calc(100% + 22px)",
+                  height: "720px",
+                  overflowY: "scroll",
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
                 }}
-              />
+              >
+                <iframe
+                  src={`${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
+                  width="100%"
+                  height="720"
+                  frameBorder="0"
+                  title="Select a Date & Time - Strategy Call"
+                  className="border-0"
+                  style={{
+                    width: "100%",
+                    height: "720px",
+                    overflowY: "auto",
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Website CTA Routing Points */}
+        <div className="lg:col-span-5 flex flex-col">
+          {/* Header */}
+          <div className="mb-4 pb-3 border-b border-purple-100/90">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-700">
+              WEBSITE CTA ROUTING
+            </span>
+            <h3 className="font-heading text-lg sm:text-xl font-bold text-slate-900 mt-1">
+              Direct Action &amp; Conversion Flow
+            </h3>
+            <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+              Every CTA button routes into our automated scheduling or instant checkout engine.
+            </p>
+          </div>
+
+          {/* Points List Breakdown (Not Cards) */}
+          <div className="divide-y divide-slate-200/70 border-y border-slate-200/70">
+            {/* 1. Book a Strategy Call */}
+            <div
+              onClick={() => {
+                if (calendlyContainerRef.current) {
+                  calendlyContainerRef.current.scrollIntoView({ behavior: "smooth" });
+                } else {
+                  window.open(calendlyUrl, "_blank");
+                }
+              }}
+              className="group flex items-center justify-between gap-3 py-3 sm:py-3.5 transition-colors hover:bg-purple-50/40 cursor-pointer px-1.5 rounded-lg"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="h-1.5 w-1.5 rounded-full bg-purple-600 shrink-0" />
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-purple-700 transition-colors truncate">
+                  Book a Strategy Call
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-purple-50 border border-purple-200/70 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-all shadow-2xs">
+                <span>&rarr;</span>
+                <span>Calendly</span>
+              </span>
+            </div>
+
+            {/* 2. Talk to Our AI Creative Team */}
+            <div
+              onClick={() => {
+                if (calendlyContainerRef.current) {
+                  calendlyContainerRef.current.scrollIntoView({ behavior: "smooth" });
+                } else {
+                  window.open(calendlyUrl, "_blank");
+                }
+              }}
+              className="group flex items-center justify-between gap-3 py-3 sm:py-3.5 transition-colors hover:bg-purple-50/40 cursor-pointer px-1.5 rounded-lg"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="h-1.5 w-1.5 rounded-full bg-purple-600 shrink-0" />
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-purple-700 transition-colors truncate">
+                  Talk to Our AI Creative Team
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-purple-50 border border-purple-200/70 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-all shadow-2xs">
+                <span>&rarr;</span>
+                <span>Calendly</span>
+              </span>
+            </div>
+
+            {/* 3. Start Your Project */}
+            <div
+              onClick={() => {
+                document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="group flex items-center justify-between gap-3 py-3 sm:py-3.5 transition-colors hover:bg-purple-50/40 cursor-pointer px-1.5 rounded-lg"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="h-1.5 w-1.5 rounded-full bg-purple-600 shrink-0" />
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-purple-700 transition-colors truncate">
+                  Start Your Project
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-indigo-50 border border-indigo-200/70 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-indigo-700 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-2xs">
+                <span>&rarr;</span>
+                <span>Project / Booking Flow</span>
+              </span>
+            </div>
+
+            {/* 4. Book & Get Started */}
+            <div
+              onClick={() => {
+                document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="group flex items-center justify-between gap-3 py-3 sm:py-3.5 transition-colors hover:bg-purple-50/40 cursor-pointer px-1.5 rounded-lg"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="h-1.5 w-1.5 rounded-full bg-purple-600 shrink-0" />
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-purple-700 transition-colors truncate">
+                  Book &amp; Get Started
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-pink-50 border border-pink-200/70 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-pink-700 group-hover:bg-pink-600 group-hover:text-white transition-all shadow-2xs">
+                <span>&rarr;</span>
+                <span>Booking + Payment Flow</span>
+              </span>
+            </div>
+
+            {/* 5. Choose Your Package */}
+            <div
+              onClick={() => {
+                document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="group flex items-center justify-between gap-3 py-3 sm:py-3.5 transition-colors hover:bg-purple-50/40 cursor-pointer px-1.5 rounded-lg"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="h-1.5 w-1.5 rounded-full bg-purple-600 shrink-0" />
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-purple-700 transition-colors truncate">
+                  Choose Your Package
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-slate-100 border border-slate-200 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-slate-700 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-2xs">
+                <span>&rarr;</span>
+                <span>Pricing / Checkout</span>
+              </span>
+            </div>
+
+            {/* 6. Create an AI UGC Ad */}
+            <div
+              onClick={() => {
+                openCheckoutModal({ itemType: "individual", itemId: "ai_ugc_video" });
+              }}
+              className="group flex items-center justify-between gap-3 py-3 sm:py-3.5 transition-colors hover:bg-purple-50/40 cursor-pointer px-1.5 rounded-lg"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="h-1.5 w-1.5 rounded-full bg-purple-600 shrink-0" />
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-purple-700 transition-colors truncate">
+                  Create an AI UGC Ad
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-purple-50 border border-purple-200/70 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-all shadow-2xs">
+                <span>&rarr;</span>
+                <span>AI UGC booking / checkout</span>
+              </span>
+            </div>
+
+            {/* 7. Create an AI Avatar Video */}
+            <div
+              onClick={() => {
+                openCheckoutModal({ itemType: "individual", itemId: "ai_avatar_video" });
+              }}
+              className="group flex items-center justify-between gap-3 py-3 sm:py-3.5 transition-colors hover:bg-purple-50/40 cursor-pointer px-1.5 rounded-lg"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="h-1.5 w-1.5 rounded-full bg-purple-600 shrink-0" />
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-purple-700 transition-colors truncate">
+                  Create an AI Avatar Video
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-purple-50 border border-purple-200/70 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-all shadow-2xs">
+                <span>&rarr;</span>
+                <span>AI Avatar booking / checkout</span>
+              </span>
+            </div>
+
+            {/* 8. Create Cartoon AI Ad */}
+            <div
+              onClick={() => {
+                openCheckoutModal({ itemType: "individual", itemId: "ai_cartoon_animation" });
+              }}
+              className="group flex items-center justify-between gap-3 py-3 sm:py-3.5 transition-colors hover:bg-purple-50/40 cursor-pointer px-1.5 rounded-lg"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="h-1.5 w-1.5 rounded-full bg-purple-600 shrink-0" />
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-purple-700 transition-colors truncate">
+                  Create Cartoon AI Ad
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-purple-50 border border-purple-200/70 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-all shadow-2xs">
+                <span>&rarr;</span>
+                <span>Cartoon booking / checkout</span>
+              </span>
+            </div>
+
+            {/* 9. Create a Premium AI Ad */}
+            <div
+              onClick={() => {
+                openCheckoutModal({ itemType: "individual", itemId: "hyper_realistic_video" });
+              }}
+              className="group flex items-center justify-between gap-3 py-3 sm:py-3.5 transition-colors hover:bg-purple-50/40 cursor-pointer px-1.5 rounded-lg"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="h-1.5 w-1.5 rounded-full bg-purple-600 shrink-0" />
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-purple-700 transition-colors truncate">
+                  Create a Premium AI Ad
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-purple-50 border border-purple-200/70 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-all shadow-2xs">
+                <span>&rarr;</span>
+                <span>Hyper-Realistic booking / checkout</span>
+              </span>
+            </div>
+
+            {/* 10. Create Your Digital Twin */}
+            <div
+              onClick={() => {
+                openCheckoutModal({ itemType: "individual", itemId: "digital_twin_avatar" });
+              }}
+              className="group flex items-center justify-between gap-3 py-3 sm:py-3.5 transition-colors hover:bg-purple-50/40 cursor-pointer px-1.5 rounded-lg"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="h-1.5 w-1.5 rounded-full bg-purple-600 shrink-0" />
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-purple-700 transition-colors truncate">
+                  Create Your Digital Twin
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-purple-50 border border-purple-200/70 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-all shadow-2xs">
+                <span>&rarr;</span>
+                <span>Digital Twin booking / checkout</span>
+              </span>
             </div>
           </div>
         </div>

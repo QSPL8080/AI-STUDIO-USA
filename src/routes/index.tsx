@@ -94,9 +94,9 @@ function Index() {
         <Faq />
         <CreativeScalingCta />
         <LeadFormSection />
+        <StrategyCall />
         <DigitalTwin />
         <UseCases />
-        <StrategyCall />
         <WhyUs />
         <WhatsAppCtaSection />
         <Contact />
