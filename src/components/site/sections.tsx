@@ -2274,24 +2274,64 @@ function ServiceVideoCard({
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
 
-  // Play video on mount / active
-  useEffect(() => {
-    if (!videoRef.current || !service.videoUrl) return;
-    videoRef.current.currentTime = 0;
-    videoRef.current
-      .play()
-      .then(() => setIsPlaying(true))
-      .catch(() => {});
-  }, [service.videoUrl, isActive]);
+  // Keep the latest callback without restarting timers on every parent render
+  const onEndedRef = useRef(onEnded);
+  onEndedRef.current = onEnded;
+  const advancedRef = useRef(false);
+  const advance = () => {
+    if (advancedRef.current) return; // only once per reel
+    advancedRef.current = true;
+    onEndedRef.current();
+  };
 
-  // For image-only service (Digital Twin), auto-advance after 6.5s
+  // Only play (and auto-advance) while the reel is on screen
+  const [inView, setInView] = useState(false);
   useEffect(() => {
-    if (service.videoUrl || !isActive) return;
-    const timer = setTimeout(() => {
-      onEnded();
-    }, 6500);
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setInView(true);
+      return;
+    }
+    const io = new IntersectionObserver(([entry]) => setInView(!!entry?.isIntersecting), { threshold: 0.35 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // New reel: start from the beginning (muted, so browsers allow autoplay)
+  useEffect(() => {
+    advancedRef.current = false;
+    const v = videoRef.current;
+    if (!v || !service.videoUrl) return;
+    v.muted = isMuted;
+    v.currentTime = 0;
+  }, [service.videoUrl]);
+
+  // Play while visible, pause when scrolled away
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !service.videoUrl || !isActive) return;
+    if (!inView) {
+      v.pause();
+      return;
+    }
+    v.muted = isMuted;
+    v.play()
+      .then(() => setIsPlaying(true))
+      .catch(() => {
+        // Autoplay blocked even when muted: still move on after a few seconds
+        setIsPlaying(false);
+        const t = setTimeout(advance, 8000);
+        return () => clearTimeout(t);
+      });
+  }, [service.videoUrl, isActive, inView]);
+
+  // Image-only service (Digital Twin): advance after 6.5s on screen
+  useEffect(() => {
+    if (service.videoUrl || !isActive || !inView) return;
+    advancedRef.current = false;
+    const timer = setTimeout(advance, 6500);
     return () => clearTimeout(timer);
-  }, [service.videoUrl, isActive, onEnded]);
+  }, [service.videoUrl, isActive, inView]);
 
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -2334,7 +2374,12 @@ function ServiceVideoCard({
             muted={isMuted}
             playsInline
             preload="auto"
-            onEnded={onEnded}
+            onEnded={advance}
+            onTimeUpdate={(e) => {
+              // Safety net: some browsers skip "ended" on short clips
+              const v = e.currentTarget;
+              if (v.duration && v.currentTime >= v.duration - 0.15) advance();
+            }}
             className="h-full w-full object-cover cursor-pointer"
             onClick={togglePlay}
           />
