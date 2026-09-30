@@ -3857,9 +3857,9 @@ export function WhoWeServe() {
           </p>
         </div>
 
-        {/* Minimalist Tab Navigation Bar (No Boxed Card) */}
-        <div className="mb-8 sm:mb-10 overflow-x-auto scrollbar-none pb-2 border-b border-purple-100/90">
-          <div className="flex items-center justify-start sm:justify-center min-w-[620px] gap-2 sm:gap-3 py-1.5">
+        {/* Table-Format Tab Navigation (Sharp Table Grid, No Border Radius) */}
+        <div className="mb-8 sm:mb-10 overflow-x-auto scrollbar-none pb-1">
+          <div className="mx-auto flex items-stretch min-w-[680px] lg:min-w-0 max-w-5xl border border-slate-300 bg-white rounded-none divide-x divide-slate-300 shadow-2xs">
             {audienceSegments.map((segment, idx) => {
               const isSelected = activeIdx === idx;
               return (
@@ -3867,13 +3867,13 @@ export function WhoWeServe() {
                   key={segment.id}
                   type="button"
                   onClick={() => setActiveIdx(idx)}
-                  className={`flex items-center gap-2 py-2 px-3.5 rounded-xl transition-all duration-200 cursor-pointer text-xs sm:text-sm font-bold ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-3.5 rounded-none transition-all duration-150 cursor-pointer text-xs sm:text-sm font-bold text-center select-none ${
                     isSelected
-                      ? "bg-purple-900 text-white shadow-md shadow-purple-900/15 scale-[1.02]"
-                      : "text-slate-600 hover:text-purple-700 hover:bg-purple-50"
+                      ? "bg-purple-900 text-white font-extrabold shadow-inner"
+                      : "bg-slate-50/70 text-slate-700 hover:bg-purple-50 hover:text-purple-900"
                   }`}
                 >
-                  <span className={isSelected ? "text-purple-200" : "text-purple-600"}>
+                  <span className={isSelected ? "text-purple-200 shrink-0" : "text-purple-600 shrink-0"}>
                     {renderIcon(segment.icon, "h-4 w-4")}
                   </span>
                   <span className="whitespace-nowrap">{segment.badge}</span>
