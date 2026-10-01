@@ -3186,7 +3186,7 @@ export function DigitalTwin() {
               
               <div className="relative overflow-hidden rounded-2xl shadow-xl shadow-purple-900/10 transition-transform duration-500 group-hover:scale-[1.02]">
                 <img
-                  src="/images/digital-twin-image.png"
+                  src="/images/Digital%20Twin%20Image.png"
                   alt="Digital Twin Setup"
                   className="h-auto w-full object-contain block rounded-2xl"
                   loading="lazy"
