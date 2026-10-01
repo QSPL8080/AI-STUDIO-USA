@@ -1131,17 +1131,31 @@ export function WhyQuickuppAiStudio() {
     },
   ];
 
-  // Auto-change active benefit card every 6 seconds (relaxed reading pace)
+  // Auto-advance every 8 seconds, only while the section is on screen (and not hovered).
+  // Each new card slides in; manual clicks restart the 8 seconds.
+  const BENEFIT_MS = 8000;
+  const benefitsSectionRef = useRef<HTMLElement>(null);
+  const [benefitsInView, setBenefitsInView] = useState(false);
+  const [slideDir, setSlideDir] = useState<"next" | "prev">("next");
+  const goToBenefit = (idx: number, dir: "next" | "prev") => {
+    setSlideDir(dir);
+    setActiveBenefit(((idx % benefits.length) + benefits.length) % benefits.length);
+  };
   useEffect(() => {
-    if (isPaused) return;
-    const timer = setInterval(() => {
-      setActiveBenefit((prev) => (prev + 1) % benefits.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, [isPaused, benefits.length]);
+    const el = benefitsSectionRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => setBenefitsInView(!!entry?.isIntersecting), { threshold: 0.35 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  useEffect(() => {
+    if (isPaused || !benefitsInView) return;
+    const t = setTimeout(() => goToBenefit(activeBenefit + 1, "next"), BENEFIT_MS);
+    return () => clearTimeout(t);
+  }, [activeBenefit, isPaused, benefitsInView]);
 
   return (
-    <section id="why-quickupp" className="relative overflow-hidden border-b border-purple-100/80 bg-gradient-to-b from-slate-50/50 via-white to-purple-50/20 py-8 sm:py-10 md:py-14 px-4 sm:px-6 lg:px-8">
+    <section ref={benefitsSectionRef} id="why-quickupp" className="relative overflow-hidden border-b border-purple-100/80 bg-gradient-to-b from-slate-50/50 via-white to-purple-50/20 py-8 sm:py-10 md:py-14 px-4 sm:px-6 lg:px-8">
       {/* Dynamic atmospheric lighting */}
       <div
         aria-hidden
@@ -1236,7 +1250,7 @@ export function WhyQuickuppAiStudio() {
                     <button
                       key={b.num}
                       type="button"
-                      onClick={() => setActiveBenefit(bIdx)}
+                      onClick={() => goToBenefit(bIdx, bIdx < activeBenefit ? "prev" : "next")}
                       className={`font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-md transition-all duration-300 flex items-center gap-1 ${
                         isCurrent
                           ? "bg-purple-900 text-white shadow-xs scale-105"
@@ -1258,13 +1272,16 @@ export function WhyQuickuppAiStudio() {
               return (
                 <div
                   key={activeBenefit}
-                  className="group relative overflow-hidden rounded-2xl p-6 sm:p-7 border border-purple-200/80 bg-white/70 backdrop-blur-xl shadow-xl shadow-purple-500/10 transition-all duration-500 text-left flex flex-col justify-between min-h-[220px] sm:min-h-[240px]"
+                  className={`group relative overflow-hidden rounded-2xl p-6 sm:p-7 border border-purple-200/80 bg-white/70 backdrop-blur-xl shadow-xl shadow-purple-500/10 text-left flex flex-col justify-between min-h-[220px] sm:min-h-[240px] ${
+                    slideDir === "next" ? "animate-benefit-in-next" : "animate-benefit-in-prev"
+                  }`}
                 >
                   {/* Running 6-second progress indicator */}
                   <div
                     className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600"
                     style={{
-                      animation: isPaused ? "none" : "scaleProgress 6s linear infinite",
+                      animation: `scaleProgress ${BENEFIT_MS}ms linear forwards`,
+                      animationPlayState: isPaused || !benefitsInView ? "paused" : "running",
                     }}
                   />
 
@@ -1301,7 +1318,7 @@ export function WhyQuickuppAiStudio() {
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
-                        onClick={() => setActiveBenefit((prev) => (prev - 1 + benefits.length) % benefits.length)}
+                        onClick={() => goToBenefit(activeBenefit - 1, "prev")}
                         className="h-7 w-7 rounded-lg bg-white border border-purple-100 text-slate-500 hover:text-purple-700 hover:border-purple-300 flex items-center justify-center transition-colors shadow-2xs"
                         aria-label="Previous benefit"
                       >
@@ -1309,7 +1326,7 @@ export function WhyQuickuppAiStudio() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setActiveBenefit((prev) => (prev + 1) % benefits.length)}
+                        onClick={() => goToBenefit(activeBenefit + 1, "next")}
                         className="h-7 w-7 rounded-lg bg-white border border-purple-100 text-slate-500 hover:text-purple-700 hover:border-purple-300 flex items-center justify-center transition-colors shadow-2xs"
                         aria-label="Next benefit"
                       >

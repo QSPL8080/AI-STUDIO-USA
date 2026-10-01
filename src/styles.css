@@ -688,6 +688,18 @@
   }
 }
 
+/* Why Quickupp benefit cards: gentle slide-in when the card changes */
+@keyframes benefitInNext {
+  0% { opacity: 0; transform: translateX(56px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+@keyframes benefitInPrev {
+  0% { opacity: 0; transform: translateX(-56px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+.animate-benefit-in-next { animation: benefitInNext 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-benefit-in-prev { animation: benefitInPrev 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
 /* Pricing Row Staggered Reveal Animation */
 @keyframes pricingRowFadeIn {
   0% {
