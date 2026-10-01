@@ -1608,9 +1608,9 @@ export function Samples() {
           </span>
 
           <h2 className="mt-3.5 font-heading text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-slate-900">
-            11-Step Creative{" "}
+            Production{" "}
             <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5 whitespace-nowrap">
-              Production Process
+              Service
             </span>
           </h2>
         </div>
