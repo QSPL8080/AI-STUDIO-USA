@@ -4158,7 +4158,7 @@ export function LeadFormSection() {
           center={true}
         />
 
-        <div className="mt-2 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
+        <div className="mt-2 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 xl:gap-20 items-stretch">
         <div className="panel w-full p-6 sm:p-8 xl:p-10 shadow-xl shadow-purple-500/5 border border-slate-200/90 bg-white/95 backdrop-blur-sm rounded-3xl">
           {submitted ? (
             <div className="py-8 text-center space-y-3 animate-in fade-in zoom-in-95 duration-300">
