@@ -2331,7 +2331,7 @@ export function Services() {
         {/* Active Service Slide Card (Alternates Left/Right by Index) */}
         <div
           key={activeIdx}
-          className="animate-step-transition relative overflow-hidden rounded-3xl border border-purple-200/80 bg-white/90 backdrop-blur-xl p-5 sm:p-7 md:p-8 shadow-xl shadow-purple-500/10 transition-all duration-300 max-w-5xl mx-auto"
+          className={`${activeIdx % 2 === 0 ? "animate-slide-in-right" : "animate-slide-in-left"} relative overflow-hidden rounded-3xl border border-purple-200/80 bg-white/90 backdrop-blur-xl p-5 sm:p-7 md:p-8 shadow-xl shadow-purple-500/10 max-w-5xl mx-auto`}
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
             {/* Content Column */}
@@ -3458,6 +3458,23 @@ export function WhoWeServe() {
     return () => clearInterval(timer);
   }, [isInView, activeIdx, current.formats.length]);
 
+  // Auto-advance every 5 seconds while the section is on screen (pauses on hover);
+  // each segment slides in, alternating from the right and from the left.
+  const [serveOnScreen, setServeOnScreen] = useState(false);
+  const [serveHovered, setServeHovered] = useState(false);
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => setServeOnScreen(!!entry?.isIntersecting), { threshold: 0.3 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!serveOnScreen || serveHovered) return;
+    const t = setTimeout(() => setActiveIdx((prev) => (prev + 1) % audienceSegments.length), 5000);
+    return () => clearTimeout(t);
+  }, [activeIdx, serveOnScreen, serveHovered]);
+
   const renderIcon = (type: AudienceSegment["icon"], className = "h-4 w-4") => {
     switch (type) {
       case "shopping-bag":
@@ -3539,7 +3556,9 @@ export function WhoWeServe() {
         {/* Cardless Open Editorial Flow */}
         <div
           key={current.id}
-          className="animate-step-transition grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start text-left"
+          onMouseEnter={() => setServeHovered(true)}
+          onMouseLeave={() => setServeHovered(false)}
+          className={`${activeIdx % 2 === 0 ? "animate-slide-in-right" : "animate-slide-in-left"} grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start text-left`}
         >
           {/* Left Column: Core Narrative, Niches, Pitch & CTAs */}
           <div className="lg:col-span-7 flex flex-col space-y-4 sm:space-y-5">
