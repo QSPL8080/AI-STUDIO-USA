@@ -160,7 +160,7 @@ export function Header() {
               href="/#pricing"
               className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
             >
-              Pricing
+              Packages
             </a>
             <a
               href="/#process"
@@ -2472,7 +2472,7 @@ export function Pricing() {
     <Section id="pricing" className="relative overflow-hidden bg-aura-diagonal border-y border-purple-100/80">
       <SectionHeading
         eyebrow="PACKAGES"
-        title="Simple Pricing."
+        title="Simple Packages."
         highlight="Built for Creative Volume."
         description="Choose the package that fits your volume and production needs with instant checkout."
       />
@@ -4642,7 +4642,7 @@ export function CreativeScalingCta() {
             href="#pricing"
             className="group inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-6 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 shadow-2xs transition-all hover:border-purple-400 hover:bg-purple-50/60 hover:text-purple-700 hover:scale-105 active:scale-95 cursor-pointer"
           >
-            <span>View Pricing</span>
+            <span>View Packages</span>
             <ArrowRight className="h-3.5 w-3.5 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-purple-600" />
           </a>
 
