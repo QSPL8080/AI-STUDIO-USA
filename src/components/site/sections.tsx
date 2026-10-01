@@ -275,7 +275,7 @@ export function Header() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex min-h-[44px] items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-purple-50 hover:text-purple-700 active:scale-[0.99]"
               >
-                <span>Pricing</span>
+                <span>Packages</span>
                 <span className="text-xs text-purple-600 font-bold">→</span>
               </a>
 
@@ -2471,7 +2471,7 @@ export function Pricing() {
   return (
     <Section id="pricing" className="relative overflow-hidden bg-aura-diagonal border-y border-purple-100/80">
       <SectionHeading
-        eyebrow="PRICING"
+        eyebrow="PACKAGES"
         title="Simple Pricing."
         highlight="Built for Creative Volume."
         description="Choose the package that fits your volume and production needs with instant checkout."
@@ -4788,7 +4788,7 @@ export function Footer() {
   const companyLinks = [
     { label: "About", href: "#top" },
     { label: "Portfolio", href: "#samples" },
-    { label: "Pricing", href: "#pricing" },
+    { label: "Packages", href: "#pricing" },
     { label: "How It Works", href: "#process" },
     { label: "FAQ", href: "#faq" },
     { label: "Contact", href: "#contact" },

@@ -757,7 +757,7 @@ export const faqs = [
 export const nav = [
   { label: "Samples", href: "/#samples" },
   { label: "Services", href: "/#services" },
-  { label: "Pricing", href: "/#pricing" },
+  { label: "Packages", href: "/#pricing" },
   { label: "Portfolio", href: "/portfolio" },
   { label: "How It Works", href: "/#process" },
   { label: "FAQ", href: "/#faq" },
