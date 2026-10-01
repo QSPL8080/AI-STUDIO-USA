@@ -107,21 +107,21 @@ export const portfolioItems = [
     specLabel: "SPEC AD / UNOFFICIAL CONCEPT",
   },
   {
+    title: "JBL Portable Speaker",
+    format: "AI Cartoon",
+    industry: "Consumer Audio & Electronics",
+    description:
+      "3D-animated story of a rooftop DJ whose JBL sound travels across the city, from office towers and taxi rides to the subway, ending in a rooftop party and a JBL speaker hero shot.",
+    videoUrl: "/videos/Portfolio 6.mp4",
+    isSpecConcept: true,
+    specLabel: "SPEC AD / UNOFFICIAL CONCEPT",
+  },
+  {
     title: "AI Avatar Presenter",
     format: "AI Avatar",
     industry: "Presenter & Spokesperson",
     description:
       "Professional presenter-style spokesperson reel for corporate, marketing, and educational content.",
-    videoUrl: "",
-    imageUrl: "",
-    isComingSoon: true,
-  },
-  {
-    title: "AI Cartoon Animation",
-    format: "AI Cartoon",
-    industry: "Creative Animation & Storytelling",
-    description:
-      "Engaging character animation and narrative product storytelling for creative brands.",
     videoUrl: "",
     imageUrl: "",
     isComingSoon: true,
@@ -337,7 +337,7 @@ export const services = [
     price: "$179 / Video",
     startingAt: "$179 / Video",
     cta: "Create Your Digital Twin",
-    videoUrl: "",
+    videoUrl: "/videos/Digital%20Twin%20Sample.mp4",
     imageUrl: "/images/Digital%20Twin%20Image.png",
   },
 ];
