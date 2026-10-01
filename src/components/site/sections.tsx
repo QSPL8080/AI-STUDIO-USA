@@ -781,12 +781,12 @@ export function Hero() {
           <div className="mt-4 sm:mt-6 w-full max-w-lg sm:max-w-xl md:max-w-2xl px-2 text-center">
             <h1 className="font-[var(--font-google-sans)] text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-slate-900">
               <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5">
-                AI Video Creation
+                Conversion-Focused
               </span>{" "}
-              for Businesses That Want to Stand Out
+              AI Video Ads for Modern Brands
             </h1>
             <p className="mt-2.5 sm:mt-3.5 text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal">
-              Turn your ideas into engaging, professional videos with AI - faster, smarter, and more cost-effectively.
+              Create high-performing video ads without expensive shoots, creators, or production teams.
             </p>
           </div>
         </div>
@@ -851,12 +851,12 @@ export function Hero() {
             >
               <h1 className="font-[var(--font-google-sans)] text-3xl lg:text-[2.35rem] xl:text-[2.85rem] 2xl:text-[3.35rem] font-bold leading-[1.12] tracking-tight text-slate-900">
                 <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5">
-                  AI Video Creation
+                  Conversion-Focused
                 </span>{" "}
-                for Businesses That Want to Stand Out
+                AI Video Ads for Modern Brands
               </h1>
               <p className="mt-3 lg:mt-4 xl:mt-5 text-base lg:text-[1.05rem] xl:text-[1.2rem] 2xl:text-[1.3rem] text-slate-600 leading-relaxed font-normal max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl">
-                Turn your ideas into engaging, professional videos with AI - faster, smarter, and more cost-effectively.
+                Create high-performing video ads without expensive shoots, creators, or production teams.
               </p>
             </div>
           </div>
