@@ -5162,11 +5162,7 @@ export function QuotePopupModal() {
           <>
             {/* Modal Header */}
             <div className="pr-6 text-center sm:pr-0">
-              <span className="eyebrow py-1 text-[11px]">
-                <span className="h-1.5 w-1.5 rounded-full bg-neon" />
-                Get a Quote
-              </span>
-              <h3 className="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-2xl">
+              <h3 className="text-lg font-bold tracking-tight text-slate-900 sm:text-2xl">
                 Let's Create Your Next{" "}
                 <span className="font-serif italic text-gradient-brand inline-block pr-1.5">
                   AI Video
