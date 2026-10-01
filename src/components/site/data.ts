@@ -342,33 +342,6 @@ export const services = [
   },
 ];
 
-export const whyAiVideo = [
-  {
-    title: "Hooks",
-    description: "Different opening messages for different audiences.",
-  },
-  {
-    title: "Angles",
-    description: "Different reasons for customers to care.",
-  },
-  {
-    title: "Personas",
-    description: "Different creator or presenter styles.",
-  },
-  {
-    title: "Concepts",
-    description: "Different storytelling approaches.",
-  },
-  {
-    title: "Visual Styles",
-    description: "UGC, avatar, cinematic, cartoon, product-focused, and more.",
-  },
-  {
-    title: "CTAs",
-    description: "Different actions based on campaign objectives.",
-  },
-];
-
 export interface IndividualPricing {
   service: string;
   price: string;

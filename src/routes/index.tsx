@@ -14,15 +14,12 @@ import {
   Process,
   QuotePopupModal,
   CheckoutModal,
-  RecommendedConversionFlows,
   ResearchToAdStrip,
   Samples,
   Services,
   DigitalTwin,
   WhoWeServe,
   StrategyCall,
-  TrustStrip,
-  WhyAiVideo,
   WhyQuickuppAiStudio,
 } from "@/components/site/sections";
 
@@ -80,21 +77,18 @@ function Index() {
       <main id="main-content">
         <Hero />
         <HeroOverview />
-        <TrustStrip />
         <WhyQuickuppAiStudio />
         <ResearchToAdStrip />
         <Samples />
         <Services />
         <DigitalTwin />
         <WhoWeServe />
-        <WhyAiVideo />
         <Pricing />
         <PackageInclusions />
         <Process />
         <Faq />
         <LeadFormSection />
         <StrategyCall />
-        <RecommendedConversionFlows />
         <CreativeScalingCta />
       </main>
       <Footer />

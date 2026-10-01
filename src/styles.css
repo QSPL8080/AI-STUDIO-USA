@@ -688,22 +688,6 @@
   }
 }
 
-/* WhyAiVideo Unique Cyber Radar Pulse & Stagger Wave Animation */
-@keyframes cyberWave {
-  0% {
-    opacity: 0;
-    transform: translateY(35px) scale(0.92);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.animate-cyber-wave {
-  animation: cyberWave 1.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
 /* Pricing Row Staggered Reveal Animation */
 @keyframes pricingRowFadeIn {
   0% {
