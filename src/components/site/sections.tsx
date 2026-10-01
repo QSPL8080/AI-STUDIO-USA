@@ -1635,7 +1635,7 @@ export function Samples() {
           <h2 className="mt-3.5 font-heading text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-slate-900">
             Production{" "}
             <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5 whitespace-nowrap">
-              Service
+              Process
             </span>
           </h2>
         </div>
