@@ -3507,54 +3507,54 @@ function AdminPage() {
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-xs">
         <div className="mx-auto flex w-full max-w-[1750px] items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 gap-2 sm:gap-4">
-          {/* Brand & Role Badge */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Brand & Role Badge (compacts on phones/tablets so the controls always fit) */}
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-3 overflow-hidden">
             <a
               href="/"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+              className="hidden sm:inline-flex rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
               title="View Public Website"
             >
               <ArrowLeft className="h-4 w-4" />
             </a>
 
-            <div className="flex items-center gap-2 sm:gap-3">
-              <a href="/" className="flex items-center transition-opacity hover:opacity-85">
+            <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
+              <a href="/" className="flex shrink-0 items-center transition-opacity hover:opacity-85">
                 <img
                   src="/images/LOGO 1.png"
                   alt="Quickupp AI Studio logo"
-                  className="h-7 sm:h-8 md:h-9 w-auto object-contain"
+                  className="h-6 min-[360px]:h-7 sm:h-8 md:h-9 w-auto object-contain"
                   width={125}
                   height={38}
                 />
               </a>
 
-              <span className="hidden md:inline text-sm font-bold text-slate-800 truncate max-w-[260px]" title={appliedPlatformTitle}>
+              <span className="hidden xl:inline text-sm font-bold text-slate-800 truncate max-w-[260px]" title={appliedPlatformTitle}>
                 {appliedPlatformTitle}
               </span>
 
               {isSuperAdmin ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/40 bg-purple-500/15 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-purple-700">
+                <span className="max-[399px]:hidden inline-flex shrink-0 items-center gap-1 rounded-full border border-purple-500/40 bg-purple-500/15 px-1.5 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-purple-700">
                   <ShieldCheck className="h-3 w-3" />
-                  <span>Super Admin</span>
+                  <span className="hidden sm:inline">Super Admin</span>
                 </span>
               ) : isLeadsManager ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-amber-700">
+                <span className="max-[399px]:hidden inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-1.5 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-amber-700">
                   <ShieldCheck className="h-3 w-3" />
-                  <span>Leads Manager</span>
+                  <span className="hidden sm:inline">Leads Manager</span>
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/40 bg-blue-500/15 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-blue-700">
+                <span className="max-[399px]:hidden inline-flex shrink-0 items-center gap-1 rounded-full border border-blue-500/40 bg-blue-500/15 px-1.5 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-blue-700">
                   <ShieldCheck className="h-3 w-3" />
-                  <span>Admin</span>
+                  <span className="hidden sm:inline">Admin</span>
                 </span>
               )}
             </div>
           </div>
 
           {/* Controls: Auto-Sync, Sound, Notifications, User Profile */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2.5">
             <div className="hidden lg:flex items-center gap-1.5 text-xs text-slate-500 font-medium">
               <span>Auto-sync in</span>
               <span className="font-mono font-bold text-blue-600">{refreshCountdown}s</span>
@@ -3565,7 +3565,7 @@ function AdminPage() {
                 fetchAllData(false);
                 setRefreshCountdown(appliedSyncInterval);
               }}
-              className="rounded-lg border border-slate-200 bg-slate-100 p-2 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+              className="rounded-lg border border-slate-200 bg-slate-100 p-1.5 sm:p-2 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
               title="Refresh Data Now"
             >
               <RefreshCw className={`h-4 w-4 ${loading || isSyncing ? "animate-spin text-blue-500" : ""}`} />
@@ -3579,7 +3579,7 @@ function AdminPage() {
                 localStorage.setItem("ai_studio_sound_enabled", String(next));
                 if (next) playNotificationChime();
               }}
-              className="rounded-lg border border-slate-200 bg-slate-100 p-2 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+              className="rounded-lg border border-slate-200 bg-slate-100 p-1.5 sm:p-2 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
               title={soundEnabled ? "Mute notification sounds" : "Enable notification sounds"}
             >
               {soundEnabled ? <Volume2 className="h-4 w-4 text-emerald-500" /> : <VolumeX className="h-4 w-4 text-slate-400" />}
@@ -3589,7 +3589,7 @@ function AdminPage() {
             <div className="relative">
               <button
                 onClick={() => setShowNotificationsPopover(!showNotificationsPopover)}
-                className={`relative rounded-lg border p-2 transition-colors cursor-pointer ${
+                className={`relative rounded-lg border p-1.5 sm:p-2 transition-colors cursor-pointer ${
                   showNotificationsPopover
                     ? "border-blue-500 bg-blue-50 text-blue-600"
                     : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -3748,8 +3748,8 @@ function AdminPage() {
             </div>
 
             {/* User Profile & Logout */}
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-2.5 sm:px-3 py-1.5">
-              <div className="hidden sm:block text-right">
+            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-2 sm:px-3 py-1.5">
+              <div className="hidden lg:block text-right">
                 <p className="text-xs font-bold leading-none">{session.name}</p>
                 <p className="text-[10px] text-slate-500 font-mono mt-0.5">{session.email}</p>
               </div>
@@ -7577,7 +7577,7 @@ function AdminPage() {
                       </span>
                     </h2>
                     <p className="mt-0.5 text-xs text-slate-500">
-                      Configure platform rules, personalize interface colors, export data streams, inspect RBAC permissions, review database counts, view analytics reports, and adjust security policies.
+                      Configure platform settings, role permissions, live record counts, and security policies.
                     </p>
                     <p className="mt-1 text-[11px] font-medium text-slate-400">
                       {settingsLastSaved
