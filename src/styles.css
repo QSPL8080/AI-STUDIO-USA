@@ -404,6 +404,14 @@
   animation-play-state: paused;
 }
 
+/* How It Works: steps 01 -> 11 scroll right-to-left, non-stop, seamless loop */
+.animate-process-rtl {
+  display: flex;
+  width: max-content;
+  animation: marquee 50s linear infinite;
+  will-change: transform;
+}
+
 @keyframes slideInLeft {
   0% {
     opacity: 0;

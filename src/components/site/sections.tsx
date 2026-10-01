@@ -3919,19 +3919,19 @@ export function Process() {
         />
       </div>
 
-      {/* 100% Full-Width Infinite Smooth Looping Track (Left to Right) */}
+      {/* Full-width infinite loop: steps 01 -> 11 move right-to-left without stopping */}
       <div className="relative mt-8 sm:mt-10 w-full overflow-hidden">
         {/* Left & Right Soft Fade Gradients */}
         <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-r from-white via-white/80 to-transparent z-10" />
         <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-l from-white via-white/80 to-transparent z-10" />
 
         {/* Marquee Row */}
-        <div className="flex gap-4 sm:gap-5 py-3 animate-marquee-ltr hover:[animation-play-state:paused]">
+        <div className="flex py-3 animate-process-rtl">
           {doubledSteps.map((step, i) => {
             return (
               <div
                 key={`${step.step}-${i}`}
-                className="group relative flex w-[280px] sm:w-[320px] md:w-[340px] shrink-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-purple-300 hover:shadow-xl hover:shadow-purple-500/10 backdrop-blur-md"
+                className="group relative mr-4 sm:mr-5 flex w-[280px] sm:w-[320px] md:w-[340px] shrink-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-purple-300 hover:shadow-xl hover:shadow-purple-500/10 backdrop-blur-md"
               >
                 {/* Step Top Bar Accent Line with Smooth Edge Masking */}
                 <div className="absolute left-0 top-0 h-1 w-0 bg-gradient-brand transition-all duration-500 ease-out group-hover:w-full" />
