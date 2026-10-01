@@ -51,6 +51,13 @@ import {
   Zap,
 } from "lucide-react";
 import { NeonButton, Section, SectionHeading } from "./ui";
+
+// Web-optimised hero reel + its first frame (shown instantly while the video buffers)
+const HERO_VIDEO = "/videos/Hero%20Video%20New.mp4";
+const HERO_POSTER = "/videos/posters/Hero%20Video%20New.jpg";
+/** First-frame poster for a reel in /public/videos (see /public/videos/posters). */
+export const posterFor = (url?: string) =>
+  url ? url.replace("/videos/", "/videos/posters/").replace(/\.mp4$/i, ".jpg") : undefined;
 import { submitLeadServerFn, broadcastLeadEvent } from "@/lib/lead-actions";
 import { openCheckoutModal, CheckoutModal } from "./checkout-modal";
 export { CheckoutModal, openCheckoutModal };
@@ -466,6 +473,8 @@ export function Hero() {
     }
 
     if (activeVideo) {
+      // Screen crossed the breakpoint: pick up the <source> meant for this size
+      if (!activeVideo.currentSrc) activeVideo.load();
       activeVideo.defaultMuted = true;
       activeVideo.muted = isMuted;
       activeVideo.volume = isMuted ? 0 : 1;
@@ -743,15 +752,18 @@ export function Hero() {
                   el.playsInline = true;
                 }
               }}
-              src="/videos/Hero%20Video%20New.mp4"
+              poster={HERO_POSTER}
               autoPlay
               loop
               muted={isMuted}
               playsInline
-              preload="metadata"
+              preload="auto"
               onClick={toggleAudio}
               className="h-full w-full object-cover object-center cursor-pointer"
-            />
+            >
+              {/* Only the copy for the current screen size downloads */}
+              <source src={HERO_VIDEO} type="video/mp4" media="(max-width: 1023.98px)" />
+            </video>
 
             {/* Audio Voice Toggle Button */}
             <div className="absolute top-2.5 left-2.5 z-30">
@@ -887,15 +899,18 @@ export function Hero() {
                     el.playsInline = true;
                   }
                 }}
-                src="/videos/Hero%20Video%20New.mp4"
+                poster={HERO_POSTER}
                 autoPlay
                 loop
                 muted={isMuted}
                 playsInline
-                preload="metadata"
+                preload="auto"
                 onClick={toggleAudio}
                 className="h-full w-full object-cover object-center cursor-pointer"
-              />
+              >
+                {/* Only the copy for the current screen size downloads */}
+                <source src={HERO_VIDEO} type="video/mp4" media="(min-width: 1024px)" />
+              </video>
 
               {/* Audio Voice Toggle Button */}
               <div className="absolute top-2.5 left-2.5 sm:top-3 sm:right-auto z-30">
@@ -1872,8 +1887,24 @@ function PortfolioCard({ sample }: { sample: (typeof portfolioItems)[number] }) 
       { threshold: 0.08, rootMargin: "40px 0px 40px 0px" },
     );
 
+    // Start downloading ~1 screen ahead so the reel is ready when it appears
+    const preloader = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && sample.videoUrl && !video.src) {
+          video.preload = "auto";
+          video.src = sample.videoUrl;
+          video.load();
+          setSrcLoaded(true);
+        }
+      },
+      { rootMargin: "900px 0px 900px 0px" },
+    );
+    preloader.observe(video);
     observer.observe(video);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      preloader.disconnect();
+    };
   }, [sample.videoUrl]);
 
   const togglePlay = () => {
@@ -1918,6 +1949,7 @@ function PortfolioCard({ sample }: { sample: (typeof portfolioItems)[number] }) 
               el.playsInline = true;
             }
           }}
+          poster={posterFor(sample.videoUrl)}
           muted={isMuted}
           loop
           playsInline
@@ -2056,10 +2088,12 @@ function ServiceVideoCard({
   service,
   onEnded,
   isActive,
+  nextVideoUrl,
 }: {
   service: (typeof services)[0];
   onEnded: () => void;
   isActive: boolean;
+  nextVideoUrl?: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -2085,6 +2119,27 @@ function ServiceVideoCard({
       return;
     }
     const io = new IntersectionObserver(([entry]) => setInView(!!entry?.isIntersecting), { threshold: 0.35 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // Only start downloading reels once the section is about a screen away
+  const [nearView, setNearView] = useState(false);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setNearView(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setNearView(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "900px 0px 900px 0px" },
+    );
     io.observe(el);
     return () => io.disconnect();
   }, []);
@@ -2158,11 +2213,25 @@ function ServiceVideoCard({
       ref={containerRef}
       className="group relative w-full max-w-[240px] sm:max-w-[260px] md:max-w-[275px] aspect-[9/16] rounded-2xl border-2 border-purple-200/90 bg-slate-950 overflow-hidden shadow-xl shadow-purple-500/10 hover:shadow-2xl hover:shadow-purple-500/20 hover:border-purple-400 transition-all duration-500 mx-auto"
     >
+      {/* Warm up the next reel so the switch is instant */}
+      {nearView && nextVideoUrl && nextVideoUrl !== service.videoUrl && (
+        <video
+          key={nextVideoUrl}
+          src={nextVideoUrl}
+          preload="auto"
+          muted
+          playsInline
+          aria-hidden="true"
+          tabIndex={-1}
+          className="hidden"
+        />
+      )}
       {service.videoUrl ? (
         <>
           <video
             ref={videoRef}
-            src={service.videoUrl}
+            src={nearView ? service.videoUrl : undefined}
+            poster={posterFor(service.videoUrl)}
             muted={isMuted}
             playsInline
             preload="auto"
@@ -2462,6 +2531,7 @@ export function Services() {
                 service={currentService}
                 onEnded={handleNext}
                 isActive={true}
+                nextVideoUrl={services[(activeIdx + 1) % services.length]?.videoUrl}
               />
             </div>
           </div>

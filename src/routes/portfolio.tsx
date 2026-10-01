@@ -101,8 +101,24 @@ function VideoCard({ item }: { item: (typeof portfolioItems)[number] }) {
       { threshold: 0.15, rootMargin: "50px 0px 50px 0px" }
     );
 
+    // Start downloading ~1 screen ahead so the reel is ready when it appears
+    const preloader = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && item.videoUrl && !video.src) {
+          video.preload = "auto";
+          video.src = item.videoUrl;
+          video.load();
+          setSrcLoaded(true);
+        }
+      },
+      { rootMargin: "900px 0px 900px 0px" },
+    );
+    preloader.observe(video);
     observer.observe(video);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      preloader.disconnect();
+    };
   }, [item.videoUrl]);
 
   const togglePlay = (e: React.MouseEvent) => {
@@ -142,6 +158,7 @@ function VideoCard({ item }: { item: (typeof portfolioItems)[number] }) {
           <>
             <video
               ref={videoRef}
+              poster={item.videoUrl.replace("/videos/", "/videos/posters/").replace(/\.mp4$/i, ".jpg")}
               muted={isMuted}
               loop
               playsInline
