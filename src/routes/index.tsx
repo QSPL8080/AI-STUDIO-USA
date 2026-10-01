@@ -73,7 +73,7 @@ function Index() {
   return (
     <div id="top" className="min-h-screen w-full overflow-x-clip bg-background text-foreground">
       <Header />
-      <main id="main-content">
+      <main id="main-content" className="typeset">
         <Hero />
         <HeroOverview />
         <WhyQuickuppAiStudio />

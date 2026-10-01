@@ -962,4 +962,31 @@
   animation: inclusionItemPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-
+/* ── Typeset ("LaTeX-style") body text on the public website ─────────────────
+   Paragraphs get straight left & right edges with automatic hyphenation (as in
+   LaTeX), so lines are even without large word gaps. Centred blocks keep a
+   centred last line. Phones keep normal alignment (columns too narrow). */
+@media (min-width: 640px) {
+  .typeset p {
+    text-align: justify;
+    text-justify: inter-word;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+    hyphenate-limit-chars: 7 3 3;
+    overflow-wrap: break-word;
+  }
+  /* Centred intro lines stay centred (justifying them spreads the words apart) */
+  .typeset p.text-center,
+  .typeset .text-center p {
+    text-align: center;
+  }
+  /* ...except blocks explicitly set to justify (e.g. the overview paragraphs) */
+  .typeset p.sm\:text-justify {
+    text-align: justify;
+    text-align-last: center;
+  }
+  .typeset p.text-right,
+  .typeset .text-right p {
+    text-align: right;
+  }
+}

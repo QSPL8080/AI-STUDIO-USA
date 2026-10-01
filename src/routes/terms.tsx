@@ -45,7 +45,7 @@ export function TermsPage() {
       </header>
 
       {/* Main Content Area */}
-      <main className="mx-auto w-full max-w-4xl px-5 py-10 md:py-14">
+      <main className="typeset mx-auto w-full max-w-4xl px-5 py-10 md:py-14">
         {/* Document Header */}
         <div className="border-b border-border/60 pb-8">
           <div className="flex flex-wrap items-center gap-2 mb-4">

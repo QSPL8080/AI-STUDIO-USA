@@ -243,7 +243,7 @@ function PortfolioPage() {
     <div id="top" className="min-h-screen w-full overflow-x-clip bg-background text-foreground flex flex-col justify-between">
       <Header />
 
-      <main id="main-content" className="pt-20 md:pt-24 pb-16 flex-1">
+      <main id="main-content" className="typeset pt-20 md:pt-24 pb-16 flex-1">
         {/* Page Hero Section */}
         <div className="bg-gradient-to-b from-purple-50/40 via-white to-transparent py-8 sm:py-10 md:py-12 border-b border-purple-100/60">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
