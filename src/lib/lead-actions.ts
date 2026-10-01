@@ -71,6 +71,93 @@ import {
 import { evaluateLocationAccess, getOfficeGeoConfig, DEFAULT_OFFICE_CONFIG } from "./geo-config";
 import { createCrmSessionToken, verifySessionWithLocation, decodeAndVerifySessionToken } from "./crm-session";
 import { getLiveSessionLoginLogIds, isSessionPresent, PRESENCE_STALE_MS, type SessionPresence } from "./login-sessions";
+// ── Office network approval ──────────────────────────────────────────────────
+// Desktop PCs often report a wrong browser location (no GPS, Wi-Fi off), so logins
+// coming from the office's own internet connection are accepted without the GPS check.
+// The office IP is learned automatically from logins with a precise reading inside the
+// 100 m circle, and the Super Admin can add / remove networks in Security Settings.
+type OfficeNetwork = { ip: string; label: string; source: "auto" | "manual"; addedBy: string; addedAt: string; lastSeenAt: string };
+const OFFICE_NETWORKS_KEY = "office_networks";
+
+// Loaded lazily: this file is also bundled for the browser, where server APIs can't be imported.
+async function getClientIp(): Promise<string> {
+  try {
+    const { getRequestIP } = await import("@tanstack/react-start/server");
+    const raw = getRequestIP({ xForwardedFor: true }) || "";
+    return raw.split(",")[0]!.trim().replace(/^::ffff:/, "");
+  } catch {
+    return "";
+  }
+}
+function isPublicIp(ip: string): boolean {
+  if (!ip) return false;
+  return !/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$|fc|fd|fe80)/i.test(ip);
+}
+async function readOfficeNetworks(): Promise<OfficeNetwork[]> {
+  try {
+    const st = await getCrmSettingsFromDb();
+    const list = JSON.parse(st[OFFICE_NETWORKS_KEY] || "[]");
+    return Array.isArray(list) ? list.filter((n) => n && typeof n.ip === "string") : [];
+  } catch {
+    return [];
+  }
+}
+async function writeOfficeNetworks(list: OfficeNetwork[]): Promise<void> {
+  await saveCrmSettingsToDb({ [OFFICE_NETWORKS_KEY]: JSON.stringify(list.slice(0, 20)) });
+}
+async function isOfficeNetwork(ip: string): Promise<boolean> {
+  if (!isPublicIp(ip)) return false;
+  return (await readOfficeNetworks()).some((n) => n.ip === ip);
+}
+async function rememberOfficeNetwork(ip: string, source: "auto" | "manual", by: string, label?: string): Promise<void> {
+  if (!isPublicIp(ip)) return;
+  const list = await readOfficeNetworks();
+  const now = new Date().toISOString();
+  const found = list.find((n) => n.ip === ip);
+  if (found) {
+    found.lastSeenAt = now;
+    if (label) found.label = label;
+  } else {
+    list.unshift({ ip, label: label || "Office network", source, addedBy: by, addedAt: now, lastSeenAt: now });
+  }
+  await writeOfficeNetworks(list);
+}
+
+export const fetchOfficeNetworksServerFn = createServerFn({ method: "POST" })
+  .validator((data: { token?: string | undefined }) => data)
+  .handler(async ({ data }) => {
+    const who = decodeAndVerifySessionToken(data.token || "");
+    if (!who.valid || who.payload?.role !== "super_admin") return { success: false as const, error: "Only Super Admin can manage office networks." };
+    const yourIp = await getClientIp();
+    return { success: true as const, networks: await readOfficeNetworks(), yourIp, yourIpUsable: isPublicIp(yourIp) };
+  });
+
+export const addCurrentOfficeNetworkServerFn = createServerFn({ method: "POST" })
+  .validator((data: { token?: string | undefined; label?: string | undefined }) => data)
+  .handler(async ({ data }) => {
+    const who = decodeAndVerifySessionToken(data.token || "");
+    if (!who.valid || who.payload?.role !== "super_admin") return { success: false as const, error: "Only Super Admin can manage office networks." };
+    const ip = await getClientIp();
+    if (!isPublicIp(ip)) return { success: false as const, error: "Couldn't detect this connection's public IP address." };
+    await rememberOfficeNetwork(ip, "manual", who.payload.email, (data.label || "").trim().slice(0, 60) || "Office network");
+    try {
+      await addActivityLogInDb({ action: "Office Network Added", details: `Office network ${ip} approved for CRM logins`, performed_by: who.payload.email, user_role: "super_admin" });
+    } catch {}
+    return { success: true as const, networks: await readOfficeNetworks() };
+  });
+
+export const removeOfficeNetworkServerFn = createServerFn({ method: "POST" })
+  .validator((data: { token?: string | undefined; ip: string }) => data)
+  .handler(async ({ data }) => {
+    const who = decodeAndVerifySessionToken(data.token || "");
+    if (!who.valid || who.payload?.role !== "super_admin") return { success: false as const, error: "Only Super Admin can manage office networks." };
+    const list = (await readOfficeNetworks()).filter((n) => n.ip !== data.ip);
+    await writeOfficeNetworks(list);
+    try {
+      await addActivityLogInDb({ action: "Office Network Removed", details: `Office network ${data.ip} removed`, performed_by: who.payload.email, user_role: "super_admin" });
+    } catch {}
+    return { success: true as const, networks: list };
+  });
 
 // ── Session presence (who has the CRM open and is active right now) ─────────
 const PRESENCE_KEY = "session_presence";
@@ -1955,7 +2042,8 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
     try {
       const cleanEmail = (data.email || "").trim().toLowerCase();
       const cleanPass = (data.password || "").trim();
-      const ipAddress = data.ip || "Unknown IP";
+      const clientIp = await getClientIp();
+      const ipAddress = data.ip && data.ip !== "Unknown IP" ? data.ip : clientIp || "Unknown IP";
       const locationName = data.locationName || "Unknown Location";
       const userAgent = data.userAgent || "Web Browser";
 
@@ -2035,12 +2123,23 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
 
 
       // 4. Server-Side Location & Geofence Verification
-      const locationEvaluation = evaluateLocationAccess(
-        authRole,
-        data.latitude,
-        data.longitude,
-        data.accuracy
-      );
+      // Logins from an approved office network skip the GPS check (desktop PCs often
+      // report a wrong browser location even inside the office).
+      const onOfficeNetwork = authRole !== "super_admin" && (await isOfficeNetwork(clientIp));
+      const rawEvaluation = evaluateLocationAccess(authRole, data.latitude, data.longitude, data.accuracy);
+      const locationEvaluation = onOfficeNetwork
+        ? { ...rawEvaluation, authorized: true, status: "authorized" as const, userMessage: undefined }
+        : rawEvaluation;
+      // A precise reading inside the 100 m circle teaches us this office's network.
+      if (
+        !onOfficeNetwork &&
+        authRole !== "super_admin" &&
+        rawEvaluation.authorized &&
+        typeof data.accuracy === "number" &&
+        data.accuracy <= 150
+      ) {
+        try { await rememberOfficeNetwork(clientIp, "auto", cleanEmail); } catch {}
+      }
 
       // Blocked if Admin / Lead Manager is outside the permitted radius (100m) or coordinates missing / poor
       if (!locationEvaluation.authorized) {
@@ -2093,7 +2192,7 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
         email: cleanEmail,
         role: authRole,
         ip_address: ipAddress,
-        location: locationName,
+        location: onOfficeNetwork ? "Office network" : locationName,
         latitude: data.latitude,
         longitude: data.longitude,
         accuracy: data.accuracy,
@@ -2152,11 +2251,22 @@ export const verifyLocationSessionServerFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     try {
-      const verification = verifySessionWithLocation(data.token, {
-        latitude: data.latitude,
-        longitude: data.longitude,
-        accuracy: data.accuracy,
-      });
+      // On an approved office network only the session itself is checked (no GPS).
+      const sessionIp = await getClientIp();
+      const onOfficeNet = await isOfficeNetwork(sessionIp);
+      let verification: ReturnType<typeof verifySessionWithLocation>;
+      if (onOfficeNet) {
+        const tok = decodeAndVerifySessionToken(data.token);
+        verification = tok.valid
+          ? { valid: true, payload: tok.payload }
+          : { valid: false, payload: tok.payload, error: tok.error, errorCode: "EXPIRED" };
+      } else {
+        verification = verifySessionWithLocation(data.token, {
+          latitude: data.latitude,
+          longitude: data.longitude,
+          accuracy: data.accuracy,
+        });
+      }
 
       if (!verification.valid || !verification.payload) {
         const dist = verification.locationResult?.distanceMeters ?? null;

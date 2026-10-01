@@ -86,6 +86,9 @@ import {
   deleteLoginLogsServerFn,
   sessionHeartbeatServerFn,
   endSessionServerFn,
+  fetchOfficeNetworksServerFn,
+  addCurrentOfficeNetworkServerFn,
+  removeOfficeNetworkServerFn,
   fetchRecordCountsServerFn,
   checkCrmAccountServerFn,
   fetchAdminUsersServerFn,
@@ -1136,6 +1139,47 @@ function AdminPage() {
     const id = setInterval(loadRecordCounts, (appliedSyncInterval || 10) * 1000);
     return () => clearInterval(id);
   }, [activeTab, crmSettingsSubTab, appliedSyncInterval, session?.token, session?.role]);
+
+  // Approved office networks (Security Settings, Super Admin)
+  type OfficeNet = { ip: string; label: string; source: "auto" | "manual"; addedBy: string; addedAt: string; lastSeenAt: string };
+  const [officeNetInfo, setOfficeNetInfo] = useState<{ networks: OfficeNet[]; yourIp: string; yourIpUsable: boolean } | null>(null);
+  const [officeNetBusy, setOfficeNetBusy] = useState(false);
+  const loadOfficeNetworks = async () => {
+    if (!session?.token || session.role !== "super_admin") return;
+    try {
+      const res = await fetchOfficeNetworksServerFn({ data: { token: session.token } });
+      if (res.success) setOfficeNetInfo({ networks: res.networks, yourIp: res.yourIp, yourIpUsable: res.yourIpUsable });
+    } catch {}
+  };
+  useEffect(() => {
+    if (activeTab === "settings" && crmSettingsSubTab === "security") loadOfficeNetworks();
+  }, [activeTab, crmSettingsSubTab, session?.token]);
+  const handleAddCurrentOfficeNetwork = async () => {
+    if (!session?.token) return;
+    setOfficeNetBusy(true);
+    try {
+      const res = await addCurrentOfficeNetworkServerFn({ data: { token: session.token, label: "Office network" } });
+      if (res.success) {
+        showToast("This network is now approved for office logins");
+        await loadOfficeNetworks();
+      } else showToast(res.error || "Could not approve this network");
+    } finally {
+      setOfficeNetBusy(false);
+    }
+  };
+  const handleRemoveOfficeNetwork = async (ip: string) => {
+    if (!session?.token || !confirm(`Remove ${ip} from approved office networks?`)) return;
+    setOfficeNetBusy(true);
+    try {
+      const res = await removeOfficeNetworkServerFn({ data: { token: session.token, ip } });
+      if (res.success) {
+        showToast("Network removed");
+        await loadOfficeNetworks();
+      } else showToast(res.error || "Could not remove the network");
+    } finally {
+      setOfficeNetBusy(false);
+    }
+  };
 
   // Account watchdog: if the Super Admin deletes or deactivates this account, any browser
   // still using it is signed out within ~5 seconds. Other accounts are unaffected.
@@ -8007,6 +8051,59 @@ function AdminPage() {
                       <p className="text-[11px] font-semibold text-emerald-700">Currently in effect: {appliedLoginAttempts} failed attempts</p>
                     </div>
                   </div>
+
+                  {/* Approved office networks (Super Admin) */}
+                  {isSuperAdmin && (
+                  <div className="rounded-xl border border-slate-200 p-4 space-y-3 text-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-slate-700" />
+                        <span className="font-bold text-slate-800">Approved Office Networks</span>
+                      </div>
+                      <button
+                        onClick={handleAddCurrentOfficeNetwork}
+                        disabled={officeNetBusy || !officeNetInfo?.yourIpUsable}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 font-bold text-white hover:bg-black disabled:opacity-50 cursor-pointer"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>Approve This Network</span>
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      Admins and Leads Managers logging in from an approved office internet connection are let in without the GPS check (office PCs often report a wrong browser location). Everywhere else the {DEFAULT_OFFICE_CONFIG.allowedRadiusMeters}m office circle still applies. A network is also approved automatically the first time someone logs in with a precise location inside the circle.
+                    </p>
+                    <p className="text-[11px] text-slate-600">
+                      Your current connection: <span className="font-mono font-semibold">{officeNetInfo?.yourIp || "detecting…"}</span>
+                      {officeNetInfo && officeNetInfo.networks.some((n) => n.ip === officeNetInfo.yourIp) && (
+                        <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Approved</span>
+                      )}
+                    </p>
+                    {officeNetInfo && officeNetInfo.networks.length > 0 ? (
+                      <div className="divide-y divide-slate-100 rounded-lg border border-slate-100">
+                        {officeNetInfo.networks.map((n) => (
+                          <div key={n.ip} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+                            <div>
+                              <span className="font-mono font-semibold text-slate-900">{n.ip}</span>
+                              <span className="ml-2 text-[11px] text-slate-500">
+                                {n.label} · {n.source === "auto" ? "auto-approved" : `added by ${n.addedBy}`} · last used {new Date(n.lastSeenAt).toLocaleString()}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveOfficeNetwork(n.ip)}
+                              disabled={officeNetBusy}
+                              className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                              title="Remove this network"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] italic text-slate-400">No office network approved yet.</p>
+                    )}
+                  </div>
+                  )}
 
                 </div>
               </div>
