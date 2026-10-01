@@ -78,11 +78,11 @@ function Index() {
         <Hero />
         <HeroOverview />
         <WhyQuickuppAiStudio />
-        <ResearchToAdStrip />
         <Services />
         <DigitalTwin />
         <WhoWeServe />
         <Samples />
+        <ResearchToAdStrip />
         <Pricing />
         <PackageInclusions />
         <Process />
