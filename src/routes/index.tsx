@@ -19,7 +19,6 @@ import {
   Services,
   DigitalTwin,
   WhoWeServe,
-  StrategyCall,
   WhyQuickuppAiStudio,
 } from "@/components/site/sections";
 
@@ -88,7 +87,6 @@ function Index() {
         <Process />
         <Faq />
         <LeadFormSection />
-        <StrategyCall />
         <CreativeScalingCta />
       </main>
       <Footer />

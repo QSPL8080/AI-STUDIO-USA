@@ -3760,7 +3760,8 @@ export function UseCases() {
   );
 }
 
-export function StrategyCall() {
+// Calendly scheduler box (used inside the Contact / Booking section)
+function CalendlyEmbed() {
   const calendlyContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -3786,10 +3787,10 @@ export function StrategyCall() {
               <iframe
                 src="${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed"
                 width="100%"
-                height="560"
+                height="700"
                 frameborder="0"
                 title="Select a Date & Time - Strategy Call"
-                style="width: 100%; height: 560px; border: 0;"
+                style="width: 100%; height: 700px; border: 0;"
               ></iframe>
             `;
           }
@@ -3854,61 +3855,56 @@ export function StrategyCall() {
     };
   }, []);
 
+  // One clean Calendly box (no extra card around it): slim branded header + the scheduler.
+  const CAL_HEIGHT = 680;
   return (
-    <Section id="book-call" className="py-8 sm:py-10 md:py-12 relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-b border-slate-200/80">
-      <SectionHeading title="Book a" highlight="Call" center={true} />
-
-      {/* Calendly booking only */}
-      <div className="mx-auto w-full max-w-4xl">
-        <div className="flex flex-col">
-          <div className="flex justify-end mb-3">
-            <a
-              href={calendlyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-white px-3 py-1 text-[11px] sm:text-xs font-semibold text-purple-700 shadow-2xs hover:border-purple-300 hover:bg-purple-50 transition-all cursor-pointer"
-            >
-              <Calendar className="h-3 w-3 text-purple-600" />
-              <span>Open in New Tab</span>
-              <ExternalLink className="h-3 w-3 text-slate-400" />
-            </a>
-          </div>
-
-          {/* Embedded Calendly Container (Compact Size) */}
-          <div className="relative w-full overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
-            <div className="w-full overflow-hidden" style={{ height: "560px" }}>
-              <div
-                ref={calendlyContainerRef}
-                className="calendly-inline-widget"
-                data-url={`${calendlyUrl}?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
-                style={{
-                  width: "calc(100% + 20px)",
-                  height: "560px",
-                  overflowY: "scroll",
-                  scrollbarWidth: "none",
-                  msOverflowStyle: "none",
-                }}
-              >
-                <iframe
-                  src={`${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
-                  width="100%"
-                  height="560"
-                  frameBorder="0"
-                  title="Select a Date & Time - Strategy Call"
-                  className="border-0"
-                  style={{
-                    width: "100%",
-                    height: "560px",
-                    overflowY: "auto",
-                  }}
-                />
-              </div>
-            </div>
+    <div className="flex h-full w-full flex-col overflow-hidden rounded-3xl border border-purple-200/70 bg-white shadow-xl shadow-purple-500/10 ring-1 ring-white/60">
+      <div className="flex items-center justify-between gap-3 border-b border-purple-100/80 bg-gradient-to-r from-purple-50 via-white to-pink-50 px-4 sm:px-5 py-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-brand text-white shadow-md">
+            <Calendar className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold text-slate-900">Book a 30-Min Strategy Call</p>
+            <p className="truncate text-[11px] text-slate-500">Pick a time that works for you · Free</p>
           </div>
         </div>
-
+        <a
+          href={calendlyUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-purple-200 bg-white px-3 py-1 text-[11px] font-semibold text-purple-700 hover:border-purple-300 hover:bg-purple-50 transition-colors"
+          aria-label="Open the booking calendar in a new tab"
+        >
+          <span className="hidden sm:inline">Open in New Tab</span>
+          <ExternalLink className="h-3 w-3" />
+        </a>
       </div>
-    </Section>
+      <div className="w-full flex-1 overflow-hidden bg-white" style={{ minHeight: `${CAL_HEIGHT}px` }}>
+        <div
+          ref={calendlyContainerRef}
+          className="calendly-inline-widget"
+          data-url={`${calendlyUrl}?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
+          style={{
+            width: "calc(100% + 20px)",
+            height: `${CAL_HEIGHT}px`,
+            overflowY: "scroll",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+          }}
+        >
+          <iframe
+            src={`${calendlyUrl}?embed_domain=${typeof window !== "undefined" ? window.location.hostname : "quickuppaistudio.us"}&embed_type=Inline&hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=7c3aed`}
+            width="100%"
+            height={CAL_HEIGHT}
+            frameBorder="0"
+            title="Select a Date & Time - Strategy Call"
+            className="border-0"
+            style={{ width: "100%", height: `${CAL_HEIGHT}px`, overflowY: "auto" }}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -4154,16 +4150,16 @@ export function LeadFormSection() {
         </svg>
       </div>
 
-      <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6">
+      <div id="book-call" className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 scroll-mt-24">
         <SectionHeading
-          eyebrow="CONTACT / BOOKING"
-          title="Let's Create Your Next"
-          highlight="Ad"
-          description="Tell us what you're selling, who you're targeting, and what you're trying to achieve. We'll help determine the right AI video format and creative direction for your project."
+          title="Contact /"
+          highlight="Booking"
+          description="Send us your project details, or book a free 30-minute strategy call with our creative team. Whichever suits you."
           center={true}
         />
 
-        <div className="panel mx-auto mt-8 max-w-3xl p-6 sm:p-10 shadow-lg border border-slate-200/90 bg-white/95 backdrop-blur-sm rounded-3xl">
+        <div className="mt-2 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
+        <div className="panel w-full p-6 sm:p-8 xl:p-10 shadow-xl shadow-purple-500/5 border border-slate-200/90 bg-white/95 backdrop-blur-sm rounded-3xl">
           {submitted ? (
             <div className="py-8 text-center space-y-3 animate-in fade-in zoom-in-95 duration-300">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 border border-emerald-500/40 shadow-[0_0_25px_rgba(16,185,129,0.3)]">
@@ -4443,7 +4439,7 @@ export function LeadFormSection() {
                   rows={4}
                   required
                   placeholder="Tell us what you're selling, who you're targeting, hooks/angles, and what you're trying to achieve..."
-                  className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                  className="mt-1.5 w-full lg:min-h-[190px] rounded-xl border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
                 />
               </div>
 
@@ -4501,6 +4497,10 @@ export function LeadFormSection() {
               </button>
             </form>
           )}
+        </div>
+
+        {/* Calendly booking, side by side with the form on laptops */}
+        <CalendlyEmbed />
         </div>
       </div>
     </Section>
