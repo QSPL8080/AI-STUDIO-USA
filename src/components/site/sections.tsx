@@ -117,7 +117,7 @@ export function Header() {
   return (
     <header id="site-nav-container" className="fixed top-0 left-0 right-0 z-50 flex flex-col">
       <div id="site-header-bar" className="relative border-b border-slate-200/80 bg-white/95 backdrop-blur-xl shadow-xs z-50">
-        <div className="mx-auto flex w-full max-w-[1560px] items-center justify-between gap-6 lg:gap-8 xl:gap-12 px-4 sm:px-6 lg:px-10 py-3.5 sm:py-4 md:py-4.5 min-h-[72px] sm:min-h-[78px] md:min-h-[82px]">
+        <div className="mx-auto flex w-full max-w-[1560px] items-center justify-between gap-4 xl:gap-6 2xl:gap-12 px-4 sm:px-6 lg:px-8 2xl:px-10 py-3.5 sm:py-4 md:py-4.5 min-h-[72px] sm:min-h-[78px] md:min-h-[82px]">
           <a
             href="/#top"
             id="navbar-logo-anchor"
@@ -133,60 +133,62 @@ export function Header() {
             />
           </a>
 
-          {/* Desktop Navigation Links (>=1024px) */}
+          {/* Desktop Navigation Links (>=1280px; smaller screens use the menu button) */}
           <nav
             aria-label="Main Navigation"
-            className="hidden items-center gap-1.5 xl:gap-2.5 rounded-xl border border-slate-200/90 bg-slate-100/80 px-3.5 xl:px-4.5 py-1.5 lg:flex shadow-2xs relative shrink-0 mx-auto"
+            className="hidden items-center gap-1 2xl:gap-2.5 rounded-xl border border-slate-200/90 bg-slate-100/80 px-3 2xl:px-4.5 py-1.5 xl:flex shadow-2xs relative shrink-0 mx-auto"
           >
             <a
               href="/#services"
-              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3 2xl:px-4 py-2 text-sm 2xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
             >
               Services
             </a>
             <a
               href="/#who-we-serve"
-              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3 2xl:px-4 py-2 text-sm 2xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
             >
               Who We Serve
             </a>
             <a
               href="/portfolio"
-              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3 2xl:px-4 py-2 text-sm 2xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
             >
               Portfolio
             </a>
             <a
               href="/#pricing"
-              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3 2xl:px-4 py-2 text-sm 2xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
             >
               Packages
             </a>
             <a
               href="/#process"
-              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3 2xl:px-4 py-2 text-sm 2xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
             >
               How It Works
             </a>
             <a
               href="/#faq"
-              className="whitespace-nowrap rounded-lg px-3.5 xl:px-4 py-2 text-sm xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
+              className="whitespace-nowrap rounded-lg px-3 2xl:px-4 py-2 text-sm 2xl:text-[14.5px] font-bold text-slate-700 transition-colors duration-200 hover:text-purple-700 active:scale-95"
             >
               FAQ
             </a>
           </nav>
 
-          {/* Desktop Right Action CTA Buttons (Only on Large Screens >= 1024px) */}
-          <div className="hidden lg:flex items-center gap-3 xl:gap-4 shrink-0 ml-2 lg:ml-3">
-            <NeonButton
-              href={calendlyUrl}
-              variant="call"
-              size="sm"
-              className="hidden xl:inline-flex items-center gap-1.5 whitespace-nowrap group !rounded-xl !px-4.5 !py-2.5 !text-xs sm:!text-[13.5px] font-bold shadow-xs"
-            >
-              <Calendar className="h-4 w-4 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-              <span>Book a Strategy Call</span>
-            </NeonButton>
+          {/* Desktop Right Action CTA Buttons (>= 1280px; "Book a Strategy Call" from 1536px) */}
+          <div className="hidden xl:flex items-center gap-2.5 2xl:gap-4 shrink-0">
+            <span className="hidden 2xl:inline-flex">
+              <NeonButton
+                href={calendlyUrl}
+                variant="call"
+                size="sm"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap group !rounded-xl !px-4.5 !py-2.5 !text-xs sm:!text-[13.5px] font-bold shadow-xs"
+              >
+                <Calendar className="h-4 w-4 text-purple-700 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                <span>Book a Strategy Call</span>
+              </NeonButton>
+            </span>
 
             <NeonButton
               href="/#contact"
@@ -208,8 +210,14 @@ export function Header() {
             </NeonButton>
           </div>
 
-          {/* Mobile & Tablet 3-Lines Menu Icon ONLY (< 1024px) */}
-          <div className="flex items-center lg:hidden shrink-0">
+          {/* Mobile, Tablet & small-laptop menu (< 1280px), with a quick Get Quote button from 640px */}
+          <div className="flex items-center gap-2.5 xl:hidden shrink-0">
+            <a
+              href="/#contact"
+              className="hidden sm:inline-flex items-center justify-center whitespace-nowrap rounded-xl bg-gradient-brand px-4 py-2.5 text-xs sm:text-[13px] font-bold text-white shadow-md hover:brightness-110 active:scale-95"
+            >
+              Get Quote
+            </a>
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -230,7 +238,7 @@ export function Header() {
         {mobileMenuOpen && (
           <nav
             aria-label="Mobile Navigation"
-            className="absolute top-full left-0 right-0 w-full border-b border-slate-200 bg-white/98 px-5 py-6 shadow-2xl backdrop-blur-2xl lg:hidden animate-in fade-in slide-in-from-top-2 duration-200 max-h-[calc(100dvh-4.5rem)] overflow-y-auto z-50"
+            className="absolute top-full left-0 right-0 w-full border-b border-slate-200 bg-white/98 px-5 py-6 shadow-2xl backdrop-blur-2xl xl:hidden animate-in fade-in slide-in-from-top-2 duration-200 max-h-[calc(100dvh-4.5rem)] overflow-y-auto z-50"
           >
             <div className="mx-auto flex max-w-md flex-col gap-1.5">
               {/* Highlighted Primary CTA at the top for immediate mobile visibility */}
@@ -1026,7 +1034,7 @@ export function HeroOverview() {
 
         {/* Description Paragraph 2 */}
         <p
-          className={`mt-3 w-full text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 text-justify [text-align-last:center] [text-justify:inter-word] hyphens-none transition-all duration-800 delay-300 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
+          className={`mt-3 w-full text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 text-center sm:text-justify sm:[text-align-last:center] [text-justify:inter-word] hyphens-none transition-all duration-800 delay-300 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
             isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
           }`}
         >
@@ -1035,7 +1043,7 @@ export function HeroOverview() {
 
         {/* Description Paragraph 3 */}
         <p
-          className={`mt-3 w-full text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 text-justify [text-align-last:center] [text-justify:inter-word] hyphens-none transition-all duration-800 delay-400 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
+          className={`mt-3 w-full text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 text-center sm:text-justify sm:[text-align-last:center] [text-justify:inter-word] hyphens-none transition-all duration-800 delay-400 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
             isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
           }`}
         >
@@ -1195,7 +1203,7 @@ export function WhyQuickuppAiStudio() {
             </p>
 
             {/* 7 Traditional Friction Items */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5 mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 2xl:grid-cols-3 gap-2 sm:gap-2.5 mb-5">
               {traditionalFriction.map((item) => {
                 const IconComp = item.icon;
                 return (
@@ -1206,7 +1214,7 @@ export function WhyQuickuppAiStudio() {
                     <div className="h-7 w-7 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
                       <IconComp className="h-3.5 w-3.5 stroke-[2.2]" />
                     </div>
-                    <span className="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight truncate">
+                    <span className="min-w-0 text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight">
                       {item.name}
                     </span>
                     <span className="ml-auto text-rose-400 text-[10px] font-bold">✕</span>
@@ -2303,8 +2311,8 @@ export function Services() {
         </div>
 
         {/* Table-Format Services Tab Navigation (same style as "Who We Serve") */}
-        <div className="mb-6 sm:mb-8 overflow-x-auto scrollbar-none pb-1">
-          <div className="mx-auto flex items-stretch min-w-[760px] lg:min-w-0 max-w-5xl border border-slate-300 bg-white rounded-none divide-x divide-slate-300 shadow-2xs">
+        <div className="mb-6 sm:mb-8">
+          <div className="mx-auto grid grid-cols-2 sm:grid-cols-3 lg:flex lg:items-stretch max-w-5xl border-l border-t border-slate-300 bg-white rounded-none shadow-2xs">
             {services.map((srv, idx) => {
               const isSelected = activeIdx === idx;
               return (
@@ -2312,7 +2320,7 @@ export function Services() {
                   key={srv.num}
                   type="button"
                   onClick={() => setActiveIdx(idx)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-3.5 rounded-none transition-all duration-150 cursor-pointer text-xs sm:text-sm font-bold text-center select-none ${
+                  className={`lg:flex-1 flex items-center justify-center gap-2 py-3 px-2.5 sm:px-3.5 rounded-none border-r border-b border-slate-300 transition-all duration-150 cursor-pointer text-xs sm:text-sm font-bold text-center select-none ${
                     isSelected
                       ? "bg-purple-900 text-white font-extrabold shadow-inner"
                       : "bg-slate-50/70 text-slate-700 hover:bg-purple-50 hover:text-purple-900"
@@ -2321,7 +2329,7 @@ export function Services() {
                   <span className={`font-mono text-[11px] font-bold shrink-0 ${isSelected ? "text-purple-200" : "text-purple-600"}`}>
                     {srv.num}
                   </span>
-                  <span className="whitespace-nowrap">{srv.title.replace("AI ", "")}</span>
+                  <span className="leading-tight sm:whitespace-nowrap">{srv.title.replace("AI ", "")}</span>
                 </button>
               );
             })}
@@ -3528,8 +3536,8 @@ export function WhoWeServe() {
         </div>
 
         {/* Table-Format Tab Navigation (Sharp Table Grid, No Border Radius) */}
-        <div className="mb-8 sm:mb-10 overflow-x-auto scrollbar-none pb-1">
-          <div className="mx-auto flex items-stretch min-w-[680px] lg:min-w-0 max-w-5xl border border-slate-300 bg-white rounded-none divide-x divide-slate-300 shadow-2xs">
+        <div className="mb-8 sm:mb-10">
+          <div className="mx-auto grid grid-cols-2 sm:grid-cols-3 lg:flex lg:items-stretch max-w-5xl border-l border-t border-slate-300 bg-white rounded-none shadow-2xs">
             {audienceSegments.map((segment, idx) => {
               const isSelected = activeIdx === idx;
               return (
@@ -3537,7 +3545,7 @@ export function WhoWeServe() {
                   key={segment.id}
                   type="button"
                   onClick={() => setActiveIdx(idx)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-3.5 rounded-none transition-all duration-150 cursor-pointer text-xs sm:text-sm font-bold text-center select-none ${
+                  className={`lg:flex-1 flex items-center justify-center gap-2 py-3 px-2.5 sm:px-3.5 rounded-none border-r border-b border-slate-300 transition-all duration-150 cursor-pointer text-xs sm:text-sm font-bold text-center select-none ${
                     isSelected
                       ? "bg-purple-900 text-white font-extrabold shadow-inner"
                       : "bg-slate-50/70 text-slate-700 hover:bg-purple-50 hover:text-purple-900"
@@ -3546,7 +3554,7 @@ export function WhoWeServe() {
                   <span className={isSelected ? "text-purple-200 shrink-0" : "text-purple-600 shrink-0"}>
                     {renderIcon(segment.icon, "h-4 w-4")}
                   </span>
-                  <span className="whitespace-nowrap">{segment.badge}</span>
+                  <span className="leading-tight sm:whitespace-nowrap">{segment.badge}</span>
                 </button>
               );
             })}
