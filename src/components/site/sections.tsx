@@ -1026,7 +1026,7 @@ export function HeroOverview() {
 
         {/* Description Paragraph 2 */}
         <p
-          className={`mt-3 text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 text-balance transition-all duration-800 delay-300 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
+          className={`mt-3 w-full text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 text-justify [text-align-last:center] [text-justify:inter-word] hyphens-none transition-all duration-800 delay-300 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
             isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
           }`}
         >
@@ -1035,7 +1035,7 @@ export function HeroOverview() {
 
         {/* Description Paragraph 3 */}
         <p
-          className={`mt-3 text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 text-balance transition-all duration-800 delay-400 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
+          className={`mt-3 w-full text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 text-justify [text-align-last:center] [text-justify:inter-word] hyphens-none transition-all duration-800 delay-400 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
             isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
           }`}
         >
