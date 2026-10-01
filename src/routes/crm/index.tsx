@@ -8070,7 +8070,7 @@ function AdminPage() {
                       </button>
                     </div>
                     <p className="text-[11px] text-slate-500">
-                      Admins and Leads Managers logging in from an approved office internet connection are let in without the GPS check (office PCs often report a wrong browser location). Everywhere else the {DEFAULT_OFFICE_CONFIG.allowedRadiusMeters}m office circle still applies. A network is also approved automatically the first time someone logs in with a precise location inside the circle.
+                      Admins and Leads Managers logging in from an approved office internet connection are let in without the GPS check (office PCs often report a wrong browser location). Everywhere else, including personal mobile data, the {DEFAULT_OFFICE_CONFIG.allowedRadiusMeters}m office circle still applies. To approve an office Wi-Fi, connect this device to it and click "Approve This Network" (repeat for each office Wi-Fi). Never approve while on mobile data.
                     </p>
                     <p className="text-[11px] text-slate-600">
                       Your current connection: <span className="font-mono font-semibold">{officeNetInfo?.yourIp || "detecting…"}</span>
@@ -8085,7 +8085,7 @@ function AdminPage() {
                             <div>
                               <span className="font-mono font-semibold text-slate-900">{n.ip}</span>
                               <span className="ml-2 text-[11px] text-slate-500">
-                                {n.label} · {n.source === "auto" ? "auto-approved" : `added by ${n.addedBy}`} · last used {new Date(n.lastSeenAt).toLocaleString()}
+                                {n.label} · added by {n.addedBy} · {new Date(n.addedAt).toLocaleDateString()}
                               </span>
                             </div>
                             <button

@@ -74,8 +74,8 @@ import { getLiveSessionLoginLogIds, isSessionPresent, PRESENCE_STALE_MS, type Se
 // ── Office network approval ──────────────────────────────────────────────────
 // Desktop PCs often report a wrong browser location (no GPS, Wi-Fi off), so logins
 // coming from the office's own internet connection are accepted without the GPS check.
-// The office IP is learned automatically from logins with a precise reading inside the
-// 100 m circle, and the Super Admin can add / remove networks in Security Settings.
+// The Super Admin approves each office Wi-Fi's internet connection (public IP) in
+// Security Settings. Mobile data is never approved: those users go through the GPS check.
 type OfficeNetwork = { ip: string; label: string; source: "auto" | "manual"; addedBy: string; addedAt: string; lastSeenAt: string };
 const OFFICE_NETWORKS_KEY = "office_networks";
 
@@ -2130,16 +2130,9 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
       const locationEvaluation = onOfficeNetwork
         ? { ...rawEvaluation, authorized: true, status: "authorized" as const, userMessage: undefined }
         : rawEvaluation;
-      // A precise reading inside the 100 m circle teaches us this office's network.
-      if (
-        !onOfficeNetwork &&
-        authRole !== "super_admin" &&
-        rawEvaluation.authorized &&
-        typeof data.accuracy === "number" &&
-        data.accuracy <= 150
-      ) {
-        try { await rememberOfficeNetwork(clientIp, "auto", cleanEmail); } catch {}
-      }
+      // (No automatic approval: someone on personal mobile data inside the office would
+      // otherwise approve the mobile carrier's shared IP. Networks are approved by the
+      // Super Admin only, from Security Settings, while connected to each office Wi-Fi.)
 
       // Blocked if Admin / Lead Manager is outside the permitted radius (100m) or coordinates missing / poor
       if (!locationEvaluation.authorized) {
