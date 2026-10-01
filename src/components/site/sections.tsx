@@ -195,7 +195,7 @@ export function Header() {
               size="sm"
               className="whitespace-nowrap !text-xs sm:!text-[13.5px] font-bold !py-2.5 !px-5 !rounded-xl shadow-md glow-neon"
             >
-              Get AI Video Quote
+              Get Quote
             </NeonButton>
 
             <NeonButton
@@ -305,7 +305,7 @@ export function Header() {
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex min-h-[44px] w-full items-center justify-center rounded-lg bg-gradient-brand py-3 text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-95"
                 >
-                  Get AI Video Quote
+                  Get Quote
                 </a>
                 <button
                   type="button"
