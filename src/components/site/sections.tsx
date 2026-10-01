@@ -1005,19 +1005,19 @@ export function HeroOverview() {
 
         {/* Headline */}
         <h2
-          className={`mt-3.5 font-heading text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-slate-900 transition-all duration-800 delay-100 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-3xl ${
+          className={`mt-4 font-heading text-2xl sm:text-3xl md:text-4xl font-bold leading-tight tracking-tight text-slate-900 text-balance transition-all duration-800 delay-100 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-3xl ${
             isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-6 blur-sm"
           }`}
         >
-          Create More Ad Creatives. Test More Ideas.{" "}
-          <span className="font-serif italic font-bold text-gradient-brand inline-block pr-1.5">
+          Create More Ad Creatives. Test More Ideas.
+          <span className="mt-1 block font-serif italic font-bold text-gradient-brand pr-1.5">
             Find What Works.
           </span>
         </h2>
 
         {/* Description Paragraph 1 */}
         <p
-          className={`mt-3 text-sm sm:text-base md:text-lg font-semibold text-slate-800 leading-snug transition-all duration-800 delay-200 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
+          className={`mt-4 text-sm sm:text-base md:text-lg font-semibold text-slate-800 leading-snug text-balance transition-all duration-800 delay-200 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
             isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
           }`}
         >
@@ -1026,7 +1026,7 @@ export function HeroOverview() {
 
         {/* Description Paragraph 2 */}
         <p
-          className={`mt-2.5 text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 transition-all duration-800 delay-300 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-3xl ${
+          className={`mt-3 text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 text-balance transition-all duration-800 delay-300 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
             isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
           }`}
         >
@@ -1035,7 +1035,7 @@ export function HeroOverview() {
 
         {/* Description Paragraph 3 */}
         <p
-          className={`mt-2 text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 transition-all duration-800 delay-400 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
+          className={`mt-3 text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 text-balance transition-all duration-800 delay-400 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-2xl ${
             isVisible ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"
           }`}
         >
