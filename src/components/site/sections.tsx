@@ -1131,9 +1131,9 @@ export function WhyQuickuppAiStudio() {
     },
   ];
 
-  // Auto-advance every 8 seconds, only while the section is on screen (and not hovered).
-  // Each new card slides in; manual clicks restart the 8 seconds.
-  const BENEFIT_MS = 8000;
+  // Auto-advance every 5 seconds, only while the section is on screen (and not hovered).
+  // Each new card slides in; manual clicks restart the 5 seconds.
+  const BENEFIT_MS = 5000;
   const benefitsSectionRef = useRef<HTMLElement>(null);
   const [benefitsInView, setBenefitsInView] = useState(false);
   const [slideDir, setSlideDir] = useState<"next" | "prev">("next");
