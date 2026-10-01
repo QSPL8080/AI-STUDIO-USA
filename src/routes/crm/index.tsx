@@ -119,6 +119,7 @@ import {
   broadcastLeadEvent,
 } from "@/lib/lead-actions";
 import { getOfficeGeoConfig, DEFAULT_OFFICE_CONFIG } from "@/lib/geo-config";
+import { getPreciseLocation } from "@/lib/precise-location";
 import { getLiveSessionLoginLogIds, isSessionPresent, PRESENCE_CHECKIN_MS, type SessionPresence } from "@/lib/login-sessions";
 import {
   fetchOrdersServerFn,
@@ -1684,24 +1685,11 @@ function AdminPage() {
     if (typeof window === "undefined" || !navigator.geolocation) {
       return null;
     }
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          resolve({
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
-          });
-        },
-        (err) => {
-          if (err.code === err.PERMISSION_DENIED) {
-            setLocationErrorType("denied");
-          }
-          resolve(null);
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-      );
-    });
+    // Most precise reading within ~8s (stops early once it's within ±60 m)
+    const loc = await getPreciseLocation({ maxWaitMs: 8000, goodEnoughMeters: 60 });
+    if (loc.ok) return loc.position;
+    if (loc.reason === "denied") setLocationErrorType("denied");
+    return null;
   };
 
   // Continuous Location Verification Watchdog for Admin & Lead Manager

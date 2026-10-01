@@ -144,8 +144,15 @@ export function evaluateLocationAccess(
     };
   }
 
-  // Check accuracy threshold
-  const isAccuracyPoor = typeof accuracy === "number" && accuracy > config.maxAllowedAccuracyMeters;
+  // Inside the office radius: allowed, whatever accuracy the device reports.
+  // (Laptops/PCs without GPS often report ±500 m+ even when the point itself is correct.)
+  // Accuracy only matters when the reading falls OUTSIDE the radius: then a poor fix
+  // means "we can't tell yet, retry" instead of a flat refusal.
+  const isAccuracyPoor =
+    distanceMeters > config.allowedRadiusMeters &&
+    typeof accuracy === "number" &&
+    accuracy > config.maxAllowedAccuracyMeters &&
+    distanceMeters - accuracy <= config.allowedRadiusMeters;
   if (isAccuracyPoor) {
     return {
       authorized: false,
@@ -156,7 +163,7 @@ export function evaluateLocationAccess(
       isSuperAdminBypass: false,
       isAccuracyPoor: true,
       status: "poor_accuracy",
-      userMessage: "Location accuracy is insufficient. Please enable high accuracy / GPS on your device and try again.",
+      userMessage: "We couldn't pin down your location precisely yet. Please make sure Wi-Fi and location are turned on, wait a few seconds and try again.",
     };
   }
 

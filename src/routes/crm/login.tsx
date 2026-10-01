@@ -13,6 +13,7 @@ import {
   Send,
   Loader2,
 } from "lucide-react";
+import { getPreciseLocation } from "@/lib/precise-location";
 import { authenticateAdminServerFn, sendAccountActivationRequestServerFn, fetchCrmSettingsServerFn } from "@/lib/lead-actions";
 
 export const Route = createFileRoute("/crm/login")({
@@ -128,21 +129,14 @@ function CrmLoginPage() {
     let acc: number | null = null;
     let locName = "USA Office";
 
-    if (navigator.geolocation) {
-      try {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0,
-          });
-        });
-        lat = pos.coords.latitude;
-        lon = pos.coords.longitude;
-        acc = pos.coords.accuracy;
-      } catch (err: any) {
-        console.warn("Geolocation prompt skipped or unavailable:", err.message);
-      }
+    // Best location within ~10s (stops early once it's within ±60 m)
+    const loc = await getPreciseLocation({ maxWaitMs: 10000, goodEnoughMeters: 60 });
+    if (loc.ok) {
+      lat = loc.position.latitude;
+      lon = loc.position.longitude;
+      acc = loc.position.accuracy;
+    } else {
+      console.warn("Geolocation unavailable:", loc.reason);
     }
 
     try {
