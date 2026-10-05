@@ -500,9 +500,43 @@ export function Hero() {
       last = t;
       const v = desktopVideoRef.current;
       const c = heroFillRef.current;
-      if (!v || !c || v.paused || v.readyState < 2) return;
+      if (!v || !c || v.readyState < 2 || (v.paused && c.dataset["drawn"])) return;
+      const W = c.clientWidth;
+      const H = c.clientHeight;
+      const ctx = c.getContext("2d");
+      if (!W || !H || !ctx) return;
+      // Small canvas with the card's shape; the frame sits exactly where the real video
+      // is, and its outermost edge pixels are stretched into the empty space. Blurred,
+      // this continues the picture seamlessly instead of showing a separate background.
+      const cw = 96;
+      const ch = Math.max(1, Math.round((cw * H) / W));
+      if (c.width !== cw || c.height !== ch) {
+        c.width = cw;
+        c.height = ch;
+      }
+      const vw = v.videoWidth || 1920;
+      const vh = v.videoHeight || 1080;
+      const ratio = vw / vh;
+      let iw = cw;
+      let ih = cw / ratio;
+      if (ih > ch) {
+        ih = ch;
+        iw = ch * ratio;
+      }
+      const ix = (cw - iw) / 2;
+      const iy = (ch - ih) / 2;
+      const s = 0.025; // edge strip (2.5% of the frame) used to extend the picture
       try {
-        c.getContext("2d")?.drawImage(v, 0, 0, c.width, c.height);
+        ctx.drawImage(v, 0, 0, vw, vh, ix, iy, iw, ih);
+        if (ix > 0.5) {
+          ctx.drawImage(v, 0, 0, vw * s, vh, 0, iy, ix + 1, ih);
+          ctx.drawImage(v, vw * (1 - s), 0, vw * s, vh, ix + iw - 1, iy, ix + 1, ih);
+        }
+        if (iy > 0.5) {
+          ctx.drawImage(v, 0, 0, vw, vh * s, 0, 0, cw, iy + 1);
+          ctx.drawImage(v, 0, vh * (1 - s), vw, vh * s, 0, iy + ih - 1, cw, iy + 1);
+        }
+        c.dataset["drawn"] = "1";
       } catch {
         /* frame not ready yet */
       }
@@ -921,6 +955,7 @@ export function Hero() {
                 right: "2.5vw",
                 bottom: "10vh",
                 borderRadius: "20px",
+                containerType: "size",
               }}
             >
               {/* Blurred live fill behind the video (covers any space the full, uncropped video leaves) */}
@@ -929,7 +964,7 @@ export function Hero() {
                 width={64}
                 height={36}
                 aria-hidden="true"
-                className="absolute inset-0 h-full w-full scale-125 blur-2xl opacity-90 pointer-events-none"
+                className="absolute inset-0 h-full w-full scale-110 blur-xl pointer-events-none"
                 style={{ backgroundImage: `url(${HERO_POSTER})`, backgroundSize: "cover", backgroundPosition: "center" }}
               />
 
@@ -950,7 +985,18 @@ export function Hero() {
                 playsInline
                 preload="auto"
                 onClick={toggleAudio}
-                className="relative h-full w-full object-contain object-center cursor-pointer"
+                className="absolute inset-0 m-auto max-w-full max-h-full object-cover cursor-pointer"
+                style={{
+                  // Largest 16:9 box that fits the card, with feathered edges that melt into the fill
+                  width: "min(100cqw, calc(100cqh * 16 / 9))",
+                  aspectRatio: "16 / 9",
+                  WebkitMaskImage:
+                    "linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%)",
+                  WebkitMaskComposite: "source-in",
+                  maskImage:
+                    "linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%)",
+                  maskComposite: "intersect",
+                }}
               >
                 {/* Only the copy for the current screen size downloads */}
                 <source src={HERO_VIDEO} type="video/mp4" media="(min-width: 1024px)" />
