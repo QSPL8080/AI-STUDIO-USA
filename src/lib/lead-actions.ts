@@ -89,15 +89,33 @@ async function getClientIp(): Promise<string> {
     return "";
   }
 }
+// The browser's real User-Agent header (server side; can't be overridden by page data).
+async function getServerUserAgent(): Promise<string> {
+  try {
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    return String(getRequestHeader("user-agent") || "");
+  } catch {
+    return "";
+  }
+}
+// Phones/tablets have accurate GPS and usually run on mobile data, whose public IP is a
+// carrier address shared with thousands of people across the city. They therefore never
+// get the office-network shortcut: they always have to be inside the GPS circle.
+function isPhoneOrTablet(ua: string): boolean {
+  return /Android|iPhone|iPad|iPod|Mobile|Mobi|Opera Mini|IEMobile|webOS|BlackBerry/i.test(ua || "");
+}
 function isPublicIp(ip: string): boolean {
   if (!ip) return false;
-  return !/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$|fc|fd|fe80)/i.test(ip);
+  // also excludes 100.64.0.0/10 (carrier-grade NAT used by mobile networks)
+  return !/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|::1$|fc|fd|fe80)/i.test(ip);
 }
 async function readOfficeNetworks(): Promise<OfficeNetwork[]> {
   try {
     const st = await getCrmSettingsFromDb();
     const list = JSON.parse(st[OFFICE_NETWORKS_KEY] || "[]");
-    return Array.isArray(list) ? list.filter((n) => n && typeof n.ip === "string") : [];
+    // Entries saved by the old automatic learning (source "auto") are ignored: they may be
+    // mobile-data IPs. Only networks the Super Admin approved by hand count.
+    return Array.isArray(list) ? list.filter((n) => n && typeof n.ip === "string" && n.source === "manual") : [];
   } catch {
     return [];
   }
@@ -137,6 +155,12 @@ export const addCurrentOfficeNetworkServerFn = createServerFn({ method: "POST" }
   .handler(async ({ data }) => {
     const who = decodeAndVerifySessionToken(data.token || "");
     if (!who.valid || who.payload?.role !== "super_admin") return { success: false as const, error: "Only Super Admin can manage office networks." };
+    if (isPhoneOrTablet(await getServerUserAgent())) {
+      return {
+        success: false as const,
+        error: "Approve office networks from an office computer connected to the office Wi-Fi, not from a phone (a phone's mobile-data IP is shared by many people outside the office).",
+      };
+    }
     const ip = await getClientIp();
     if (!isPublicIp(ip)) return { success: false as const, error: "Couldn't detect this connection's public IP address." };
     await rememberOfficeNetwork(ip, "manual", who.payload.email, (data.label || "").trim().slice(0, 60) || "Office network");
@@ -2125,7 +2149,10 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
       // 4. Server-Side Location & Geofence Verification
       // Logins from an approved office network skip the GPS check (desktop PCs often
       // report a wrong browser location even inside the office).
-      const onOfficeNetwork = authRole !== "super_admin" && (await isOfficeNetwork(clientIp));
+      // Phones/tablets never get this shortcut (see isPhoneOrTablet) - they must pass GPS.
+      const loginUa = (await getServerUserAgent()) || userAgent;
+      const onOfficeNetwork =
+        authRole !== "super_admin" && !isPhoneOrTablet(loginUa) && (await isOfficeNetwork(clientIp));
       const rawEvaluation = evaluateLocationAccess(authRole, data.latitude, data.longitude, data.accuracy);
       const locationEvaluation = onOfficeNetwork
         ? { ...rawEvaluation, authorized: true, status: "authorized" as const, userMessage: undefined }
@@ -2245,8 +2272,10 @@ export const verifyLocationSessionServerFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       // On an approved office network only the session itself is checked (no GPS).
+      // Phones/tablets are always GPS-checked, so leaving the 100m circle logs them out.
       const sessionIp = await getClientIp();
-      const onOfficeNet = await isOfficeNetwork(sessionIp);
+      const sessionUa = (await getServerUserAgent()) || data.userAgent || "";
+      const onOfficeNet = !isPhoneOrTablet(sessionUa) && (await isOfficeNetwork(sessionIp));
       let verification: ReturnType<typeof verifySessionWithLocation>;
       if (onOfficeNet) {
         const tok = decodeAndVerifySessionToken(data.token);

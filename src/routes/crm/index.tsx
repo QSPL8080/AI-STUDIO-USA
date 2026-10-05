@@ -8070,7 +8070,7 @@ function AdminPage() {
                       </button>
                     </div>
                     <p className="text-[11px] text-slate-500">
-                      Admins and Leads Managers logging in from an approved office internet connection are let in without the GPS check (office PCs often report a wrong browser location). Everywhere else, including personal mobile data, the {DEFAULT_OFFICE_CONFIG.allowedRadiusMeters}m office circle still applies. To approve an office Wi-Fi, connect this device to it and click "Approve This Network" (repeat for each office Wi-Fi). Never approve while on mobile data.
+                      Admins and Leads Managers on an office computer connected to an approved office Wi-Fi are let in without the GPS check (office PCs often report a wrong browser location). Phones and tablets never use this shortcut: on Wi-Fi or mobile data they must always be inside the {DEFAULT_OFFICE_CONFIG.allowedRadiusMeters}m office circle, and they are logged out when they leave it. To approve an office Wi-Fi, open the CRM on an office computer connected to it and click "Approve This Network" (repeat for each office Wi-Fi).
                     </p>
                     <p className="text-[11px] text-slate-600">
                       Your current connection: <span className="font-mono font-semibold">{officeNetInfo?.yourIp || "detecting…"}</span>
