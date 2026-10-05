@@ -89,6 +89,14 @@ async function getClientIp(): Promise<string> {
     return "";
   }
 }
+// Office computers on an approved office Wi-Fi are STILL location-checked, but against a
+// wider circle: desktop PCs have no GPS and their browser estimate is often several hundred
+// metres off. Anyone further than this (or with location turned off) is refused.
+const OFFICE_NETWORK_RADIUS_METERS = 1000;
+function officeNetworkGeoConfig() {
+  return { ...getOfficeGeoConfig(), allowedRadiusMeters: OFFICE_NETWORK_RADIUS_METERS };
+}
+
 // The browser's real User-Agent header (server side; can't be overridden by page data).
 async function getServerUserAgent(): Promise<string> {
   try {
@@ -2153,10 +2161,10 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
       const loginUa = (await getServerUserAgent()) || userAgent;
       const onOfficeNetwork =
         authRole !== "super_admin" && !isPhoneOrTablet(loginUa) && (await isOfficeNetwork(clientIp));
-      const rawEvaluation = evaluateLocationAccess(authRole, data.latitude, data.longitude, data.accuracy);
+      // Everyone (except Super Admin) is location-checked - on an approved office network too.
       const locationEvaluation = onOfficeNetwork
-        ? { ...rawEvaluation, authorized: true, status: "authorized" as const, userMessage: undefined }
-        : rawEvaluation;
+        ? evaluateLocationAccess(authRole, data.latitude, data.longitude, data.accuracy, officeNetworkGeoConfig())
+        : evaluateLocationAccess(authRole, data.latitude, data.longitude, data.accuracy);
       // (No automatic approval: someone on personal mobile data inside the office would
       // otherwise approve the mobile carrier's shared IP. Networks are approved by the
       // Super Admin only, from Security Settings, while connected to each office Wi-Fi.)
@@ -2271,7 +2279,8 @@ export const verifyLocationSessionServerFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     try {
-      // On an approved office network only the session itself is checked (no GPS).
+      // On an approved office network (office computer) the location is still checked,
+      // against the wider office-network circle.
       // Phones/tablets are always GPS-checked, so leaving the 100m circle logs them out.
       const sessionIp = await getClientIp();
       const sessionUa = (await getServerUserAgent()) || data.userAgent || "";
@@ -2279,9 +2288,33 @@ export const verifyLocationSessionServerFn = createServerFn({ method: "POST" })
       let verification: ReturnType<typeof verifySessionWithLocation>;
       if (onOfficeNet) {
         const tok = decodeAndVerifySessionToken(data.token);
-        verification = tok.valid
-          ? { valid: true, payload: tok.payload }
-          : { valid: false, payload: tok.payload, error: tok.error, errorCode: "EXPIRED" };
+        if (!tok.valid || !tok.payload) {
+          verification = { valid: false, payload: tok.payload, error: tok.error, errorCode: "EXPIRED" };
+        } else if (tok.payload.role === "super_admin") {
+          verification = { valid: true, payload: tok.payload };
+        } else {
+          const loc = evaluateLocationAccess(
+            tok.payload.role,
+            data.latitude ?? tok.payload.latitude,
+            data.longitude ?? tok.payload.longitude,
+            data.accuracy ?? tok.payload.accuracy,
+            officeNetworkGeoConfig(),
+          );
+          verification = loc.authorized
+            ? { valid: true, payload: tok.payload, locationResult: loc }
+            : {
+                valid: false,
+                payload: tok.payload,
+                locationResult: loc,
+                error: loc.userMessage || "CRM access is not available at your current location.",
+                errorCode:
+                  loc.status === "missing_coordinates"
+                    ? "MISSING_LOCATION"
+                    : loc.status === "poor_accuracy"
+                      ? "POOR_ACCURACY"
+                      : "OUT_OF_BOUNDS",
+              };
+        }
       } else {
         verification = verifySessionWithLocation(data.token, {
           latitude: data.latitude,
