@@ -654,20 +654,32 @@ export function Hero() {
           mediaCardRef.current.style.border =
             expandP >= 0.98 ? "none" : "1px solid rgba(255, 255, 255, 0.2)";
         } else {
-          // Desktop & Laptop (1024px+): Starting card is 36% width, 42% height
-          const startW = 36;
-          const startH = 42;
-          const currentW = startW + (100 - startW) * expandP;
-          const currentH = startH + (100 - startH) * expandP;
-          const currentRadius = 20 * (1 - expandP);
+          // Desktop & Laptop (1024px+): starts as a 36% x 42% card and grows into the
+          // largest 16:9 frame that fits the screen, so the full video is always visible
+          // (no top/bottom cropping on wide or short screens).
+          const area = mediaCardRef.current.parentElement;
+          const availW = area?.clientWidth || window.innerWidth;
+          const availH = area?.clientHeight || window.innerHeight;
+          const VIDEO_RATIO = 16 / 9;
+          const endW = Math.min(availW, availH * VIDEO_RATIO);
+          const endH = endW / VIDEO_RATIO;
+          const startW = availW * 0.36;
+          const startH = availH * 0.42;
+          const startRight = window.innerWidth * 0.025;
+          const startBottom = window.innerHeight * 0.1;
+          const endRight = (availW - endW) / 2;
+          const endBottom = (availH - endH) / 2;
+          const mix = (a: number, b: number) => a + (b - a) * expandP;
+          const fillsScreen = endW >= availW - 1 && endH >= availH - 1;
+          const currentRadius = fillsScreen ? 20 * (1 - expandP) : mix(20, 14);
 
-          mediaCardRef.current.style.width = expandP >= 0.98 ? "100%" : `${currentW}%`;
-          mediaCardRef.current.style.height = expandP >= 0.98 ? "100%" : `${currentH}%`;
-          mediaCardRef.current.style.right = expandP >= 0.98 ? "0px" : `${(1 - expandP) * 2.5}vw`;
-          mediaCardRef.current.style.bottom = expandP >= 0.98 ? "0px" : `${(1 - expandP) * 10}vh`;
+          mediaCardRef.current.style.width = `${mix(startW, endW)}px`;
+          mediaCardRef.current.style.height = `${mix(startH, endH)}px`;
+          mediaCardRef.current.style.right = `${mix(startRight, endRight)}px`;
+          mediaCardRef.current.style.bottom = `${mix(startBottom, endBottom)}px`;
           mediaCardRef.current.style.borderRadius = `${currentRadius}px`;
           mediaCardRef.current.style.border =
-            expandP >= 0.98 ? "none" : "1px solid rgba(255, 255, 255, 0.2)";
+            expandP >= 0.98 && fillsScreen ? "none" : "1px solid rgba(255, 255, 255, 0.2)";
         }
       }
     };
