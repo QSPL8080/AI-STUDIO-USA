@@ -117,19 +117,21 @@ export const portfolioItems = [
     specLabel: "SPEC AD / UNOFFICIAL CONCEPT",
   },
   {
-    title: "Non-Stick Cookware Story",
-    format: "AI Cartoon",
-    industry: "Kitchen & Cookware",
-    description:
-      "3D-animated kitchen story: a stressed chef battling smoking pans switches to non-stick cookware, with playful character-led product storytelling.",
-    videoUrl: "/videos/Cartoon%20Sample.mp4",
-  },
-  {
     title: "AI Avatar Presenter",
     format: "AI Avatar",
     industry: "Presenter & Spokesperson",
     description:
       "Professional presenter-style spokesperson reel for corporate, marketing, and educational content.",
+    videoUrl: "",
+    imageUrl: "",
+    isComingSoon: true,
+  },
+  {
+    title: "Hyper-Realistic Product Film",
+    format: "Hyper-Realistic",
+    industry: "Premium Product Commercials",
+    description:
+      "Cinematic hyper-realistic product commercial with studio lighting, macro detail and premium reveal shots.",
     videoUrl: "",
     imageUrl: "",
     isComingSoon: true,

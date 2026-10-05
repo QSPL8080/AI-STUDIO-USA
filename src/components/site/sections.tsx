@@ -433,6 +433,7 @@ export function Hero() {
   const heroBrandRef = useRef<HTMLDivElement>(null);
   const mediaCardRef = useRef<HTMLDivElement>(null);
   const desktopVideoRef = useRef<HTMLVideoElement | null>(null);
+  const heroFillRef = useRef<HTMLCanvasElement | null>(null);
   const mobileVideoRef = useRef<HTMLVideoElement | null>(null);
   const userExplicitlyMutedRef = useRef(true);
   const [isMuted, setIsMuted] = useState(true);
@@ -487,6 +488,28 @@ export function Hero() {
       });
     }
   }, [isDesktop, isMuted]);
+
+  // Desktop hero: paint a tiny copy of the current frame into the blurred fill canvas
+  useEffect(() => {
+    if (!isDesktop) return;
+    let raf = 0;
+    let last = 0;
+    const tick = (t: number) => {
+      raf = requestAnimationFrame(tick);
+      if (t - last < 120) return;
+      last = t;
+      const v = desktopVideoRef.current;
+      const c = heroFillRef.current;
+      if (!v || !c || v.paused || v.readyState < 2) return;
+      try {
+        c.getContext("2d")?.drawImage(v, 0, 0, c.width, c.height);
+      } catch {
+        /* frame not ready yet */
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [isDesktop]);
 
   // IntersectionObserver: resume video when hero is in view, pause when out of view
   useEffect(() => {
@@ -654,24 +677,23 @@ export function Hero() {
           mediaCardRef.current.style.border =
             expandP >= 0.98 ? "none" : "1px solid rgba(255, 255, 255, 0.2)";
         } else {
-          // Desktop & Laptop (1024px+): starts as a 36% x 42% card and grows into the
-          // largest 16:9 frame that fits the screen, so the full video is always visible
-          // (no top/bottom cropping on wide or short screens).
+          // Desktop & Laptop (1024px+): starts as a 36% x 42% card and grows to FULL SCREEN.
+          // The video itself is never cropped: it is shown whole (object-contain) and any
+          // space around it is filled by a live, blurred copy of the same frame.
           const area = mediaCardRef.current.parentElement;
           const availW = area?.clientWidth || window.innerWidth;
           const availH = area?.clientHeight || window.innerHeight;
-          const VIDEO_RATIO = 16 / 9;
-          const endW = Math.min(availW, availH * VIDEO_RATIO);
-          const endH = endW / VIDEO_RATIO;
+          const endW = availW;
+          const endH = availH;
           const startW = availW * 0.36;
           const startH = availH * 0.42;
           const startRight = window.innerWidth * 0.025;
           const startBottom = window.innerHeight * 0.1;
-          const endRight = (availW - endW) / 2;
-          const endBottom = (availH - endH) / 2;
+          const endRight = 0;
+          const endBottom = 0;
           const mix = (a: number, b: number) => a + (b - a) * expandP;
-          const fillsScreen = endW >= availW - 1 && endH >= availH - 1;
-          const currentRadius = fillsScreen ? 20 * (1 - expandP) : mix(20, 14);
+          const fillsScreen = true;
+          const currentRadius = 20 * (1 - expandP);
 
           mediaCardRef.current.style.width = `${mix(startW, endW)}px`;
           mediaCardRef.current.style.height = `${mix(startH, endH)}px`;
@@ -901,6 +923,16 @@ export function Hero() {
                 borderRadius: "20px",
               }}
             >
+              {/* Blurred live fill behind the video (covers any space the full, uncropped video leaves) */}
+              <canvas
+                ref={heroFillRef}
+                width={64}
+                height={36}
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full scale-125 blur-2xl opacity-90 pointer-events-none"
+                style={{ backgroundImage: `url(${HERO_POSTER})`, backgroundSize: "cover", backgroundPosition: "center" }}
+              />
+
               {/* Active autoplaying video with audio default */}
               <video
                 ref={(el) => {
@@ -918,7 +950,7 @@ export function Hero() {
                 playsInline
                 preload="auto"
                 onClick={toggleAudio}
-                className="h-full w-full object-cover object-center cursor-pointer"
+                className="relative h-full w-full object-contain object-center cursor-pointer"
               >
                 {/* Only the copy for the current screen size downloads */}
                 <source src={HERO_VIDEO} type="video/mp4" media="(min-width: 1024px)" />
