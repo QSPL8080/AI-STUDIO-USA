@@ -52,9 +52,9 @@ import {
 } from "lucide-react";
 import { NeonButton, Section, SectionHeading } from "./ui";
 
-// Web-optimised hero reel + its first frame (shown instantly while the video buffers)
-const HERO_VIDEO = "/videos/Hero%20Video%20New.mp4";
-const HERO_POSTER = "/videos/posters/Hero%20Video%20New.jpg";
+// Full-quality 1080p hero reel (streams instantly: faststart) + its first frame (shown instantly while the video buffers)
+const HERO_VIDEO = "/videos/HERO%20VIDEO.mp4";
+const HERO_POSTER = "/videos/posters/HERO%20VIDEO.jpg";
 /** First-frame poster for a reel in /public/videos (see /public/videos/posters). */
 export const posterFor = (url?: string) =>
   url ? url.replace("/videos/", "/videos/posters/").replace(/\.mp4$/i, ".jpg") : undefined;
