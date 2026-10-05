@@ -321,17 +321,6 @@ function PortfolioPage() {
             ))}
           </div>
 
-          {/* Spec Concept Notice Disclaimer */}
-          <div className="mt-12 rounded-2xl border border-purple-200/70 bg-purple-50/50 p-4 sm:p-5 text-center max-w-3xl mx-auto text-xs text-slate-600 leading-relaxed">
-            <div className="flex items-center justify-center gap-2 font-bold text-slate-800 mb-1">
-              <Info className="h-4 w-4 text-purple-600" />
-              <span>SPEC CONCEPT NOTICE</span>
-            </div>
-            <p>
-              If a portfolio video uses a real brand but was not commissioned by that brand: <strong>AI VIDEO SPEC CONCEPT</strong> or <strong>SPEC AD / UNOFFICIAL CONCEPT</strong>. Do not imply that the featured brand is a Quickupp AI Studio client unless it actually is.
-            </p>
-          </div>
-
           {/* Bottom Call to Action Section (Light Theme) */}
           <div className="mt-12 sm:mt-14 overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50/90 via-white to-pink-50/60 border border-purple-200/80 p-6 sm:p-8 md:p-10 text-center shadow-md relative">
             <div className="relative z-10 max-w-xl mx-auto space-y-2.5">
