@@ -655,9 +655,9 @@ export function Hero() {
             expandP >= 0.98 ? "none" : "1px solid rgba(255, 255, 255, 0.2)";
         } else {
           // Desktop & Laptop (1024px+): starts as a 36% x 42% card and grows to fill the
-          // whole screen below the header (no scrolling needed). Inside it the video eases
-          // from "fill the card" to "whole video visible": once open, nothing is cut from any
-          // side; on screens wider than 16:9 a slim dark margin shows at the sides.
+          // whole screen below the header (no scrolling needed). The video always fills it
+          // FULL WIDTH, centred; on screens wider than 16:9 an equal strip at the top and
+          // bottom falls outside the screen.
           const area = mediaCardRef.current.parentElement;
           const availW = area?.clientWidth || window.innerWidth;
           const availH = area?.clientHeight || window.innerHeight;
@@ -685,9 +685,8 @@ export function Hero() {
           if (vid) {
             const cw = mix(startW, endW);
             const ch = mix(startH, endH);
-            const cover = Math.max(cw / 16, ch / 9);
-            const contain = Math.min(cw / 16, ch / 9);
-            const unit = mix(cover, contain);
+            // Always fill the card edge to edge (full width when open), centred
+            const unit = Math.max(cw / 16, ch / 9);
             const vw = 16 * unit;
             const vh = 9 * unit;
             vid.style.width = `${vw}px`;
