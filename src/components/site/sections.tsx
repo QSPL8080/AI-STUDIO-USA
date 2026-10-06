@@ -573,17 +573,7 @@ export function Hero() {
       const trackRect = trackRef.current.getBoundingClientRect();
       const trackHeight = trackRef.current.offsetHeight;
       const windowHeight = window.innerHeight;
-
-      // The expanded video is FULL WIDTH at its true 16:9 shape (never cropped). On screens
-      // too short to show all of it below the header, the pinned stage is made taller so
-      // the rest of the video scrolls into view instead of being cut off.
-      const headerH = document.getElementById("site-header-bar")?.offsetHeight ?? 64;
-      const fullW = containerRef.current.clientWidth || window.innerWidth;
-      const stageH = Math.max(windowHeight, Math.ceil(headerH + (fullW * 9) / 16));
-      const extraH = stageH - windowHeight;
-      containerRef.current.style.height = `${stageH}px`;
-      if (heroBrandRef.current) heroBrandRef.current.style.bottom = `${extraH}px`;
-      const scrollableDistance = trackHeight - stageH;
+      const scrollableDistance = trackHeight - windowHeight;
 
       if (scrollableDistance <= 0) return;
 
@@ -664,21 +654,21 @@ export function Hero() {
           mediaCardRef.current.style.border =
             expandP >= 0.98 ? "none" : "1px solid rgba(255, 255, 255, 0.2)";
         } else {
-          // Desktop & Laptop (1024px+): starts as a 36% x 42% card and grows to the FULL
-          // WIDTH of the screen at the video's own 16:9 shape, so nothing is cut from the
-          // top or bottom (centred vertically when the screen is taller than the video).
+          // Desktop & Laptop (1024px+): starts as a 36% x 42% card and grows to fill the
+          // whole screen below the header (no scrolling needed). Inside it the video eases
+          // from "fill the card" to "whole video visible": once open, nothing is cut from any
+          // side; on screens wider than 16:9 a slim dark margin shows at the sides.
           const area = mediaCardRef.current.parentElement;
           const availW = area?.clientWidth || window.innerWidth;
           const availH = area?.clientHeight || window.innerHeight;
-          const visibleH = Math.max(1, availH - extraH); // part of the stage on screen
           const endW = availW;
-          const endH = (availW * 9) / 16;
+          const endH = availH;
           const startW = availW * 0.36;
-          const startH = visibleH * 0.42;
+          const startH = availH * 0.42;
           const startRight = window.innerWidth * 0.025;
-          const startBottom = extraH + window.innerHeight * 0.1;
+          const startBottom = window.innerHeight * 0.1;
           const endRight = 0;
-          const endBottom = Math.max(0, (availH - endH) / 2);
+          const endBottom = 0;
           const mix = (a: number, b: number) => a + (b - a) * expandP;
           const fillsScreen = true;
           const currentRadius = 20 * (1 - expandP);
@@ -690,6 +680,21 @@ export function Hero() {
           mediaCardRef.current.style.borderRadius = `${currentRadius}px`;
           mediaCardRef.current.style.border =
             expandP >= 0.98 && fillsScreen ? "none" : "1px solid rgba(255, 255, 255, 0.2)";
+
+          const vid = desktopVideoRef.current;
+          if (vid) {
+            const cw = mix(startW, endW);
+            const ch = mix(startH, endH);
+            const cover = Math.max(cw / 16, ch / 9);
+            const contain = Math.min(cw / 16, ch / 9);
+            const unit = mix(cover, contain);
+            const vw = 16 * unit;
+            const vh = 9 * unit;
+            vid.style.width = `${vw}px`;
+            vid.style.height = `${vh}px`;
+            vid.style.left = `${(cw - vw) / 2}px`;
+            vid.style.top = `${(ch - vh) / 2}px`;
+          }
         }
       }
     };
@@ -928,7 +933,7 @@ export function Hero() {
                 playsInline
                 preload="auto"
                 onClick={toggleAudio}
-                className="h-full w-full object-cover object-center cursor-pointer"
+                className="absolute left-0 top-0 h-full w-full max-w-none object-cover object-center cursor-pointer"
               >
                 {/* Only the copy for the current screen size downloads */}
                 <source src={HERO_VIDEO} type="video/mp4" media="(min-width: 1024px)" />
