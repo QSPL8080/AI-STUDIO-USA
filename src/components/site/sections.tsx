@@ -573,7 +573,17 @@ export function Hero() {
       const trackRect = trackRef.current.getBoundingClientRect();
       const trackHeight = trackRef.current.offsetHeight;
       const windowHeight = window.innerHeight;
-      const scrollableDistance = trackHeight - windowHeight;
+
+      // The expanded video is FULL WIDTH at its true 16:9 shape (never cropped). On screens
+      // too short to show all of it below the header, the pinned stage is made taller so
+      // the rest of the video scrolls into view instead of being cut off.
+      const headerH = document.getElementById("site-header-bar")?.offsetHeight ?? 64;
+      const fullW = containerRef.current.clientWidth || window.innerWidth;
+      const stageH = Math.max(windowHeight, Math.ceil(headerH + (fullW * 9) / 16));
+      const extraH = stageH - windowHeight;
+      containerRef.current.style.height = `${stageH}px`;
+      if (heroBrandRef.current) heroBrandRef.current.style.bottom = `${extraH}px`;
+      const scrollableDistance = trackHeight - stageH;
 
       if (scrollableDistance <= 0) return;
 
@@ -654,19 +664,21 @@ export function Hero() {
           mediaCardRef.current.style.border =
             expandP >= 0.98 ? "none" : "1px solid rgba(255, 255, 255, 0.2)";
         } else {
-          // Desktop & Laptop (1024px+): starts as a 36% x 42% card and grows to FULL SCREEN,
-          // with the video filling the full width edge to edge.
+          // Desktop & Laptop (1024px+): starts as a 36% x 42% card and grows to the FULL
+          // WIDTH of the screen at the video's own 16:9 shape, so nothing is cut from the
+          // top or bottom (centred vertically when the screen is taller than the video).
           const area = mediaCardRef.current.parentElement;
           const availW = area?.clientWidth || window.innerWidth;
           const availH = area?.clientHeight || window.innerHeight;
+          const visibleH = Math.max(1, availH - extraH); // part of the stage on screen
           const endW = availW;
-          const endH = availH;
+          const endH = (availW * 9) / 16;
           const startW = availW * 0.36;
-          const startH = availH * 0.42;
+          const startH = visibleH * 0.42;
           const startRight = window.innerWidth * 0.025;
-          const startBottom = window.innerHeight * 0.1;
+          const startBottom = extraH + window.innerHeight * 0.1;
           const endRight = 0;
-          const endBottom = 0;
+          const endBottom = Math.max(0, (availH - endH) / 2);
           const mix = (a: number, b: number) => a + (b - a) * expandP;
           const fillsScreen = true;
           const currentRadius = 20 * (1 - expandP);
