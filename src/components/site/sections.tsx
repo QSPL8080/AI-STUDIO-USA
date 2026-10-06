@@ -53,8 +53,8 @@ import {
 import { NeonButton, Section, SectionHeading } from "./ui";
 
 // Full-quality 1080p hero reel (streams instantly: faststart) + its first frame (shown instantly while the video buffers)
-const HERO_VIDEO = "/videos/HERO%20VIDEO.mp4";
-const HERO_POSTER = "/videos/posters/HERO%20VIDEO.jpg";
+const HERO_VIDEO = "/videos/HERO%20VIDEO%20NEW.mp4";
+const HERO_POSTER = "/videos/posters/HERO%20VIDEO%20NEW.jpg";
 /** First-frame poster for a reel in /public/videos (see /public/videos/posters). */
 export const posterFor = (url?: string) =>
   url ? url.replace("/videos/", "/videos/posters/").replace(/\.mp4$/i, ".jpg") : undefined;
@@ -433,7 +433,6 @@ export function Hero() {
   const heroBrandRef = useRef<HTMLDivElement>(null);
   const mediaCardRef = useRef<HTMLDivElement>(null);
   const desktopVideoRef = useRef<HTMLVideoElement | null>(null);
-  const heroFillRef = useRef<HTMLCanvasElement | null>(null);
   const mobileVideoRef = useRef<HTMLVideoElement | null>(null);
   const userExplicitlyMutedRef = useRef(true);
   const [isMuted, setIsMuted] = useState(true);
@@ -488,62 +487,6 @@ export function Hero() {
       });
     }
   }, [isDesktop, isMuted]);
-
-  // Desktop hero: paint a tiny copy of the current frame into the blurred fill canvas
-  useEffect(() => {
-    if (!isDesktop) return;
-    let raf = 0;
-    let last = 0;
-    const tick = (t: number) => {
-      raf = requestAnimationFrame(tick);
-      if (t - last < 120) return;
-      last = t;
-      const v = desktopVideoRef.current;
-      const c = heroFillRef.current;
-      if (!v || !c || v.readyState < 2 || (v.paused && c.dataset["drawn"])) return;
-      const W = c.clientWidth;
-      const H = c.clientHeight;
-      const ctx = c.getContext("2d");
-      if (!W || !H || !ctx) return;
-      // Small canvas with the card's shape; the frame sits exactly where the real video
-      // is, and its outermost edge pixels are stretched into the empty space. Blurred,
-      // this continues the picture seamlessly instead of showing a separate background.
-      const cw = 96;
-      const ch = Math.max(1, Math.round((cw * H) / W));
-      if (c.width !== cw || c.height !== ch) {
-        c.width = cw;
-        c.height = ch;
-      }
-      const vw = v.videoWidth || 1920;
-      const vh = v.videoHeight || 1080;
-      const ratio = vw / vh;
-      let iw = cw;
-      let ih = cw / ratio;
-      if (ih > ch) {
-        ih = ch;
-        iw = ch * ratio;
-      }
-      const ix = (cw - iw) / 2;
-      const iy = (ch - ih) / 2;
-      const s = 0.025; // edge strip (2.5% of the frame) used to extend the picture
-      try {
-        ctx.drawImage(v, 0, 0, vw, vh, ix, iy, iw, ih);
-        if (ix > 0.5) {
-          ctx.drawImage(v, 0, 0, vw * s, vh, 0, iy, ix + 1, ih);
-          ctx.drawImage(v, vw * (1 - s), 0, vw * s, vh, ix + iw - 1, iy, ix + 1, ih);
-        }
-        if (iy > 0.5) {
-          ctx.drawImage(v, 0, 0, vw, vh * s, 0, 0, cw, iy + 1);
-          ctx.drawImage(v, 0, vh * (1 - s), vw, vh * s, 0, iy + ih - 1, cw, iy + 1);
-        }
-        c.dataset["drawn"] = "1";
-      } catch {
-        /* frame not ready yet */
-      }
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [isDesktop]);
 
   // IntersectionObserver: resume video when hero is in view, pause when out of view
   useEffect(() => {
@@ -711,9 +654,8 @@ export function Hero() {
           mediaCardRef.current.style.border =
             expandP >= 0.98 ? "none" : "1px solid rgba(255, 255, 255, 0.2)";
         } else {
-          // Desktop & Laptop (1024px+): starts as a 36% x 42% card and grows to FULL SCREEN.
-          // The video itself is never cropped: it is shown whole (object-contain) and any
-          // space around it is filled by a live, blurred copy of the same frame.
+          // Desktop & Laptop (1024px+): starts as a 36% x 42% card and grows to FULL SCREEN,
+          // with the video filling the full width edge to edge.
           const area = mediaCardRef.current.parentElement;
           const availW = area?.clientWidth || window.innerWidth;
           const availH = area?.clientHeight || window.innerHeight;
@@ -955,19 +897,8 @@ export function Hero() {
                 right: "2.5vw",
                 bottom: "10vh",
                 borderRadius: "20px",
-                containerType: "size",
               }}
             >
-              {/* Blurred live fill behind the video (covers any space the full, uncropped video leaves) */}
-              <canvas
-                ref={heroFillRef}
-                width={64}
-                height={36}
-                aria-hidden="true"
-                className="absolute inset-0 h-full w-full scale-110 blur-xl pointer-events-none"
-                style={{ backgroundImage: `url(${HERO_POSTER})`, backgroundSize: "cover", backgroundPosition: "center" }}
-              />
-
               {/* Active autoplaying video with audio default */}
               <video
                 ref={(el) => {
@@ -985,18 +916,7 @@ export function Hero() {
                 playsInline
                 preload="auto"
                 onClick={toggleAudio}
-                className="absolute inset-0 m-auto max-w-full max-h-full object-cover cursor-pointer"
-                style={{
-                  // Largest 16:9 box that fits the card, with feathered edges that melt into the fill
-                  width: "min(100cqw, calc(100cqh * 16 / 9))",
-                  aspectRatio: "16 / 9",
-                  WebkitMaskImage:
-                    "linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%)",
-                  WebkitMaskComposite: "source-in",
-                  maskImage:
-                    "linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%)",
-                  maskComposite: "intersect",
-                }}
+                className="h-full w-full object-cover object-center cursor-pointer"
               >
                 {/* Only the copy for the current screen size downloads */}
                 <source src={HERO_VIDEO} type="video/mp4" media="(min-width: 1024px)" />
