@@ -3132,7 +3132,9 @@ export function PackageInclusions() {
   ];
 
   return (
-    <Section id="package-inclusions" className="relative overflow-hidden bg-gradient-to-b from-white via-purple-50/15 to-white py-10 sm:py-12 md:py-14 border-b border-purple-100/80">
+    <Section id="package-inclusions" className="relative isolate overflow-hidden bg-gradient-to-b from-white via-purple-50/15 to-white py-10 sm:py-12 md:py-14 border-b border-purple-100/80">
+      {/* Flat lay of camera, lenses and production gear - "everything included" */}
+      <SectionPhotoBg photo="https://images.unsplash.com/photo-1678798694643-2b8fddcf900f" />
       <SectionHeading
         eyebrow="PACKAGE INCLUSIONS"
         title="Every Video"
@@ -4046,8 +4048,7 @@ export function Process() {
   const doubledSteps = [...processSteps, ...processSteps];
 
   return (
-    <section id="process" className="scroll-mt-[72px] relative isolate w-full overflow-hidden bg-gradient-to-b from-purple-50/40 via-white to-purple-50/20 border-y border-purple-100/70 py-14 sm:py-18">
-      <SectionPhotoBg photo="https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d" />
+    <section id="process" className="scroll-mt-[72px] relative w-full overflow-hidden bg-gradient-to-b from-purple-50/40 via-white to-purple-50/20 border-y border-purple-100/70 py-14 sm:py-18">
       {/* Centered Heading */}
       <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
         <SectionHeading
