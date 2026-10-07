@@ -5226,7 +5226,7 @@ export function QuotePopupModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-3 sm:p-5 md:p-6 backdrop-blur-[4px] animate-in fade-in duration-300">
-      <div className="relative max-h-[94vh] w-full max-w-[680px] overflow-y-auto overflow-x-hidden rounded-[28px] border border-slate-200 bg-white p-5 shadow-2xl sm:p-7">
+      <div className="relative max-h-[94vh] [@media(min-width:640px)_and_(max-height:640px)]:max-h-[98vh] w-full max-w-[680px] overflow-y-auto overflow-x-hidden rounded-[28px] border border-slate-200 bg-white p-5 shadow-2xl sm:p-7 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:p-5 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:p-4 [@media(min-width:640px)_and_(max-height:640px)]:py-3">
         {/* Close Button */}
         <button
           onClick={handleClose}
@@ -5268,20 +5268,20 @@ export function QuotePopupModal() {
           <>
             {/* Modal Header */}
             <div className="pr-12 text-left">
-              <h3 className="font-heading text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              <h3 className="font-heading text-xl font-bold tracking-tight text-slate-900 sm:text-2xl [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:text-xl [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-lg [@media(min-width:640px)_and_(max-height:640px)]:text-base">
                 Get Free{" "}
                 <span className="font-serif italic text-gradient-brand inline-block pr-1.5">
                   Creative Audit
                 </span>
               </h3>
-              <p className="mt-1.5 text-xs leading-relaxed text-slate-600 sm:text-sm">
+              <p className="mt-1.5 text-xs leading-relaxed text-slate-600 sm:text-sm [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:mt-1 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:text-[13px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:mt-1 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-xs [@media(min-width:640px)_and_(max-height:640px)]:mt-0.5 [@media(min-width:640px)_and_(max-height:640px)]:text-[11px]">
                 Send us your project details, or book a free 30-minute strategy call with our creative
                 team. Whichever suits you.
               </p>
               <a
                 href="#book-call"
                 onClick={handleClose}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-800 transition-colors hover:bg-purple-100"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-purple-50 px-3 py-1.5 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:mt-2 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:mt-2 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:py-1 [@media(min-width:640px)_and_(max-height:640px)]:mt-1.5 [@media(min-width:640px)_and_(max-height:640px)]:py-0.5 text-xs font-semibold text-purple-800 transition-colors hover:bg-purple-100"
               >
                 <Calendar className="h-3.5 w-3.5 text-purple-700" />
                 <span>Book a Strategy Call</span>
@@ -5362,14 +5362,14 @@ export function QuotePopupModal() {
                 }, 3000);
               }}
               autoComplete="off"
-              className="mt-5 space-y-3.5 sm:space-y-4"
+              className="mt-5 space-y-3.5 sm:space-y-4 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:mt-3.5 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:space-y-2.5 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:mt-2.5 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:space-y-2 [@media(min-width:640px)_and_(max-height:640px)]:mt-2 [@media(min-width:640px)_and_(max-height:640px)]:space-y-1.5"
             >
               {/* Row 1: Name & Work Email */}
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:gap-2.5 [@media(min-width:640px)_and_(max-height:640px)]:gap-2">
                 <div className="w-full">
                   <label
                     htmlFor="modalName"
-                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-xs [@media(min-width:640px)_and_(max-height:640px)]:text-[11px]"
                   >
                     Name*
                   </label>
@@ -5379,13 +5379,13 @@ export function QuotePopupModal() {
                     name="name"
                     required
                     placeholder="Your full name"
-                    className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
+                    className="mt-1.5 h-11 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:mt-1 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:h-9 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:mt-1 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:h-8 [@media(min-width:640px)_and_(max-height:640px)]:h-[30px] [@media(min-width:640px)_and_(max-height:640px)]:mt-0.5 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-[13px] [@media(min-width:640px)_and_(max-height:640px)]:text-[13px] w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
                   />
                 </div>
                 <div className="w-full">
                   <label
                     htmlFor="modalEmail"
-                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-xs [@media(min-width:640px)_and_(max-height:640px)]:text-[11px]"
                   >
                     Work Email*
                   </label>
@@ -5395,17 +5395,17 @@ export function QuotePopupModal() {
                     name="email"
                     required
                     placeholder="you@company.com"
-                    className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
+                    className="mt-1.5 h-11 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:mt-1 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:h-9 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:mt-1 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:h-8 [@media(min-width:640px)_and_(max-height:640px)]:h-[30px] [@media(min-width:640px)_and_(max-height:640px)]:mt-0.5 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-[13px] [@media(min-width:640px)_and_(max-height:640px)]:text-[13px] w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
                   />
                 </div>
               </div>
 
               {/* Row 2: Phone & Company / Brand */}
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:gap-2.5 [@media(min-width:640px)_and_(max-height:640px)]:gap-2">
                 <div className="w-full">
                   <label
                     htmlFor="modalPhone"
-                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-xs [@media(min-width:640px)_and_(max-height:640px)]:text-[11px]"
                   >
                     Phone*
                   </label>
@@ -5415,13 +5415,13 @@ export function QuotePopupModal() {
                     name="phone"
                     required
                     placeholder="+1 (555) 000-0000"
-                    className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
+                    className="mt-1.5 h-11 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:mt-1 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:h-9 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:mt-1 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:h-8 [@media(min-width:640px)_and_(max-height:640px)]:h-[30px] [@media(min-width:640px)_and_(max-height:640px)]:mt-0.5 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-[13px] [@media(min-width:640px)_and_(max-height:640px)]:text-[13px] w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
                   />
                 </div>
                 <div className="w-full">
                   <label
                     htmlFor="modalCompany"
-                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-xs [@media(min-width:640px)_and_(max-height:640px)]:text-[11px]"
                   >
                     Company / Brand*
                   </label>
@@ -5431,17 +5431,17 @@ export function QuotePopupModal() {
                     name="business"
                     required
                     placeholder="Company or brand name"
-                    className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
+                    className="mt-1.5 h-11 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:mt-1 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:h-9 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:mt-1 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:h-8 [@media(min-width:640px)_and_(max-height:640px)]:h-[30px] [@media(min-width:640px)_and_(max-height:640px)]:mt-0.5 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-[13px] [@media(min-width:640px)_and_(max-height:640px)]:text-[13px] w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
                   />
                 </div>
               </div>
 
               {/* Row 3: Website & Industry */}
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:gap-2.5 [@media(min-width:640px)_and_(max-height:640px)]:gap-2">
                 <div className="w-full">
                   <label
                     htmlFor="modalWebsite"
-                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-xs [@media(min-width:640px)_and_(max-height:640px)]:text-[11px]"
                   >
                     Website
                   </label>
@@ -5450,22 +5450,22 @@ export function QuotePopupModal() {
                     type="text"
                     name="website"
                     placeholder="https://yourbrand.com or social"
-                    className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
+                    className="mt-1.5 h-11 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:mt-1 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:h-9 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:mt-1 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:h-8 [@media(min-width:640px)_and_(max-height:640px)]:h-[30px] [@media(min-width:640px)_and_(max-height:640px)]:mt-0.5 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-[13px] [@media(min-width:640px)_and_(max-height:640px)]:text-[13px] w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
                   />
                 </div>
                 <div className="w-full">
                   <label
                     htmlFor="modalIndustry"
-                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-xs [@media(min-width:640px)_and_(max-height:640px)]:text-[11px]"
                   >
                     Industry*
                   </label>
-                  <div className="relative mt-1.5">
+                  <div className="relative mt-1.5 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:mt-1 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:mt-1 [@media(min-width:640px)_and_(max-height:640px)]:mt-0.5">
                     <select
                       id="modalIndustry"
                       name="industry"
                       required
-                      className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 pr-9 text-sm text-slate-900 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15 cursor-pointer"
+                      className="h-11 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:h-9 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:h-8 [@media(min-width:640px)_and_(max-height:640px)]:h-[30px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-[13px] [@media(min-width:640px)_and_(max-height:640px)]:text-[13px] w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 pr-9 text-sm text-slate-900 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15 cursor-pointer"
                     >
                       <option value="">Select industry</option>
                       <option value="E-commerce / DTC">E-commerce / DTC</option>
@@ -5481,20 +5481,20 @@ export function QuotePopupModal() {
               </div>
 
               {/* Row 4: What do you need? & Monthly creative requirement */}
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:gap-2.5 [@media(min-width:640px)_and_(max-height:640px)]:gap-2">
                 <div className="w-full">
                   <label
                     htmlFor="modalWhatDoYouNeed"
-                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-xs [@media(min-width:640px)_and_(max-height:640px)]:text-[11px]"
                   >
                     What do you need?*
                   </label>
-                  <div className="relative mt-1.5">
+                  <div className="relative mt-1.5 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:mt-1 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:mt-1 [@media(min-width:640px)_and_(max-height:640px)]:mt-0.5">
                     <select
                       id="modalWhatDoYouNeed"
                       name="videoType"
                       required
-                      className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 pr-9 text-sm text-slate-900 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15 cursor-pointer"
+                      className="h-11 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:h-9 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:h-8 [@media(min-width:640px)_and_(max-height:640px)]:h-[30px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-[13px] [@media(min-width:640px)_and_(max-height:640px)]:text-[13px] w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 pr-9 text-sm text-slate-900 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15 cursor-pointer"
                     >
                       <option value="">Select video format / need</option>
                       <option value="AI UGC Video Ads">AI UGC Video Ads</option>
@@ -5511,16 +5511,16 @@ export function QuotePopupModal() {
                 <div className="w-full">
                   <label
                     htmlFor="modalMonthlyRequirement"
-                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-xs [@media(min-width:640px)_and_(max-height:640px)]:text-[11px]"
                   >
                     Monthly creative requirement*
                   </label>
-                  <div className="relative mt-1.5">
+                  <div className="relative mt-1.5 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:mt-1 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:mt-1 [@media(min-width:640px)_and_(max-height:640px)]:mt-0.5">
                     <select
                       id="modalMonthlyRequirement"
                       name="videoQuantity"
                       required
-                      className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 pr-9 text-sm text-slate-900 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15 cursor-pointer"
+                      className="h-11 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:h-9 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:h-8 [@media(min-width:640px)_and_(max-height:640px)]:h-[30px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-[13px] [@media(min-width:640px)_and_(max-height:640px)]:text-[13px] w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 pr-9 text-sm text-slate-900 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15 cursor-pointer"
                     >
                       <option value="">Select volume / requirement</option>
                       <option value="1 – 3 Videos (Testing / One-off)">1 – 3 Videos (Testing / One-off)</option>
@@ -5538,7 +5538,7 @@ export function QuotePopupModal() {
               <div className="w-full">
                 <label
                   htmlFor="modalProjectDetails"
-                  className="block text-xs font-medium text-slate-700 sm:text-[13px]"
+                  className="block text-xs font-medium text-slate-700 sm:text-[13px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-xs [@media(min-width:640px)_and_(max-height:640px)]:text-[11px]"
                 >
                   Project details*
                 </label>
@@ -5548,7 +5548,7 @@ export function QuotePopupModal() {
                   rows={3}
                   required
                   placeholder="Tell us what you're selling, who you're targeting, hooks/angles, and what you're trying to achieve..."
-                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
+                  className="mt-1.5 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:mt-1 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:h-16 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:py-2 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:mt-1 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:h-12 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:py-2 [@media(min-width:640px)_and_(max-height:640px)]:h-10 [@media(min-width:640px)_and_(max-height:640px)]:mt-0.5 [@media(min-width:640px)_and_(max-height:640px)]:py-1.5 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-[13px] [@media(min-width:640px)_and_(max-height:640px)]:text-[13px] [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:resize-none [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:resize-none [@media(min-width:640px)_and_(max-height:640px)]:resize-none w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
                 />
               </div>
 
@@ -5601,7 +5601,7 @@ export function QuotePopupModal() {
               <button
                 type="submit"
                 disabled={loading}
-                className="h-12 w-full rounded-xl bg-gradient-brand text-sm font-bold uppercase tracking-wider text-white shadow-lg glow-neon transition-all hover:brightness-110 disabled:opacity-50 active:scale-[0.98] cursor-pointer"
+                className="h-12 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:h-10 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:h-9 [@media(min-width:640px)_and_(max-height:640px)]:h-8 w-full rounded-xl bg-gradient-brand text-sm font-bold uppercase tracking-wider text-white shadow-lg glow-neon transition-all hover:brightness-110 disabled:opacity-50 active:scale-[0.98] cursor-pointer"
               >
                 {loading ? "Submitting..." : "Submit Inquiry"}
               </button>
