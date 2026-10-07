@@ -1135,7 +1135,7 @@ export function HeroOverview() {
 function SectionPhotoBg({
   photo,
   position = "center",
-  opacity = 0.14,
+  opacity = 0.32,
 }: {
   photo: string;
   position?: string;
@@ -1151,12 +1151,12 @@ function SectionPhotoBg({
         alt=""
         loading="lazy"
         decoding="async"
-        className="h-full w-full object-cover saturate-[0.85]"
+        className="h-full w-full object-cover"
         style={{ opacity, objectPosition: position }}
       />
-      {/* brand tint + fade at top/bottom so sections still blend into each other */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-200/25 via-transparent to-pink-200/20 mix-blend-multiply" />
-      <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-transparent to-white/80" />
+      {/* light brand tint + short fade only at the very top/bottom edge */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-200/15 via-transparent to-pink-200/10 mix-blend-multiply" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.85)_0%,transparent_14%,transparent_86%,rgba(255,255,255,0.85)_100%)]" />
     </div>
   );
 }
@@ -1239,7 +1239,7 @@ export function WhyQuickuppAiStudio() {
 
   return (
     <section ref={benefitsSectionRef} id="why-quickupp" className="relative isolate overflow-hidden border-b border-purple-100/80 bg-gradient-to-b from-slate-50/50 via-white to-purple-50/20 py-8 sm:py-10 md:py-14 px-4 sm:px-6 lg:px-8">
-      <SectionPhotoBg photo="https://images.unsplash.com/photo-1612544409025-e1f6a56c1152" opacity={0.16} />
+      <SectionPhotoBg photo="https://images.unsplash.com/photo-1612544409025-e1f6a56c1152" />
       {/* Dynamic atmospheric lighting */}
       <div
         aria-hidden
@@ -3631,7 +3631,7 @@ export function WhoWeServe() {
 
   return (
     <Section id="who-we-serve" className="relative isolate overflow-hidden bg-gradient-to-b from-slate-50/50 via-purple-50/20 to-white py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 border-y border-purple-100/80 shadow-inner">
-      <SectionPhotoBg photo="https://images.unsplash.com/photo-1542744173-8e7e53415bb0" opacity={0.14} />
+      <SectionPhotoBg photo="https://images.unsplash.com/photo-1542744173-8e7e53415bb0" />
       {/* Light atmospheric ambient background glows */}
       <div
         aria-hidden="true"
@@ -4045,7 +4045,7 @@ export function Process() {
 
   return (
     <section id="process" className="scroll-mt-[72px] relative isolate w-full overflow-hidden bg-gradient-to-b from-purple-50/40 via-white to-purple-50/20 border-y border-purple-100/70 py-14 sm:py-18">
-      <SectionPhotoBg photo="https://images.unsplash.com/photo-1471341971476-ae15ff5dd4ea" opacity={0.15} />
+      <SectionPhotoBg photo="https://images.unsplash.com/photo-1471341971476-ae15ff5dd4ea" />
       {/* Centered Heading */}
       <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
         <SectionHeading
@@ -4772,7 +4772,7 @@ export function Faq() {
 export function CreativeScalingCta() {
   return (
     <section className="relative isolate overflow-hidden border-t border-purple-100/80 bg-gradient-to-b from-white via-purple-50/30 to-slate-50 py-12 sm:py-16 px-4 sm:px-6">
-      <SectionPhotoBg photo="https://images.unsplash.com/photo-1543525469-65b61cc2bc06" opacity={0.16} />
+      <SectionPhotoBg photo="https://images.unsplash.com/photo-1543525469-65b61cc2bc06" />
       {/* Background ambient lighting */}
       <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-96 w-full max-w-4xl rounded-full bg-gradient-to-r from-purple-400/15 via-indigo-300/15 to-pink-400/15 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 right-10 h-64 w-64 rounded-full bg-purple-300/10 blur-2xl" />
