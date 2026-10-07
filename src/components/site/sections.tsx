@@ -4775,7 +4775,7 @@ export function Faq() {
 export function CreativeScalingCta() {
   return (
     <section className="relative isolate overflow-hidden border-t border-purple-100/80 bg-gradient-to-b from-white via-purple-50/30 to-slate-50 py-12 sm:py-16 px-4 sm:px-6">
-      <SectionPhotoBg photo="https://images.unsplash.com/photo-1759393852314-59dc00faeed3" />
+      <SectionPhotoBg photo="https://images.unsplash.com/photo-1519389950473-47ba0277781c" />
       {/* Background ambient lighting */}
       <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-96 w-full max-w-4xl rounded-full bg-gradient-to-r from-purple-400/15 via-indigo-300/15 to-pink-400/15 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 right-10 h-64 w-64 rounded-full bg-purple-300/10 blur-2xl" />
