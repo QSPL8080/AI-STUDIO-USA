@@ -4546,6 +4546,8 @@ export function LeadFormSection() {
                   id="bookingConsent"
                   name="consent"
                   required
+                  defaultChecked={false}
+                  autoComplete="off"
                   className="mt-0.5 h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer accent-purple-600 shrink-0"
                 />
                 <label
@@ -5224,11 +5226,11 @@ export function QuotePopupModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-3 sm:p-5 md:p-6 backdrop-blur-[4px] animate-in fade-in duration-300">
-      <div className="panel relative max-h-[94vh] w-full max-w-xl md:max-w-2xl lg:max-w-3xl overflow-y-auto overflow-x-hidden border-slate-200 bg-white p-5 shadow-2xl sm:p-7 md:p-8">
+      <div className="relative max-h-[94vh] w-full max-w-[680px] overflow-y-auto overflow-x-hidden rounded-[28px] border border-slate-200 bg-white p-5 shadow-2xl sm:p-7">
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute right-3.5 top-3.5 rounded-full border border-slate-200 bg-slate-100 p-2 text-slate-500 transition-colors hover:border-purple-300 hover:text-slate-900"
+          className="absolute right-4 top-4 sm:right-5 sm:top-5 flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition-colors hover:bg-purple-100 hover:text-slate-900"
           aria-label="Close modal"
         >
           <X className="h-4 w-4" />
@@ -5265,38 +5267,25 @@ export function QuotePopupModal() {
         ) : (
           <>
             {/* Modal Header */}
-            <div className="pr-6 text-center sm:pr-0">
-              <h3 className="text-lg font-bold tracking-tight text-slate-900 sm:text-2xl">
-                Let's Create Your Next{" "}
+            <div className="pr-12 text-left">
+              <h3 className="font-heading text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                Get Free{" "}
                 <span className="font-serif italic text-gradient-brand inline-block pr-1.5">
-                  AI Video
+                  Creative Audit
                 </span>
               </h3>
-              <p className="mt-1 text-xs text-slate-600 sm:text-sm">
-                Fill in your details below and our team will get in touch with a customized quote.
+              <p className="mt-1.5 text-xs leading-relaxed text-slate-600 sm:text-sm">
+                Send us your project details, or book a free 30-minute strategy call with our creative
+                team. Whichever suits you.
               </p>
-
-              {/* Attractive Call Highlight Banner */}
-              <div className="mt-3 flex items-center justify-between gap-2.5 rounded-lg border border-purple-200/90 bg-gradient-to-r from-violet-100 via-purple-50 to-pink-100 p-2.5 text-left shadow-xs">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2.5 w-2.5 shrink-0">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                  </span>
-                  <div>
-                    <p className="text-[11px] font-bold text-purple-950 sm:text-xs">Prefer a live strategy call?</p>
-                    <p className="text-[10px] text-purple-700">Skip the wait & book a 1-on-1 call directly.</p>
-                  </div>
-                </div>
-                <a
-                  href="#book-call"
-                  onClick={handleClose}
-                  className="shrink-0 inline-flex items-center gap-1 rounded-md bg-gradient-brand px-2.5 py-1 text-[11px] font-bold text-white shadow-xs transition-all hover:brightness-110 active:scale-95"
-                >
-                  <Calendar className="h-3 w-3 text-white" />
-                  <span>Book Call</span>
-                </a>
-              </div>
+              <a
+                href="#book-call"
+                onClick={handleClose}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-800 transition-colors hover:bg-purple-100"
+              >
+                <Calendar className="h-3.5 w-3.5 text-purple-700" />
+                <span>Book a Strategy Call</span>
+              </a>
             </div>
 
             {/* Form */}
@@ -5372,14 +5361,15 @@ export function QuotePopupModal() {
                   setIsOpen(false);
                 }, 3000);
               }}
-              className="mt-4 space-y-3.5 sm:space-y-4"
+              autoComplete="off"
+              className="mt-5 space-y-3.5 sm:space-y-4"
             >
               {/* Row 1: Name & Work Email */}
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="w-full">
                   <label
                     htmlFor="modalName"
-                    className="block text-xs font-bold text-slate-800"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
                   >
                     Name*
                   </label>
@@ -5389,13 +5379,13 @@ export function QuotePopupModal() {
                     name="name"
                     required
                     placeholder="Your full name"
-                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                    className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
                   />
                 </div>
                 <div className="w-full">
                   <label
                     htmlFor="modalEmail"
-                    className="block text-xs font-bold text-slate-800"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
                   >
                     Work Email*
                   </label>
@@ -5405,7 +5395,7 @@ export function QuotePopupModal() {
                     name="email"
                     required
                     placeholder="you@company.com"
-                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                    className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
                   />
                 </div>
               </div>
@@ -5415,7 +5405,7 @@ export function QuotePopupModal() {
                 <div className="w-full">
                   <label
                     htmlFor="modalPhone"
-                    className="block text-xs font-bold text-slate-800"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
                   >
                     Phone*
                   </label>
@@ -5425,13 +5415,13 @@ export function QuotePopupModal() {
                     name="phone"
                     required
                     placeholder="+1 (555) 000-0000"
-                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                    className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
                   />
                 </div>
                 <div className="w-full">
                   <label
                     htmlFor="modalCompany"
-                    className="block text-xs font-bold text-slate-800"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
                   >
                     Company / Brand*
                   </label>
@@ -5441,7 +5431,7 @@ export function QuotePopupModal() {
                     name="business"
                     required
                     placeholder="Company or brand name"
-                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                    className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
                   />
                 </div>
               </div>
@@ -5451,7 +5441,7 @@ export function QuotePopupModal() {
                 <div className="w-full">
                   <label
                     htmlFor="modalWebsite"
-                    className="block text-xs font-bold text-slate-800"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
                   >
                     Website
                   </label>
@@ -5459,14 +5449,14 @@ export function QuotePopupModal() {
                     id="modalWebsite"
                     type="text"
                     name="website"
-                    placeholder="https://yourbrand.com or yourbrand.com"
-                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                    placeholder="https://yourbrand.com or social"
+                    className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
                   />
                 </div>
                 <div className="w-full">
                   <label
                     htmlFor="modalIndustry"
-                    className="block text-xs font-bold text-slate-800"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
                   >
                     Industry*
                   </label>
@@ -5475,7 +5465,7 @@ export function QuotePopupModal() {
                       id="modalIndustry"
                       name="industry"
                       required
-                      className="w-full appearance-none rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 pr-9 text-xs sm:text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer shadow-2xs"
+                      className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 pr-9 text-sm text-slate-900 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15 cursor-pointer"
                     >
                       <option value="">Select industry</option>
                       <option value="E-commerce / DTC">E-commerce / DTC</option>
@@ -5495,7 +5485,7 @@ export function QuotePopupModal() {
                 <div className="w-full">
                   <label
                     htmlFor="modalWhatDoYouNeed"
-                    className="block text-xs font-bold text-slate-800"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
                   >
                     What do you need?*
                   </label>
@@ -5504,7 +5494,7 @@ export function QuotePopupModal() {
                       id="modalWhatDoYouNeed"
                       name="videoType"
                       required
-                      className="w-full appearance-none rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 pr-9 text-xs sm:text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer shadow-2xs"
+                      className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 pr-9 text-sm text-slate-900 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15 cursor-pointer"
                     >
                       <option value="">Select video format / need</option>
                       <option value="AI UGC Video Ads">AI UGC Video Ads</option>
@@ -5521,7 +5511,7 @@ export function QuotePopupModal() {
                 <div className="w-full">
                   <label
                     htmlFor="modalMonthlyRequirement"
-                    className="block text-xs font-bold text-slate-800"
+                    className="block text-xs font-medium text-slate-700 sm:text-[13px]"
                   >
                     Monthly creative requirement*
                   </label>
@@ -5530,7 +5520,7 @@ export function QuotePopupModal() {
                       id="modalMonthlyRequirement"
                       name="videoQuantity"
                       required
-                      className="w-full appearance-none rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 pr-9 text-xs sm:text-sm text-slate-900 focus:border-purple-500 focus:bg-white focus:outline-none cursor-pointer shadow-2xs"
+                      className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 pr-9 text-sm text-slate-900 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15 cursor-pointer"
                     >
                       <option value="">Select volume / requirement</option>
                       <option value="1 – 3 Videos (Testing / One-off)">1 – 3 Videos (Testing / One-off)</option>
@@ -5548,7 +5538,7 @@ export function QuotePopupModal() {
               <div className="w-full">
                 <label
                   htmlFor="modalProjectDetails"
-                  className="block text-xs font-bold text-slate-800"
+                  className="block text-xs font-medium text-slate-700 sm:text-[13px]"
                 >
                   Project details*
                 </label>
@@ -5558,7 +5548,7 @@ export function QuotePopupModal() {
                   rows={3}
                   required
                   placeholder="Tell us what you're selling, who you're targeting, hooks/angles, and what you're trying to achieve..."
-                  className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
                 />
               </div>
 
@@ -5569,7 +5559,9 @@ export function QuotePopupModal() {
                   id="modalConsent"
                   name="consent"
                   required
-                  className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer accent-purple-600 shrink-0"
+                  defaultChecked={false}
+                  autoComplete="off"
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer accent-purple-600 shrink-0"
                 />
                 <label
                   htmlFor="modalConsent"
@@ -5609,30 +5601,11 @@ export function QuotePopupModal() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-lg bg-gradient-brand py-2.5 text-xs font-bold uppercase tracking-wider text-neon-foreground shadow-lg glow-neon transition-all hover:brightness-110 disabled:opacity-50 sm:py-3 sm:text-sm active:scale-95 cursor-pointer"
+                className="h-12 w-full rounded-xl bg-gradient-brand text-sm font-bold uppercase tracking-wider text-white shadow-lg glow-neon transition-all hover:brightness-110 disabled:opacity-50 active:scale-[0.98] cursor-pointer"
               >
-                {loading ? "Submitting..." : "Submit & Request Quote"}
+                {loading ? "Submitting..." : "Submit Inquiry"}
               </button>
 
-              {/* Alternative Buy Plan Option */}
-              <div className="pt-0.5">
-                <div className="relative my-2 flex items-center justify-center">
-                  <div className="w-full border-t border-slate-200"></div>
-                  <span className="absolute bg-white px-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                    or
-                  </span>
-                </div>
-
-                <a
-                  href="/#pricing"
-                  onClick={handleClose}
-                  className="group flex w-full items-center justify-center gap-2 rounded-lg border border-purple-400/80 bg-slate-900 py-2.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-slate-800 hover:border-purple-300 active:scale-95 sm:text-sm"
-                >
-                  <Zap className="h-3.5 w-3.5 text-white shrink-0 transition-transform duration-200 group-hover:scale-110" />
-                  <span>Explore Packages &amp; Buy Plan</span>
-                  <span className="text-xs text-white/80 font-bold transition-transform duration-200 group-hover:translate-x-0.5">→</span>
-                </a>
-              </div>
             </form>
           </>
         )}
