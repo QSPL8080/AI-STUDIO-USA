@@ -4048,7 +4048,9 @@ export function Process() {
   const doubledSteps = [...processSteps, ...processSteps];
 
   return (
-    <section id="process" className="scroll-mt-[72px] relative w-full overflow-hidden bg-gradient-to-b from-purple-50/40 via-white to-purple-50/20 border-y border-purple-100/70 py-14 sm:py-18">
+    <section id="process" className="scroll-mt-[72px] relative isolate w-full overflow-hidden bg-gradient-to-b from-purple-50/40 via-white to-purple-50/20 border-y border-purple-100/70 py-14 sm:py-18">
+      {/* Team planning a creative brief at a whiteboard - "from brief to ready-to-run creative" */}
+      <SectionPhotoBg photo="https://images.unsplash.com/photo-1557804506-669a67965ba0" />
       {/* Centered Heading */}
       <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
         <SectionHeading
