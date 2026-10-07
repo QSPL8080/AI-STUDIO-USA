@@ -1430,8 +1430,7 @@ export function WhyQuickuppAiStudio() {
 
 export function ResearchToAdStrip() {
   return (
-    <section className="relative isolate overflow-hidden border-y border-purple-100/90 bg-gradient-to-b from-purple-50/40 via-white to-purple-50/30 py-6 sm:py-7 px-4 sm:px-6 lg:px-8">
-      <SectionPhotoBg photo="https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d" opacity={0.18} />
+    <section className="relative overflow-hidden border-y border-purple-100/90 bg-gradient-to-b from-purple-50/40 via-white to-purple-50/30 py-6 sm:py-7 px-4 sm:px-6 lg:px-8">
       {/* Radiant ambient glow */}
       <div
         aria-hidden
@@ -4227,8 +4226,7 @@ export function LeadFormSection() {
   const [loading, setLoading] = useState(false);
 
   return (
-    <Section id="contact" className="relative isolate overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-t border-slate-200/80 pt-10 sm:pt-14 pb-6 sm:pb-8">
-      <SectionPhotoBg photo="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4" opacity={0.13} />
+    <Section id="contact" className="relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-t border-slate-200/80 pt-10 sm:pt-14 pb-6 sm:pb-8">
       {/* Light Shade Dynamic Fluid Ribbon Wave Background */}
       <div className="pointer-events-none absolute inset-0 select-none overflow-hidden z-0">
         <svg
