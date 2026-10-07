@@ -4527,13 +4527,12 @@ export function LeadFormSection() {
                   htmlFor="bookingProjectDetails"
                   className="block text-xs font-bold text-slate-800"
                 >
-                  Project details*
+                  Project details
                 </label>
                 <textarea
                   id="bookingProjectDetails"
                   name="requirement"
                   rows={4}
-                  required
                   placeholder="Tell us what you're selling, who you're targeting, hooks/angles, and what you're trying to achieve..."
                   className="mt-1.5 w-full lg:min-h-[190px] rounded-xl border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
                 />
@@ -5540,13 +5539,12 @@ export function QuotePopupModal() {
                   htmlFor="modalProjectDetails"
                   className="block text-xs font-medium text-slate-700 sm:text-[13px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-xs [@media(min-width:640px)_and_(max-height:640px)]:text-[11px]"
                 >
-                  Project details*
+                  Project details
                 </label>
                 <textarea
                   id="modalProjectDetails"
                   name="requirement"
                   rows={3}
-                  required
                   placeholder="Tell us what you're selling, who you're targeting, hooks/angles, and what you're trying to achieve..."
                   className="mt-1.5 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:mt-1 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:h-16 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:py-2 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:mt-1 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:h-12 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:py-2 [@media(min-width:640px)_and_(max-height:640px)]:h-10 [@media(min-width:640px)_and_(max-height:640px)]:mt-0.5 [@media(min-width:640px)_and_(max-height:640px)]:py-1.5 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-[13px] [@media(min-width:640px)_and_(max-height:640px)]:text-[13px] [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:resize-none [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:resize-none [@media(min-width:640px)_and_(max-height:640px)]:resize-none w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
                 />
