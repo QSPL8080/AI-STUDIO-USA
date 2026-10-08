@@ -1134,26 +1134,35 @@ export function HeroOverview() {
  */
 function SectionPhotoBg({
   photo,
+  photos,
+  active = 0,
   position = "center",
   opacity = 0.3,
 }: {
-  photo: string;
+  photo?: string;
+  /** Several photos that cross-fade; `active` picks the one shown (e.g. the selected tab). */
+  photos?: string[];
+  active?: number;
   position?: string;
   opacity?: number;
 }) {
-  const url = (w: number) => `${photo}?auto=format&fit=crop&w=${w}&q=60`;
+  const list = photos && photos.length ? photos : photo ? [photo] : [];
+  const url = (p: string, w: number) => `${p}?auto=format&fit=crop&w=${w}&q=60`;
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-      <img
-        src={url(1600)}
-        srcSet={`${url(800)} 800w, ${url(1600)} 1600w, ${url(2400)} 2400w`}
-        sizes="100vw"
-        alt=""
-        loading="lazy"
-        decoding="async"
-        className="h-full w-full object-cover"
-        style={{ opacity, objectPosition: position }}
-      />
+      {list.map((p, i) => (
+        <img
+          key={p}
+          src={url(p, 1600)}
+          srcSet={`${url(p, 800)} 800w, ${url(p, 1600)} 1600w, ${url(p, 2400)} 2400w`}
+          sizes="100vw"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ease-out"
+          style={{ opacity: i === active ? opacity : 0, objectPosition: position }}
+        />
+      ))}
       {/* light brand tint + short fade only at the very top/bottom edge */}
       <div className="absolute inset-0 bg-gradient-to-br from-purple-200/15 via-transparent to-pink-200/10 mix-blend-multiply" />
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.85)_0%,transparent_14%,transparent_86%,rgba(255,255,255,0.85)_100%)]" />
@@ -3373,6 +3382,15 @@ interface AudienceSegment {
   ctaSecondaryText?: string;
 }
 
+// One background photo per "Who We Serve" tab
+const WHO_WE_SERVE_PHOTOS: Record<string, string> = {
+  "dtc-ecommerce": "https://images.unsplash.com/photo-1721403396830-d290f04c08a4", // skincare / product bottles
+  "saas-technology": "https://images.unsplash.com/photo-1768293336571-c48f8765a82d", // laptop with a software dashboard
+  "real-estate": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9", // modern home with a pool
+  "med-spa-aesthetics": "https://images.unsplash.com/photo-1616394584738-fc6e612e71b9", // facial treatment at a spa
+  "agency-partners": "https://images.unsplash.com/photo-1767786330387-5cef0327b6c1", // modern agency office
+};
+
 const audienceSegments: AudienceSegment[] = [
   {
     id: "dtc-ecommerce",
@@ -3635,7 +3653,11 @@ export function WhoWeServe() {
 
   return (
     <Section id="who-we-serve" className="relative isolate overflow-hidden bg-gradient-to-b from-slate-50/50 via-purple-50/20 to-white py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 border-y border-purple-100/80 shadow-inner">
-      <SectionPhotoBg photo="https://images.unsplash.com/photo-1721403396830-d290f04c08a4" />
+      {/* Background photo follows the selected tab */}
+      <SectionPhotoBg
+        photos={audienceSegments.map((s) => WHO_WE_SERVE_PHOTOS[s.id] ?? WHO_WE_SERVE_PHOTOS["dtc-ecommerce"]!)}
+        active={activeIdx}
+      />
       {/* Light atmospheric ambient background glows */}
       <div
         aria-hidden="true"
