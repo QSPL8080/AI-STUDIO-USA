@@ -58,6 +58,59 @@ const HERO_POSTER = "/videos/posters/HERO%20VIDEO%20NEW.jpg";
 /** First-frame poster for a reel in /public/videos (see /public/videos/posters). */
 export const posterFor = (url?: string) =>
   url ? url.replace("/videos/", "/videos/posters/").replace(/\.mp4$/i, ".jpg") : undefined;
+
+/** Auto-detect campaign parameters (Meta Ads, Facebook, Instagram, Google Ads, UTM parameters) */
+export function getVisitorCampaignDetails(defaultSource = "USA - Website"): {
+  source: string;
+  campaignNotes: string;
+} {
+  if (typeof window === "undefined") return { source: defaultSource, campaignNotes: "" };
+
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const utmSource = params.get("utm_source") || sessionStorage.getItem("lead_utm_source") || "";
+    const utmMedium = params.get("utm_medium") || sessionStorage.getItem("lead_utm_medium") || "";
+    const utmCampaign = params.get("utm_campaign") || sessionStorage.getItem("lead_utm_campaign") || "";
+    const utmContent = params.get("utm_content") || sessionStorage.getItem("lead_utm_content") || "";
+    const utmTerm = params.get("utm_term") || sessionStorage.getItem("lead_utm_term") || "";
+    const fbclid = params.get("fbclid") || sessionStorage.getItem("lead_fbclid") || "";
+
+    // Retain campaign tracking throughout the user's session navigation
+    if (params.get("utm_source")) sessionStorage.setItem("lead_utm_source", params.get("utm_source")!);
+    if (params.get("utm_medium")) sessionStorage.setItem("lead_utm_medium", params.get("utm_medium")!);
+    if (params.get("utm_campaign")) sessionStorage.setItem("lead_utm_campaign", params.get("utm_campaign")!);
+    if (params.get("utm_content")) sessionStorage.setItem("lead_utm_content", params.get("utm_content")!);
+    if (params.get("utm_term")) sessionStorage.setItem("lead_utm_term", params.get("utm_term")!);
+    if (params.get("fbclid")) sessionStorage.setItem("lead_fbclid", params.get("fbclid")!);
+
+    let derivedSource = defaultSource;
+    const sLower = utmSource.toLowerCase().trim();
+    if (sLower.includes("instagram") || sLower === "ig") {
+      derivedSource = "Meta (Instagram Ad)";
+    } else if (sLower.includes("facebook") || sLower === "fb" || fbclid) {
+      derivedSource = "Meta (Facebook Ad)";
+    } else if (sLower.includes("meta")) {
+      derivedSource = "Meta (Ad Campaign)";
+    } else if (utmSource) {
+      derivedSource = `${utmSource.toUpperCase()} Ad Campaign`;
+    }
+
+    const notesArr: string[] = [];
+    if (utmCampaign) notesArr.push(`Campaign: ${utmCampaign}`);
+    if (utmMedium) notesArr.push(`Medium: ${utmMedium}`);
+    if (utmContent) notesArr.push(`Ad: ${utmContent}`);
+    if (utmTerm) notesArr.push(`Term: ${utmTerm}`);
+    if (fbclid) notesArr.push(`FB Click ID: ${fbclid.slice(0, 15)}...`);
+
+    return {
+      source: derivedSource,
+      campaignNotes: notesArr.length > 0 ? ` [${notesArr.join(" | ")}]` : "",
+    };
+  } catch {
+    return { source: defaultSource, campaignNotes: "" };
+  }
+}
+
 import { submitLeadServerFn, broadcastLeadEvent } from "@/lib/lead-actions";
 import { openCheckoutModal, CheckoutModal } from "./checkout-modal";
 export { CheckoutModal, openCheckoutModal };
@@ -4357,13 +4410,15 @@ export function LeadFormSection() {
                 const videoType = String(data.get("videoType") || "");
                 const videoQuantity = String(data.get("videoQuantity") || "");
                 const requirement = String(data.get("requirement") || "");
+                const campaignInfo = getVisitorCampaignDetails("USA - Contact Form");
+                const finalRequirement = requirement + campaignInfo.campaignNotes;
 
                 // 1. Send directly to PostgreSQL Database
                 let savedLead: any = null;
                 try {
                   const res = await submitLeadServerFn({
                     data: {
-                      source: "USA - Contact Form",
+                      source: campaignInfo.source,
                       name,
                       email,
                       phone,
@@ -4372,7 +4427,7 @@ export function LeadFormSection() {
                       industry,
                       videoType,
                       videoQuantity,
-                      requirement,
+                      requirement: finalRequirement,
                     },
                   });
                   if (res?.success && res.lead) {
@@ -5368,13 +5423,15 @@ export function QuotePopupModal() {
                 const videoType = String(data.get("videoType") || "");
                 const videoQuantity = String(data.get("videoQuantity") || "");
                 const requirement = String(data.get("requirement") || "");
+                const campaignInfo = getVisitorCampaignDetails("USA - Popup Modal");
+                const finalRequirement = requirement + campaignInfo.campaignNotes;
 
                 // 1. Send directly to PostgreSQL Database
                 let savedLead: any = null;
                 try {
                   const res = await submitLeadServerFn({
                     data: {
-                      source: "USA - Popup Modal",
+                      source: campaignInfo.source,
                       name,
                       email,
                       phone,
@@ -5383,7 +5440,7 @@ export function QuotePopupModal() {
                       industry,
                       videoType,
                       videoQuantity,
-                      requirement,
+                      requirement: finalRequirement,
                     },
                   });
                   if (res?.success && res.lead) {
