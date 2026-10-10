@@ -513,10 +513,33 @@ export default {
                 requirementNotes = requirementNotes ? `${requirementNotes} [${metaMeta}]` : `[${metaMeta}]`;
               }
 
-              const rawSource = String(payload.source || "Meta (Facebook Ad)");
-              const source = rawSource.toLowerCase().includes("meta") || rawSource.toLowerCase().includes("facebook") || rawSource.toLowerCase().includes("instagram")
-                ? rawSource
-                : `Meta (${rawSource})`;
+              // Auto-segregate Instagram vs Facebook
+              const platformRaw = String(payload.platform || payload.publisher_platform || "").toLowerCase();
+              const adNameRaw = String(payload.ad_name || payload.adName || "").toLowerCase();
+              const campaignRaw = String(payload.campaign_name || payload.campaign || "").toLowerCase();
+              const rawSource = String(payload.source || "");
+
+              let source = "Meta (Facebook Lead Ads)";
+              if (
+                platformRaw.includes("instagram") ||
+                platformRaw.includes("ig") ||
+                adNameRaw.includes("instagram") ||
+                adNameRaw.includes("insta") ||
+                campaignRaw.includes("instagram") ||
+                campaignRaw.includes("insta") ||
+                rawSource.toLowerCase().includes("instagram") ||
+                rawSource.toLowerCase().includes("insta")
+              ) {
+                source = "Meta (Instagram Lead Ads)";
+              } else if (
+                platformRaw.includes("facebook") ||
+                platformRaw.includes("fb") ||
+                rawSource.toLowerCase().includes("facebook")
+              ) {
+                source = "Meta (Facebook Lead Ads)";
+              } else if (rawSource && rawSource !== "Meta (Facebook Ad)") {
+                source = rawSource.toLowerCase().includes("meta") ? rawSource : `Meta (${rawSource})`;
+              }
 
               const normalizedLead = {
                 source,
