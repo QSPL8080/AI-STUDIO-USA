@@ -491,8 +491,8 @@ export default {
               // Case 2: Direct JSON / Zapier / Make.com / Pabbly / Webhook Forwarder Payload
               const payload = body.payload || body;
               const name = payload.name || payload.full_name || payload.client_name || payload.customer_name || "Meta Prospect";
-              const email = payload.email || payload.email_address || "";
-              const phone = sanitizeLeadPhone(payload.phone || payload.phone_number || payload.mobile || "", true);
+              const rawPhone = String(payload.phone || payload.phone_number || payload.mobile || "");
+              const phone = typeof sanitizeLeadPhone === "function" ? sanitizeLeadPhone(rawPhone, true) : rawPhone;
               const business = payload.business || payload.company || payload.business_name || payload.brand_name || "Business";
               const website = payload.website || payload.company_website || "";
               const location = payload.location || payload.city || payload.state || "USA";
