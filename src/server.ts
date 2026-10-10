@@ -550,9 +550,15 @@ export default {
                 business,
                 website,
                 location,
-                video_type: videoType,
-                video_quantity: videoQuantity,
+                videoType: videoType || "AI Video Ads",
+                video_type: videoType || "AI Video Ads",
+                videoQuantity: videoQuantity || 1,
+                video_quantity: videoQuantity || 1,
                 requirement: requirementNotes,
+                campaignName: campaignName || undefined,
+                adName: payload.ad_name || payload.adName || undefined,
+                formName: formName || undefined,
+                metaLeadId: payload.lead_id || payload.leadgen_id || payload.id || undefined,
               };
 
               const saved = await saveLead(normalizedLead);
