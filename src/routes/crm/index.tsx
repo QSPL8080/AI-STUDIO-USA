@@ -2910,10 +2910,12 @@ function AdminPage() {
     }
   };
 
-  const getLeadSourceDisplay = (source: string): "USA Website" | "Meta" | "Manual" | "Calendly" => {
+  const getLeadSourceDisplay = (source: string): "Instagram" | "Facebook" | "Meta" | "USA Website" | "Manual" | "Calendly" => {
     if (!source) return "USA Website";
     const s = source.toLowerCase();
-    if (s.includes("meta") || s.includes("facebook") || s.includes("instagram")) return "Meta";
+    if (s.includes("instagram") || s.includes("ig_") || s.includes("insta")) return "Instagram";
+    if (s.includes("facebook") || s.includes("fb_")) return "Facebook";
+    if (s.includes("meta")) return "Meta";
     if (s.includes("manual")) return "Manual";
     if (s.includes("calendly")) return "Calendly";
     return "USA Website";
@@ -2922,14 +2924,22 @@ function AdminPage() {
   const getLeadSourceBadgeClass = (source: string) => {
     const type = getLeadSourceDisplay(source);
     switch (type) {
+      case "Instagram":
+        return isDark
+          ? "border-pink-500/50 bg-gradient-to-r from-purple-950/60 via-pink-950/60 to-rose-950/60 text-pink-300 font-bold"
+          : "border-pink-300 bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 text-pink-700 font-bold shadow-xs";
+      case "Facebook":
+        return isDark
+          ? "border-blue-500/50 bg-blue-950/60 text-blue-300 font-bold"
+          : "border-blue-300 bg-blue-50 text-blue-700 font-bold shadow-xs";
+      case "Meta":
+        return isDark
+          ? "border-sky-500/40 bg-sky-500/15 text-sky-300 font-bold"
+          : "border-sky-200 bg-sky-50 text-sky-700 font-bold";
       case "USA Website":
         return isDark
           ? "border-blue-500/40 bg-blue-500/15 text-blue-300"
           : "border-blue-200 bg-blue-50 text-blue-700";
-      case "Meta":
-        return isDark
-          ? "border-sky-500/40 bg-sky-500/15 text-sky-300"
-          : "border-sky-200 bg-sky-50 text-sky-700";
       case "Manual":
         return isDark
           ? "border-purple-500/40 bg-purple-500/15 text-purple-300"
@@ -3153,7 +3163,13 @@ function AdminPage() {
         if (metaFilterSource !== "All" && metaFilterSource.trim() !== "") {
           const rawSrc = (lead.source || "").toLowerCase();
           const targetSrc = metaFilterSource.toLowerCase();
-          matchesSource = rawSrc.includes(targetSrc) || targetSrc.includes(rawSrc);
+          if (targetSrc.includes("instagram")) {
+            matchesSource = rawSrc.includes("instagram") || rawSrc.includes("ig_") || rawSrc.includes("insta");
+          } else if (targetSrc.includes("facebook")) {
+            matchesSource = rawSrc.includes("facebook") || rawSrc.includes("fb_");
+          } else {
+            matchesSource = rawSrc.includes(targetSrc) || targetSrc.includes(rawSrc);
+          }
         }
 
         // 2. Status Filter
