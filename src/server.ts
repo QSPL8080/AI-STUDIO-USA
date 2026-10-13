@@ -397,7 +397,26 @@ export default {
                             `${fieldMap["first_name"] || ""} ${fieldMap["last_name"] || ""}`.trim() ||
                             leadName;
                           leadEmail = fieldMap["email"] || leadEmail;
-                          leadPhone = fieldMap["phone_number"] || fieldMap["phone"] || leadPhone;
+                          leadPhone =
+                            fieldMap["phone_number"] ||
+                            fieldMap["phone"] ||
+                            fieldMap["contact_number"] ||
+                            fieldMap["mobile_number"] ||
+                            fieldMap["mobile"] ||
+                            fieldMap["contact"] ||
+                            fieldMap["whatsapp"] ||
+                            fieldMap["tel"] ||
+                            leadPhone;
+
+                          if (!leadPhone) {
+                            for (const [k, v] of Object.entries(fieldMap)) {
+                              if (v && (k.includes("phone") || k.includes("mobile") || k.includes("contact") || k.includes("tel") || k.includes("whatsapp"))) {
+                                leadPhone = v;
+                                break;
+                              }
+                            }
+                          }
+
                           leadBusiness = fieldMap["company_name"] || fieldMap["business_name"] || leadBusiness;
                           leadVideoType = fieldMap["video_type"] || fieldMap["service"] || leadVideoType;
 
@@ -431,11 +450,11 @@ export default {
                       source: "Meta (Facebook Lead Ads)",
                       name: leadName,
                       email: leadEmail,
-                      phone: sanitizeLeadPhone(leadPhone, true),
+                      phone: sanitizeLeadPhone(leadPhone, false),
                       business: leadBusiness,
                       video_type: leadVideoType,
                       video_quantity: 1,
-                      location: "USA",
+                      location: "USA / Global",
                       requirement: leadRequirements,
                     };
 
@@ -490,10 +509,90 @@ export default {
             } else {
               // Case 2: Direct JSON / Zapier / Make.com / Pabbly / Webhook Forwarder Payload
               const payload = body.payload || body;
-              const name = payload.name || payload.full_name || payload.client_name || payload.customer_name || "Meta Prospect";
-              const email = String(payload.email || payload.email_address || "");
-              const rawPhone = String(payload.phone || payload.phone_number || payload.mobile || "");
-              const phone = typeof sanitizeLeadPhone === "function" ? sanitizeLeadPhone(rawPhone, true) : rawPhone;
+
+              // Comprehensive Name extraction
+              let name = payload.name || payload.full_name || payload.client_name || payload.customer_name || "";
+              if (!name && (payload.first_name || payload.last_name)) {
+                name = `${payload.first_name || ""} ${payload.last_name || ""}`.trim();
+              }
+
+              // Comprehensive Email extraction
+              let email = String(payload.email || payload.email_address || payload.work_email || "");
+
+              // Comprehensive Phone extraction across all possible key aliases from any form
+              let rawPhone = String(
+                payload.phone ||
+                payload.phone_number ||
+                payload.mobile ||
+                payload.mobile_number ||
+                payload.contact ||
+                payload.contact_number ||
+                payload.whatsapp ||
+                payload.telephone ||
+                payload.tel ||
+                payload.user_phone ||
+                payload.phone_no ||
+                ""
+              );
+
+              // Support for Meta/Make.com field_data array: [{ name: 'phone_number', values: ['...'] }]
+              if (Array.isArray(payload.field_data)) {
+                for (const item of payload.field_data) {
+                  const k = String(item.name || "").toLowerCase();
+                  const v = Array.isArray(item.values) ? item.values[0] : (item.values || item.value);
+                  if (v) {
+                    const strVal = String(v).trim();
+                    if (!rawPhone && (k.includes("phone") || k.includes("mobile") || k.includes("contact") || k.includes("tel") || k.includes("whatsapp"))) {
+                      rawPhone = strVal;
+                    }
+                    if (!name && (k === "full_name" || k.includes("name"))) {
+                      name = strVal;
+                    }
+                    if (!email && (k === "email" || k.includes("email"))) {
+                      email = strVal;
+                    }
+                  }
+                }
+              }
+
+              // Support for answers/questions array
+              if (Array.isArray(payload.answers)) {
+                for (const item of payload.answers) {
+                  const k = String(item.field || item.question || item.name || "").toLowerCase();
+                  const v = item.value || (Array.isArray(item.values) ? item.values[0] : "");
+                  if (v) {
+                    const strVal = String(v).trim();
+                    if (!rawPhone && (k.includes("phone") || k.includes("mobile") || k.includes("contact") || k.includes("tel") || k.includes("whatsapp"))) {
+                      rawPhone = strVal;
+                    }
+                    if (!name && k.includes("name")) {
+                      name = strVal;
+                    }
+                    if (!email && k.includes("email")) {
+                      email = strVal;
+                    }
+                  }
+                }
+              }
+
+              // Deep scan payload object for any phone key if still empty
+              if (!rawPhone && typeof payload === "object") {
+                for (const [k, v] of Object.entries(payload)) {
+                  if (typeof v === "string" && v.trim()) {
+                    const lk = k.toLowerCase();
+                    if (lk.includes("phone") || lk.includes("mobile") || lk.includes("contact") || lk.includes("tel")) {
+                      rawPhone = v.trim();
+                      break;
+                    }
+                  }
+                }
+              }
+
+              if (!name) name = "Meta Prospect";
+
+              // Clean Meta 'p:' prefix and preserve international numbers from any form
+              rawPhone = rawPhone.replace(/^p:/i, "").trim();
+              const phone = typeof sanitizeLeadPhone === "function" ? sanitizeLeadPhone(rawPhone, false) : rawPhone;
               const business = payload.business || payload.company || payload.business_name || payload.brand_name || "Business";
               const website = payload.website || payload.company_website || "";
               const location = payload.location || payload.city || payload.state || "USA";

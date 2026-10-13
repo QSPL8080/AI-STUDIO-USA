@@ -2416,12 +2416,20 @@ function AdminPage() {
     return true;
   };
 
-  const sanitizePhoneNumber = (phone: string, _isUsa: boolean = true) => {
-    let clean = (phone || "").replace(/[^0-9]/g, "");
-    if (clean.length === 10) {
-      clean = `1${clean}`;
+  const sanitizePhoneNumber = (phone: string, leadLocation?: string | null) => {
+    const raw = (phone || "").trim().replace(/^p:/i, "");
+    let digits = raw.replace(/[^0-9]/g, "");
+    if (!digits) return "";
+    // If phone started with +, keep the international digits
+    if (raw.startsWith("+")) return digits;
+    // If 10 digits and location mentions India
+    if (digits.length === 10) {
+      if (leadLocation && leadLocation.toLowerCase().includes("india")) {
+        return `91${digits}`;
+      }
+      return `1${digits}`;
     }
-    return clean;
+    return digits;
   };
 
   const getAdminWhatsAppPlainText = (lead: Lead) => {
@@ -2437,9 +2445,19 @@ function AdminPage() {
   };
 
   const handleOpenWhatsApp = (lead: Lead) => {
+    if (!lead.phone || !lead.phone.trim()) {
+      showToast("Phone number missing. Opening edit modal to add phone.");
+      setEditingLead(lead);
+      return;
+    }
     setSelectedLeadForMsg(lead);
     const text = getAdminWhatsAppPlainText(lead);
-    const phone = sanitizePhoneNumber(lead.phone, true);
+    const phone = sanitizePhoneNumber(lead.phone, lead.location);
+    if (!phone) {
+      showToast("Please provide a valid phone number with country code.");
+      setEditingLead(lead);
+      return;
+    }
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text).catch(() => {});
     }
@@ -3700,25 +3718,31 @@ function AdminPage() {
             </div>
           </div>
 
-          {/* Controls: Auto-Sync, Sound, Notifications, User Profile */}
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2.5">
-            {/* Live Dual Timezone Clock (India IST & US Eastern) */}
-            <div className="hidden xl:flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100/80 px-2.5 py-1 text-[11px] shadow-2xs">
-              <div className="flex items-center gap-1 font-semibold">
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1 py-0.2 rounded">🇮🇳 IST</span>
-                <span className="font-mono text-slate-800 font-bold">
+          {/* Center: Live Dual Timezone Clock (India IST & US EDT) - Bold, sharp rectangular / NO border radius */}
+          <div className="hidden md:flex flex-1 items-center justify-center px-2">
+            <div className="flex items-center gap-3 rounded-none border-2 border-slate-900 bg-white px-3.5 py-1 text-xs shadow-xs">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-black uppercase tracking-wider text-amber-950 bg-amber-200 border border-amber-400 px-1.5 py-0.5 rounded-none shadow-2xs">
+                  🇮🇳 IST
+                </span>
+                <span className="font-mono text-sm font-black text-slate-950 tracking-tight">
                   {currentLiveTime.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
                 </span>
               </div>
-              <span className="text-slate-300">|</span>
-              <div className="flex items-center gap-1 font-semibold">
-                <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-1 py-0.2 rounded">🇺🇸 US</span>
-                <span className="font-mono text-slate-800 font-bold">
+              <span className="text-slate-400 font-black">|</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-black uppercase tracking-wider text-blue-950 bg-blue-200 border border-blue-400 px-1.5 py-0.5 rounded-none shadow-2xs">
+                  🇺🇸 US (EDT)
+                </span>
+                <span className="font-mono text-sm font-black text-slate-950 tracking-tight">
                   {currentLiveTime.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
                 </span>
               </div>
             </div>
+          </div>
 
+          {/* Controls: Auto-Sync, Sound, Notifications, User Profile */}
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2.5">
             <div className="hidden lg:flex items-center gap-1.5 text-xs text-slate-500 font-medium">
               <span>Auto-sync in</span>
               <span className="font-mono font-bold text-blue-600">{refreshCountdown}s</span>
@@ -3925,6 +3949,29 @@ function AdminPage() {
               >
                 <LogOut className="h-4 w-4" />
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Dual Timezone Clock (Sharp rectangular, bold, centered) */}
+        <div className="md:hidden flex items-center justify-center border-t border-slate-200 bg-slate-50/70 py-1.5 px-3">
+          <div className="flex items-center gap-2.5 rounded-none border-2 border-slate-900 bg-white px-2.5 py-0.5 text-[11px] shadow-2xs">
+            <div className="flex items-center gap-1 font-black">
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-950 bg-amber-200 border border-amber-400 px-1 py-0.2 rounded-none">
+                🇮🇳 IST
+              </span>
+              <span className="font-mono text-xs font-black text-slate-950">
+                {currentLiveTime.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
+              </span>
+            </div>
+            <span className="text-slate-400 font-black">|</span>
+            <div className="flex items-center gap-1 font-black">
+              <span className="text-[10px] font-black uppercase tracking-wider text-blue-950 bg-blue-200 border border-blue-400 px-1 py-0.2 rounded-none">
+                🇺🇸 US (EDT)
+              </span>
+              <span className="font-mono text-xs font-black text-slate-950">
+                {currentLiveTime.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
+              </span>
             </div>
           </div>
         </div>
@@ -5040,13 +5087,42 @@ function AdminPage() {
 
                             {/* WhatsApp / Phone */}
                             <td className="whitespace-nowrap px-4 py-3.5">
-                              <a
-                                href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
-                                className="font-mono text-xs font-semibold hover:text-blue-600 hover:underline flex items-center gap-1"
-                              >
-                                <Phone className="h-3 w-3 text-slate-400" />
-                                <span>{lead.phone}</span>
-                              </a>
+                              {lead.phone && lead.phone.trim() ? (
+                                <div className="flex items-center gap-1.5">
+                                  <a
+                                    href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
+                                    className="font-mono text-xs font-bold text-slate-900 hover:text-blue-600 hover:underline flex items-center gap-1"
+                                    title="Call phone number"
+                                  >
+                                    <Phone className="h-3 w-3 text-slate-500" />
+                                    <span>{lead.phone}</span>
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenWhatsApp(lead);
+                                    }}
+                                    className="rounded p-0.5 text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
+                                    title="Chat on WhatsApp"
+                                  >
+                                    <WhatsAppIcon className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingLead(lead);
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded-none border border-dashed border-amber-500 bg-amber-50/90 px-2 py-0.5 text-[11px] font-bold text-amber-800 hover:bg-amber-100 hover:border-amber-600 transition-all cursor-pointer shadow-2xs"
+                                  title="Phone missing - Click to add phone number"
+                                >
+                                  <Plus className="h-3 w-3 text-amber-600" />
+                                  <span>+ Add Phone</span>
+                                </button>
+                              )}
                             </td>
 
                             {/* Video Scope */}
@@ -5222,10 +5298,30 @@ function AdminPage() {
                       </div>
 
                       {/* Phone & Scope */}
-                      <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
-                        <a href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`} className="font-mono text-slate-900 font-semibold flex items-center gap-1">
-                          <Phone className="h-3 w-3 text-slate-500" /> {lead.phone}
-                        </a>
+                      <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-none border border-slate-200 dark:border-slate-700">
+                        {lead.phone && lead.phone.trim() ? (
+                          <div className="flex items-center gap-1.5">
+                            <a href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`} className="font-mono text-slate-900 font-bold flex items-center gap-1">
+                              <Phone className="h-3 w-3 text-slate-500" /> {lead.phone}
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenWhatsApp(lead)}
+                              className="p-1 rounded text-emerald-600 hover:bg-emerald-50 cursor-pointer"
+                              title="WhatsApp"
+                            >
+                              <WhatsAppIcon className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setEditingLead(lead)}
+                            className="inline-flex items-center gap-1 rounded-none border border-dashed border-amber-500 bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800 hover:bg-amber-100 cursor-pointer"
+                          >
+                            <Plus className="h-3 w-3 text-amber-600" /> + Add Phone
+                          </button>
+                        )}
                         <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                           <Video className="h-3 w-3 text-slate-600" /> {lead.video_type}
                           {lead.video_quantity && ` (x${lead.video_quantity})`}
@@ -5898,13 +5994,42 @@ function AdminPage() {
 
                             {/* WhatsApp / Phone */}
                             <td className="whitespace-nowrap px-4 py-3.5">
-                              <a
-                                href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
-                                className="font-mono text-xs font-semibold hover:text-blue-600 hover:underline flex items-center gap-1"
-                              >
-                                <Phone className="h-3 w-3 text-slate-400" />
-                                <span>{lead.phone}</span>
-                              </a>
+                              {lead.phone && lead.phone.trim() ? (
+                                <div className="flex items-center gap-1.5">
+                                  <a
+                                    href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
+                                    className="font-mono text-xs font-bold text-slate-900 hover:text-blue-600 hover:underline flex items-center gap-1"
+                                    title="Call phone number"
+                                  >
+                                    <Phone className="h-3 w-3 text-slate-500" />
+                                    <span>{lead.phone}</span>
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenWhatsApp(lead);
+                                    }}
+                                    className="rounded p-0.5 text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
+                                    title="Chat on WhatsApp"
+                                  >
+                                    <WhatsAppIcon className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingLead(lead);
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded-none border border-dashed border-amber-500 bg-amber-50/90 px-2 py-0.5 text-[11px] font-bold text-amber-800 hover:bg-amber-100 hover:border-amber-600 transition-all cursor-pointer shadow-2xs"
+                                  title="Phone missing from Meta / Calendly - Click to add phone number"
+                                >
+                                  <Plus className="h-3 w-3 text-amber-600" />
+                                  <span>+ Add Phone</span>
+                                </button>
+                              )}
                             </td>
 
                             {/* Video Scope */}
@@ -6108,13 +6233,24 @@ function AdminPage() {
                       </div>
 
                       <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                        <a
-                          href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
-                          className="text-xs font-mono font-semibold text-slate-900 hover:underline flex items-center gap-1"
-                        >
-                          <Phone className="h-3 w-3 text-slate-500" />
-                          <span>{lead.phone}</span>
-                        </a>
+                        {lead.phone && lead.phone.trim() ? (
+                          <a
+                            href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
+                            className="text-xs font-mono font-bold text-slate-900 hover:underline flex items-center gap-1"
+                          >
+                            <Phone className="h-3 w-3 text-slate-500" />
+                            <span>{lead.phone}</span>
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setEditingLead(lead)}
+                            className="inline-flex items-center gap-1 rounded-none border border-dashed border-amber-500 bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800 hover:bg-amber-100 cursor-pointer"
+                          >
+                            <Plus className="h-3 w-3 text-amber-600" />
+                            <span>+ Add Phone</span>
+                          </button>
+                        )}
 
                         <div className="flex items-center gap-1.5">
                           <a
@@ -6637,7 +6773,19 @@ function AdminPage() {
                           <td className="px-4 py-3.5">
                             <div className="font-bold text-sm text-slate-900 dark:text-slate-100">{m.client_name}</div>
                             <div className="text-[11px] text-slate-500 font-mono">{m.email}</div>
-                            {m.phone && <div className="text-[10px] text-slate-400 font-mono">{m.phone}</div>}
+                            {m.phone ? (
+                              <div className="text-[11px] text-slate-800 font-mono font-bold">{m.phone}</div>
+                            ) : matchedLead?.phone ? (
+                              <div className="text-[11px] text-slate-800 font-mono font-bold">{matchedLead.phone}</div>
+                            ) : matchedLead ? (
+                              <button
+                                type="button"
+                                onClick={() => setEditingLead(matchedLead)}
+                                className="inline-flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 border border-dashed border-amber-300 px-1.5 py-0.2 rounded hover:bg-amber-100 cursor-pointer"
+                              >
+                                <Plus className="h-2.5 w-2.5" /> Add Phone
+                              </button>
+                            ) : null}
 
                             {/* Lead Matching Badge */}
                             <div className="mt-1.5 flex items-center gap-1.5">
@@ -8732,25 +8880,44 @@ function AdminPage() {
 
                     <div className="flex justify-between items-center">
                       <span className="text-slate-500">Phone:</span>
-                      <a
-                        href={`tel:${viewLeadDetails.phone.replace(/[^0-9+]/g, "")}`}
-                        className="font-mono font-bold text-slate-900 hover:underline flex items-center gap-1"
-                      >
-                        <Phone className="h-3 w-3 text-slate-500" />
-                        <span>{viewLeadDetails.phone}</span>
-                      </a>
+                      {viewLeadDetails.phone && viewLeadDetails.phone.trim() ? (
+                        <a
+                          href={`tel:${viewLeadDetails.phone.replace(/[^0-9+]/g, "")}`}
+                          className="font-mono font-bold text-slate-900 hover:underline flex items-center gap-1"
+                        >
+                          <Phone className="h-3 w-3 text-slate-500" />
+                          <span>{viewLeadDetails.phone}</span>
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const l = viewLeadDetails;
+                            setViewLeadDetails(null);
+                            setEditingLead(l);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-none border border-dashed border-amber-500 bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer"
+                        >
+                          <Plus className="h-3 w-3 text-amber-600" />
+                          <span>+ Add Phone</span>
+                        </button>
+                      )}
                     </div>
 
                     <div className="flex justify-between items-center">
                       <span className="text-slate-500">WhatsApp:</span>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenWhatsApp(viewLeadDetails)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer"
-                      >
-                        <WhatsAppIcon className="h-3.5 w-3.5" />
-                        <span>Chat on WhatsApp</span>
-                      </button>
+                      {viewLeadDetails.phone && viewLeadDetails.phone.trim() ? (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenWhatsApp(viewLeadDetails)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-800 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer"
+                        >
+                          <WhatsAppIcon className="h-3.5 w-3.5" />
+                          <span>Chat on WhatsApp</span>
+                        </button>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">Add phone to chat</span>
+                      )}
                     </div>
 
                     <div className="flex justify-between items-start">
@@ -9082,22 +9249,39 @@ function AdminPage() {
               {/* Quick Actions Footer (Section 09: Action Buttons) */}
               <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t">
                 <div className="flex items-center gap-2">
-                  <a
-                    href={`tel:${viewLeadDetails.phone.replace(/[^0-9+]/g, "")}`}
-                    className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
-                  >
-                    <Phone className="h-3.5 w-3.5" />
-                    <span>Call</span>
-                  </a>
+                  {viewLeadDetails.phone && viewLeadDetails.phone.trim() ? (
+                    <>
+                      <a
+                        href={`tel:${viewLeadDetails.phone.replace(/[^0-9+]/g, "")}`}
+                        className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
+                      >
+                        <Phone className="h-3.5 w-3.5" />
+                        <span>Call</span>
+                      </a>
 
-                  <button
-                    type="button"
-                    onClick={() => handleOpenWhatsApp(viewLeadDetails)}
-                    className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
-                  >
-                    <WhatsAppIcon className="h-3.5 w-3.5" />
-                    <span>WhatsApp</span>
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenWhatsApp(viewLeadDetails)}
+                        className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors"
+                      >
+                        <WhatsAppIcon className="h-3.5 w-3.5" />
+                        <span>WhatsApp</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const l = viewLeadDetails;
+                        setViewLeadDetails(null);
+                        setEditingLead(l);
+                      }}
+                      className="rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100 flex items-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <Plus className="h-3.5 w-3.5 text-amber-600" />
+                      <span>+ Add Phone Number</span>
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">

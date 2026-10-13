@@ -256,7 +256,7 @@ export const endSessionServerFn = createServerFn({ method: "POST" })
   });
 
 export function sanitizeLeadPhone(phone: string, _isUsa: boolean = true): string {
-  const trimmed = phone.trim();
+  const trimmed = (phone || "").trim().replace(/^p:/i, "");
   if (!trimmed) return trimmed;
   const digits = trimmed.replace(/\D/g, "");
 
@@ -268,7 +268,10 @@ export function sanitizeLeadPhone(phone: string, _isUsa: boolean = true): string
   }
 
   if (digits.length === 10) {
-    return `+1 (${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    if (_isUsa) {
+      return `+1 (${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    return trimmed;
   }
 
   if (digits.length === 11 && digits.startsWith("1")) {
