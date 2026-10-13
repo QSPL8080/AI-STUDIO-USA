@@ -550,15 +550,15 @@ export function TermsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs sm:text-sm">
               <div className="rounded-xl border border-border/60 bg-surface/40 p-3">
                 <div className="text-muted-foreground">AI UGC</div>
-                <div className="text-base font-bold text-foreground">starting at $79</div>
+                <div className="text-base font-bold text-foreground">starting at $99</div>
               </div>
               <div className="rounded-xl border border-border/60 bg-surface/40 p-3">
                 <div className="text-muted-foreground">AI Avatar</div>
-                <div className="text-base font-bold text-foreground">starting at $79</div>
+                <div className="text-base font-bold text-foreground">starting at $99</div>
               </div>
               <div className="rounded-xl border border-border/60 bg-surface/40 p-3">
                 <div className="text-muted-foreground">AI Cartoon</div>
-                <div className="text-base font-bold text-foreground">starting at $79</div>
+                <div className="text-base font-bold text-foreground">starting at $99</div>
               </div>
               <div className="rounded-xl border border-border/60 bg-surface/40 p-3">
                 <div className="text-muted-foreground">AI Hyper-Realistic</div>

@@ -1172,7 +1172,7 @@ export function HeroOverview() {
           </div>
           <p className="text-xs font-semibold text-slate-500 flex items-center justify-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block"></span>
-            Starting at $79 / AI Video
+            Starting at $99 / AI Video
           </p>
         </div>
       </div>
@@ -2748,35 +2748,35 @@ export function Pricing() {
                       className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                       title="Order 1 Video - AI UGC"
                     >
-                      $79
+                      $99
                     </td>
                     <td
                       onClick={() => openCheckoutModal({ itemType: "package", tierId: "starter", format: "ai-ugc" })}
                       className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                       title="Order 5 Videos - AI UGC"
                     >
-                      $359
+                      $449
                     </td>
                     <td
                       onClick={() => openCheckoutModal({ itemType: "package", tierId: "growth", format: "ai-ugc" })}
                       className="px-3 py-4 text-center font-bold text-purple-950 bg-purple-50/40 border-x border-purple-200/50 cursor-pointer hover:text-purple-600 hover:bg-purple-100/70 transition-colors"
                       title="Order 10 Videos - AI UGC (Popular)"
                     >
-                      $649
+                      $849
                     </td>
                     <td
                       onClick={() => openCheckoutModal({ itemType: "package", tierId: "scale", format: "ai-ugc" })}
                       className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                       title="Order 15 Videos - AI UGC"
                     >
-                      $899
+                      $1,149
                     </td>
                     <td
                       onClick={() => openCheckoutModal({ itemType: "package", tierId: "pro", format: "ai-ugc" })}
                       className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                       title="Order 30 Videos - AI UGC"
                     >
-                      $1,549
+                      $1,999
                     </td>
                     <td className="px-3 py-4 text-center font-semibold text-purple-700">
                       <a
@@ -2812,35 +2812,35 @@ export function Pricing() {
                       className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                       title="Order 1 Video - AI Avatar"
                     >
-                      $79
+                      $99
                     </td>
                     <td
                       onClick={() => openCheckoutModal({ itemType: "package", tierId: "starter", format: "ai-avatar" })}
                       className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                       title="Order 5 Videos - AI Avatar"
                     >
-                      $359
+                      $449
                     </td>
                     <td
                       onClick={() => openCheckoutModal({ itemType: "package", tierId: "growth", format: "ai-avatar" })}
                       className="px-3 py-4 text-center font-bold text-purple-950 bg-purple-50/40 border-x border-purple-200/50 cursor-pointer hover:text-purple-600 hover:bg-purple-100/70 transition-colors"
                       title="Order 10 Videos - AI Avatar"
                     >
-                      $649
+                      $849
                     </td>
                     <td
                       onClick={() => openCheckoutModal({ itemType: "package", tierId: "scale", format: "ai-avatar" })}
                       className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                       title="Order 15 Videos - AI Avatar"
                     >
-                      $899
+                      $1,149
                     </td>
                     <td
                       onClick={() => openCheckoutModal({ itemType: "package", tierId: "pro", format: "ai-avatar" })}
                       className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                       title="Order 30 Videos - AI Avatar"
                     >
-                      $1,549
+                      $1,999
                     </td>
                     <td className="px-3 py-4 text-center font-semibold text-purple-700">
                       <a
@@ -2876,35 +2876,35 @@ export function Pricing() {
                       className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                       title="Order 1 Video - AI Cartoon"
                     >
-                      $79
+                      $99
                     </td>
                     <td
                       onClick={() => openCheckoutModal({ itemType: "package", tierId: "starter", format: "ai-cartoon" })}
                       className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                       title="Order 5 Videos - AI Cartoon"
                     >
-                      $359
+                      $449
                     </td>
                     <td
                       onClick={() => openCheckoutModal({ itemType: "package", tierId: "growth", format: "ai-cartoon" })}
                       className="px-3 py-4 text-center font-bold text-purple-950 bg-purple-50/40 border-x border-purple-200/50 cursor-pointer hover:text-purple-600 hover:bg-purple-100/70 transition-colors"
                       title="Order 10 Videos - AI Cartoon"
                     >
-                      $649
+                      $849
                     </td>
                     <td
                       onClick={() => openCheckoutModal({ itemType: "package", tierId: "scale", format: "ai-cartoon" })}
                       className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                       title="Order 15 Videos - AI Cartoon"
                     >
-                      $899
+                      $1,149
                     </td>
                     <td
                       onClick={() => openCheckoutModal({ itemType: "package", tierId: "pro", format: "ai-cartoon" })}
                       className="px-3 py-4 text-center font-bold text-slate-800 cursor-pointer hover:text-purple-600 hover:bg-purple-50/80 transition-colors"
                       title="Order 30 Videos - AI Cartoon"
                     >
-                      $1,549
+                      $1,999
                     </td>
                     <td className="px-3 py-4 text-center font-semibold text-purple-700">
                       <a
