@@ -300,7 +300,13 @@ export default {
       if (
         url.pathname === "/api/meta-leads" ||
         url.pathname === "/api/meta-webhook" ||
-        url.pathname === "/api/webhook/meta"
+        url.pathname === "/api/webhook/meta" ||
+        url.pathname === "/api/webhooks/meta" ||
+        url.pathname === "/api/crm/lead-webhook" ||
+        url.pathname === "/api/crm/lead-webhooks" ||
+        url.pathname === "/api/lead-webhook" ||
+        url.pathname === "/api/leads-webhook" ||
+        url.pathname === "/api/webhook/leads"
       ) {
         if (request.method === "OPTIONS") {
           return new Response(null, {
@@ -452,9 +458,11 @@ export default {
                       email: leadEmail,
                       phone: sanitizeLeadPhone(leadPhone, false),
                       business: leadBusiness,
+                      industry: fieldMap["_what_type_of_business_"] || fieldMap["type_of_business"] || fieldMap["industry"] || undefined,
+                      website: fieldMap["website"] || undefined,
                       video_type: leadVideoType,
                       video_quantity: 1,
-                      location: "USA / Global",
+                      location: fieldMap["location"] || fieldMap["city"] || "USA / Global",
                       requirement: leadRequirements,
                     };
 
@@ -593,16 +601,73 @@ export default {
               // Clean Meta 'p:' prefix and preserve international numbers from any form
               rawPhone = rawPhone.replace(/^p:/i, "").trim();
               const phone = typeof sanitizeLeadPhone === "function" ? sanitizeLeadPhone(rawPhone, false) : rawPhone;
-              const business = payload.business || payload.company || payload.business_name || payload.brand_name || "Business";
-              const website = payload.website || payload.company_website || "";
-              const location = payload.location || payload.city || payload.state || "USA";
+              let business = payload.company_name || payload.company || payload.business_name || payload.business || payload.brand_name || "";
+              let website = payload.website || payload.company_website || "";
+              let industry = payload._what_type_of_business_ || payload.type_of_business || payload.what_type_of_business || payload.business_type || payload.industry || "";
+
+              // Additional extraction from field_data if not found at root
+              if (Array.isArray(payload.field_data)) {
+                for (const item of payload.field_data) {
+                  const k = String(item.name || "").toLowerCase();
+                  const v = Array.isArray(item.values) ? item.values[0] : (item.values || item.value);
+                  if (v) {
+                    const strVal = String(v).trim();
+                    if (!business && (k.includes("company") || k.includes("business_name") || k === "business")) {
+                      business = strVal;
+                    }
+                    if (!website && k.includes("website")) {
+                      website = strVal;
+                    }
+                    if (!industry && (k.includes("type_of_business") || k.includes("industry") || k.includes("business_type"))) {
+                      industry = strVal;
+                    }
+                  }
+                }
+              }
+
+              // Format industry (e.g. "beauty_/_skincare" -> "Beauty / Skincare")
+              if (industry) {
+                industry = String(industry)
+                  .replace(/_/g, " ")
+                  .replace(/\s*\/\s*/g, " / ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase())
+                  .trim();
+              }
+
+              const location = payload.location || payload.city || payload.state || "USA / Global";
               const videoType = payload.videoType || payload.video_type || payload.service || "AI UGC Video Ads";
               const videoQuantity = payload.videoQuantity || payload.video_quantity || 1;
               const campaignName = payload.campaign || payload.campaign_name || payload.ad_name || "";
               const formName = payload.form || payload.form_name || "";
               const rawRequirement = payload.requirement || payload.notes || payload.message || payload.comments || "";
               
+              // Collect custom question answers from form fields
+              const extraQuestions: string[] = [];
+              const ignoredKeys = new Set([
+                "name", "full_name", "first_name", "last_name", "email", "work_email", "email_address",
+                "phone", "phone_number", "mobile", "mobile_number", "contact", "contact_number", "whatsapp",
+                "company", "company_name", "business", "business_name", "website", "company_website",
+                "industry", "_what_type_of_business_", "type_of_business", "what_type_of_business",
+                "location", "city", "state", "video_type", "videotype", "video_quantity",
+                "campaign", "campaign_name", "form", "form_name", "ad_name", "adname", "platform",
+                "publisher_platform", "source", "requirement", "notes", "message", "comments",
+                "payload", "field_data", "answers", "lead_id", "leadgen_id", "id", "created_time"
+              ]);
+
+              for (const [k, v] of Object.entries(payload)) {
+                if (typeof v === "string" && v.trim() && !ignoredKeys.has(k.toLowerCase())) {
+                  const label = k.replace(/^_+|_+$/g, "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+                  const val = v.replace(/_/g, " ").trim();
+                  extraQuestions.push(`${label}: ${val}`);
+                }
+              }
+
               let requirementNotes = rawRequirement;
+              if (extraQuestions.length > 0) {
+                const qBlock = extraQuestions.join(" | ");
+                requirementNotes = requirementNotes ? `${requirementNotes} [${qBlock}]` : `[${qBlock}]`;
+              }
+
               if (campaignName || formName) {
                 const metaMeta = [
                   campaignName ? `Campaign: ${campaignName}` : "",
@@ -646,8 +711,9 @@ export default {
                 name,
                 email,
                 phone,
-                business,
-                website,
+                business: business || "Business Prospect",
+                industry: industry || undefined,
+                website: website || undefined,
                 location,
                 videoType: videoType || "AI Video Ads",
                 video_type: videoType || "AI Video Ads",
