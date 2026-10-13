@@ -383,6 +383,11 @@ export default {
                     let leadVideoType = "AI Video Commercial";
                     let leadRequirements = `Meta Lead Form ID: ${formId} | Ad ID: ${adId || "N/A"} | Page ID: ${pageId}`;
 
+                    let metaCampaignName: string | undefined = undefined;
+                    let metaAdsetName: string | undefined = undefined;
+                    let metaAdName: string | undefined = adId ? `Ad #${adId}` : undefined;
+                    let metaFormName: string | undefined = formId ? `Form #${formId}` : undefined;
+
                     // If Meta Page Access Token is configured, fetch full field_data from Meta Graph API
                     if (metaAccessToken && leadgenId && leadgenId !== "444444444444") {
                       try {
@@ -391,6 +396,11 @@ export default {
                         );
                         if (metaGraphRes.ok) {
                           const graphData = await metaGraphRes.json();
+                          metaCampaignName = graphData.campaign_name || (graphData.campaign_id ? `Campaign #${graphData.campaign_id}` : metaCampaignName);
+                          metaAdsetName = graphData.adset_name || (graphData.adset_id ? `AdSet #${graphData.adset_id}` : metaAdsetName);
+                          metaAdName = graphData.ad_name || metaAdName;
+                          metaFormName = graphData.form_name || metaFormName;
+
                           const fieldData = graphData.field_data || [];
                           const fieldMap: Record<string, string> = {};
                           for (const f of fieldData) {
@@ -458,12 +468,22 @@ export default {
                       email: leadEmail,
                       phone: sanitizeLeadPhone(leadPhone, false),
                       business: leadBusiness,
-                      industry: fieldMap["_what_type_of_business_"] || fieldMap["type_of_business"] || fieldMap["industry"] || undefined,
-                      website: fieldMap["website"] || undefined,
+                      industry: (typeof fieldMap !== "undefined" ? (fieldMap["_what_type_of_business_"] || fieldMap["type_of_business"] || fieldMap["industry"]) : undefined) || undefined,
+                      website: (typeof fieldMap !== "undefined" ? fieldMap["website"] : undefined) || undefined,
                       video_type: leadVideoType,
                       video_quantity: 1,
-                      location: fieldMap["location"] || fieldMap["city"] || "USA / Global",
+                      location: (typeof fieldMap !== "undefined" ? (fieldMap["location"] || fieldMap["city"]) : undefined) || "USA / Global",
                       requirement: leadRequirements,
+                      campaign_name: metaCampaignName,
+                      campaignName: metaCampaignName,
+                      adset_name: metaAdsetName,
+                      adsetName: metaAdsetName,
+                      ad_name: metaAdName,
+                      adName: metaAdName,
+                      form_name: metaFormName,
+                      formName: metaFormName,
+                      meta_lead_id: String(leadgenId),
+                      metaLeadId: String(leadgenId),
                     };
 
                     const saved = await saveLead(normalizedLead);
@@ -636,9 +656,42 @@ export default {
 
               const location = payload.location || payload.city || payload.state || "USA / Global";
               const videoType = payload.videoType || payload.video_type || payload.service || "AI UGC Video Ads";
-              const videoQuantity = payload.videoQuantity || payload.video_quantity || 1;
-              const campaignName = payload.campaign || payload.campaign_name || payload.ad_name || "";
-              const formName = payload.form || payload.form_name || "";
+              let campaignName = payload.campaign_name || payload.campaignName || payload.campaign || "";
+              let adsetName = payload.adset_name || payload.adsetName || payload.adset || payload.ad_set_name || "";
+              let adName = payload.ad_name || payload.adName || payload.ad || "";
+              let formName = payload.form_name || payload.formName || payload.form || "";
+              let metaLeadId = payload.lead_id || payload.leadgen_id || payload.meta_lead_id || payload.metaLeadId || payload.id || "";
+
+              // Search field_data and answers arrays for campaign, adset, ad, form, lead ID
+              if (Array.isArray(payload.field_data)) {
+                for (const item of payload.field_data) {
+                  const k = String(item.name || "").toLowerCase();
+                  const v = Array.isArray(item.values) ? item.values[0] : (item.values || item.value);
+                  if (v) {
+                    const strVal = String(v).trim();
+                    if (!campaignName && (k.includes("campaign_name") || k === "campaign")) campaignName = strVal;
+                    if (!adsetName && (k.includes("adset_name") || k.includes("ad_set") || k === "adset")) adsetName = strVal;
+                    if (!adName && (k.includes("ad_name") || k === "ad")) adName = strVal;
+                    if (!formName && (k.includes("form_name") || k === "form")) formName = strVal;
+                    if (!metaLeadId && (k.includes("lead_id") || k.includes("leadgen_id"))) metaLeadId = strVal;
+                  }
+                }
+              }
+              if (Array.isArray(payload.answers)) {
+                for (const item of payload.answers) {
+                  const k = String(item.field || item.question || item.name || "").toLowerCase();
+                  const v = item.value || (Array.isArray(item.values) ? item.values[0] : "");
+                  if (v) {
+                    const strVal = String(v).trim();
+                    if (!campaignName && (k.includes("campaign_name") || k === "campaign")) campaignName = strVal;
+                    if (!adsetName && (k.includes("adset_name") || k.includes("ad_set") || k === "adset")) adsetName = strVal;
+                    if (!adName && (k.includes("ad_name") || k === "ad")) adName = strVal;
+                    if (!formName && (k.includes("form_name") || k === "form")) formName = strVal;
+                    if (!metaLeadId && (k.includes("lead_id") || k.includes("leadgen_id"))) metaLeadId = strVal;
+                  }
+                }
+              }
+
               const rawRequirement = payload.requirement || payload.notes || payload.message || payload.comments || "";
               
               // Collect custom question answers from form fields
@@ -721,9 +774,15 @@ export default {
                 video_quantity: videoQuantity || 1,
                 requirement: requirementNotes,
                 campaignName: campaignName || undefined,
-                adName: payload.ad_name || payload.adName || undefined,
+                campaign_name: campaignName || undefined,
+                adsetName: adsetName || undefined,
+                adset_name: adsetName || undefined,
+                adName: adName || undefined,
+                ad_name: adName || undefined,
                 formName: formName || undefined,
-                metaLeadId: payload.lead_id || payload.leadgen_id || payload.id || undefined,
+                form_name: formName || undefined,
+                metaLeadId: metaLeadId || undefined,
+                meta_lead_id: metaLeadId || undefined,
               };
 
               const saved = await saveLead(normalizedLead);

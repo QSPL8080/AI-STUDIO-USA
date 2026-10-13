@@ -9089,11 +9089,24 @@ function AdminPage() {
                         Meta Information
                       </span>
                     </div>
-                    {viewLeadDetails.is_duplicate && (
-                      <span className="rounded-full bg-slate-100 border border-slate-300 px-2 py-0.5 text-[10px] font-bold text-slate-800">
-                        Consolidated Duplicate
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingLead(viewLeadDetails);
+                        }}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 px-2 py-0.5 rounded-lg border border-purple-200/60 transition-colors cursor-pointer"
+                        title="Edit Meta campaign, ad, form or lead ID"
+                      >
+                        <Edit className="h-3 w-3" />
+                        <span>Edit Meta Info</span>
+                      </button>
+                      {viewLeadDetails.is_duplicate && (
+                        <span className="rounded-full bg-slate-100 border border-slate-300 px-2 py-0.5 text-[10px] font-bold text-slate-800">
+                          Consolidated Duplicate
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl">
@@ -9361,10 +9374,16 @@ function AdminPage() {
                   video_quantity: formData.get("videoQuantity") as string,
                   delivery_date: (formData.get("deliveryDate") as string) || undefined,
                   notes: (formData.get("notes") as string) || undefined,
+                  campaign_name: (formData.get("campaign_name") as string) || undefined,
+                  adset_name: (formData.get("adset_name") as string) || undefined,
+                  ad_name: (formData.get("ad_name") as string) || undefined,
+                  form_name: (formData.get("form_name") as string) || undefined,
+                  meta_lead_id: (formData.get("meta_lead_id") as string) || undefined,
                 };
 
                 const updatedLeads = leads.map((l) => (l.id === editingLead.id ? { ...l, ...updates } : l));
                 setLeads(updatedLeads);
+                setViewLeadDetails((prev) => (prev && prev.id === editingLead.id ? { ...prev, ...updates } : prev));
                 localStorage.setItem("ai_studio_local_leads", JSON.stringify(updatedLeads));
                 broadcastLeadEvent({ type: "UPDATE_LEAD", id: editingLead.id });
 
@@ -9487,6 +9506,70 @@ function AdminPage() {
                     isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
                   }`}
                 />
+              </div>
+              {/* Meta Ad Campaign & Form Information */}
+              <div className="rounded-xl border border-purple-200/70 bg-purple-50/40 dark:bg-purple-950/20 dark:border-purple-900/50 p-3 space-y-2.5">
+                <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200 text-[11px] uppercase tracking-wider">
+                  <Megaphone className="h-3.5 w-3.5 text-purple-600" />
+                  <span>Meta Ad Campaign & Form Information</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Campaign Name</label>
+                    <input
+                      name="campaign_name"
+                      placeholder="e.g. USA AI Video Lead Gen"
+                      defaultValue={editingLead.campaign_name || ""}
+                      className={`w-full rounded-xl border p-2 text-xs focus:outline-none ${
+                        isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Form Name</label>
+                    <input
+                      name="form_name"
+                      placeholder="e.g. USA AI 3"
+                      defaultValue={editingLead.form_name || ""}
+                      className={`w-full rounded-xl border p-2 text-xs focus:outline-none ${
+                        isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Ad Set Name</label>
+                    <input
+                      name="adset_name"
+                      placeholder="e.g. Top Cities Lead Gen"
+                      defaultValue={editingLead.adset_name || ""}
+                      className={`w-full rounded-xl border p-2 text-xs focus:outline-none ${
+                        isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Ad Name</label>
+                    <input
+                      name="ad_name"
+                      placeholder="e.g. AI UGC Video Ads"
+                      defaultValue={editingLead.ad_name || ""}
+                      className={`w-full rounded-xl border p-2 text-xs focus:outline-none ${
+                        isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"
+                      }`}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Meta Lead ID</label>
+                    <input
+                      name="meta_lead_id"
+                      placeholder="e.g. 10482910482019"
+                      defaultValue={editingLead.meta_lead_id || ""}
+                      className={`w-full rounded-xl border p-2 font-mono text-xs focus:outline-none ${
+                        isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"
+                      }`}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div>
