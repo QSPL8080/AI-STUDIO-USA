@@ -1225,13 +1225,20 @@ export async function syncCalendlyEventsFromApi(opts?: { force?: boolean | undef
           year: "numeric",
           timeZone: "America/New_York",
         });
+        const isDst = (d: Date) => {
+          const yr = d.getFullYear() || 2026;
+          const marSecondSun = new Date(yr, 2, 8 + (7 - new Date(yr, 2, 8).getDay()) % 7, 2, 0);
+          const novFirstSun = new Date(yr, 10, 1 + (7 - new Date(yr, 10, 1).getDay()) % 7, 2, 0);
+          return d >= marSecondSun && d < novFirstSun;
+        };
+        const usTz = isDst(startDate) ? "EDT" : "EST";
         const timeStr =
           startDate.toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
             hour12: true,
             timeZone: "America/New_York",
-          }) + " EST";
+          }) + ` ${usTz}`;
 
         const decision = classifyCalendlyInvitee({ eventStatus: ev.status, endTime: ev.end_time, invitee });
         // The old slot of a reschedule: the new booking carries the meeting forward
@@ -1247,10 +1254,17 @@ export async function syncCalendlyEventsFromApi(opts?: { force?: boolean | undef
         const link = ev.location?.join_url || ev.uri;
         const cancelReason = invitee.cancellation?.reason ? ` (Reason: ${invitee.cancellation.reason})` : "";
 
+        const qnaPhone = Array.isArray(invitee.questions_and_answers)
+          ? invitee.questions_and_answers.find((q: any) =>
+              /phone|mobile|cell|contact|number|whatsapp/i.test(q.question || "")
+            )?.answer
+          : undefined;
+        const phone = invitee.text_reminder_number || qnaPhone || undefined;
+
         await saveCalendlyMeetingInDb({
           client_name: invitee.name || "Calendly Client",
           email: invitee.email || "client@calendly.com",
-          phone: invitee.text_reminder_number || undefined,
+          phone,
           meeting_date: dateStr,
           meeting_time: timeStr,
           meeting_status: status,

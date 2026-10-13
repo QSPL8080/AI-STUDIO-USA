@@ -3101,9 +3101,17 @@ function AdminPage() {
       year: "numeric",
     });
 
+    const pdtTime = parsed.toLocaleTimeString("en-US", {
+      timeZone: "America/Los_Angeles",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+    const pdtTz = isDst(approx) ? "PDT" : "PST";
+
     return {
       usDate: meetingDate,
-      usTime: `${cleanTime} ${usTzName}`,
+      usTime: `${cleanTime} ${usTzName} · ${pdtTime} ${pdtTz}`,
       istDate,
       istTime: `${istTime} IST`,
     };
