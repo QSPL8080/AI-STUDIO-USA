@@ -356,6 +356,13 @@ function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  // Live Dual-Time Clock State (IST & US Eastern)
+  const [currentLiveTime, setCurrentLiveTime] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentLiveTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Search & Filtering State for Website Leads (Section 11: Filters & Search)
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSource, setFilterSource] = useState<string>("All");
@@ -2469,30 +2476,35 @@ function AdminPage() {
       "Delivery Date",
       "Meeting Date",
       "Internal Notes",
-      "Created At",
+      "Created At (IST)",
+      "Created At (US Eastern)",
     ];
-    const rows = listToExport.map((l) => [
-      l.id,
-      `"${l.source}"`,
-      `"${l.name}"`,
-      `"${l.business}"`,
-      `"${l.website || ""}"`,
-      `"${l.phone}"`,
-      `"${l.email || ""}"`,
-      `"${l.industry || ""}"`,
-      `"${l.video_type}"`,
-      `"${l.video_quantity || "1 – 3 Videos"}"`,
-      `"${(l.requirement || "").replace(/"/g, '""')}"`,
-      `"${l.location || ""}"`,
-      l.status,
-      l.project_status || "In Progress",
-      `"${l.closed_by || ""}"`,
-      `"${l.closed_at ? new Date(l.closed_at).toLocaleDateString() : ""}"`,
-      `"${l.delivery_date || ""}"`,
-      `"${l.meeting_date || ""}"`,
-      `"${(l.notes || "").replace(/"/g, '""')}"`,
-      new Date(l.created_at).toLocaleString(),
-    ]);
+    const rows = listToExport.map((l) => {
+      const dt = formatDualTimestamp(l.created_at);
+      return [
+        l.id,
+        `"${l.source}"`,
+        `"${l.name}"`,
+        `"${l.business}"`,
+        `"${l.website || ""}"`,
+        `"${l.phone}"`,
+        `"${l.email || ""}"`,
+        `"${l.industry || ""}"`,
+        `"${l.video_type}"`,
+        `"${l.video_quantity || "1 – 3 Videos"}"`,
+        `"${(l.requirement || "").replace(/"/g, '""')}"`,
+        `"${l.location || ""}"`,
+        l.status,
+        l.project_status || "In Progress",
+        `"${l.closed_by || ""}"`,
+        `"${l.closed_at ? new Date(l.closed_at).toLocaleDateString() : ""}"`,
+        `"${l.delivery_date || ""}"`,
+        `"${l.meeting_date || ""}"`,
+        `"${(l.notes || "").replace(/"/g, '""')}"`,
+        `"${dt ? dt.istFull : new Date(l.created_at).toLocaleString()}"`,
+        `"${dt ? dt.usFull : new Date(l.created_at).toLocaleString()}"`,
+      ];
+    });
 
     const csvContent =
       "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
@@ -2531,26 +2543,31 @@ function AdminPage() {
       "Closed Date",
       "Delivery Date",
       "Internal Notes",
-      "Created At",
+      "Created At (IST)",
+      "Created At (US Eastern)",
     ];
-    const rows = listToExport.map((l) => [
-      l.id,
-      `"${l.source}"`,
-      `"${l.name}"`,
-      `"${l.business}"`,
-      `"${l.phone}"`,
-      `"${l.email || ""}"`,
-      `"${l.video_type}"`,
-      `"${l.video_quantity || 1}"`,
-      `"${l.location || ""}"`,
-      l.status,
-      l.project_status || "In Progress",
-      `"${l.closed_by || ""}"`,
-      `"${l.closed_at ? new Date(l.closed_at).toLocaleDateString() : ""}"`,
-      `"${l.delivery_date || ""}"`,
-      `"${(l.notes || "").replace(/"/g, '""')}"`,
-      new Date(l.created_at).toLocaleString(),
-    ]);
+    const rows = listToExport.map((l) => {
+      const dt = formatDualTimestamp(l.created_at);
+      return [
+        l.id,
+        `"${l.source}"`,
+        `"${l.name}"`,
+        `"${l.business}"`,
+        `"${l.phone}"`,
+        `"${l.email || ""}"`,
+        `"${l.video_type}"`,
+        `"${l.video_quantity || 1}"`,
+        `"${l.location || ""}"`,
+        l.status,
+        l.project_status || "In Progress",
+        `"${l.closed_by || ""}"`,
+        `"${l.closed_at ? new Date(l.closed_at).toLocaleDateString() : ""}"`,
+        `"${l.delivery_date || ""}"`,
+        `"${(l.notes || "").replace(/"/g, '""')}"`,
+        `"${dt ? dt.istFull : new Date(l.created_at).toLocaleString()}"`,
+        `"${dt ? dt.usFull : new Date(l.created_at).toLocaleString()}"`,
+      ];
+    });
 
     const csvContent =
       "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
@@ -2984,6 +3001,112 @@ function AdminPage() {
     }
     const loc = (lead.location || "").toLowerCase().trim();
     return s.includes("india") || s.includes("in -") || /\bindia\b/.test(loc) || loc.includes("bharat");
+  };
+
+  // ── Dual Timezone Helpers (Indian Standard Time & US Eastern Time) ──
+  const formatDualTimestamp = (dateInput?: string | Date | null) => {
+    if (!dateInput) return null;
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return null;
+
+    // Indian Standard Time (IST - Asia/Kolkata)
+    const istTime = d.toLocaleTimeString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+    const istDate = d.toLocaleDateString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    // US Time (America/New_York)
+    const usTime = d.toLocaleTimeString("en-US", {
+      timeZone: "America/New_York",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+    const usDate = d.toLocaleDateString("en-US", {
+      timeZone: "America/New_York",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    const usTz =
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York",
+        timeZoneName: "short",
+      })
+        .formatToParts(d)
+        .find((p) => p.type === "timeZoneName")?.value || "EST";
+
+    const now = new Date();
+    const todayIst = now.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
+    const itemIst = d.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
+    const isTodayIst = todayIst === itemIst;
+
+    const todayUs = now.toLocaleDateString("en-US", { timeZone: "America/New_York" });
+    const itemUs = d.toLocaleDateString("en-US", { timeZone: "America/New_York" });
+    const isTodayUs = todayUs === itemUs;
+
+    return {
+      istTime: `${istTime} IST`,
+      istDate: isTodayIst ? "Today" : istDate,
+      istFull: `${isTodayIst ? "Today" : istDate}, ${istTime} IST`,
+      usTime: `${usTime} ${usTz}`,
+      usDate: isTodayUs ? "Today" : usDate,
+      usFull: `${isTodayUs ? "Today" : usDate}, ${usTime} ${usTz}`,
+      isTodayIst,
+      isTodayUs,
+    };
+  };
+
+  const formatDualMeetingTime = (meetingDate?: string | null, meetingTime?: string | null) => {
+    if (!meetingDate || !meetingTime) return null;
+    const cleanTime = String(meetingTime).replace(/\s*E[SD]T/i, "").trim();
+    const approx = new Date(`${meetingDate} ${cleanTime}`);
+    const isDst = (d: Date) => {
+      const yr = d.getFullYear() || 2026;
+      const marSecondSun = new Date(yr, 2, 8 + (7 - new Date(yr, 2, 8).getDay()) % 7, 2, 0);
+      const novFirstSun = new Date(yr, 10, 1 + (7 - new Date(yr, 10, 1).getDay()) % 7, 2, 0);
+      return d >= marSecondSun && d < novFirstSun;
+    };
+    const offset = isDst(approx) ? "-04:00" : "-05:00";
+    const usTzName = isDst(approx) ? "EDT" : "EST";
+    const parsed = new Date(`${meetingDate} ${cleanTime} GMT${offset}`);
+
+    if (isNaN(parsed.getTime())) {
+      return {
+        usDate: meetingDate,
+        usTime: meetingTime,
+        istDate: null,
+        istTime: null,
+      };
+    }
+
+    const istTime = parsed.toLocaleTimeString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+    const istDate = parsed.toLocaleDateString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    return {
+      usDate: meetingDate,
+      usTime: `${cleanTime} ${usTzName}`,
+      istDate,
+      istTime: `${istTime} IST`,
+    };
   };
 
   // Helper to match a Calendly meeting to an existing lead by Email, Phone, or Client Name (Section 14)
@@ -3571,6 +3694,23 @@ function AdminPage() {
 
           {/* Controls: Auto-Sync, Sound, Notifications, User Profile */}
           <div className="flex shrink-0 items-center gap-1 sm:gap-2.5">
+            {/* Live Dual Timezone Clock (India IST & US Eastern) */}
+            <div className="hidden xl:flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100/80 px-2.5 py-1 text-[11px] shadow-2xs">
+              <div className="flex items-center gap-1 font-semibold">
+                <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1 py-0.2 rounded">🇮🇳 IST</span>
+                <span className="font-mono text-slate-800 font-bold">
+                  {currentLiveTime.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
+                </span>
+              </div>
+              <span className="text-slate-300">|</span>
+              <div className="flex items-center gap-1 font-semibold">
+                <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-1 py-0.2 rounded">🇺🇸 US</span>
+                <span className="font-mono text-slate-800 font-bold">
+                  {currentLiveTime.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
+                </span>
+              </div>
+            </div>
+
             <div className="hidden lg:flex items-center gap-1.5 text-xs text-slate-500 font-medium">
               <span>Auto-sync in</span>
               <span className="font-mono font-bold text-blue-600">{refreshCountdown}s</span>
@@ -4820,21 +4960,28 @@ function AdminPage() {
                               </span>
                             </td>
 
-                            {/* Timestamp */}
-                            <td className="whitespace-nowrap px-4 py-3.5 text-xs text-slate-500">
-                              {isToday(lead.created_at) ? (
-                                <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/40 bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-300">
-                                  <Calendar className="h-3 w-3" />
-                                  Today, {new Date(lead.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                                </span>
-                              ) : (
-                                <div>
-                                  <div>{new Date(lead.created_at).toLocaleDateString()}</div>
-                                  <div className="text-[10px] text-slate-400">
-                                    {new Date(lead.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            {/* Timestamp (Dual Timezone: Indian IST & US Client Time) */}
+                            <td className="whitespace-nowrap px-4 py-3.5 text-xs">
+                              {(() => {
+                                const dt = formatDualTimestamp(lead.created_at);
+                                if (!dt) return <span className="text-slate-400">N/A</span>;
+                                return (
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-1">
+                                      <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
+                                        <span>🇮🇳</span>
+                                        <span>{dt.istDate}, {dt.istTime}</span>
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                        <span>🇺🇸</span>
+                                        <span>{dt.usDate}, {dt.usTime}</span>
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                );
+                              })()}
                             </td>
 
                             {/* Client & Business */}
@@ -5110,8 +5257,17 @@ function AdminPage() {
 
                       {/* Action Buttons */}
                       <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-                        <div className="text-[10px] text-slate-400">
-                          {new Date(lead.created_at).toLocaleDateString()}
+                        <div className="text-[10px] space-y-0.5">
+                          {(() => {
+                            const dt = formatDualTimestamp(lead.created_at);
+                            if (!dt) return <span className="text-slate-400">{new Date(lead.created_at).toLocaleDateString()}</span>;
+                            return (
+                              <>
+                                <div className="font-bold text-amber-800">🇮🇳 {dt.istDate}, {dt.istTime}</div>
+                                <div className="text-slate-500">🇺🇸 {dt.usDate}, {dt.usTime}</div>
+                              </>
+                            );
+                          })()}
                         </div>
 
                         <div className="flex items-center gap-1.5">
@@ -5660,21 +5816,28 @@ function AdminPage() {
                               </span>
                             </td>
 
-                            {/* Timestamp */}
-                            <td className="whitespace-nowrap px-4 py-3.5 text-xs text-slate-500">
-                              {isToday(lead.created_at) ? (
-                                <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/40 bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-600">
-                                  <Calendar className="h-3 w-3" />
-                                  Today, {new Date(lead.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                                </span>
-                              ) : (
-                                <div>
-                                  <div>{new Date(lead.created_at).toLocaleDateString()}</div>
-                                  <div className="text-[10px] text-slate-400">
-                                    {new Date(lead.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            {/* Timestamp (Dual Timezone: Indian IST & US Client Time) */}
+                            <td className="whitespace-nowrap px-4 py-3.5 text-xs">
+                              {(() => {
+                                const dt = formatDualTimestamp(lead.created_at);
+                                if (!dt) return <span className="text-slate-400">N/A</span>;
+                                return (
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-1">
+                                      <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
+                                        <span>🇮🇳</span>
+                                        <span>{dt.istDate}, {dt.istTime}</span>
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                        <span>🇺🇸</span>
+                                        <span>{dt.usDate}, {dt.usTime}</span>
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                );
+                              })()}
                             </td>
 
                             {/* Client & Business */}
@@ -5920,6 +6083,20 @@ function AdminPage() {
                             <option value="Delivered">Delivered</option>
                           </select>
                         </div>
+                      </div>
+
+                      {/* Dual Timezone (IST & US) */}
+                      <div className="flex items-center justify-between rounded-lg bg-slate-50 px-2.5 py-1.5 border border-slate-100 text-[10px]">
+                        {(() => {
+                          const dt = formatDualTimestamp(lead.created_at);
+                          if (!dt) return <span className="text-slate-400">{new Date(lead.created_at).toLocaleDateString()}</span>;
+                          return (
+                            <>
+                              <div className="font-bold text-amber-800">🇮🇳 {dt.istDate}, {dt.istTime}</div>
+                              <div className="text-slate-500">🇺🇸 {dt.usDate}, {dt.usTime}</div>
+                            </>
+                          );
+                        })()}
                       </div>
 
                       <div className="flex items-center justify-between pt-2 border-t border-slate-100">
@@ -6415,10 +6592,37 @@ function AdminPage() {
                             />
                           </td>
 
-                          {/* 1. Meeting Date & Time */}
-                          <td className="px-4 py-3.5">
-                            <div className="font-bold text-blue-600 dark:text-blue-400">{m.meeting_date}</div>
-                            <div className="text-[11px] text-slate-500 font-mono mt-0.5">{m.meeting_time}</div>
+                          {/* 1. Meeting Date & Time (Dual Timezone: Indian IST & US Client Time) */}
+                          <td className="whitespace-nowrap px-4 py-3.5 text-xs">
+                            {(() => {
+                              const dt = formatDualMeetingTime(m.meeting_date, m.meeting_time);
+                              if (!dt) {
+                                return (
+                                  <div>
+                                    <div className="font-bold text-blue-600 dark:text-blue-400">{m.meeting_date}</div>
+                                    <div className="text-[11px] text-slate-500 font-mono mt-0.5">{m.meeting_time}</div>
+                                  </div>
+                                );
+                              }
+                              return (
+                                <div className="space-y-1">
+                                  {dt.istTime && (
+                                    <div className="flex items-center gap-1">
+                                      <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
+                                        <span>🇮🇳</span>
+                                        <span>{dt.istDate}, {dt.istTime}</span>
+                                      </span>
+                                    </div>
+                                  )}
+                                  <div className="flex items-center gap-1">
+                                    <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                      <span>🇺🇸</span>
+                                      <span>{dt.usDate}, {dt.usTime}</span>
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </td>
 
                           {/* 2. Client Name & Contact & Matching Lead */}
@@ -6529,9 +6733,18 @@ function AdminPage() {
                             {m.assigned_admin || <span className="text-slate-400 italic">Unassigned</span>}
                           </td>
 
-                          {/* 7. Meeting Created Date */}
-                          <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px]">
-                            {new Date(m.created_at).toLocaleDateString()}
+                          {/* 7. Meeting Created Date (Dual Timezone) */}
+                          <td className="whitespace-nowrap px-4 py-3.5 text-xs">
+                            {(() => {
+                              const dt = formatDualTimestamp(m.created_at);
+                              if (!dt) return <span className="text-slate-500 font-mono text-[11px]">{new Date(m.created_at).toLocaleDateString()}</span>;
+                              return (
+                                <div className="space-y-0.5 text-[10px]">
+                                  <div className="font-bold text-amber-800">🇮🇳 {dt.istDate}, {dt.istTime}</div>
+                                  <div className="text-slate-400">🇺🇸 {dt.usDate}, {dt.usTime}</div>
+                                </div>
+                              );
+                            })()}
                           </td>
 
                           {/* 8. Workflow Actions */}
@@ -8574,11 +8787,29 @@ function AdminPage() {
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-start">
                       <span className="text-slate-500">Lead Created Date/Time:</span>
-                      <span className="font-mono text-slate-700 text-[11px]">
-                        {new Date(viewLeadDetails.created_at).toLocaleString()}
-                      </span>
+                      {(() => {
+                        const dt = formatDualTimestamp(viewLeadDetails.created_at);
+                        if (!dt) {
+                          return (
+                            <span className="font-mono text-slate-700 text-[11px]">
+                              {new Date(viewLeadDetails.created_at).toLocaleString()}
+                            </span>
+                          );
+                        }
+                        return (
+                          <div className="text-right space-y-1">
+                            <div className="inline-flex items-center gap-1 font-bold text-amber-800 text-[11px] bg-amber-50 px-2 py-0.5 rounded border border-amber-200 shadow-2xs">
+                              <span>🇮🇳</span>
+                              <span>{dt.istFull}</span>
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-mono">
+                              🇺🇸 {dt.usFull}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <div className="flex justify-between items-center">
@@ -8738,17 +8969,35 @@ function AdminPage() {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl">
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Meeting Date</span>
-                    <p className="font-semibold text-slate-900 mt-0.5">
-                      {leadMeeting?.meeting_date || viewLeadDetails.meeting_date || "Not scheduled"}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Meeting Time</span>
-                    <p className="font-semibold text-slate-900 mt-0.5">
-                      {leadMeeting?.meeting_time || viewLeadDetails.meeting_time || "N/A"}
-                    </p>
+                  <div className="col-span-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Meeting Date & Time</span>
+                    {(() => {
+                      const mDate = leadMeeting?.meeting_date || viewLeadDetails.meeting_date;
+                      const mTime = leadMeeting?.meeting_time || viewLeadDetails.meeting_time;
+                      if (!mDate || !mTime) {
+                        return (
+                          <p className="font-semibold text-slate-900 mt-0.5">
+                            {mDate || "Not scheduled"}
+                          </p>
+                        );
+                      }
+                      const dt = formatDualMeetingTime(mDate, mTime);
+                      return (
+                        <div className="mt-1 space-y-1">
+                          {dt?.istTime && (
+                            <div>
+                              <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md shadow-2xs">
+                                <span>🇮🇳</span>
+                                <span>{dt.istDate}, {dt.istTime}</span>
+                              </span>
+                            </div>
+                          )}
+                          <div className="text-xs text-slate-600 font-medium">
+                            🇺🇸 {dt?.usDate}, {dt?.usTime}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase">Meeting Status</span>
@@ -9579,13 +9828,35 @@ function AdminPage() {
                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Phone</div>
                   <div className="font-mono text-slate-700 dark:text-slate-300 mt-0.5">{viewMeetingDetails.phone || "—"}</div>
                 </div>
-                <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Meeting Date</div>
-                  <div className="font-semibold text-blue-600 dark:text-blue-400 mt-0.5">{viewMeetingDetails.meeting_date}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Meeting Time</div>
-                  <div className="font-mono text-slate-700 dark:text-slate-300 mt-0.5">{viewMeetingDetails.meeting_time}</div>
+                <div className="col-span-2">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Meeting Date & Time</div>
+                  {(() => {
+                    const dt = formatDualMeetingTime(viewMeetingDetails.meeting_date, viewMeetingDetails.meeting_time);
+                    if (!dt) {
+                      return (
+                        <div className="mt-1">
+                          <span className="font-bold text-blue-600 dark:text-blue-400">{viewMeetingDetails.meeting_date}</span>
+                          <span className="font-mono text-slate-700 dark:text-slate-300 ml-2">{viewMeetingDetails.meeting_time}</span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="mt-1.5 space-y-1.5">
+                        {dt.istTime && (
+                          <div>
+                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs font-extrabold text-amber-800 shadow-2xs">
+                              <span>🇮🇳</span>
+                              <span>Indian Time: {dt.istDate}, {dt.istTime}</span>
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                          <span>🇺🇸</span>
+                          <span>US Client Time: {dt.usDate}, {dt.usTime}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
