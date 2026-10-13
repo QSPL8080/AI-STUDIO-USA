@@ -1700,6 +1700,10 @@ export async function saveCalendlyMeeting(data: {
       const bySlot = (d: string, t: string) =>
         supabaseRest(`${base}&meeting_date=eq.${encodeURIComponent(d)}&meeting_time=eq.${encodeURIComponent(t)}&order=created_at.desc&limit=1&select=*`);
       let existing: any[] = await bySlot(data.meeting_date, data.meeting_time);
+      if ((!Array.isArray(existing) || existing.length === 0)) {
+        // Fallback: match by email + meeting_date (prevents EDT vs EST string duplicates)
+        existing = await supabaseRest(`${base}&meeting_date=eq.${encodeURIComponent(data.meeting_date)}&order=created_at.desc&limit=1&select=*`);
+      }
       if ((!Array.isArray(existing) || existing.length === 0) && hasPreviousSlot) {
         existing = await bySlot(data.previous_meeting_date as string, data.previous_meeting_time as string);
       }
@@ -1791,6 +1795,14 @@ export async function saveCalendlyMeeting(data: {
           )
         ).rows[0] || null;
       let existingMeeting: any = await bySlot(data.meeting_date, data.meeting_time);
+      if (!existingMeeting) {
+        existingMeeting = (
+          await pool.query(
+            `SELECT * FROM calendly_meetings WHERE email = $1 AND meeting_date = $2 AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1`,
+            [data.email, data.meeting_date]
+          )
+        ).rows[0] || null;
+      }
       if (!existingMeeting && hasPreviousSlot) {
         existingMeeting = await bySlot(data.previous_meeting_date as string, data.previous_meeting_time as string);
       }
