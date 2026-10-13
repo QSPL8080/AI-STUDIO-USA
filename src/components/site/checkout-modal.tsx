@@ -441,7 +441,7 @@ export function CheckoutModal() {
                     <input
                       id="checkoutPhone"
                       type="tel"
-                      placeholder="+1 (555) 000-0000"
+                      placeholder="+1 (555) 000-0000 or international (+91, +44, +234...)"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-xs transition-all focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100"

@@ -4265,12 +4265,30 @@ export function WhyUs() {
   );
 }
 
-export function formatUsaPhoneInput(input: string): string {
-  const trimmed = input.trim();
-  if (!trimmed) return "";
-  const digitsOnly = trimmed.replace(/\D/g, "");
+export const COUNTRY_PHONE_CODES = [
+  { code: "+1", country: "US / CA", flag: "🇺🇸", label: "🇺🇸 +1 (USA / Canada)" },
+  { code: "+91", country: "IN", flag: "🇮🇳", label: "🇮🇳 +91 (India)" },
+  { code: "+44", country: "UK", flag: "🇬🇧", label: "🇬🇧 +44 (United Kingdom)" },
+  { code: "+234", country: "NG", flag: "🇳🇬", label: "🇳🇬 +234 (Nigeria)" },
+  { code: "+61", country: "AU", flag: "🇦🇺", label: "🇦🇺 +61 (Australia)" },
+  { code: "+971", country: "AE", flag: "🇦🇪", label: "🇦🇪 +971 (UAE)" },
+  { code: "+49", country: "DE", flag: "🇩🇪", label: "🇩🇪 +49 (Germany)" },
+  { code: "+33", country: "FR", flag: "🇫🇷", label: "🇫🇷 +33 (France)" },
+  { code: "+65", country: "SG", flag: "🇸🇬", label: "🇸🇬 +65 (Singapore)" },
+  { code: "+966", country: "SA", flag: "🇸🇦", label: "🇸🇦 +966 (Saudi Arabia)" },
+  { code: "+52", country: "MX", flag: "🇲🇽", label: "🇲🇽 +52 (Mexico)" },
+  { code: "+55", country: "BR", flag: "🇧🇷", label: "🇧🇷 +55 (Brazil)" },
+  { code: "+27", country: "ZA", flag: "🇿🇦", label: "🇿🇦 +27 (South Africa)" },
+  { code: "", country: "Global", flag: "🌐", label: "🌐 Other / International" },
+];
 
+export function formatGlobalPhoneInput(input: string, selectedCode: string = "+1"): string {
+  const trimmed = (input || "").trim().replace(/^p:/i, "");
+  if (!trimmed) return "";
+
+  // If user explicitly typed a leading + in the text field, respect their typed country code directly!
   if (trimmed.startsWith("+")) {
+    const digitsOnly = trimmed.replace(/\D/g, "");
     if (digitsOnly.length === 11 && digitsOnly.startsWith("1")) {
       const area = digitsOnly.slice(1, 4);
       const mid = digitsOnly.slice(4, 7);
@@ -4280,30 +4298,45 @@ export function formatUsaPhoneInput(input: string): string {
     return trimmed;
   }
 
-  if (digitsOnly.length === 10) {
-    const area = digitsOnly.slice(0, 3);
-    const mid = digitsOnly.slice(3, 6);
-    const last = digitsOnly.slice(6);
-    return `+1 (${area}) ${mid}-${last}`;
+  const digitsOnly = trimmed.replace(/\D/g, "");
+  if (!digitsOnly) return trimmed;
+
+  // If country code is selected as US/CA (+1)
+  if (selectedCode === "+1") {
+    if (digitsOnly.length === 10) {
+      const area = digitsOnly.slice(0, 3);
+      const mid = digitsOnly.slice(3, 6);
+      const last = digitsOnly.slice(6);
+      return `+1 (${area}) ${mid}-${last}`;
+    }
+    if (digitsOnly.length === 11 && digitsOnly.startsWith("1")) {
+      const area = digitsOnly.slice(1, 4);
+      const mid = digitsOnly.slice(4, 7);
+      const last = digitsOnly.slice(7);
+      return `+1 (${area}) ${mid}-${last}`;
+    }
+    return `+1 ${digitsOnly}`;
   }
 
-  if (digitsOnly.length === 11 && digitsOnly.startsWith("1")) {
-    const area = digitsOnly.slice(1, 4);
-    const mid = digitsOnly.slice(4, 7);
-    const last = digitsOnly.slice(7);
-    return `+1 (${area}) ${mid}-${last}`;
+  // If any other country code selected (+91, +44, +234, etc.)
+  if (selectedCode) {
+    const codeDigits = selectedCode.replace(/\D/g, "");
+    if (digitsOnly.startsWith(codeDigits)) {
+      return `+${digitsOnly}`;
+    }
+    return `${selectedCode} ${digitsOnly}`;
   }
 
-  if (digitsOnly.length > 10) {
-    return `+${digitsOnly}`;
-  }
-
-  return trimmed;
+  // If "Other" selected (empty code), prepend + if length suggests full international format
+  return digitsOnly.length > 7 ? `+${digitsOnly}` : trimmed;
 }
+
+export const formatUsaPhoneInput = formatGlobalPhoneInput;
 
 export function LeadFormSection() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [bookingCountryCode, setBookingCountryCode] = useState("+1");
 
   return (
     <Section id="contact" className="relative overflow-hidden bg-gradient-to-b from-slate-100/90 via-purple-50/30 to-slate-100/95 border-t border-slate-200/80 pt-10 sm:pt-14 pb-6 sm:pb-8">
@@ -4403,7 +4436,7 @@ export function LeadFormSection() {
                 const data = new FormData(form);
                 const name = String(data.get("name") || "");
                 const email = String(data.get("email") || "");
-                const phone = formatUsaPhoneInput(String(data.get("phone") || ""));
+                const phone = formatGlobalPhoneInput(String(data.get("phone") || ""), bookingCountryCode);
                 const business = String(data.get("business") || "");
                 const website = String(data.get("website") || "");
                 const industry = String(data.get("industry") || "");
@@ -4509,20 +4542,38 @@ export function LeadFormSection() {
               {/* Row 2: Phone & Company / Brand */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label
-                    htmlFor="bookingPhone"
-                    className="block text-xs font-bold text-slate-800"
-                  >
-                    Phone*
-                  </label>
-                  <input
-                    id="bookingPhone"
-                    type="tel"
-                    name="phone"
-                    required
-                    placeholder="+1 (555) 000-0000"
-                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50/80 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:outline-none shadow-2xs"
-                  />
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="bookingPhone"
+                      className="block text-xs font-bold text-slate-800"
+                    >
+                      Phone Number*
+                    </label>
+                    <span className="text-[11px] text-slate-500 font-medium">All countries supported</span>
+                  </div>
+                  <div className="mt-1.5 flex rounded-xl border border-slate-300 bg-slate-50/80 focus-within:border-purple-500 focus-within:bg-white shadow-2xs overflow-hidden">
+                    <select
+                      value={bookingCountryCode}
+                      onChange={(e) => setBookingCountryCode(e.target.value)}
+                      className="bg-slate-100/90 border-r border-slate-300 px-2 sm:px-2.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none cursor-pointer shrink-0 max-w-[110px] sm:max-w-[130px]"
+                      title="Select Country Code"
+                      aria-label="Country Code"
+                    >
+                      {COUNTRY_PHONE_CODES.map((c) => (
+                        <option key={c.label} value={c.code}>
+                          {c.flag} {c.code || "Other"} ({c.country})
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      id="bookingPhone"
+                      type="tel"
+                      name="phone"
+                      required
+                      placeholder={bookingCountryCode === "+1" ? "(555) 000-0000" : "Phone number"}
+                      className="w-full bg-transparent px-3 py-2.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none font-medium"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label
@@ -5313,6 +5364,7 @@ export function QuotePopupModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [modalCountryCode, setModalCountryCode] = useState("+1");
 
   useEffect(() => {
     // 1. Popup on every website refresh / load after 1.2s
@@ -5416,7 +5468,7 @@ export function QuotePopupModal() {
                 const data = new FormData(form);
                 const name = String(data.get("name") || "");
                 const email = String(data.get("email") || "");
-                const phone = formatUsaPhoneInput(String(data.get("phone") || ""));
+                const phone = formatGlobalPhoneInput(String(data.get("phone") || ""), modalCountryCode);
                 const business = String(data.get("business") || "");
                 const website = String(data.get("website") || "");
                 const industry = String(data.get("industry") || "");
@@ -5524,20 +5576,38 @@ export function QuotePopupModal() {
               {/* Row 2: Phone & Company / Brand */}
               <div className="grid gap-3 sm:grid-cols-2 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:gap-2.5 [@media(min-width:640px)_and_(max-height:640px)]:gap-2">
                 <div className="w-full">
-                  <label
-                    htmlFor="modalPhone"
-                    className="block text-xs font-medium text-slate-700 sm:text-[13px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-xs [@media(min-width:640px)_and_(max-height:640px)]:text-[11px]"
-                  >
-                    Phone*
-                  </label>
-                  <input
-                    id="modalPhone"
-                    type="tel"
-                    name="phone"
-                    required
-                    placeholder="+1 (555) 000-0000"
-                    className="mt-1.5 h-11 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:mt-1 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:h-9 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:mt-1 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:h-8 [@media(min-width:640px)_and_(max-height:640px)]:h-[30px] [@media(min-width:640px)_and_(max-height:640px)]:mt-0.5 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-[13px] [@media(min-width:640px)_and_(max-height:640px)]:text-[13px] w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/15"
-                  />
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="modalPhone"
+                      className="block text-xs font-medium text-slate-700 sm:text-[13px] [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-xs [@media(min-width:640px)_and_(max-height:640px)]:text-[11px]"
+                    >
+                      Phone Number*
+                    </label>
+                    <span className="text-[10px] text-slate-400 font-medium">All countries</span>
+                  </div>
+                  <div className="mt-1.5 h-11 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:mt-1 [@media(min-width:640px)_and_(min-height:701px)_and_(max-height:860px)]:h-9 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:mt-1 [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:h-8 [@media(min-width:640px)_and_(max-height:640px)]:h-[30px] [@media(min-width:640px)_and_(max-height:640px)]:mt-0.5 flex w-full rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs transition-colors focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/15">
+                    <select
+                      value={modalCountryCode}
+                      onChange={(e) => setModalCountryCode(e.target.value)}
+                      className="bg-slate-50 border-r border-slate-200 px-2 text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer shrink-0 max-w-[110px] sm:max-w-[125px]"
+                      title="Select Country Code"
+                      aria-label="Country Code"
+                    >
+                      {COUNTRY_PHONE_CODES.map((c) => (
+                        <option key={c.label} value={c.code}>
+                          {c.flag} {c.code || "Other"} ({c.country})
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      id="modalPhone"
+                      type="tel"
+                      name="phone"
+                      required
+                      placeholder={modalCountryCode === "+1" ? "(555) 000-0000" : "Phone number"}
+                      className="w-full bg-transparent px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none font-medium [@media(min-width:640px)_and_(min-height:641px)_and_(max-height:700px)]:text-[13px] [@media(min-width:640px)_and_(max-height:640px)]:text-[13px]"
+                    />
+                  </div>
                 </div>
                 <div className="w-full">
                   <label
