@@ -3718,23 +3718,24 @@ function AdminPage() {
             </div>
           </div>
 
-          {/* Center: Live Dual Timezone Clock (India IST & US EDT) - Bold, sharp rectangular / NO border radius */}
-          <div className="hidden md:flex flex-1 items-center justify-center px-2">
-            <div className="flex items-center gap-3 rounded-none border-2 border-slate-900 bg-white px-3.5 py-1 text-xs shadow-xs">
+          {/* Center: Live Dual Timezone Clock (India IST & US EDT) */}
+          <div className="hidden md:flex flex-1 items-center justify-center px-3">
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-100/90 px-3.5 py-1.5 shadow-2xs hover:bg-slate-100 transition-colors">
+              <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
               <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-black uppercase tracking-wider text-amber-950 bg-amber-200 border border-amber-400 px-1.5 py-0.5 rounded-none shadow-2xs">
+                <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-bold text-amber-900 tracking-wide">
                   🇮🇳 IST
                 </span>
-                <span className="font-mono text-sm font-black text-slate-950 tracking-tight">
+                <span className="font-mono text-xs sm:text-[13px] font-bold text-slate-800 tracking-tight">
                   {currentLiveTime.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
                 </span>
               </div>
-              <span className="text-slate-400 font-black">|</span>
+              <span className="h-4 w-px bg-slate-300 shrink-0" />
               <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-black uppercase tracking-wider text-blue-950 bg-blue-200 border border-blue-400 px-1.5 py-0.5 rounded-none shadow-2xs">
+                <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/15 border border-blue-500/30 px-1.5 py-0.5 text-[10px] font-bold text-blue-900 tracking-wide">
                   🇺🇸 US (EDT)
                 </span>
-                <span className="font-mono text-sm font-black text-slate-950 tracking-tight">
+                <span className="font-mono text-xs sm:text-[13px] font-bold text-slate-800 tracking-tight">
                   {currentLiveTime.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
                 </span>
               </div>
@@ -3953,23 +3954,24 @@ function AdminPage() {
           </div>
         </div>
 
-        {/* Mobile Dual Timezone Clock (Sharp rectangular, bold, centered) */}
+        {/* Mobile Dual Timezone Clock */}
         <div className="md:hidden flex items-center justify-center border-t border-slate-200 bg-slate-50/70 py-1.5 px-3">
-          <div className="flex items-center gap-2.5 rounded-none border-2 border-slate-900 bg-white px-2.5 py-0.5 text-[11px] shadow-2xs">
-            <div className="flex items-center gap-1 font-black">
-              <span className="text-[10px] font-black uppercase tracking-wider text-amber-950 bg-amber-200 border border-amber-400 px-1 py-0.2 rounded-none">
+          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs shadow-2xs">
+            <Clock className="h-3 w-3 text-slate-400 shrink-0" />
+            <div className="flex items-center gap-1">
+              <span className="inline-flex items-center rounded-md bg-amber-500/15 border border-amber-500/30 px-1 py-0.5 text-[9px] font-bold text-amber-900">
                 🇮🇳 IST
               </span>
-              <span className="font-mono text-xs font-black text-slate-950">
+              <span className="font-mono text-[11px] font-bold text-slate-800 tracking-tight">
                 {currentLiveTime.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
               </span>
             </div>
-            <span className="text-slate-400 font-black">|</span>
-            <div className="flex items-center gap-1 font-black">
-              <span className="text-[10px] font-black uppercase tracking-wider text-blue-950 bg-blue-200 border border-blue-400 px-1 py-0.2 rounded-none">
+            <span className="h-3 w-px bg-slate-200 shrink-0" />
+            <div className="flex items-center gap-1">
+              <span className="inline-flex items-center rounded-md bg-blue-500/15 border border-blue-500/30 px-1 py-0.5 text-[9px] font-bold text-blue-900">
                 🇺🇸 US (EDT)
               </span>
-              <span className="font-mono text-xs font-black text-slate-950">
+              <span className="font-mono text-[11px] font-bold text-slate-800 tracking-tight">
                 {currentLiveTime.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
               </span>
             </div>
