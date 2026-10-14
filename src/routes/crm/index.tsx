@@ -8843,6 +8843,80 @@ function AdminPage() {
                 </button>
               </div>
 
+              {/* Top Action Bar (Shifted to Top of Modal) */}
+              <div className="flex flex-wrap items-center justify-between gap-2.5 bg-slate-50 border border-slate-200/90 rounded-xl p-2.5 -mt-1 shadow-2xs">
+                <div className="flex items-center gap-2">
+                  {viewLeadDetails.phone && viewLeadDetails.phone.trim() ? (
+                    <>
+                      <a
+                        href={`tel:${viewLeadDetails.phone.replace(/[^0-9+]/g, "")}`}
+                        className="rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                      >
+                        <Phone className="h-3.5 w-3.5" />
+                        <span>Call</span>
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenWhatsApp(viewLeadDetails)}
+                        className="rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                      >
+                        <WhatsAppIcon className="h-3.5 w-3.5" />
+                        <span>WhatsApp</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const l = viewLeadDetails;
+                        setViewLeadDetails(null);
+                        setEditingLead(l);
+                      }}
+                      className="rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-1.5 text-xs font-bold text-amber-800 hover:bg-amber-100 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                    >
+                      <Plus className="h-3.5 w-3.5 text-amber-600" />
+                      <span>+ Add Phone Number</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingLead(viewLeadDetails);
+                      setViewLeadDetails(null);
+                    }}
+                    className="rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                  >
+                    <Edit className="h-3.5 w-3.5" />
+                    <span>Edit Lead</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const idToDelete = viewLeadDetails.id;
+                      setViewLeadDetails(null);
+                      handleSoftDeleteLead(idToDelete);
+                    }}
+                    className="rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-rose-600 hover:text-white hover:border-rose-600 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Delete</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setViewLeadDetails(null)}
+                    className="rounded-xl border border-slate-200 bg-slate-100 px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 cursor-pointer transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+
               {/* 2-Column Grid: Section 1 & Section 2 (Section 8) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 {/* 1. Client Information */}
