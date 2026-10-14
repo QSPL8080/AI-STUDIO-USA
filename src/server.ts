@@ -387,6 +387,7 @@ export default {
                     let metaAdsetName: string | undefined = undefined;
                     let metaAdName: string | undefined = adId ? `Ad #${adId}` : undefined;
                     let metaFormName: string | undefined = formId ? `Form #${formId}` : undefined;
+                    let fieldMap: Record<string, string> = {};
 
                     // If Meta Page Access Token is configured, fetch full field_data from Meta Graph API
                     if (metaAccessToken && leadgenId && leadgenId !== "444444444444") {
@@ -402,7 +403,7 @@ export default {
                           metaFormName = graphData.form_name || metaFormName;
 
                           const fieldData = graphData.field_data || [];
-                          const fieldMap: Record<string, string> = {};
+                          fieldMap = {};
                           for (const f of fieldData) {
                             const val = Array.isArray(f.values) ? f.values[0] : f.values;
                             if (f.name && val) fieldMap[f.name.toLowerCase()] = String(val);
@@ -468,11 +469,13 @@ export default {
                       email: leadEmail,
                       phone: sanitizeLeadPhone(leadPhone, false),
                       business: leadBusiness,
-                      industry: (typeof fieldMap !== "undefined" ? (fieldMap["_what_type_of_business_"] || fieldMap["type_of_business"] || fieldMap["industry"]) : undefined) || undefined,
-                      website: (typeof fieldMap !== "undefined" ? fieldMap["website"] : undefined) || undefined,
+                      industry: fieldMap["_what_type_of_business_"] || fieldMap["type_of_business"] || fieldMap["industry"] || undefined,
+                      website: fieldMap["website"] || undefined,
+                      videoType: leadVideoType,
                       video_type: leadVideoType,
+                      videoQuantity: 1,
                       video_quantity: 1,
-                      location: (typeof fieldMap !== "undefined" ? (fieldMap["location"] || fieldMap["city"]) : undefined) || "USA / Global",
+                      location: fieldMap["location"] || fieldMap["city"] || "USA / Global",
                       requirement: leadRequirements,
                       campaign_name: metaCampaignName,
                       campaignName: metaCampaignName,
@@ -656,6 +659,7 @@ export default {
 
               const location = payload.location || payload.city || payload.state || "USA / Global";
               const videoType = payload.videoType || payload.video_type || payload.service || "AI UGC Video Ads";
+              let videoQuantity = Number(payload.videoQuantity || payload.video_quantity || payload.quantity) || 1;
               let campaignName = payload.campaign_name || payload.campaignName || payload.campaign || "";
               let adsetName = payload.adset_name || payload.adsetName || payload.adset || payload.ad_set_name || "";
               let adName = payload.ad_name || payload.adName || payload.ad || "";
