@@ -9109,38 +9109,49 @@ function AdminPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl">
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Campaign Name</span>
-                      <p className="font-semibold text-slate-900 mt-0.5">
-                        {viewLeadDetails.campaign_name || "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Ad Set Name</span>
-                      <p className="font-semibold text-slate-900 mt-0.5">
-                        {viewLeadDetails.adset_name || "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Ad Name</span>
-                      <p className="font-semibold text-slate-900 mt-0.5">
-                        {viewLeadDetails.ad_name || "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Form Name</span>
-                      <p className="font-semibold text-slate-900 mt-0.5">
-                        {viewLeadDetails.form_name || "N/A"}
-                      </p>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Meta Lead ID</span>
-                      <p className="font-mono text-[11px] text-slate-800 mt-0.5">
-                        {viewLeadDetails.meta_lead_id || "N/A"}
-                      </p>
-                    </div>
-                  </div>
+                  {(() => {
+                    const req = `${viewLeadDetails.requirement || ""} ${viewLeadDetails.notes || ""} ${viewLeadDetails.additional || ""}`;
+                    const displayCampaign = viewLeadDetails.campaign_name || (/Campaign:\s*([^|\]\n]+)/i.exec(req)?.[1]?.trim()) || "N/A";
+                    const displayAdSet = viewLeadDetails.adset_name || (/Ad\s*Set:\s*([^|\]\n]+)/i.exec(req)?.[1]?.trim()) || "N/A";
+                    const displayAd = viewLeadDetails.ad_name || (/Ad(?:\s*Name)?:\s*([^|\]\n]+)/i.exec(req)?.[1]?.trim()) || "N/A";
+                    const displayForm = viewLeadDetails.form_name || (/Form(?:\s*Name)?:\s*([^|\]\n]+)/i.exec(req)?.[1]?.trim()) || "N/A";
+                    const displayLeadId = viewLeadDetails.meta_lead_id || (/(?:Meta\s*Lead\s*ID|Leadgen\s*ID|Lead\s*ID):\s*([^|\]\n]+)/i.exec(req)?.[1]?.trim()) || "N/A";
+
+                    return (
+                      <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl">
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">Campaign Name</span>
+                          <p className="font-semibold text-slate-900 mt-0.5">
+                            {displayCampaign}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">Ad Set Name</span>
+                          <p className="font-semibold text-slate-900 mt-0.5">
+                            {displayAdSet}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">Ad Name</span>
+                          <p className="font-semibold text-slate-900 mt-0.5">
+                            {displayAd}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">Form Name</span>
+                          <p className="font-semibold text-slate-900 mt-0.5">
+                            {displayForm}
+                          </p>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">Meta Lead ID</span>
+                          <p className="font-mono text-[11px] text-slate-800 mt-0.5">
+                            {displayLeadId}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 

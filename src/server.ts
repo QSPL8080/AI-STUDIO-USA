@@ -357,7 +357,25 @@ export default {
         // Handle Incoming Lead Submissions (from Meta Webhook, Zapier, Make, Pabbly, or Custom POST)
         if (request.method === "POST") {
           try {
-            const body = await request.json().catch(() => ({}));
+            const rawBodyText = await request.text().catch(() => "");
+            let body: any = {};
+            if (rawBodyText) {
+              try {
+                body = JSON.parse(rawBodyText);
+              } catch (parseErr) {
+                try {
+                  const params = new URLSearchParams(rawBodyText);
+                  const obj: Record<string, any> = {};
+                  let count = 0;
+                  for (const [k, v] of params.entries()) {
+                    obj[k] = v;
+                    count++;
+                  }
+                  if (count > 0) body = obj;
+                } catch {}
+              }
+            }
+
             const { saveLead, saveCRMNotification, addActivityLog } = await import("./lib/db");
             const { broadcastLeadEvent, sanitizeLeadPhone, sendLeadNotificationEmail } = await import("./lib/lead-actions");
 
@@ -539,7 +557,22 @@ export default {
               }
             } else {
               // Case 2: Direct JSON / Zapier / Make.com / Pabbly / Webhook Forwarder Payload
-              const payload = body.payload || body;
+              let payload: any = Array.isArray(body) ? (body[0] || {}) : (body.payload || body.data || body);
+              if (typeof payload === "string") {
+                try {
+                  payload = JSON.parse(payload);
+                } catch {}
+              }
+              if (payload && typeof payload === "object") {
+                if (payload.body && typeof payload.body === "string" && payload.body.trim().startsWith("{")) {
+                  try {
+                    payload = { ...payload, ...JSON.parse(payload.body) };
+                  } catch {}
+                }
+                if (payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)) {
+                  payload = { ...payload, ...payload.data };
+                }
+              }
 
               // Comprehensive Name extraction
               let name = payload.name || payload.full_name || payload.client_name || payload.customer_name || "";
@@ -694,6 +727,49 @@ export default {
                     if (!metaLeadId && (k.includes("lead_id") || k.includes("leadgen_id"))) metaLeadId = strVal;
                   }
                 }
+              }
+
+              if (!campaignName && (payload.campaign_id || payload.campaignId)) {
+                campaignName = `Campaign #${payload.campaign_id || payload.campaignId}`;
+              }
+              if (!adsetName && (payload.adset_id || payload.adsetId)) {
+                adsetName = `AdSet #${payload.adset_id || payload.adsetId}`;
+              }
+              if (!adName && (payload.ad_id || payload.adId)) {
+                adName = `Ad #${payload.ad_id || payload.adId}`;
+              }
+              if (!formName && (payload.form_id || payload.formId)) {
+                formName = `Form #${payload.form_id || payload.formId}`;
+              }
+
+              // Fallback regex extraction from rawBodyText if fields are still empty
+              if (!campaignName && rawBodyText) {
+                const m = /(?:campaign_name|campaignName|campaign)["']?\s*[:=]\s*["']?([^"',}\]\n\r&]+)/i.exec(rawBodyText);
+                if (m && m[1]) campaignName = decodeURIComponent(m[1].trim());
+              }
+              if (!formName && rawBodyText) {
+                const m = /(?:form_name|formName|form)["']?\s*[:=]\s*["']?([^"',}\]\n\r&]+)/i.exec(rawBodyText);
+                if (m && m[1]) formName = decodeURIComponent(m[1].trim());
+              }
+              if (!adsetName && rawBodyText) {
+                const m = /(?:adset_name|adsetName|adset|ad_set_name)["']?\s*[:=]\s*["']?([^"',}\]\n\r&]+)/i.exec(rawBodyText);
+                if (m && m[1]) adsetName = decodeURIComponent(m[1].trim());
+              }
+              if (!adName && rawBodyText) {
+                const m = /(?:ad_name|adName|ad)["']?\s*[:=]\s*["']?([^"',}\]\n\r&]+)/i.exec(rawBodyText);
+                if (m && m[1]) adName = decodeURIComponent(m[1].trim());
+              }
+              if (!metaLeadId && rawBodyText) {
+                const m = /(?:meta_lead_id|metaLeadId|lead_id|leadgen_id|leadId)["']?\s*[:=]\s*["']?([^"',}\]\n\r&]+)/i.exec(rawBodyText);
+                if (m && m[1]) metaLeadId = decodeURIComponent(m[1].trim());
+              }
+              if (!rawPhone && rawBodyText) {
+                const m = /(?:phone_number|phoneNumber|phone|mobile|contact)["']?\s*[:=]\s*["']?([^"',}\]\n\r&]+)/i.exec(rawBodyText);
+                if (m && m[1]) rawPhone = decodeURIComponent(m[1].trim());
+              }
+              if ((!name || name === "Meta Prospect") && rawBodyText) {
+                const m = /(?:full_name|fullName|name|first_name)["']?\s*[:=]\s*["']?([^"',}\]\n\r&]+)/i.exec(rawBodyText);
+                if (m && m[1] && m[1] !== "Meta Prospect") name = decodeURIComponent(m[1].trim());
               }
 
               const rawRequirement = payload.requirement || payload.notes || payload.message || payload.comments || "";
