@@ -1960,23 +1960,25 @@ async function registerFailedLogin(
   email: string,
   role: string | null | undefined,
   threshold: number
-): Promise<{ lockedNow: boolean; alertNow: boolean; lockMinutes: number; attemptsLeft: number; level: number }> {
+): Promise<{ lockedNow: boolean; alertNow: boolean; lockMinutes: number; attemptsLeft: number; level: number; currentFails: number }> {
   const key = (email || "").toLowerCase().trim();
-  if (!key) return { lockedNow: false, alertNow: false, lockMinutes: 0, attemptsLeft: threshold, level: 0 };
+  if (!key) return { lockedNow: false, alertNow: false, lockMinutes: 0, attemptsLeft: threshold, level: 0, currentFails: 1 };
   const states = await readLockStates();
   if (isSuperAdminLogin(key, role)) {
     // Super Admin is never locked, but every N failed attempts still sends an alert
     const sa: LockState = states[key] || { fails: 0, level: 0, lockedUntil: 0 };
     sa.fails += 1;
+    const currentFails = sa.fails;
     const alertNow = sa.fails >= threshold;
     if (alertNow) sa.fails = 0;
     sa.lockedUntil = 0;
     states[key] = sa;
     await writeLockStates(states);
-    return { lockedNow: false, alertNow, lockMinutes: 0, attemptsLeft: threshold, level: 0 };
+    return { lockedNow: false, alertNow, lockMinutes: 0, attemptsLeft: threshold, level: 0, currentFails };
   }
   const st: LockState = states[key] || { fails: 0, level: 0, lockedUntil: 0 };
   st.fails += 1;
+  const currentFails = st.fails;
   let lockedNow = false;
   let lockMinutes = 0;
   if (st.fails >= threshold) {
@@ -1988,7 +1990,7 @@ async function registerFailedLogin(
   }
   states[key] = st;
   await writeLockStates(states);
-  return { lockedNow, alertNow: lockedNow, lockMinutes, attemptsLeft: lockedNow ? 0 : Math.max(threshold - st.fails, 0), level: st.level };
+  return { lockedNow, alertNow: lockedNow, lockMinutes, attemptsLeft: lockedNow ? 0 : Math.max(threshold - st.fails, 0), level: st.level, currentFails };
 }
 
 /** Successful login: back to a clean slate */
@@ -2005,29 +2007,12 @@ async function alertLockout(opts: {
   email: string; ip: string; location?: string | undefined; userAgent?: string | undefined;
   threshold: number; lockMinutes: number; level: number;
 }) {
-  let mailOk = false;
-  let mailErr = "";
-  try {
-    const mail = await sendFailedLoginAlertEmail({
-      email: opts.email,
-      ipAddress: opts.ip,
-      location: opts.location,
-      userAgent: opts.userAgent,
-      attempts: opts.threshold,
-      threshold: opts.threshold,
-      lockoutMinutes: opts.lockMinutes,
-    });
-    mailOk = mail.success;
-    mailErr = mail.error || "";
-  } catch (e: any) {
-    mailErr = e?.message || "";
-  }
   try {
     await addActivityLogInDb({
       action: opts.lockMinutes > 0 ? "Account Locked (Failed Logins)" : "Super Admin Failed Logins Alert",
       details: `${opts.threshold} failed logins for ${opts.email || "unknown"} from ${opts.ip}; ${
         opts.lockMinutes > 0 ? `lockout #${opts.level}: ${formatLockDuration(opts.lockMinutes)}` : "Super Admin is never locked"
-      }; alert email ${mailOk ? "sent" : "FAILED" + (mailErr ? ": " + mailErr : "")}`,
+      }`,
       performed_by: "System / Security",
       user_role: "system",
     });
@@ -2059,8 +2044,9 @@ export const recordFailedLoginServerFn = createServerFn({ method: "POST" })
   .validator((data: { email: string; ip?: string | undefined; location?: string | undefined; userAgent?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
+      const cleanEmail = (data.email || "").toLowerCase().trim() || "unknown";
       await addLoginLogInDb({
-        email: (data.email || "").toLowerCase().trim() || "unknown",
+        email: cleanEmail,
         role: "unknown",
         ip_address: data.ip || "Unknown IP",
         location: data.location || "Failed Attempt",
@@ -2070,6 +2056,21 @@ export const recordFailedLoginServerFn = createServerFn({ method: "POST" })
 
       const threshold = await getLoginThreshold();
       const res = await registerFailedLogin(data.email, null, threshold);
+
+      // Dispatch security alert email immediately
+      sendFailedLoginAlertEmail({
+        email: cleanEmail,
+        role: "unknown",
+        reason: "Failed Login Recorded via Client",
+        ipAddress: data.ip || "Unknown IP",
+        location: data.location || "Failed Attempt",
+        userAgent: data.userAgent || "Web Browser",
+        attempts: res.currentFails,
+        threshold,
+        lockoutMinutes: res.lockMinutes,
+        isLocked: res.lockedNow,
+      }).catch((e) => console.error("Failed to send alert in recordFailedLoginServerFn:", e));
+
       if (res.alertNow) {
         await alertLockout({
           email: data.email, ip: data.ip || "Unknown", location: data.location, userAgent: data.userAgent,
@@ -2114,6 +2115,22 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
       const threshold = await getLoginThreshold();
       const activeLock = await getActiveLock(cleanEmail);
       if (activeLock.locked) {
+        // Send alert email immediately for login attempt on locked account
+        sendFailedLoginAlertEmail({
+          email: cleanEmail,
+          role: "locked_account",
+          reason: `Attempted login on locked account (${formatLockDuration(activeLock.remainingMinutes)} lock remaining)`,
+          ipAddress,
+          location: locationName,
+          userAgent,
+          attempts: threshold,
+          threshold,
+          lockoutMinutes: activeLock.remainingMinutes,
+          isLocked: true,
+          latitude: data.latitude,
+          longitude: data.longitude,
+        }).catch((e) => console.error("Failed to send locked login alert:", e));
+
         return {
           success: false,
           locked: true,
@@ -2140,6 +2157,28 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
 
         const superAdmin = isSuperAdminLogin(cleanEmail, user?.role);
         const fail = await registerFailedLogin(cleanEmail, user?.role, threshold);
+
+        const reason = !user
+          ? "Unregistered Account (No CRM user exists with this email)"
+          : "Incorrect Password";
+
+        // Dispatch security alert email on EVERY failed attempt to info@quickuppaistudio.us
+        sendFailedLoginAlertEmail({
+          email: cleanEmail,
+          role: user?.role || "unknown",
+          userName: user?.name,
+          reason,
+          ipAddress,
+          location: locationName,
+          userAgent,
+          attempts: fail.currentFails,
+          threshold,
+          lockoutMinutes: fail.lockMinutes,
+          isLocked: fail.lockedNow,
+          latitude: data.latitude,
+          longitude: data.longitude,
+        }).catch((e) => console.error("Failed to send failed login alert:", e));
+
         if (fail.alertNow) {
           await alertLockout({
             email: cleanEmail, ip: ipAddress, location: locationName, userAgent,
@@ -2171,6 +2210,23 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
         const isDeactivated = user.status !== "active";
 
         if (isDeactivated) {
+          // Send security alert email for deactivated account login attempt
+          sendFailedLoginAlertEmail({
+            email: cleanEmail,
+            role: user.role,
+            userName: user.name,
+            reason: "Account Deactivated (User attempted login with inactive/deactivated account)",
+            ipAddress,
+            location: locationName,
+            userAgent,
+            attempts: 1,
+            threshold,
+            lockoutMinutes: 0,
+            isLocked: false,
+            latitude: data.latitude,
+            longitude: data.longitude,
+          }).catch((e) => console.error("Failed to send deactivated login alert:", e));
+
           return {
             success: false,
             deactivated: true,
@@ -2224,6 +2280,24 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
           performed_by: cleanEmail,
           user_role: authRole,
         });
+
+        // Send security alert email for location-blocked login attempt
+        sendFailedLoginAlertEmail({
+          email: cleanEmail,
+          role: authRole,
+          userName: authName,
+          reason: `Location Blocked: Attempted login outside permitted office geofence (${dist !== null ? Math.round(dist) + "m from office" : "no GPS"})`,
+          ipAddress,
+          location: locationName,
+          userAgent,
+          attempts: 1,
+          threshold,
+          lockoutMinutes: 0,
+          isLocked: false,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          distanceMeters: dist,
+        }).catch((e) => console.error("Failed to send location-blocked alert:", e));
 
         return {
           success: false,

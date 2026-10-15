@@ -20,6 +20,8 @@ export interface LeadEmailPayload {
 }
 
 const DEFAULT_NOTIFICATION_EMAIL = "info@quickuppaistudio.us";
+const DEFAULT_LEAD_NOTIFICATION_EMAILS = "qsaistudio@gmail.com, info@quickuppaistudio.us";
+const DEFAULT_FAILED_LOGIN_ALERT_EMAILS = "info@quickuppaistudio.us, info@quickuppaistudio.in";
 const DEFAULT_PLATFORM_TITLE = "Quickupp AI Studio USA";
 
 /**
@@ -30,6 +32,22 @@ const DEFAULT_PLATFORM_TITLE = "Quickupp AI Studio USA";
 export async function resolveNotificationEmail(): Promise<string> {
   // Fixed recipient: the alert email can no longer be changed from CRM Settings.
   return DEFAULT_NOTIFICATION_EMAIL;
+}
+
+/**
+ * Recipients for new incoming leads (from website forms, popups, and Meta Lead Ads).
+ * Delivers directly to qsaistudio@gmail.com as requested, with a copy to info@quickuppaistudio.us.
+ */
+export async function resolveLeadNotificationEmail(): Promise<string> {
+  return DEFAULT_LEAD_NOTIFICATION_EMAILS;
+}
+
+/**
+ * Recipients for CRM failed login security alerts.
+ * Sends immediately to info@quickuppaistudio.us and info@quickuppaistudio.in.
+ */
+export async function resolveFailedLoginAlertEmail(): Promise<string> {
+  return DEFAULT_FAILED_LOGIN_ALERT_EMAILS;
 }
 
 /** Platform / CRM Title from Admin → CRM Settings, used in internal alert subjects. */
@@ -44,7 +62,7 @@ async function resolvePlatformTitle(): Promise<string> {
 const BACKUP_NOTIFICATION_EMAIL = "quickuppaistudio1@gmail.com";
 
 export async function sendLeadNotificationEmail(lead: LeadEmailPayload): Promise<{ success: boolean; error?: string | undefined }> {
-  const NOTIFICATION_EMAIL = await resolveNotificationEmail();
+  const NOTIFICATION_EMAIL = await resolveLeadNotificationEmail();
   const PLATFORM_TITLE = await resolvePlatformTitle();
   const timestamp = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
   const subject = `🇺🇸 [${PLATFORM_TITLE}] New Lead: ${lead.name} (${lead.videoType}) - ${lead.source}`;
@@ -957,77 +975,316 @@ Operated by-Quickupp Softech LLC
   return { success: false, error: "SMTP dispatch failed" };
 }
 
-/**
- * Security alert to the System Alert Notification Email (CRM Settings) when the
- * failed-login threshold is reached.
- */
-export async function sendFailedLoginAlertEmail(info: {
+export interface FailedLoginAlertPayload {
   email: string;
   ipAddress: string;
   location?: string | undefined;
   userAgent?: string | undefined;
-  attempts: number;
-  threshold: number;
-  lockoutMinutes: number;
-}): Promise<{ success: boolean; error?: string | undefined }> {
-  const to = await resolveNotificationEmail();
+  attempts?: number | undefined;
+  threshold?: number | undefined;
+  lockoutMinutes?: number | undefined;
+  role?: string | undefined;
+  userName?: string | undefined;
+  reason?: string | undefined;
+  isLocked?: boolean | undefined;
+  latitude?: number | null | undefined;
+  longitude?: number | null | undefined;
+  distanceMeters?: number | null | undefined;
+}
+
+function formatRoleBadge(role?: string): string {
+  if (!role) return "Unregistered Account";
+  const r = role.toLowerCase().trim();
+  if (r === "super_admin") return "Super Admin 👑";
+  if (r === "admin") return "Admin 🛡️";
+  if (r === "manager" || r === "lead_manager") return "Lead Manager 💼";
+  if (r === "caller" || r === "telecaller") return "Telecaller 📞";
+  if (r === "editor" || r === "video_editor") return "Video Editor 🎬";
+  if (r === "locked_account") return "Locked Account 🔒";
+  if (r === "unknown") return "Unregistered / Unknown User ❓";
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}
+
+function parseDeviceSummary(ua?: string): string {
+  if (!ua) return "Unknown Device & Browser";
+  let os = "Desktop / PC";
+  if (/iPad/i.test(ua)) os = "Apple iPad";
+  else if (/iPhone/i.test(ua)) os = "Apple iPhone";
+  else if (/Android.*Mobile|Mobile/i.test(ua)) os = "Android Mobile";
+  else if (/Android/i.test(ua)) os = "Android Tablet";
+  else if (/Macintosh|Mac OS/i.test(ua)) os = "macOS";
+  else if (/Windows/i.test(ua)) os = "Windows PC";
+  else if (/Linux/i.test(ua)) os = "Linux";
+
+  let browser = "Web Browser";
+  if (/Edg\//i.test(ua)) browser = "Microsoft Edge";
+  else if (/Chrome\//i.test(ua)) browser = "Google Chrome";
+  else if (/Safari\//i.test(ua) && !/Chrome/i.test(ua)) browser = "Apple Safari";
+  else if (/Firefox\//i.test(ua)) browser = "Mozilla Firefox";
+  else if (/Opera|OPR/i.test(ua)) browser = "Opera";
+
+  return `${browser} &bull; ${os}`;
+}
+
+function formatLockMinutesText(minutes?: number): string {
+  if (!minutes || minutes <= 0) return "Account not locked";
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+  const h = Math.round((minutes / 60) * 10) / 10;
+  return `${h} hour${h === 1 ? "" : "s"}`;
+}
+
+/**
+ * Security alert sent to info@quickuppaistudio.us and info@quickuppaistudio.in
+ * on ANY failed CRM login attempt (Super Admin, Admin, team members, or unregistered users).
+ */
+export async function sendFailedLoginAlertEmail(
+  info: FailedLoginAlertPayload
+): Promise<{ success: boolean; error?: string | undefined }> {
+  const to = await resolveFailedLoginAlertEmail();
   const title = await resolvePlatformTitle();
-  const when = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
-  const subject = `🚨 [${title}] ${info.attempts} failed admin login attempts — ${info.email || "unknown user"}`;
-  const text = `Security alert from the ${title} admin panel.
+  const now = new Date();
 
-${info.attempts} consecutive failed login attempts reached the configured threshold of ${info.threshold}.
-${info.lockoutMinutes > 0 ? `Further logins for this account are locked for ${info.lockoutMinutes >= 60 ? `${Math.round((info.lockoutMinutes / 60) * 10) / 10} hours` : `${info.lockoutMinutes} minutes`}.` : "This is the Super Admin account, which is never locked. Please check that these attempts were you."}
+  const whenIST = now.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    dateStyle: "full",
+    timeStyle: "medium",
+  }) + " (IST - India)";
 
-Email tried: ${info.email || "N/A"}
-IP address: ${info.ipAddress || "Unknown"}
-Location: ${info.location || "Unknown"}
-Browser: ${info.userAgent || "Unknown"}
-Time (ET): ${when}
+  const whenET = now.toLocaleString("en-US", {
+    timeZone: "America/New_York",
+    dateStyle: "full",
+    timeStyle: "medium",
+  }) + " (ET - US Eastern)";
 
-If this wasn't you or your team, review Login / IP Tracking in the admin panel.`;
+  const attempts = info.attempts || 1;
+  const threshold = info.threshold || 3;
+  const isLocked = Boolean(info.isLocked || (info.lockoutMinutes && info.lockoutMinutes > 0));
+  const roleDisplay = formatRoleBadge(info.role);
+  const deviceDisplay = parseDeviceSummary(info.userAgent);
+  const failureReason = info.reason || "Incorrect Password";
+
+  const isSuperAdmin = (info.role || "").toLowerCase() === "super_admin" || (info.email || "").toLowerCase().trim() === "sa@aistudio.us";
+
+  const subject = isLocked
+    ? `🚨 [SECURITY ALERT] CRM Account Locked: ${info.email || "Unknown User"} (${roleDisplay})`
+    : `🚨 [SECURITY ALERT] Failed CRM Login Attempt: ${info.email || "Unknown User"} (${roleDisplay})`;
+
   const esc = (v: string) => v.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
-  const html = `<div style="font-family:Arial,sans-serif;font-size:14px;color:#0f172a">
-  <h2 style="color:#b91c1c;margin:0 0 8px">🚨 Failed login threshold reached</h2>
-  <p>${info.attempts} consecutive failed login attempts reached the threshold of <b>${info.threshold}</b>.
-  ${info.lockoutMinutes > 0 ? `Logins for this account are locked for <b>${info.lockoutMinutes >= 60 ? `${Math.round((info.lockoutMinutes / 60) * 10) / 10} hours` : `${info.lockoutMinutes} minutes`}</b>.` : "This is the <b>Super Admin</b> account, which is never locked. Please check that these attempts were you."}</p>
-  <table style="border-collapse:collapse">
-    <tr><td style="padding:4px 12px 4px 0;color:#64748b">Email tried</td><td><b>${esc(info.email || "N/A")}</b></td></tr>
-    <tr><td style="padding:4px 12px 4px 0;color:#64748b">IP address</td><td>${esc(info.ipAddress || "Unknown")}</td></tr>
-    <tr><td style="padding:4px 12px 4px 0;color:#64748b">Location</td><td>${esc(info.location || "Unknown")}</td></tr>
-    <tr><td style="padding:4px 12px 4px 0;color:#64748b">Browser</td><td>${esc(info.userAgent || "Unknown")}</td></tr>
-    <tr><td style="padding:4px 12px 4px 0;color:#64748b">Time (ET)</td><td>${when}</td></tr>
-  </table>
-  <p style="color:#64748b;font-size:12px">Sent by ${esc(title)}. Review Login / IP Tracking in the admin panel.</p>
-</div>`;
 
+  let statusBadgeHtml = "";
+  if (isLocked) {
+    statusBadgeHtml = `<span style="display:inline-block;padding:4px 10px;background:#fee2e2;color:#991b1b;font-weight:700;border-radius:6px;border:1px solid #fecaca;">⛔ LOCKED FOR ${formatLockMinutesText(info.lockoutMinutes)}</span>`;
+  } else if (isSuperAdmin) {
+    statusBadgeHtml = `<span style="display:inline-block;padding:4px 10px;background:#fef3c7;color:#92400e;font-weight:700;border-radius:6px;border:1px solid #fde68a;">🛡️ ACTIVE (Super Admin is immune to lockout)</span>`;
+  } else {
+    const remaining = Math.max(threshold - attempts, 0);
+    statusBadgeHtml = `<span style="display:inline-block;padding:4px 10px;background:#fef2f2;color:#b91c1c;font-weight:700;border-radius:6px;border:1px solid #fecaca;">⚠️ Attempt ${attempts} of ${threshold} (${remaining} attempt${remaining === 1 ? "" : "s"} left)</span>`;
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CRM Failed Login Security Alert</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 24px 12px; color: #0f172a;">
+  <div style="max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #cbd5e1; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+    
+    <!-- Top Alert Banner -->
+    <div style="background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%); padding: 22px 24px; color: #ffffff;">
+      <div style="font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; background: rgba(255,255,255,0.2); display: inline-block; padding: 3px 10px; border-radius: 4px; margin-bottom: 8px;">
+        🚨 Security Alert &bull; CRM Login Monitoring
+      </div>
+      <h1 style="margin: 0; font-size: 20px; font-weight: 800; line-height: 1.3;">
+        ${isLocked ? "Account Locked After Failed Logins" : "Failed CRM Login Attempt Detected"}
+      </h1>
+      <p style="margin: 6px 0 0; font-size: 13px; opacity: 0.9;">
+        ${esc(title)} Security System
+      </p>
+    </div>
+
+    <!-- Main Content -->
+    <div style="padding: 24px;">
+      
+      <!-- Callout Box -->
+      <div style="background: ${isLocked ? '#fef2f2' : '#fffbeb'}; border-left: 4px solid ${isLocked ? '#dc2626' : '#f59e0b'}; padding: 14px 16px; border-radius: 6px; margin-bottom: 20px;">
+        <p style="margin: 0; font-size: 14px; font-weight: 600; color: ${isLocked ? '#991b1b' : '#92400e'};">
+          ${isLocked 
+            ? `Account has been locked for ${formatLockMinutesText(info.lockoutMinutes)} after reaching ${threshold} consecutive failed login attempts.` 
+            : isSuperAdmin
+            ? `A failed login attempt was made on the Super Admin account (${esc(info.email || 'N/A')}). Please confirm this was you.`
+            : `An unauthorized or failed login attempt was made on the CRM portal (Attempt ${attempts} of ${threshold}).`}
+        </p>
+      </div>
+
+      <!-- Details Table -->
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <tbody>
+          <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 10px 14px; color: #475569; font-weight: 700; width: 35%;">Attempted Email</td>
+            <td style="padding: 10px 14px; color: #0f172a; font-weight: 800; font-family: monospace; font-size: 14px;">
+              ${esc(info.email || "N/A")}
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">Account Role</td>
+            <td style="padding: 10px 14px; color: #0f172a; font-weight: 700;">
+              ${esc(roleDisplay)}
+            </td>
+          </tr>
+          ${info.userName ? `
+          <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">Account Holder Name</td>
+            <td style="padding: 10px 14px; color: #0f172a; font-weight: 600;">
+              ${esc(info.userName)}
+            </td>
+          </tr>` : ""}
+          <tr style="background-color: #fff1f2; border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 10px 14px; color: #9f1239; font-weight: 700;">Failure Reason</td>
+            <td style="padding: 10px 14px; color: #b91c1c; font-weight: 800;">
+              ${esc(failureReason)}
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">Account Security Status</td>
+            <td style="padding: 10px 14px;">
+              ${statusBadgeHtml}
+            </td>
+          </tr>
+          <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">IP Address</td>
+            <td style="padding: 10px 14px; color: #0f172a; font-family: monospace; font-weight: 700;">
+              ${esc(info.ipAddress || "Unknown IP")}
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">Reported Location</td>
+            <td style="padding: 10px 14px; color: #0f172a; font-weight: 600;">
+              ${esc(info.location || "Unknown Location")}
+              ${info.latitude && info.longitude ? `
+                <div style="margin-top: 4px; font-size: 11px; font-weight: normal;">
+                  GPS: ${info.latitude.toFixed(4)}, ${info.longitude.toFixed(4)} 
+                  <a href="https://www.google.com/maps?q=${info.latitude},${info.longitude}" target="_blank" style="color: #2563eb; text-decoration: underline; margin-left: 6px;">
+                    View on Google Maps &rarr;
+                  </a>
+                </div>
+              ` : ""}
+            </td>
+          </tr>
+          <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">Browser & Device</td>
+            <td style="padding: 10px 14px; color: #0f172a; font-weight: 600;">
+              ${deviceDisplay}
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">Time (India - IST)</td>
+            <td style="padding: 10px 14px; color: #0f172a; font-weight: 600;">
+              ${whenIST}
+            </td>
+          </tr>
+          <tr style="background-color: #f8fafc;">
+            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">Time (USA - ET)</td>
+            <td style="padding: 10px 14px; color: #0f172a; font-weight: 600;">
+              ${whenET}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Security Guidance -->
+      <div style="margin-top: 22px; padding: 14px 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <div style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px;">Recommended Administrator Actions:</div>
+        <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #64748b; line-height: 1.6;">
+          <li>Review real-time access under <strong>CRM &rarr; Login / IP Tracking</strong>.</li>
+          <li>If this was an authorized team member who forgot their credentials, advise them to contact the Super Admin for a password reset.</li>
+          <li>If you do not recognize this IP (${esc(info.ipAddress || "Unknown")}), consider blocking the IP or reviewing firewall rules.</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 24px; text-align: center; font-size: 11px; color: #94a3b8;">
+      &copy; ${now.getFullYear()} ${esc(title)} &bull; Automated Security Dispatch &bull; Recipients: ${esc(to)}
+    </div>
+
+  </div>
+</body>
+</html>`;
+
+  const text = `🚨 [SECURITY ALERT] Failed CRM Login Attempt
+Platform: ${title}
+------------------------------------------------------
+Attempted Email: ${info.email || "N/A"}
+Account Role: ${roleDisplay}
+Account Holder: ${info.userName || "N/A"}
+Failure Reason: ${failureReason}
+Attempt Count: Attempt ${attempts} of ${threshold}
+Account Status: ${isLocked ? `LOCKED for ${formatLockMinutesText(info.lockoutMinutes)}` : (isSuperAdmin ? "ACTIVE (Super Admin never locked)" : `ACTIVE (${Math.max(threshold - attempts, 0)} attempts remaining)`)}
+IP Address: ${info.ipAddress || "Unknown"}
+Reported Location: ${info.location || "Unknown"}
+Browser & Device: ${info.userAgent || "Unknown"}
+Time (IST - India): ${whenIST}
+Time (ET - US Eastern): ${whenET}
+------------------------------------------------------
+Alert sent to: ${to}
+Review Login / IP Tracking in the admin panel if this attempt was unexpected.`;
+
+  // 1. Primary Hostinger SMTP Delivery
   const smtpHost = process.env["SMTP_HOST"] || "smtp.hostinger.com";
   const smtpPort = Number(process.env["SMTP_PORT"] || 465);
   const smtpSecure = process.env["SMTP_SECURE"] === "false" ? false : true;
   const smtpUser = process.env["SMTP_USER"] || process.env["EMAIL_USER"] || "info@quickuppaistudio.us";
   const smtpPass = process.env["SMTP_PASS"] || process.env["EMAIL_PASS"] || "Quickuppaistudio@8080";
   const fromAddress = process.env["EMAIL_FROM"] || smtpUser;
-  if (!smtpUser || !smtpPass) return { success: false, error: "SMTP credentials not configured" };
 
-  try {
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpSecure,
-      auth: { user: smtpUser, pass: smtpPass.replace(/\s+/g, "") },
-    });
-    await transporter.sendMail({
-      from: `"${title.replace(/"/g, "")} Security" <${fromAddress}>`,
-      to,
-      subject,
-      text,
-      html,
-    });
-    return { success: true };
-  } catch (error: any) {
-    console.error("Failed-login alert email error:", error);
-    return { success: false, error: error.message };
+  if (smtpUser && smtpPass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpSecure,
+        auth: { user: smtpUser, pass: smtpPass.replace(/\s+/g, "") },
+      });
+      await transporter.sendMail({
+        from: `"${title.replace(/"/g, "")} Security" <${fromAddress}>`,
+        to,
+        subject,
+        text,
+        html,
+      });
+      return { success: true };
+    } catch (error: any) {
+      console.error("Hostinger SMTP failed-login alert error:", error?.message || error);
+    }
   }
+
+  // 2. Backup Gmail SMTP Fallback Delivery
+  const backupUser = process.env["GMAIL_USER"] || "quickuppaistudio1@gmail.com";
+  const backupPass = process.env["GMAIL_APP_PASSWORD"] || "ggtodbgiucfdypcj";
+  if (backupUser && backupPass && backupUser !== smtpUser) {
+    try {
+      const backupTransporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: { user: backupUser, pass: backupPass.replace(/\s+/g, "") },
+      });
+      await backupTransporter.sendMail({
+        from: `"${title.replace(/"/g, "")} Security" <${backupUser}>`,
+        to,
+        subject,
+        text,
+        html,
+      });
+      return { success: true };
+    } catch (backupErr: any) {
+      console.error("Gmail fallback failed-login alert error:", backupErr?.message || backupErr);
+    }
+  }
+
+  return { success: false, error: "SMTP delivery failed for failed-login alert" };
 }
 
 /**
