@@ -55,6 +55,7 @@ function CrmLoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingLocation, setIsCheckingLocation] = useState(false);
   const [locationErrorType, setLocationErrorType] = useState<"none" | "denied" | "out_of_bounds" | "poor_accuracy">("none");
+  const [isLocked, setIsLocked] = useState(false);
 
   // Deactivated Account State & Activation Request
   const [isDeactivated, setIsDeactivated] = useState(false);
@@ -170,13 +171,26 @@ function CrmLoginPage() {
         window.location.replace("/crm");
       } else if (res.deactivated) {
         setIsDeactivated(true);
+        setIsLocked(false);
         setDeactivatedEmail(res.email || cleanEmail);
         setDeactivatedName(res.name || cleanEmail);
         setAuthError(res.error || "This account is deactivated. Please contact the Super Admin for activation.");
+      } else if (res.locked) {
+        setIsLocked(true);
+        setIsDeactivated(false);
+        setLocationErrorType("none");
+        setAuthError(
+          res.error ||
+            "This account is locked after too many failed login attempts. You have to wait for this lockout period to login again."
+        );
       } else if (res.locationBlocked) {
+        setIsLocked(false);
+        setIsDeactivated(false);
         setLocationErrorType("out_of_bounds");
         setAuthError(res.error || "CRM access restricted to permitted office geofence.");
       } else {
+        setIsLocked(false);
+        setIsDeactivated(false);
         setAuthError(res.error || "Invalid email or password. Please verify your credentials.");
       }
     } catch (err: any) {
@@ -235,8 +249,10 @@ function CrmLoginPage() {
         <form onSubmit={handleLoginSubmit} className="mt-6 space-y-4">
           {authError ? (
             <div
-              className={`rounded-xl border p-3.5 text-xs ${
-                locationErrorType !== "none"
+              className={`rounded-xl border p-4 text-xs transition-all ${
+                isLocked
+                  ? "border-red-500 bg-red-50 text-red-950 ring-2 ring-red-500/30 shadow-md"
+                  : locationErrorType !== "none"
                   ? "border-amber-300 bg-amber-50 text-amber-900"
                   : isDeactivated
                   ? "border-red-300 bg-red-50 text-red-800"
@@ -244,7 +260,9 @@ function CrmLoginPage() {
               }`}
             >
               <div className="flex items-start gap-2.5">
-                {locationErrorType !== "none" ? (
+                {isLocked ? (
+                  <Lock className="h-5 w-5 text-red-600 shrink-0 mt-0.5 animate-pulse" />
+                ) : locationErrorType !== "none" ? (
                   <MapPin className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                 ) : isDeactivated ? (
                   <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
@@ -252,14 +270,16 @@ function CrmLoginPage() {
                   <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
                 )}
                 <div className="flex-1">
-                  <p className="font-bold">
-                    {locationErrorType !== "none"
+                  <p className={`font-bold ${isLocked ? "text-red-700 font-extrabold text-sm" : ""}`}>
+                    {isLocked
+                      ? "Account Locked (Security Alert Triggered)"
+                      : locationErrorType !== "none"
                       ? "Location Restriction Alert"
                       : isDeactivated
                       ? "Account Deactivated"
                       : "Authentication Notice"}
                   </p>
-                  <p className="mt-0.5 leading-relaxed">{authError}</p>
+                  <p className={`mt-1 leading-relaxed ${isLocked ? "text-red-600 font-bold text-xs" : ""}`}>{authError}</p>
 
                   {/* Location guidance */}
                   {locationErrorType === "denied" && (

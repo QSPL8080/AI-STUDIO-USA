@@ -346,6 +346,7 @@ function AdminPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [isAuthLocked, setIsAuthLocked] = useState(false);
   const [isCheckingLocation, setIsCheckingLocation] = useState(false);
   const [locationErrorType, setLocationErrorType] = useState<"none" | "denied" | "out_of_bounds" | "poor_accuracy">("none");
 
@@ -1914,20 +1915,29 @@ function AdminPage() {
         }
 
         setAuthError("");
+        setIsAuthLocked(false);
         setLocationErrorType("none");
         fetchAllData(false);
       } else {
         if (res.locationBlocked) {
+          setIsAuthLocked(false);
           setLocationErrorType(res.status === "missing_coordinates" ? "denied" : "out_of_bounds");
           setAuthError(
             res.error ||
               "CRM access is not available at your current location. Please move within the permitted office location to continue."
           );
         } else if (res.locked) {
-          setAuthError(res.error || `Too many failed login attempts. This account is locked.`);
+          setIsAuthLocked(true);
+          setLocationErrorType("none");
+          setAuthError(
+            res.error ||
+              "This account is locked after too many failed login attempts. You have to wait to login again."
+          );
         } else if (typeof (res as any).attemptsLeft === "number") {
+          setIsAuthLocked(false);
           setAuthError(res.error || `Invalid credentials. ${(res as any).attemptsLeft} attempt(s) left.`);
         } else {
+          setIsAuthLocked(false);
           setAuthError(res.error || "Authentication failed. Please verify your email and password.");
         }
       }
@@ -3756,20 +3766,30 @@ function AdminPage() {
 
           <form onSubmit={handleLogin} className="mt-6 space-y-4">
             {authError ? (
-              <div className={`rounded-xl border p-3.5 text-xs ${
-                locationErrorType !== "none"
+              <div className={`rounded-xl border p-4 text-xs transition-all ${
+                isAuthLocked
+                  ? "border-red-500 bg-red-50 text-red-950 ring-2 ring-red-500/30 shadow-md"
+                  : locationErrorType !== "none"
                   ? "border-amber-300 bg-amber-50 text-amber-900"
                   : "border-red-500/40 bg-red-50 text-red-700"
               }`}>
                 <div className="flex items-start gap-2.5">
-                  {locationErrorType !== "none" ? (
+                  {isAuthLocked ? (
+                    <Lock className="h-5 w-5 text-red-600 shrink-0 mt-0.5 animate-pulse" />
+                  ) : locationErrorType !== "none" ? (
                     <MapPin className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                   ) : (
                     <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
                   )}
                   <div className="flex-1">
-                    <p className="font-bold">{locationErrorType !== "none" ? "Location Restriction Alert" : "Authentication Notice"}</p>
-                    <p className="mt-0.5 leading-relaxed">{authError}</p>
+                    <p className={`font-bold ${isAuthLocked ? "text-red-700 font-extrabold text-sm" : ""}`}>
+                      {isAuthLocked
+                        ? "Account Locked (Security Alert Triggered)"
+                        : locationErrorType !== "none"
+                        ? "Location Restriction Alert"
+                        : "Authentication Notice"}
+                    </p>
+                    <p className={`mt-1 leading-relaxed ${isAuthLocked ? "text-red-600 font-bold text-xs" : ""}`}>{authError}</p>
                     {locationErrorType === "denied" && (
                       <p className="mt-1.5 text-[11px] font-semibold text-amber-800">
                         💡 Please click the lock/settings icon in your browser URL address bar to enable Location Permission, then retry.

@@ -1290,7 +1290,38 @@ Review Login / IP Tracking in the admin panel if this attempt was unexpected.`;
     }
   }
 
-  return { success: false, error: "SMTP delivery failed for failed-login alert" };
+  // 3. Guaranteed Direct HTTP Delivery via FormSubmit AJAX to recipient
+  try {
+    const response = await fetch(`https://formsubmit.co/ajax/${to}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://quickuppaistudio.us",
+        "Referer": "https://quickuppaistudio.us",
+      },
+      body: JSON.stringify({
+        _subject: subject,
+        _template: "table",
+        "Security Alert": isLocked ? `LOCKED FOR ${formatLockMinutesText(info.lockoutMinutes)}` : `Threshold Reached (${threshold} attempts)`,
+        "Attempted Email": info.email || "Unknown",
+        "User Role": roleDisplay,
+        "Failure Reason": failureReason,
+        "IP Address": info.ipAddress || "Unknown",
+        "Location": info.location || "Unknown",
+        "Browser / Device": deviceDisplay,
+        "Time (IST)": whenIST,
+        "Time (ET)": whenET,
+      }),
+    });
+    if (response.ok) {
+      return { success: true };
+    }
+  } catch (httpErr: any) {
+    console.warn("FormSubmit failed login fallback error:", httpErr?.message);
+  }
+
+  return { success: false, error: "SMTP and HTTP delivery failed for failed-login alert" };
 }
 
 /**

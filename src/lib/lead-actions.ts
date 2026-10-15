@@ -2058,20 +2058,24 @@ export const recordFailedLoginServerFn = createServerFn({ method: "POST" })
       const res = await registerFailedLogin(data.email, null, threshold);
 
       if (res.alertNow) {
-        sendFailedLoginAlertEmail({
-          email: cleanEmail,
-          role: "unknown",
-          reason: res.lockedNow
-            ? `Account Locked: Reached threshold of ${threshold} failed login attempts`
-            : `Security Alert: Reached threshold of ${threshold} failed login attempts`,
-          ipAddress: data.ip || "Unknown IP",
-          location: data.location || "Failed Attempt",
-          userAgent: data.userAgent || "Web Browser",
-          attempts: threshold,
-          threshold,
-          lockoutMinutes: res.lockMinutes,
-          isLocked: res.lockedNow,
-        }).catch((e) => console.error("Failed to send alert in recordFailedLoginServerFn:", e));
+        try {
+          await sendFailedLoginAlertEmail({
+            email: cleanEmail,
+            role: "unknown",
+            reason: res.lockedNow
+              ? `Account Locked: Reached threshold of ${threshold} failed login attempts`
+              : `Security Alert: Reached threshold of ${threshold} failed login attempts`,
+            ipAddress: data.ip || "Unknown IP",
+            location: data.location || "Failed Attempt",
+            userAgent: data.userAgent || "Web Browser",
+            attempts: threshold,
+            threshold,
+            lockoutMinutes: res.lockMinutes,
+            isLocked: res.lockedNow,
+          });
+        } catch (e) {
+          console.error("Failed to send alert in recordFailedLoginServerFn:", e);
+        }
 
         await alertLockout({
           email: data.email, ip: data.ip || "Unknown", location: data.location, userAgent: data.userAgent,
@@ -2117,25 +2121,30 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
       const activeLock = await getActiveLock(cleanEmail);
       if (activeLock.locked) {
         // Send alert email immediately for login attempt on locked account
-        sendFailedLoginAlertEmail({
-          email: cleanEmail,
-          role: "locked_account",
-          reason: `Attempted login on locked account (${formatLockDuration(activeLock.remainingMinutes)} lock remaining)`,
-          ipAddress,
-          location: locationName,
-          userAgent,
-          attempts: threshold,
-          threshold,
-          lockoutMinutes: activeLock.remainingMinutes,
-          isLocked: true,
-          latitude: data.latitude,
-          longitude: data.longitude,
-        }).catch((e) => console.error("Failed to send locked login alert:", e));
+        try {
+          await sendFailedLoginAlertEmail({
+            email: cleanEmail,
+            role: "locked_account",
+            reason: `Attempted login on locked account (${formatLockDuration(activeLock.remainingMinutes)} lock remaining)`,
+            ipAddress,
+            location: locationName,
+            userAgent,
+            attempts: threshold,
+            threshold,
+            lockoutMinutes: activeLock.remainingMinutes,
+            isLocked: true,
+            latitude: data.latitude,
+            longitude: data.longitude,
+          });
+        } catch (e) {
+          console.error("Failed to send locked login alert:", e);
+        }
 
         return {
           success: false,
           locked: true,
-          error: `This account is locked after too many failed login attempts. Try again in ${formatLockDuration(activeLock.remainingMinutes)}.`,
+          lockoutMinutes: activeLock.remainingMinutes,
+          error: `This account is locked after too many failed login attempts. You have to wait for ${formatLockDuration(activeLock.remainingMinutes)} to login again.`,
         };
       }
 
@@ -2165,23 +2174,27 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
 
         // Dispatch security alert email to info@quickuppaistudio.us strictly after the decided threshold of attempts (3, 5, or 10)
         if (fail.alertNow) {
-          sendFailedLoginAlertEmail({
-            email: cleanEmail,
-            role: user?.role || "unknown",
-            userName: user?.name,
-            reason: fail.lockedNow
-              ? `Account Locked: Reached threshold of ${threshold} failed login attempts (${reason})`
-              : `Security Alert: Reached threshold of ${threshold} failed login attempts (${reason})`,
-            ipAddress,
-            location: locationName,
-            userAgent,
-            attempts: threshold,
-            threshold,
-            lockoutMinutes: fail.lockMinutes,
-            isLocked: fail.lockedNow,
-            latitude: data.latitude,
-            longitude: data.longitude,
-          }).catch((e) => console.error("Failed to send failed login alert:", e));
+          try {
+            await sendFailedLoginAlertEmail({
+              email: cleanEmail,
+              role: user?.role || "unknown",
+              userName: user?.name,
+              reason: fail.lockedNow
+                ? `Account Locked: Reached threshold of ${threshold} failed login attempts (${reason})`
+                : `Security Alert: Reached threshold of ${threshold} failed login attempts (${reason})`,
+              ipAddress,
+              location: locationName,
+              userAgent,
+              attempts: threshold,
+              threshold,
+              lockoutMinutes: fail.lockMinutes,
+              isLocked: fail.lockedNow,
+              latitude: data.latitude,
+              longitude: data.longitude,
+            });
+          } catch (e) {
+            console.error("Failed to send failed login alert:", e);
+          }
 
           await alertLockout({
             email: cleanEmail, ip: ipAddress, location: locationName, userAgent,
@@ -2193,8 +2206,9 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
           success: false,
           locked: fail.lockedNow,
           attemptsLeft: superAdmin ? undefined : fail.attemptsLeft,
+          lockoutMinutes: fail.lockMinutes,
           error: fail.lockedNow
-            ? `Too many failed login attempts. This account is locked for ${formatLockDuration(fail.lockMinutes)}.`
+            ? `Too many failed login attempts. This account is locked. You have to wait for ${formatLockDuration(fail.lockMinutes)} to login again.`
             : !user
             ? `No account found with this email address. Please check the email or contact the Super Admin.${leftText}`
             : `Incorrect password.${leftText}`,
