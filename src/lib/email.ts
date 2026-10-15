@@ -327,7 +327,7 @@ WhatsApp: https://wa.me/${waPhone}
 Call: tel:${cleanPhone}
   `;
 
-  // 1. Primary Direct Google Delivery via qsaistudio@gmail.com
+  // Lead alerts use ONLY Gmail: qsaistudio@gmail.com (app password) -> qsaistudio@gmail.com
   const { user: gmailUser, pass: gmailPass } = getGmailCredentials();
   if (gmailUser && gmailPass) {
     try {
@@ -385,113 +385,13 @@ Call: tel:${cleanPhone}
 
         return { success: true };
       } catch (err587: any) {
-        console.error("Gmail 587 failed, falling back to Hostinger SMTP:", err587?.message);
+        console.error("Gmail lead email failed on 465 and 587:", err587?.message);
       }
     }
   }
 
-  // 2. Secondary Hostinger / SMTP Delivery
-  const smtpHost = process.env["SMTP_HOST"] || "smtp.hostinger.com";
-  const smtpPort = Number(process.env["SMTP_PORT"] || 465);
-  const smtpSecure = process.env["SMTP_SECURE"] === "false" ? false : true;
-  const smtpUser = process.env["SMTP_USER"] || process.env["EMAIL_USER"] || "info@quickuppaistudio.us";
-  const smtpPass = process.env["SMTP_PASS"] || process.env["EMAIL_PASS"] || "Quickuppaistudio@8080";
-  const fromAddress = process.env["EMAIL_FROM"] || smtpUser || "info@quickuppaistudio.us";
-
-  if (smtpUser && smtpPass && !smtpUser.includes("@gmail.com")) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpSecure,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass.replace(/\s+/g, ""),
-        },
-      });
-
-      await transporter.sendMail({
-        from: `"Quickupp AI Studio" <${fromAddress}>`,
-        to: NOTIFICATION_EMAIL,
-        replyTo: lead.email || undefined,
-        subject,
-        text: textContent,
-        html: htmlContent,
-      });
-
-      return { success: true };
-    } catch (smtpErr: any) {
-      console.error("Hostinger SMTP email dispatch failed:", smtpErr?.message);
-    }
-  }
-
-  // 3. Check for Resend API Key
-  const resendApiKey = process.env["RESEND_API_KEY"];
-  if (resendApiKey) {
-    try {
-      const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${resendApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: process.env["RESEND_FROM"] || "Quickupp Leads <leads@quickuppaistudio.us>",
-          to: [NOTIFICATION_EMAIL],
-          reply_to: lead.email || undefined,
-          subject,
-          html: htmlContent,
-          text: textContent,
-        }),
-      });
-
-      if (res.ok) {
-        return { success: true };
-      }
-      const errTxt = await res.text();
-      console.warn("Resend API failed:", errTxt);
-    } catch (resendErr: any) {
-      console.warn("Resend email dispatch error:", resendErr?.message);
-    }
-  }
-
-  // 4. Guaranteed Direct HTTP Delivery via FormSubmit AJAX to quickuppaistudio1@gmail.com
-  try {
-    const response = await fetch(`https://formsubmit.co/ajax/${NOTIFICATION_EMAIL}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://quickuppaistudio.us",
-        "Referer": "https://quickuppaistudio.us",
-      },
-      body: JSON.stringify({
-        _subject: subject,
-        _template: "table",
-        "Lead Source": lead.source,
-        "Customer Name": lead.name,
-        "Phone Number": lead.phone,
-        "Email Address": lead.email || "Not provided",
-        "Video Service": lead.videoType,
-        "Business / Company": lead.business,
-        "Industry": lead.industry || "N/A",
-        "Location / City": lead.location || "N/A",
-        "Requirement": lead.requirement || "N/A",
-        "Additional Details": lead.additional || "N/A",
-        "Submission Time": timestamp,
-      }),
-    });
-
-    if (response.ok) {
-      return { success: true };
-    }
-    const resData = await response.text();
-    console.warn("FormSubmit response:", resData);
-    return { success: true };
-  } catch (httpErr: any) {
-    console.error("HTTP email notification fallback error:", httpErr?.message);
-    return { success: false, error: httpErr?.message };
-  }
+  if (!gmailPass) console.error("Lead email not sent: GMAIL_APP_PASSWORD is not set.");
+  return { success: false, error: "Gmail lead email could not be sent" };
 }
 
 export interface PaymentReceiptEmailPayload {
@@ -1258,7 +1158,7 @@ Time (ET - US Eastern): ${whenET}
 Alert sent to: ${to}
 Review Login / IP Tracking in the admin panel if this attempt was unexpected.`;
 
-  // 1. Primary Direct Google SMTP Delivery via qsaistudio@gmail.com
+  // Failed-login alerts use ONLY Gmail: qsaistudio@gmail.com (app password) -> info@quickuppaistudio.us
   const { user: gmailUser, pass: gmailPass } = getGmailCredentials();
   if (gmailUser && gmailPass) {
     try {
@@ -1294,72 +1194,13 @@ Review Login / IP Tracking in the admin panel if this attempt was unexpected.`;
         });
         return { success: true };
       } catch (err587: any) {
-        console.error("Gmail 587 alert failed, trying Hostinger SMTP...", err587?.message);
+        console.error("Gmail failed-login alert failed on 465 and 587:", err587?.message);
       }
     }
   }
 
-  // 2. Secondary Hostinger SMTP Delivery
-  const smtpHost = process.env["SMTP_HOST"] || "smtp.hostinger.com";
-  const smtpPort = Number(process.env["SMTP_PORT"] || 465);
-  const smtpSecure = process.env["SMTP_SECURE"] === "false" ? false : true;
-  const smtpUser = process.env["SMTP_USER"] || process.env["EMAIL_USER"] || "info@quickuppaistudio.us";
-  const smtpPass = process.env["SMTP_PASS"] || process.env["EMAIL_PASS"] || "Quickuppaistudio@8080";
-  const fromAddress = process.env["EMAIL_FROM"] || smtpUser;
-
-  if (smtpUser && smtpPass && !smtpUser.includes("@gmail.com")) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpSecure,
-        auth: { user: smtpUser, pass: smtpPass.replace(/\s+/g, "") },
-      });
-      await transporter.sendMail({
-        from: `"${title.replace(/"/g, "")} Security" <${fromAddress}>`,
-        to,
-        subject,
-        text,
-        html,
-      });
-      return { success: true };
-    } catch (error: any) {
-      console.error("Hostinger SMTP failed-login alert error:", error?.message || error);
-    }
-  }
-
-  // 3. Guaranteed Direct HTTP Delivery via FormSubmit AJAX to recipient
-  try {
-    const response = await fetch(`https://formsubmit.co/ajax/${to}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": "https://quickuppaistudio.us",
-        "Referer": "https://quickuppaistudio.us",
-      },
-      body: JSON.stringify({
-        _subject: subject,
-        _template: "table",
-        "Security Alert": isLocked ? `LOCKED FOR ${formatLockMinutesText(info.lockoutMinutes)}` : `Threshold Reached (${threshold} attempts)`,
-        "Attempted Email": info.email || "Unknown",
-        "User Role": roleDisplay,
-        "Failure Reason": failureReason,
-        "IP Address": info.ipAddress || "Unknown",
-        "Location": info.location || "Unknown",
-        "Browser / Device": deviceDisplay,
-        "Time (IST)": whenIST,
-        "Time (ET)": whenET,
-      }),
-    });
-    if (response.ok) {
-      return { success: true };
-    }
-  } catch (httpErr: any) {
-    console.warn("FormSubmit failed login fallback error:", httpErr?.message);
-  }
-
-  return { success: false, error: "SMTP and HTTP delivery failed for failed-login alert" };
+  if (!gmailPass) console.error("Failed-login alert not sent: GMAIL_APP_PASSWORD is not set.");
+  return { success: false, error: "Gmail failed-login alert could not be sent" };
 }
 
 /**

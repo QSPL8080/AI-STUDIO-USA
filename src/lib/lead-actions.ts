@@ -65,11 +65,14 @@ import {
   type CalendlyMeeting,
   type CRMNotification,
 } from "./db";
-export {
+import {
   sendLeadNotificationEmail,
   sendFailedLoginAlertEmail,
   sendAccountActivationRequestEmail,
 } from "./email";
+// Re-exported for server.ts (Meta webhook) - `export ... from` alone does NOT make
+// these usable inside this file, which silently broke lead + failed-login emails.
+export { sendLeadNotificationEmail, sendFailedLoginAlertEmail, sendAccountActivationRequestEmail };
 import { evaluateLocationAccess, getOfficeGeoConfig, DEFAULT_OFFICE_CONFIG } from "./geo-config";
 import { createCrmSessionToken, verifySessionWithLocation, decodeAndVerifySessionToken } from "./crm-session";
 import { getLiveSessionLoginLogIds, isSessionPresent, PRESENCE_STALE_MS, type SessionPresence } from "./login-sessions";
@@ -476,6 +479,27 @@ export const addManualLeadServerFn = createServerFn({ method: "POST" })
         });
       } catch (notifErr) {
         console.warn("Failed to create manual/meta lead CRM notification:", notifErr);
+      }
+
+      // New-lead email -> qsaistudio@gmail.com (leads added in Lead Management / Meta tab)
+      try {
+        await sendLeadNotificationEmail({
+          source: saved.source || leadSource,
+          name: saved.name,
+          phone: saved.phone,
+          email: saved.email,
+          videoType: saved.video_type || (data as any).videoType || "AI Video",
+          videoQuantity: saved.video_quantity,
+          business: saved.business || "",
+          website: saved.website,
+          location: saved.location,
+          industry: saved.industry,
+          requirement: saved.requirement,
+          additional: saved.additional,
+          leadId: saved.id,
+        });
+      } catch (mailError) {
+        console.error("Failed to send manual/meta lead notification email:", mailError);
       }
 
       return { success: true, lead: saved };
@@ -2120,26 +2144,6 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
       const threshold = await getLoginThreshold();
       const activeLock = await getActiveLock(cleanEmail);
       if (activeLock.locked) {
-        // Send alert email immediately for login attempt on locked account
-        try {
-          await sendFailedLoginAlertEmail({
-            email: cleanEmail,
-            role: "locked_account",
-            reason: `Attempted login on locked account (${formatLockDuration(activeLock.remainingMinutes)} lock remaining)`,
-            ipAddress,
-            location: locationName,
-            userAgent,
-            attempts: threshold,
-            threshold,
-            lockoutMinutes: activeLock.remainingMinutes,
-            isLocked: true,
-            latitude: data.latitude,
-            longitude: data.longitude,
-          });
-        } catch (e) {
-          console.error("Failed to send locked login alert:", e);
-        }
-
         return {
           success: false,
           locked: true,
@@ -2227,23 +2231,6 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
         const isDeactivated = user.status !== "active";
 
         if (isDeactivated) {
-          // Send security alert email for deactivated account login attempt
-          sendFailedLoginAlertEmail({
-            email: cleanEmail,
-            role: user.role,
-            userName: user.name,
-            reason: "Account Deactivated (User attempted login with inactive/deactivated account)",
-            ipAddress,
-            location: locationName,
-            userAgent,
-            attempts: 1,
-            threshold,
-            lockoutMinutes: 0,
-            isLocked: false,
-            latitude: data.latitude,
-            longitude: data.longitude,
-          }).catch((e) => console.error("Failed to send deactivated login alert:", e));
-
           return {
             success: false,
             deactivated: true,
@@ -2297,24 +2284,6 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
           performed_by: cleanEmail,
           user_role: authRole,
         });
-
-        // Send security alert email for location-blocked login attempt
-        sendFailedLoginAlertEmail({
-          email: cleanEmail,
-          role: authRole,
-          userName: authName,
-          reason: `Location Blocked: Attempted login outside permitted office geofence (${dist !== null ? Math.round(dist) + "m from office" : "no GPS"})`,
-          ipAddress,
-          location: locationName,
-          userAgent,
-          attempts: 1,
-          threshold,
-          lockoutMinutes: 0,
-          isLocked: false,
-          latitude: data.latitude,
-          longitude: data.longitude,
-          distanceMeters: dist,
-        }).catch((e) => console.error("Failed to send location-blocked alert:", e));
 
         return {
           success: false,
