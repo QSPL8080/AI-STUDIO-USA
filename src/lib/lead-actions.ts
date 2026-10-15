@@ -2043,6 +2043,33 @@ async function alertLockout(opts: {
   } catch {}
 }
 
+/** Like the India site: sends the failed-login alert to info@quickuppaistudio.us in the
+ *  background (sign-in is not slowed down) and records delivered / exact error in Activity History. */
+function dispatchFailedLoginAlert(payload: Parameters<typeof sendFailedLoginAlertEmail>[0]): void {
+  void (async () => {
+    try {
+      const r = await sendFailedLoginAlertEmail(payload);
+      await addActivityLogInDb({
+        action: r.success ? "Login alert email sent" : "Login alert email FAILED",
+        details: r.success
+          ? `Alert for ${payload.email} delivered to info@quickuppaistudio.us via ${r.via || "SMTP"}.`
+          : `Could not email info@quickuppaistudio.us: ${(r.error || "unknown error").slice(0, 900)}`,
+        performed_by: "System / Security",
+        user_role: "system",
+      });
+    } catch (e: any) {
+      try {
+        await addActivityLogInDb({
+          action: "Login alert email FAILED",
+          details: String(e?.message || e),
+          performed_by: "System / Security",
+          user_role: "system",
+        });
+      } catch {}
+    }
+  })();
+}
+
 async function getLoginThreshold(): Promise<number> {
   try {
     const st = await getCrmSettingsFromDb();
@@ -2083,9 +2110,11 @@ export const recordFailedLoginServerFn = createServerFn({ method: "POST" })
 
       if (res.alertNow) {
         try {
-          await sendFailedLoginAlertEmail({
+          const crmUser = await getAdminUserByEmailWithPassword(cleanEmail).catch(() => null);
+          if (crmUser) dispatchFailedLoginAlert({
             email: cleanEmail,
-            role: "unknown",
+            role: crmUser.role || "unknown",
+            userName: crmUser.name,
             reason: res.lockedNow
               ? `Account Locked: Reached threshold of ${threshold} failed login attempts`
               : `Security Alert: Reached threshold of ${threshold} failed login attempts`,
@@ -2176,10 +2205,11 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
           ? "Unregistered Account (No CRM user exists with this email)"
           : "Incorrect Password";
 
-        // Dispatch security alert email to info@quickuppaistudio.us strictly after the decided threshold of attempts (3, 5, or 10)
+        // Security alert email -> info@quickuppaistudio.us ONLY when the Super Admin's threshold (3, 5 or 10) is reached
         if (fail.alertNow) {
           try {
-            await sendFailedLoginAlertEmail({
+            // Only real CRM users (same as the India site) - no email for unknown addresses
+            if (user) dispatchFailedLoginAlert({
               email: cleanEmail,
               role: user?.role || "unknown",
               userName: user?.name,

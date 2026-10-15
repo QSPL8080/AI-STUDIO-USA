@@ -965,7 +965,7 @@ function formatLockMinutesText(minutes?: number): string {
  */
 export async function sendFailedLoginAlertEmail(
   info: FailedLoginAlertPayload
-): Promise<{ success: boolean; error?: string | undefined }> {
+): Promise<{ success: boolean; via?: string | undefined; error?: string | undefined }> {
   const to = await resolveFailedLoginAlertEmail();
   const title = await resolvePlatformTitle();
   const now = new Date();
@@ -1158,7 +1158,9 @@ Time (ET - US Eastern): ${whenET}
 Alert sent to: ${to}
 Review Login / IP Tracking in the admin panel if this attempt was unexpected.`;
 
-  // Failed-login alerts use ONLY Gmail: qsaistudio@gmail.com (app password) -> info@quickuppaistudio.us
+  // Same as the India site: 1) Gmail qsaistudio@gmail.com, 2) this site's mailbox info@quickuppaistudio.us.
+  // The alert always goes TO info@quickuppaistudio.us only.
+  const errors: string[] = [];
   const { user: gmailUser, pass: gmailPass } = getGmailCredentials();
   if (gmailUser && gmailPass) {
     try {
@@ -1175,8 +1177,9 @@ Review Login / IP Tracking in the admin panel if this attempt was unexpected.`;
         text,
         html,
       });
-      return { success: true };
+      return { success: true, via: `smtp.gmail.com:465 (${gmailUser})` };
     } catch (gmailErr: any) {
+      errors.push(`Gmail 465: ${gmailErr?.message}`);
       console.warn("Gmail 465 alert failed, trying port 587...", gmailErr?.message);
       try {
         const fallbackTransporter = nodemailer.createTransport({
@@ -1192,15 +1195,41 @@ Review Login / IP Tracking in the admin panel if this attempt was unexpected.`;
           text,
           html,
         });
-        return { success: true };
+        return { success: true, via: `smtp.gmail.com:587 (${gmailUser})` };
       } catch (err587: any) {
+        errors.push(`Gmail 587: ${err587?.message}`);
         console.error("Gmail failed-login alert failed on 465 and 587:", err587?.message);
       }
     }
+  } else {
+    errors.push("GMAIL_APP_PASSWORD is not set");
   }
 
-  if (!gmailPass) console.error("Failed-login alert not sent: GMAIL_APP_PASSWORD is not set.");
-  return { success: false, error: "Gmail failed-login alert could not be sent" };
+  // Backup: this website's own mailbox info@quickuppaistudio.us (Hostinger SMTP)
+  const hHost = (process.env["SMTP_HOST"] || "smtp.hostinger.com").trim();
+  const hUser = (process.env["SMTP_USER"] || "info@quickuppaistudio.us").trim();
+  const hPass = (process.env["SMTP_PASS"] || "").trim();
+  if (hUser && hPass && !hUser.includes("@gmail.com")) {
+    for (const port of [465, 587]) {
+      try {
+        const t = nodemailer.createTransport({
+          host: hHost, port, secure: port === 465, requireTLS: port === 587,
+          auth: { user: hUser, pass: hPass },
+          connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 15000,
+        });
+        await t.sendMail({ from: `"${title.replace(/"/g, "")} Security" <${hUser}>`, to, subject, text, html });
+        return { success: true, via: `${hHost}:${port} (${hUser})` };
+      } catch (e: any) {
+        errors.push(`${hHost}:${port}: ${e?.code ? e.code + " " : ""}${e?.message}`);
+        if (e?.code === "EAUTH") break;
+      }
+    }
+  } else {
+    errors.push("SMTP_USER / SMTP_PASS (info@quickuppaistudio.us) not set");
+  }
+
+  console.error("Failed-login alert could not be sent:", errors.join(" | "));
+  return { success: false, error: errors.join(" | ") };
 }
 
 /**
