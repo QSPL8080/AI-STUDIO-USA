@@ -1072,19 +1072,20 @@ export async function sendFailedLoginAlertEmail(
   const isSuperAdmin = (info.role || "").toLowerCase() === "super_admin" || (info.email || "").toLowerCase().trim() === "sa@aistudio.us";
 
   const subject = isLocked
-    ? `🚨 [SECURITY ALERT] CRM Account Locked: ${info.email || "Unknown User"} (${roleDisplay})`
-    : `🚨 [SECURITY ALERT] Failed CRM Login Attempt: ${info.email || "Unknown User"} (${roleDisplay})`;
+    ? `🚨 [SECURITY ALERT] CRM Account Locked: ${info.email || "Unknown User"} (${threshold} Failed Attempts)`
+    : isSuperAdmin
+    ? `🚨 [SECURITY ALERT] Super Admin ${threshold} Failed Logins: ${info.email || "Unknown User"}`
+    : `🚨 [SECURITY ALERT] CRM Failed Login Threshold Reached (${threshold} Attempts): ${info.email || "Unknown User"}`;
 
   const esc = (v: string) => v.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
 
   let statusBadgeHtml = "";
   if (isLocked) {
-    statusBadgeHtml = `<span style="display:inline-block;padding:4px 10px;background:#fee2e2;color:#991b1b;font-weight:700;border-radius:6px;border:1px solid #fecaca;">⛔ LOCKED FOR ${formatLockMinutesText(info.lockoutMinutes)}</span>`;
+    statusBadgeHtml = `<span style="display:inline-block;padding:4px 10px;background:#fee2e2;color:#991b1b;font-weight:700;border-radius:6px;border:1px solid #fecaca;">⛔ LOCKED FOR ${formatLockMinutesText(info.lockoutMinutes)} (${threshold} Failed Attempts)</span>`;
   } else if (isSuperAdmin) {
-    statusBadgeHtml = `<span style="display:inline-block;padding:4px 10px;background:#fef3c7;color:#92400e;font-weight:700;border-radius:6px;border:1px solid #fde68a;">🛡️ ACTIVE (Super Admin is immune to lockout)</span>`;
+    statusBadgeHtml = `<span style="display:inline-block;padding:4px 10px;background:#fef3c7;color:#92400e;font-weight:700;border-radius:6px;border:1px solid #fde68a;">🛡️ ACTIVE (Super Admin reached ${threshold} attempts — immune to lockout)</span>`;
   } else {
-    const remaining = Math.max(threshold - attempts, 0);
-    statusBadgeHtml = `<span style="display:inline-block;padding:4px 10px;background:#fef2f2;color:#b91c1c;font-weight:700;border-radius:6px;border:1px solid #fecaca;">⚠️ Attempt ${attempts} of ${threshold} (${remaining} attempt${remaining === 1 ? "" : "s"} left)</span>`;
+    statusBadgeHtml = `<span style="display:inline-block;padding:4px 10px;background:#fef2f2;color:#b91c1c;font-weight:700;border-radius:6px;border:1px solid #fecaca;">⚠️ Reached Policy Threshold (${threshold} of ${threshold} attempts)</span>`;
   }
 
   const html = `<!DOCTYPE html>
@@ -1099,13 +1100,13 @@ export async function sendFailedLoginAlertEmail(
     <!-- Top Alert Banner -->
     <div style="background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%); padding: 22px 24px; color: #ffffff;">
       <div style="font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; background: rgba(255,255,255,0.2); display: inline-block; padding: 3px 10px; border-radius: 4px; margin-bottom: 8px;">
-        🚨 Security Alert &bull; CRM Login Monitoring
+        🚨 Security Alert &bull; CRM Policy Threshold: ${threshold} Attempts
       </div>
       <h1 style="margin: 0; font-size: 20px; font-weight: 800; line-height: 1.3;">
-        ${isLocked ? "Account Locked After Failed Logins" : "Failed CRM Login Attempt Detected"}
+        ${isLocked ? `Account Locked (${threshold} Failed Attempts)` : `Failed Login Threshold Reached (${threshold} Attempts)`}
       </h1>
       <p style="margin: 6px 0 0; font-size: 13px; opacity: 0.9;">
-        ${esc(title)} Security System
+        ${esc(title)} Security Monitoring
       </p>
     </div>
 
@@ -1116,10 +1117,10 @@ export async function sendFailedLoginAlertEmail(
       <div style="background: ${isLocked ? '#fef2f2' : '#fffbeb'}; border-left: 4px solid ${isLocked ? '#dc2626' : '#f59e0b'}; padding: 14px 16px; border-radius: 6px; margin-bottom: 20px;">
         <p style="margin: 0; font-size: 14px; font-weight: 600; color: ${isLocked ? '#991b1b' : '#92400e'};">
           ${isLocked 
-            ? `Account has been locked for ${formatLockMinutesText(info.lockoutMinutes)} after reaching ${threshold} consecutive failed login attempts.` 
+            ? `Account has reached the policy threshold of ${threshold} consecutive failed login attempts and is temporarily locked for ${formatLockMinutesText(info.lockoutMinutes)}.` 
             : isSuperAdmin
-            ? `A failed login attempt was made on the Super Admin account (${esc(info.email || 'N/A')}). Please confirm this was you.`
-            : `An unauthorized or failed login attempt was made on the CRM portal (Attempt ${attempts} of ${threshold}).`}
+            ? `The Super Admin account (${esc(info.email || 'N/A')}) has reached ${threshold} consecutive failed login attempts. Super Admin accounts are immune to lockout, but please verify this activity immediately.`
+            : `CRM login attempts for ${esc(info.email || 'N/A')} reached the policy threshold of ${threshold} consecutive failed attempts.`}
         </p>
       </div>
 

@@ -2057,21 +2057,22 @@ export const recordFailedLoginServerFn = createServerFn({ method: "POST" })
       const threshold = await getLoginThreshold();
       const res = await registerFailedLogin(data.email, null, threshold);
 
-      // Dispatch security alert email immediately
-      sendFailedLoginAlertEmail({
-        email: cleanEmail,
-        role: "unknown",
-        reason: "Failed Login Recorded via Client",
-        ipAddress: data.ip || "Unknown IP",
-        location: data.location || "Failed Attempt",
-        userAgent: data.userAgent || "Web Browser",
-        attempts: res.currentFails,
-        threshold,
-        lockoutMinutes: res.lockMinutes,
-        isLocked: res.lockedNow,
-      }).catch((e) => console.error("Failed to send alert in recordFailedLoginServerFn:", e));
-
       if (res.alertNow) {
+        sendFailedLoginAlertEmail({
+          email: cleanEmail,
+          role: "unknown",
+          reason: res.lockedNow
+            ? `Account Locked: Reached threshold of ${threshold} failed login attempts`
+            : `Security Alert: Reached threshold of ${threshold} failed login attempts`,
+          ipAddress: data.ip || "Unknown IP",
+          location: data.location || "Failed Attempt",
+          userAgent: data.userAgent || "Web Browser",
+          attempts: threshold,
+          threshold,
+          lockoutMinutes: res.lockMinutes,
+          isLocked: res.lockedNow,
+        }).catch((e) => console.error("Failed to send alert in recordFailedLoginServerFn:", e));
+
         await alertLockout({
           email: data.email, ip: data.ip || "Unknown", location: data.location, userAgent: data.userAgent,
           threshold, lockMinutes: res.lockMinutes, level: res.level,
@@ -2162,24 +2163,26 @@ export const authenticateAdminServerFn = createServerFn({ method: "POST" })
           ? "Unregistered Account (No CRM user exists with this email)"
           : "Incorrect Password";
 
-        // Dispatch security alert email on EVERY failed attempt to info@quickuppaistudio.us
-        sendFailedLoginAlertEmail({
-          email: cleanEmail,
-          role: user?.role || "unknown",
-          userName: user?.name,
-          reason,
-          ipAddress,
-          location: locationName,
-          userAgent,
-          attempts: fail.currentFails,
-          threshold,
-          lockoutMinutes: fail.lockMinutes,
-          isLocked: fail.lockedNow,
-          latitude: data.latitude,
-          longitude: data.longitude,
-        }).catch((e) => console.error("Failed to send failed login alert:", e));
-
+        // Dispatch security alert email to info@quickuppaistudio.us strictly after the decided threshold of attempts (3, 5, or 10)
         if (fail.alertNow) {
+          sendFailedLoginAlertEmail({
+            email: cleanEmail,
+            role: user?.role || "unknown",
+            userName: user?.name,
+            reason: fail.lockedNow
+              ? `Account Locked: Reached threshold of ${threshold} failed login attempts (${reason})`
+              : `Security Alert: Reached threshold of ${threshold} failed login attempts (${reason})`,
+            ipAddress,
+            location: locationName,
+            userAgent,
+            attempts: threshold,
+            threshold,
+            lockoutMinutes: fail.lockMinutes,
+            isLocked: fail.lockedNow,
+            latitude: data.latitude,
+            longitude: data.longitude,
+          }).catch((e) => console.error("Failed to send failed login alert:", e));
+
           await alertLockout({
             email: cleanEmail, ip: ipAddress, location: locationName, userAgent,
             threshold, lockMinutes: fail.lockMinutes, level: fail.level,
