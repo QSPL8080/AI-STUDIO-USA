@@ -36,15 +36,15 @@ export async function resolveNotificationEmail(): Promise<string> {
 
 /**
  * Recipient for new incoming leads (from website forms, popups, and Meta Lead Ads).
- * Delivers exclusively to qsaistudio@gmail.com.
+ * Delivers ONLY to qsaistudio@gmail.com (lead emails never go to any other inbox).
  */
 export async function resolveLeadNotificationEmail(): Promise<string> {
   return DEFAULT_LEAD_NOTIFICATION_EMAILS;
 }
 
 /**
- * Recipient for CRM failed login security alerts.
- * Sends immediately to info@quickuppaistudio.us.
+ * Recipient for CRM failed login security alerts (wrong password threshold,
+ * deactivated account, location blocked). Sends ONLY to info@quickuppaistudio.us.
  */
 export async function resolveFailedLoginAlertEmail(): Promise<string> {
   return DEFAULT_FAILED_LOGIN_ALERT_EMAILS;
@@ -62,8 +62,12 @@ async function resolvePlatformTitle(): Promise<string> {
 const DEFAULT_GMAIL_USER = "qsaistudio@gmail.com";
 
 export function getGmailCredentials(): { user: string; pass: string } {
-  const user = (process.env["GMAIL_USER"] || DEFAULT_GMAIL_USER).trim();
-  const rawPass = process.env["GMAIL_APP_PASSWORD"] || process.env["GMAIL_PASS"] || "";
+  const user = (process.env["GMAIL_USER"] || (process.env["SMTP_USER"]?.includes("@gmail.com") ? process.env["SMTP_USER"] : "") || DEFAULT_GMAIL_USER).trim();
+  const rawPass =
+    process.env["GMAIL_APP_PASSWORD"] ||
+    process.env["GMAIL_PASS"] ||
+    (process.env["SMTP_PASS"]?.includes(" ") ? process.env["SMTP_PASS"] : "") ||
+    "";
   const pass = rawPass.replace(/\s+/g, "");
   return { user, pass };
 }
@@ -323,23 +327,17 @@ WhatsApp: https://wa.me/${waPhone}
 Call: tel:${cleanPhone}
   `;
 
-  // 1. Direct Hostinger / SMTP Delivery (Primary Guaranteed Delivery)
-  const smtpHost = process.env["SMTP_HOST"] || "smtp.hostinger.com";
-  const smtpPort = Number(process.env["SMTP_PORT"] || 465);
-  const smtpSecure = process.env["SMTP_SECURE"] === "false" ? false : true;
-  const smtpUser = process.env["SMTP_USER"] || process.env["EMAIL_USER"] || "info@quickuppaistudio.us";
-  const smtpPass = process.env["SMTP_PASS"] || process.env["EMAIL_PASS"] || "Quickuppaistudio@8080";
-  const fromAddress = process.env["EMAIL_FROM"] || smtpUser || "info@quickuppaistudio.us";
-
-  if (smtpUser && smtpPass) {
+  // 1. Primary Direct Google Delivery via qsaistudio@gmail.com
+  const { user: gmailUser, pass: gmailPass } = getGmailCredentials();
+  if (gmailUser && gmailPass) {
     try {
       const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpSecure,
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
         auth: {
-          user: smtpUser,
-          pass: smtpPass.replace(/\s+/g, ""),
+          user: gmailUser,
+          pass: gmailPass,
         },
       });
 
@@ -353,7 +351,7 @@ Call: tel:${cleanPhone}
       ];
 
       await transporter.sendMail({
-        from: `"Quickupp AI Studio" <${fromAddress}>`,
+        from: `"Quickupp AI Studio Leads" <${gmailUser}>`,
         to: NOTIFICATION_EMAIL,
         replyTo: lead.email || undefined,
         subject,
@@ -363,45 +361,67 @@ Call: tel:${cleanPhone}
       });
 
       return { success: true };
-    } catch (smtpErr: any) {
-      console.error("Hostinger SMTP email dispatch failed:", smtpErr?.message);
+    } catch (gmailErr: any) {
+      console.warn("Primary Gmail 465 failed, trying port 587...", gmailErr?.message);
+      try {
+        const fallbackTransporter = nodemailer.createTransport({
+          host: "smtp.gmail.com",
+          port: 587,
+          secure: false,
+          auth: {
+            user: gmailUser,
+            pass: gmailPass,
+          },
+        });
+
+        await fallbackTransporter.sendMail({
+          from: `"Quickupp AI Studio Leads" <${gmailUser}>`,
+          to: NOTIFICATION_EMAIL,
+          replyTo: lead.email || undefined,
+          subject,
+          text: textContent,
+          html: htmlContent,
+        });
+
+        return { success: true };
+      } catch (err587: any) {
+        console.error("Gmail 587 failed, falling back to Hostinger SMTP:", err587?.message);
+      }
     }
   }
 
-  // 2. Backup Gmail SMTP Fallback
-  const { user: backupUser, pass: backupPass } = getGmailCredentials();
-  if (backupUser && backupPass) {
+  // 2. Secondary Hostinger / SMTP Delivery
+  const smtpHost = process.env["SMTP_HOST"] || "smtp.hostinger.com";
+  const smtpPort = Number(process.env["SMTP_PORT"] || 465);
+  const smtpSecure = process.env["SMTP_SECURE"] === "false" ? false : true;
+  const smtpUser = process.env["SMTP_USER"] || process.env["EMAIL_USER"] || "info@quickuppaistudio.us";
+  const smtpPass = process.env["SMTP_PASS"] || process.env["EMAIL_PASS"] || "Quickuppaistudio@8080";
+  const fromAddress = process.env["EMAIL_FROM"] || smtpUser || "info@quickuppaistudio.us";
+
+  if (smtpUser && smtpPass && !smtpUser.includes("@gmail.com")) {
     try {
-      const backupTransporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 465,
-        secure: true,
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpSecure,
         auth: {
-          user: backupUser,
-          pass: backupPass,
+          user: smtpUser,
+          pass: smtpPass.replace(/\s+/g, ""),
         },
       });
 
-      await backupTransporter.sendMail({
-        from: `"Quickupp AI Studio" <${backupUser}>`,
+      await transporter.sendMail({
+        from: `"Quickupp AI Studio" <${fromAddress}>`,
         to: NOTIFICATION_EMAIL,
         replyTo: lead.email || undefined,
         subject,
         text: textContent,
         html: htmlContent,
-        attachments: [
-          {
-            filename: "logo.png",
-            content: getCompanyLogoBuffer(),
-            cid: "quickupp-logo",
-            contentType: "image/png",
-          },
-        ],
       });
 
       return { success: true };
-    } catch (backupErr: any) {
-      console.error("Backup Gmail SMTP failed:", backupErr?.message);
+    } catch (smtpErr: any) {
+      console.error("Hostinger SMTP email dispatch failed:", smtpErr?.message);
     }
   }
 
@@ -1238,7 +1258,48 @@ Time (ET - US Eastern): ${whenET}
 Alert sent to: ${to}
 Review Login / IP Tracking in the admin panel if this attempt was unexpected.`;
 
-  // 1. Primary Hostinger SMTP Delivery
+  // 1. Primary Direct Google SMTP Delivery via qsaistudio@gmail.com
+  const { user: gmailUser, pass: gmailPass } = getGmailCredentials();
+  if (gmailUser && gmailPass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: { user: gmailUser, pass: gmailPass },
+      });
+      await transporter.sendMail({
+        from: `"${title.replace(/"/g, "")} Security" <${gmailUser}>`,
+        to,
+        subject,
+        text,
+        html,
+      });
+      return { success: true };
+    } catch (gmailErr: any) {
+      console.warn("Gmail 465 alert failed, trying port 587...", gmailErr?.message);
+      try {
+        const fallbackTransporter = nodemailer.createTransport({
+          host: "smtp.gmail.com",
+          port: 587,
+          secure: false,
+          auth: { user: gmailUser, pass: gmailPass },
+        });
+        await fallbackTransporter.sendMail({
+          from: `"${title.replace(/"/g, "")} Security" <${gmailUser}>`,
+          to,
+          subject,
+          text,
+          html,
+        });
+        return { success: true };
+      } catch (err587: any) {
+        console.error("Gmail 587 alert failed, trying Hostinger SMTP...", err587?.message);
+      }
+    }
+  }
+
+  // 2. Secondary Hostinger SMTP Delivery
   const smtpHost = process.env["SMTP_HOST"] || "smtp.hostinger.com";
   const smtpPort = Number(process.env["SMTP_PORT"] || 465);
   const smtpSecure = process.env["SMTP_SECURE"] === "false" ? false : true;
@@ -1246,7 +1307,7 @@ Review Login / IP Tracking in the admin panel if this attempt was unexpected.`;
   const smtpPass = process.env["SMTP_PASS"] || process.env["EMAIL_PASS"] || "Quickuppaistudio@8080";
   const fromAddress = process.env["EMAIL_FROM"] || smtpUser;
 
-  if (smtpUser && smtpPass) {
+  if (smtpUser && smtpPass && !smtpUser.includes("@gmail.com")) {
     try {
       const transporter = nodemailer.createTransport({
         host: smtpHost,
@@ -1264,29 +1325,6 @@ Review Login / IP Tracking in the admin panel if this attempt was unexpected.`;
       return { success: true };
     } catch (error: any) {
       console.error("Hostinger SMTP failed-login alert error:", error?.message || error);
-    }
-  }
-
-  // 2. Backup Gmail SMTP Fallback Delivery
-  const { user: backupUser, pass: backupPass } = getGmailCredentials();
-  if (backupUser && backupPass) {
-    try {
-      const backupTransporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 465,
-        secure: true,
-        auth: { user: backupUser, pass: backupPass },
-      });
-      await backupTransporter.sendMail({
-        from: `"${title.replace(/"/g, "")} Security" <${backupUser}>`,
-        to,
-        subject,
-        text,
-        html,
-      });
-      return { success: true };
-    } catch (backupErr: any) {
-      console.error("Gmail fallback failed-login alert error:", backupErr?.message || backupErr);
     }
   }
 
