@@ -20,8 +20,8 @@ export interface LeadEmailPayload {
 }
 
 const DEFAULT_NOTIFICATION_EMAIL = "info@quickuppaistudio.us";
-const DEFAULT_LEAD_NOTIFICATION_EMAILS = "qsaistudio@gmail.com, info@quickuppaistudio.us";
-const DEFAULT_FAILED_LOGIN_ALERT_EMAILS = "info@quickuppaistudio.us, info@quickuppaistudio.in";
+const DEFAULT_LEAD_NOTIFICATION_EMAILS = "qsaistudio@gmail.com";
+const DEFAULT_FAILED_LOGIN_ALERT_EMAILS = "info@quickuppaistudio.us";
 const DEFAULT_PLATFORM_TITLE = "Quickupp AI Studio USA";
 
 /**
@@ -35,16 +35,16 @@ export async function resolveNotificationEmail(): Promise<string> {
 }
 
 /**
- * Recipients for new incoming leads (from website forms, popups, and Meta Lead Ads).
- * Delivers directly to qsaistudio@gmail.com as requested, with a copy to info@quickuppaistudio.us.
+ * Recipient for new incoming leads (from website forms, popups, and Meta Lead Ads).
+ * Delivers exclusively to qsaistudio@gmail.com.
  */
 export async function resolveLeadNotificationEmail(): Promise<string> {
   return DEFAULT_LEAD_NOTIFICATION_EMAILS;
 }
 
 /**
- * Recipients for CRM failed login security alerts.
- * Sends immediately to info@quickuppaistudio.us and info@quickuppaistudio.in.
+ * Recipient for CRM failed login security alerts.
+ * Sends immediately to info@quickuppaistudio.us.
  */
 export async function resolveFailedLoginAlertEmail(): Promise<string> {
   return DEFAULT_FAILED_LOGIN_ALERT_EMAILS;
