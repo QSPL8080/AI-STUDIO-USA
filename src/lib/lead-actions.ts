@@ -4,6 +4,8 @@ import {
   saveLead as saveLeadToDb,
   getLeads as getLeadsFromDb,
   countTableRows,
+  countActivityLogs,
+  countLoginLogs,
   getOrders as getOrdersForCountsFromDb,
   getCrmSettings as getCrmSettingsFromDb,
   countRecentFailedLogins,
@@ -878,8 +880,8 @@ export const fetchRecordCountsServerFn = createServerFn({ method: "POST" })
         getOrdersForCountsFromDb(),
         countTableRows("calendly_meetings", { supabase: "deleted_at=is.null", sql: "deleted_at IS NULL" }),
         getAdminUsersFromDb(),
-        countTableRows("activity_logs"),
-        countTableRows("login_logs"),
+        Promise.resolve(countActivityLogs()),
+        Promise.resolve(countLoginLogs()),
       ]);
       const crmLeads = leads.filter(
         (l) => !isIndia(l.source, l.location) && !(l.source || "").toLowerCase().includes("calendly")
@@ -1729,6 +1731,8 @@ const DEFAULT_CRM_SETTINGS = {
   inactivity_timeout: "10",
   login_attempts: "3",
   broadcast_banner: "",
+  meta_page_access_token: "",
+  meta_verify_token: "quickupp_meta_leads_secure_token",
 };
 
 export const fetchCrmSettingsServerFn = createServerFn({ method: "GET" }).handler(async () => {
@@ -1749,6 +1753,8 @@ export const saveCrmSettingsServerFn = createServerFn({ method: "POST" })
     inactivityTimeout?: number | undefined;
     loginAttempts?: number | undefined;
     performedBy?: string | undefined;
+    metaPageAccessToken?: string | undefined;
+    metaVerifyToken?: string | undefined;
   }) => data)
   .handler(async ({ data }) => {
     try {
@@ -1769,7 +1775,8 @@ export const saveCrmSettingsServerFn = createServerFn({ method: "POST" })
 
       const savedAt = new Date().toISOString();
       const savedBy = data.performedBy || "Super Admin";
-      const ok = await saveCrmSettingsToDb({
+
+      const updates: Record<string, string> = {
         platform_title: title,
         notification_email: email,
         sync_interval: String(interval),
@@ -1777,7 +1784,16 @@ export const saveCrmSettingsServerFn = createServerFn({ method: "POST" })
         login_attempts: String(attempts),
         settings_updated_at: savedAt,
         settings_updated_by: savedBy,
-      });
+      };
+
+      if (data.metaPageAccessToken !== undefined) {
+        updates.meta_page_access_token = data.metaPageAccessToken.trim();
+      }
+      if (data.metaVerifyToken !== undefined) {
+        updates.meta_verify_token = data.metaVerifyToken.trim();
+      }
+
+      const ok = await saveCrmSettingsToDb(updates);
       if (!ok) return { success: false, error: "Could not save settings to the database" };
 
       try {
@@ -1789,16 +1805,13 @@ export const saveCrmSettingsServerFn = createServerFn({ method: "POST" })
         });
       } catch {}
 
+      const latest = await getCrmSettingsFromDb();
       return {
         success: true,
         settings: {
-          platform_title: title,
-          notification_email: email,
-          sync_interval: String(interval),
-          inactivity_timeout: String(inactivity),
-          login_attempts: String(attempts),
-          settings_updated_at: savedAt,
-          settings_updated_by: savedBy,
+          ...DEFAULT_CRM_SETTINGS,
+          ...latest,
+          ...updates,
         },
       };
     } catch (error: any) {
@@ -2431,3 +2444,204 @@ export const verifyLocationSessionServerFn = createServerFn({ method: "POST" })
       return { authorized: false, error: error.message || "Failed to verify location session" };
     }
   });
+
+// ── 37. Import Meta Leads CSV directly from Facebook Ads Manager / Google Sheets ──
+export const importMetaLeadsCsvServerFn = createServerFn({ method: "POST" })
+  .validator((data: { token?: string | undefined; rows: Record<string, string>[] }) => data)
+  .handler(async ({ data }) => {
+    const who = decodeAndVerifySessionToken(data.token || "");
+    if (!who.valid || !who.payload) {
+      return { success: false, error: "Unauthorized: Invalid or expired session." };
+    }
+
+    if (!Array.isArray(data.rows) || data.rows.length === 0) {
+      return { success: false, error: "No lead rows provided in CSV." };
+    }
+
+    const savedLeads: any[] = [];
+    const standardKeys = new Set([
+      "id", "lead_id", "leadgen_id", "created_time", "created_at", "submission_time", "date",
+      "ad_id", "ad_name", "adset_id", "adset_name", "campaign_id", "campaign_name", "form_id", "form_name",
+      "is_organic", "platform", "publisher_platform", "full_name", "name", "first_name", "last_name",
+      "phone_number", "phone", "mobile", "mobile_number", "contact", "email", "email_address",
+      "company_name", "business", "company", "business_name", "website", "company_website",
+      "industry", "video_type", "video_quantity", "location", "city", "state"
+    ]);
+
+    for (const rawRow of data.rows) {
+      if (!rawRow || typeof rawRow !== "object") continue;
+
+      // Normalize row keys to lowercase and trimmed
+      const row: Record<string, string> = {};
+      for (const [k, v] of Object.entries(rawRow)) {
+        if (k && v != null) {
+          row[k.trim().toLowerCase()] = String(v).trim();
+        }
+      }
+
+      // 1. Meta Lead ID
+      let rawLeadId = row["id"] || row["lead_id"] || row["leadgen_id"] || "";
+      rawLeadId = rawLeadId.replace(/^l:/i, "").trim();
+
+      // 2. Created Time
+      let rawCreatedTime = row["created_time"] || row["created_at"] || row["submission_time"] || row["date"] || "";
+      let submissionTimestamp: string | undefined = undefined;
+      if (rawCreatedTime) {
+        const strTime = String(rawCreatedTime).trim();
+        if (/^\d+$/.test(strTime) && strTime.length <= 11) {
+          const d = new Date(Number(strTime) * 1000);
+          if (!isNaN(d.getTime())) submissionTimestamp = d.toISOString();
+        } else {
+          const d = new Date(strTime);
+          if (!isNaN(d.getTime())) submissionTimestamp = d.toISOString();
+        }
+      }
+
+      // 3. Name
+      let name = row["full_name"] || row["name"] || "";
+      if (!name && (row["first_name"] || row["last_name"])) {
+        name = `${row["first_name"] || ""} ${row["last_name"] || ""}`.trim();
+      }
+      if (!name) name = "Meta Prospect";
+
+      // 4. Phone
+      let rawPhone = row["phone_number"] || row["phone"] || row["mobile"] || row["mobile_number"] || row["contact"] || "";
+      rawPhone = rawPhone.replace(/^p:/i, "").trim();
+      const phone = sanitizeLeadPhone(rawPhone, false);
+
+      // 5. Email
+      const email = row["email"] || row["email_address"] || undefined;
+
+      // 6. Company & Business
+      const business = row["company_name"] || row["business"] || row["business_name"] || row["company"] || "Meta Ad Prospect";
+      const website = row["website"] || row["company_website"] || undefined;
+
+      // 7. Industry / Type of business
+      let industry = row["_what_type_of_business_"] || row["type_of_business"] || row["what_type_of_business"] || row["industry"] || "";
+      if (industry) {
+        industry = industry
+          .replace(/_/g, " ")
+          .replace(/\s*\/\s*/g, " / ")
+          .replace(/\b\w/g, (c) => c.toUpperCase())
+          .trim();
+      }
+
+      // 8. Ad Attribution Hierarchy
+      const campaignName = row["campaign_name"] || (row["campaign_id"] ? `Campaign #${row["campaign_id"].replace(/^c:/i, "")}` : "USA | Cold Leads");
+      const adsetName = row["adset_name"] || (row["adset_id"] ? `AdSet #${row["adset_id"].replace(/^as:/i, "")}` : "Ad Set 2");
+      const adName = row["ad_name"] || (row["ad_id"] ? `Ad #${row["ad_id"].replace(/^ag:/i, "")}` : "AI Video Commercial");
+      const formName = row["form_name"] || (row["form_id"] ? `Form #${row["form_id"].replace(/^f:/i, "")}` : "USA AI Form");
+
+      // 9. Platform Segregation (Facebook vs Instagram)
+      const platformRaw = (row["platform"] || row["publisher_platform"] || "").toLowerCase();
+      let source = "Meta (Facebook Lead Ads)";
+      if (platformRaw.includes("ig") || platformRaw.includes("instagram")) {
+        source = "Meta (Instagram Lead Ads)";
+      } else if (platformRaw.includes("fb") || platformRaw.includes("facebook")) {
+        source = "Meta (Facebook Lead Ads)";
+      }
+
+      // 10. Custom Question Responses
+      const customQuestions: { question: string; answer: string }[] = [];
+      for (const [k, v] of Object.entries(row)) {
+        if (!standardKeys.has(k) && v && !k.startsWith("raw_")) {
+          const cleanQ = k
+            .replace(/^_+|_+$/g, "")
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+          const cleanA = v.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()).trim();
+          customQuestions.push({ question: cleanQ, answer: cleanA });
+        }
+      }
+
+      let requirement = customQuestions.map((q) => `${q.question}: ${q.answer}`).join(" | ");
+      if (!requirement) requirement = `Imported from Meta Lead Ads CSV (Form: ${formName})`;
+
+      let structuredNotes: string | undefined = undefined;
+      if (customQuestions.length > 0) {
+        structuredNotes = `[Meta Lead Form Responses]:\n` + customQuestions.map((q) => `• ${q.question}: ${q.answer}`).join("\n");
+      }
+
+      try {
+        const saved = await saveLeadToDb({
+          source,
+          name,
+          phone,
+          email,
+          business,
+          website,
+          industry: industry || undefined,
+          videoType: row["video_type"] || "AI UGC Video Ads",
+          videoQuantity: Number(row["video_quantity"]) || 1,
+          location: row["location"] || row["city"] || "USA / Global",
+          requirement,
+          notes: structuredNotes,
+          campaignName,
+          adsetName,
+          adName,
+          formName,
+          metaLeadId: rawLeadId || `Meta-CSV-${Date.now()}`,
+          createdAt: submissionTimestamp,
+          created_at: submissionTimestamp,
+        });
+
+        savedLeads.push(saved);
+
+        await addActivityLogInDb({
+          lead_id: saved.id,
+          action: "Meta CSV Lead Imported",
+          details: `Imported Meta lead ${saved.name} (${saved.phone || saved.email || "No phone"}) from Meta CSV export.`,
+          performed_by: who.payload.email,
+          user_role: who.payload.role,
+        });
+      } catch (err: any) {
+        console.warn("Failed to import individual Meta lead row:", err);
+      }
+    }
+
+    await bumpDataVersion();
+
+    return {
+      success: true,
+      count: savedLeads.length,
+      message: `Successfully imported ${savedLeads.length} lead${savedLeads.length === 1 ? "" : "s"} into Meta Leads.`,
+    };
+  });
+
+// ── 38. Test Meta Page Access Token validity against Facebook Graph API ──
+export const testMetaTokenServerFn = createServerFn({ method: "POST" })
+  .validator((data: { token?: string | undefined; metaToken?: string | undefined }) => data)
+  .handler(async ({ data }) => {
+    const who = decodeAndVerifySessionToken(data.token || "");
+    if (!who.valid || !who.payload) {
+      return { success: false, error: "Unauthorized: Invalid or expired session." };
+    }
+
+    const cleanToken = (data.metaToken || "").trim();
+    if (!cleanToken) {
+      return { success: false, error: "Please provide a Meta Page Access Token to test." };
+    }
+
+    try {
+      const res = await fetch(
+        `https://graph.facebook.com/v20.0/me?fields=id,name,category,access_token&access_token=${encodeURIComponent(cleanToken)}`
+      );
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        return {
+          success: false,
+          error: json.error?.message || `Meta Graph API responded with status ${res.status}`,
+        };
+      }
+
+      return {
+        success: true,
+        pageId: json.id,
+        pageName: json.name || "Facebook Page",
+        category: json.category || "Business",
+      };
+    } catch (err: any) {
+      return { success: false, error: err.message || "Failed to connect to Meta Graph API server" };
+    }
+  });
+

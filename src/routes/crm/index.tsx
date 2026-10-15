@@ -57,6 +57,8 @@ import {
   UserCheck,
   UserPlus,
   Users,
+  HelpCircle,
+  Upload,
   Video,
   Volume2,
   VolumeX,
@@ -120,6 +122,8 @@ import {
   markAllNotificationsReadServerFn,
   clearNotificationsServerFn,
   broadcastLeadEvent,
+  importMetaLeadsCsvServerFn,
+  testMetaTokenServerFn,
 } from "@/lib/lead-actions";
 import { getOfficeGeoConfig, DEFAULT_OFFICE_CONFIG } from "@/lib/geo-config";
 import { getPreciseLocation } from "@/lib/precise-location";
@@ -598,6 +602,33 @@ function AdminPage() {
     }
     return 3;
   });
+  const [metaPageAccessToken, setMetaPageAccessToken] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("crm_meta_page_access_token") || "";
+    }
+    return "";
+  });
+  const [metaVerifyToken, setMetaVerifyToken] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("crm_meta_verify_token") || "quickupp_meta_leads_secure_token";
+    }
+    return "quickupp_meta_leads_secure_token";
+  });
+  const [testingMetaToken, setTestingMetaToken] = useState(false);
+  const [metaTokenTestResult, setMetaTokenTestResult] = useState<{
+    success: boolean;
+    pageName?: string;
+    pageId?: string;
+    category?: string;
+    error?: string;
+  } | null>(null);
+
+  // Meta Leads CSV Import state
+  const [showImportMetaCsvModal, setShowImportMetaCsvModal] = useState(false);
+  const [importMetaCsvRows, setImportMetaCsvRows] = useState<Record<string, string>[]>([]);
+  const [importMetaCsvFileName, setImportMetaCsvFileName] = useState("");
+  const [isImportingMetaCsv, setIsImportingMetaCsv] = useState(false);
+  const [importMetaCsvError, setImportMetaCsvError] = useState<string | null>(null);
   // Live values used by the app (synced from the server for every admin); the
   // crm* values above are the editable form fields in CRM Settings.
   const [appliedSyncInterval, setAppliedSyncInterval] = useState<number>(() => {
@@ -1633,6 +1664,14 @@ function AdminPage() {
       const v = [5, 10, 15, 30].includes(Number(st["inactivity_timeout"])) ? Number(st["inactivity_timeout"]) : 10;
       setAppliedInactivityTimeout(v);
       try { localStorage.setItem("crm_inactivity_timeout", String(v)); } catch {}
+    }
+    if (st["meta_page_access_token"] !== undefined) {
+      setMetaPageAccessToken(st["meta_page_access_token"]);
+      try { localStorage.setItem("crm_meta_page_access_token", st["meta_page_access_token"]); } catch {}
+    }
+    if (st["meta_verify_token"] !== undefined) {
+      setMetaVerifyToken(st["meta_verify_token"]);
+      try { localStorage.setItem("crm_meta_verify_token", st["meta_verify_token"]); } catch {}
     }
     if (st["settings_updated_at"]) {
       setSettingsLastSaved({ at: st["settings_updated_at"], by: st["settings_updated_by"] || "Super Admin" });
@@ -2839,6 +2878,151 @@ function AdminPage() {
     }
   };
 
+  const handleTestMetaToken = async () => {
+    if (!metaPageAccessToken.trim()) {
+      showToast("Please enter a Meta Page Access Token first.");
+      return;
+    }
+    setTestingMetaToken(true);
+    setMetaTokenTestResult(null);
+    try {
+      const res = await testMetaTokenServerFn({
+        data: {
+          token: session?.token,
+          metaToken: metaPageAccessToken.trim(),
+        },
+      });
+      if (res.success) {
+        setMetaTokenTestResult({
+          success: true,
+          pageName: res.pageName,
+          pageId: res.pageId,
+          category: res.category,
+        });
+        showToast(`Connected to Meta Page: ${res.pageName}`);
+      } else {
+        setMetaTokenTestResult({
+          success: false,
+          error: res.error || "Token validation failed",
+        });
+        showToast(res.error || "Meta Token validation failed");
+      }
+    } catch (err: any) {
+      setMetaTokenTestResult({
+        success: false,
+        error: err.message || "Failed to reach server",
+      });
+      showToast("Could not test Meta token");
+    } finally {
+      setTestingMetaToken(false);
+    }
+  };
+
+  const parseMetaCsvText = (text: string): Record<string, string>[] => {
+    const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+    if (lines.length < 2) return [];
+
+    const parseCsvRow = (line: string): string[] => {
+      const row: string[] = [];
+      let inQuotes = false;
+      let cur = "";
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            cur += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === "," && !inQuotes) {
+          row.push(cur.trim());
+          cur = "";
+        } else {
+          cur += char;
+        }
+      }
+      row.push(cur.trim());
+      return row;
+    };
+
+    const headers = parseCsvRow(lines[0]).map((h) => h.toLowerCase().trim());
+    const rows: Record<string, string>[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCsvRow(lines[i]);
+      if (values.length <= 1 && !values[0]) continue;
+      const item: Record<string, string> = {};
+      for (let j = 0; j < headers.length; j++) {
+        const header = headers[j];
+        const val = values[j] || "";
+        if (header) {
+          item[header] = val;
+        }
+      }
+      rows.push(item);
+    }
+    return rows;
+  };
+
+  const handleSelectMetaCsvFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportMetaCsvFileName(file.name);
+    setImportMetaCsvError(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (!text) {
+        setImportMetaCsvError("CSV file is empty.");
+        return;
+      }
+      const rows = parseMetaCsvText(text);
+      if (rows.length === 0) {
+        setImportMetaCsvError("No valid data rows found in CSV. Make sure the file has headers and at least 1 lead row.");
+        return;
+      }
+      setImportMetaCsvRows(rows);
+    };
+    reader.onerror = () => {
+      setImportMetaCsvError("Failed to read the file. Please try again.");
+    };
+    reader.readAsText(file);
+  };
+
+  const handleConfirmImportMetaCsv = async () => {
+    if (importMetaCsvRows.length === 0) {
+      showToast("No leads to import. Please select a valid Meta CSV file.");
+      return;
+    }
+    setIsImportingMetaCsv(true);
+    setImportMetaCsvError(null);
+    try {
+      const res = await importMetaLeadsCsvServerFn({
+        data: {
+          token: session?.token,
+          rows: importMetaCsvRows,
+        },
+      });
+      if (res.success) {
+        showToast(`Successfully imported ${res.count} Meta leads!`);
+        setShowImportMetaCsvModal(false);
+        setImportMetaCsvRows([]);
+        setImportMetaCsvFileName("");
+        await loadLeads();
+      } else {
+        setImportMetaCsvError(res.error || "Failed to import Meta CSV");
+        showToast(res.error || "Import failed");
+      }
+    } catch (err: any) {
+      setImportMetaCsvError(err.message || "Failed to import Meta CSV");
+      showToast("Error importing CSV");
+    } finally {
+      setIsImportingMetaCsv(false);
+    }
+  };
+
   const handleSaveCrmSettings = async () => {
     // Title, alert email and auto-sync interval are stored on the server so they
     // apply to every admin and the server uses the email for lead/payment alerts.
@@ -2852,6 +3036,8 @@ function AdminPage() {
           inactivityTimeout: crmInactivityTimeout,
           loginAttempts: crmLoginAttempts,
           performedBy: session?.name || "Super Admin",
+          metaPageAccessToken,
+          metaVerifyToken,
         },
       });
       if (!res.success) {
@@ -2879,6 +3065,8 @@ function AdminPage() {
       localStorage.setItem("crm_audio_enabled", crmAudioEnabled ? "true" : "false");
       localStorage.setItem("crm_inactivity_timeout", crmInactivityTimeout.toString());
       localStorage.setItem("crm_login_attempts", crmLoginAttempts.toString());
+      localStorage.setItem("crm_meta_page_access_token", metaPageAccessToken);
+      localStorage.setItem("crm_meta_verify_token", metaVerifyToken);
     }
     setCrmSettingsSaved(true);
     setTimeout(() => setCrmSettingsSaved(false), 3000);
@@ -5446,7 +5634,7 @@ function AdminPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setShowAddLeadModal("Meta Ads")}
@@ -5454,6 +5642,20 @@ function AdminPage() {
                 >
                   <Plus className="h-3.5 w-3.5" />
                   <span>Add Meta Lead</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImportMetaCsvRows([]);
+                    setImportMetaCsvFileName("");
+                    setImportMetaCsvError(null);
+                    setShowImportMetaCsvModal(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-purple-300 bg-purple-50 px-3.5 py-2 text-xs font-bold text-purple-700 hover:bg-purple-100 transition-all cursor-pointer shadow-2xs"
+                  title="Upload CSV exported from Meta Ads Manager or Google Sheets"
+                >
+                  <Upload className="h-3.5 w-3.5 text-purple-600" />
+                  <span>Import Meta CSV</span>
                 </button>
                 <button
                   type="button"
@@ -8136,6 +8338,150 @@ function AdminPage() {
                     </button>
                   </div>
                 </div>
+
+                {/* Section: Meta (Facebook & Instagram) Lead Ads Webhook & Graph API Integration */}
+                <div className="rounded-2xl border border-purple-200 bg-white p-5 shadow-xs space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <Megaphone className="h-4 w-4 text-purple-600" />
+                        <span>Meta (Facebook & Instagram) Lead Ads & Graph API Integration</span>
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Configure Meta webhook endpoint and Page Access Token so new leads automatically pull customer names, mobile numbers, company info, and custom form question answers in real time.
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-purple-100 text-purple-800 text-[10px] font-extrabold px-2.5 py-1 border border-purple-200 shrink-0">
+                      LIVE WEBHOOK & GRAPH API
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-purple-100 text-xs">
+                    {/* Webhook Callback URL */}
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">
+                        Meta Webhook Callback URL (Paste in Meta Business Suite / Developers)
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value="https://quickuppaistudio.us/api/meta-leads"
+                          className="w-full rounded-xl border border-slate-200 bg-slate-100 p-2.5 text-xs font-mono text-slate-700 select-all"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText("https://quickuppaistudio.us/api/meta-leads");
+                            showToast("Webhook URL copied to clipboard");
+                          }}
+                          className="rounded-xl border border-slate-200 bg-white p-2.5 hover:bg-slate-50 text-slate-700 cursor-pointer shrink-0"
+                          title="Copy Callback URL"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Set this in Meta Developers Portal under <strong>Webhooks &gt; Page &gt; leadgen</strong> subscription.
+                      </p>
+                    </div>
+
+                    {/* Verify Token */}
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">
+                        Meta Verify Token (hub.verify_token)
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={metaVerifyToken}
+                          onChange={(e) => setMetaVerifyToken(e.target.value)}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-mono font-medium focus:outline-none focus:ring-2 focus:ring-purple-600"
+                          placeholder="quickupp_meta_leads_secure_token"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(metaVerifyToken);
+                            showToast("Verify Token copied to clipboard");
+                          }}
+                          className="rounded-xl border border-slate-200 bg-white p-2.5 hover:bg-slate-50 text-slate-700 cursor-pointer shrink-0"
+                          title="Copy Verify Token"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Token expected by Meta during the handshake verification check.
+                      </p>
+                    </div>
+
+                    {/* Page Access Token */}
+                    <div className="md:col-span-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-bold text-slate-700">
+                          Meta Page Access Token (Required to auto-fetch Customer Mobile & Answers)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleTestMetaToken}
+                          disabled={testingMetaToken || !metaPageAccessToken.trim()}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-purple-300 bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-700 hover:bg-purple-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {testingMetaToken ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <span>Testing Token...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Zap className="h-3 w-3 text-purple-600" />
+                              <span>Test Token Connection</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <input
+                        type="password"
+                        value={metaPageAccessToken}
+                        onChange={(e) => {
+                          setMetaPageAccessToken(e.target.value);
+                          setMetaTokenTestResult(null);
+                        }}
+                        placeholder="EAABw..."
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-mono font-medium focus:outline-none focus:ring-2 focus:ring-purple-600"
+                      />
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Generated in Meta App Dashboard / Business Settings under System Users with <code className="font-mono text-purple-600 font-bold">leads_retrieval</code> and <code className="font-mono text-purple-600 font-bold">pages_read_engagement</code> permissions. Click <strong>"Save All Settings"</strong> at the top to save.
+                      </p>
+
+                      {/* Test Result Feedback */}
+                      {metaTokenTestResult && (
+                        <div className={`mt-2 rounded-xl p-3 text-xs border ${
+                          metaTokenTestResult.success
+                            ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                            : "bg-red-50 border-red-200 text-red-900"
+                        }`}>
+                          {metaTokenTestResult.success ? (
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                              <span>
+                                <strong>Connected successfully:</strong> Page <em>{metaTokenTestResult.pageName}</em> (ID: {metaTokenTestResult.pageId}) • Category: {metaTokenTestResult.category}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+                              <span>
+                                <strong>Connection failed:</strong> {metaTokenTestResult.error}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -8498,6 +8844,182 @@ function AdminPage() {
           </div>
         )}
       </main>
+
+      {/* ========================================================================= */}
+      {/* MODAL: IMPORT META LEADS CSV (ADS MANAGER EXPORT) */}
+      {/* ========================================================================= */}
+      {showImportMetaCsvModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className={`w-full max-w-2xl rounded-2xl border p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto ${
+            isDark ? "border-slate-700 bg-[#151222] text-white" : "border-slate-200 bg-white text-slate-900"
+          }`}>
+            <div className="flex items-center justify-between border-b pb-3 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600">
+                  <Upload className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold">Import Meta Leads CSV</h3>
+                  <p className="text-xs text-slate-500">
+                    Upload official CSV exported from Meta Ads Manager / Lead Center
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowImportMetaCsvModal(false);
+                  setImportMetaCsvRows([]);
+                  setImportMetaCsvFileName("");
+                  setImportMetaCsvError(null);
+                }}
+                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Info notice */}
+            <div className={`rounded-xl border p-3.5 text-xs flex gap-2.5 ${
+              isDark ? "border-purple-800/50 bg-purple-950/20 text-purple-200" : "border-purple-100 bg-purple-50/80 text-purple-900"
+            }`}>
+              <Megaphone className="h-4 w-4 shrink-0 text-purple-600 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-semibold">Automatic Field Mapping & Time Preservation</p>
+                <p className="text-[11px] leading-relaxed opacity-90">
+                  The CSV parser automatically strips prefix characters (like <code className="font-mono bg-purple-100/50 dark:bg-purple-900/40 px-1 py-0.5 rounded">p:+1...</code>), preserves exact Meta submission timestamps, captures custom form questions, and deduplicates existing leads by Meta Lead ID.
+                </p>
+              </div>
+            </div>
+
+            {/* File Upload Zone */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Select CSV File
+              </label>
+              <div className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${
+                isDark ? "border-slate-700 bg-slate-900/40 hover:bg-slate-900/80" : "border-slate-300 bg-slate-50 hover:bg-slate-100/80"
+              }`}>
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleSelectMetaCsvFile}
+                  className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                />
+                <FileSpreadsheet className="h-9 w-9 text-purple-500 mb-2" />
+                <p className="text-sm font-semibold">
+                  {importMetaCsvFileName ? importMetaCsvFileName : "Click to select or drag and drop your Meta CSV file"}
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Supports standard Meta Leads Center CSV exports (.csv)
+                </p>
+                {importMetaCsvFileName && (
+                  <span className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>{importMetaCsvRows.length} lead(s) ready to import</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {importMetaCsvError && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+                <span>{importMetaCsvError}</span>
+              </div>
+            )}
+
+            {/* Preview of Parsed Leads */}
+            {importMetaCsvRows.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Preview ({importMetaCsvRows.length} Leads Detected)
+                  </span>
+                </div>
+                <div className="max-h-52 overflow-y-auto overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                  <table className="w-full text-left text-xs">
+                    <thead className="sticky top-0 bg-slate-100 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      <tr>
+                        <th className="px-3 py-2">Full Name</th>
+                        <th className="px-3 py-2">Phone</th>
+                        <th className="px-3 py-2">Company</th>
+                        <th className="px-3 py-2">Form / Campaign</th>
+                        <th className="px-3 py-2">Submission Time</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                      {importMetaCsvRows.slice(0, 5).map((row, idx) => {
+                        const name = row.full_name || row["full_name"] || row.name || row["Name"] || "N/A";
+                        let phone = row.phone_number || row["phone_number"] || row.phone || row["Phone"] || "N/A";
+                        if (phone.startsWith("p:")) phone = phone.slice(2);
+                        const company = row.company_name || row["company_name"] || row.company || row["Company"] || "N/A";
+                        const form = row.form_name || row["form_name"] || row.form_id || "N/A";
+                        const campaign = row.campaign_name || row["campaign_name"] || "";
+                        const created = row.created_time || row["created_time"] || "N/A";
+
+                        return (
+                          <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                            <td className="px-3 py-2 font-medium">{name}</td>
+                            <td className="px-3 py-2 font-mono text-slate-600 dark:text-slate-300">{phone}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{company}</td>
+                            <td className="px-3 py-2">
+                              <span className="font-semibold text-purple-700 dark:text-purple-300">{form}</span>
+                              {campaign && <p className="text-[10px] text-slate-400">{campaign}</p>}
+                            </td>
+                            <td className="px-3 py-2 font-mono text-[10px] text-slate-500">{created}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {importMetaCsvRows.length > 5 && (
+                    <div className="bg-slate-50 px-3 py-2 text-center text-[11px] text-slate-500 dark:bg-slate-900/40">
+                      + {importMetaCsvRows.length - 5} more leads will be imported
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowImportMetaCsvModal(false);
+                  setImportMetaCsvRows([]);
+                  setImportMetaCsvFileName("");
+                  setImportMetaCsvError(null);
+                }}
+                disabled={isImportingMetaCsv}
+                className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmImportMetaCsv}
+                disabled={isImportingMetaCsv || importMetaCsvRows.length === 0}
+                className="rounded-xl bg-purple-600 px-5 py-2 text-xs font-bold text-white hover:bg-purple-700 cursor-pointer transition-colors disabled:opacity-50 flex items-center gap-2 shadow-xs"
+              >
+                {isImportingMetaCsv ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Importing Leads...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4" />
+                    <span>Import {importMetaCsvRows.length > 0 ? `${importMetaCsvRows.length} Leads` : "Leads"}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* MODAL 1: + ADD MANUAL LEAD */}
@@ -9158,9 +9680,9 @@ function AdminPage() {
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-xs text-xs">
                   <div className="flex items-center justify-between border-b pb-2">
                     <div className="flex items-center gap-1.5">
-                      <Megaphone className="h-4 w-4 text-slate-800" />
+                      <Megaphone className="h-4 w-4 text-purple-700" />
                       <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-800">
-                        Meta Information
+                        Meta Information & Lead Ad Details
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -9169,7 +9691,7 @@ function AdminPage() {
                         onClick={() => {
                           setEditingLead(viewLeadDetails);
                         }}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 px-2 py-0.5 rounded-lg border border-purple-200/60 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-lg border border-purple-200/60 transition-colors cursor-pointer"
                         title="Edit Meta campaign, ad, form or lead ID"
                       >
                         <Edit className="h-3 w-3" />
@@ -9191,38 +9713,174 @@ function AdminPage() {
                     const displayForm = viewLeadDetails.form_name || (/Form(?:\s*Name)?:\s*([^|\]\n]+)/i.exec(req)?.[1]?.trim()) || "N/A";
                     const displayLeadId = viewLeadDetails.meta_lead_id || (/(?:Meta\s*Lead\s*ID|Leadgen\s*ID|Lead\s*ID):\s*([^|\]\n]+)/i.exec(req)?.[1]?.trim()) || "N/A";
 
+                    const platformRaw = (/Platform:\s*([^|\]\n]+)/i.exec(req)?.[1]?.trim()) || "";
+                    const displayPlatform = platformRaw.toLowerCase() === "ig" ? "Instagram" : platformRaw.toLowerCase() === "fb" ? "Facebook" : platformRaw || "Meta Ad";
+
+                    const submissionRaw = (/Submitted at \(Meta created_time\):\s*([^\n]+)/i.exec(req)?.[1]?.trim()) || viewLeadDetails.created_at;
+                    const submissionDt = submissionRaw ? formatDualTimestamp(submissionRaw) : null;
+
+                    // Parse custom form question-answer pairs
+                    const extractedQuestions: { question: string; answer: string }[] = [];
+                    const seenQ = new Set<string>();
+
+                    const bulletMatches = req.match(/^[•\-\*]\s*([^:\n]+):\s*([^\n]+)/gm);
+                    if (bulletMatches) {
+                      for (const bLine of bulletMatches) {
+                        const m = /^[•\-\*]\s*([^:\n]+):\s*(.+)$/.exec(bLine.trim());
+                        if (m) {
+                          const q = m[1].trim();
+                          const a = m[2].trim();
+                          const lq = q.toLowerCase();
+                          if (
+                            lq.includes("platform") ||
+                            lq.includes("form") ||
+                            lq.includes("campaign") ||
+                            lq.includes("ad set") ||
+                            lq.includes("submitted at") ||
+                            lq.includes("meta lead id")
+                          ) {
+                            continue;
+                          }
+                          if (!seenQ.has(lq)) {
+                            seenQ.add(lq);
+                            extractedQuestions.push({ question: q, answer: a });
+                          }
+                        }
+                      }
+                    }
+
+                    // 2. Also dynamically parse pipe-delimited questions from requirement/notes (e.g. from any new form)
+                    const pipeParts = req.split(/\||\n/);
+                    for (const part of pipeParts) {
+                      const cleanPart = part.replace(/^[\[\s•\-\*]+|[\]\s]+$/g, "").trim();
+                      const m = /^([^:\n]+):\s*(.+)$/.exec(cleanPart);
+                      if (m) {
+                        const rawQ = m[1].trim();
+                        const rawA = m[2].trim();
+                        const lq = rawQ.toLowerCase();
+                        if (
+                          lq.includes("platform") ||
+                          lq.includes("form") ||
+                          lq.includes("campaign") ||
+                          lq.includes("ad set") ||
+                          lq.includes("ad name") ||
+                          lq.includes("submitted at") ||
+                          lq.includes("meta lead id") ||
+                          lq.includes("leadgen id") ||
+                          lq.includes("lead id") ||
+                          lq.includes("requirement") ||
+                          lq.includes("activity notes")
+                        ) {
+                          continue;
+                        }
+                        if (!seenQ.has(lq) && rawA && rawA.toLowerCase() !== "n/a") {
+                          seenQ.add(lq);
+                          extractedQuestions.push({ question: rawQ, answer: rawA });
+                        }
+                      }
+                    }
+
+                    const questionPatterns: [string, RegExp][] = [
+                      ["What Type of Business", /(?:What Type Of Business|_what_type_of_business_):\s*([^|\n]+)/i],
+                      ["Are You Currently Running Ads", /(?:Are You Currently Running Ads|are_you_currently_running_ads):\s*([^|\n]+)/i],
+                      ["What Do You Need Video For", /(?:What Do You Need Video For|what_do_you_need_video_for_):\s*([^|\n]+)/i],
+                    ];
+                    for (const [title, re] of questionPatterns) {
+                      const m = re.exec(req);
+                      if (m && m[1] && !seenQ.has(title.toLowerCase())) {
+                        const val = m[1].trim();
+                        if (val && val.toLowerCase() !== "n/a") {
+                          seenQ.add(title.toLowerCase());
+                          extractedQuestions.push({ question: title, answer: val });
+                        }
+                      }
+                    }
+
                     return (
-                      <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl">
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase">Campaign Name</span>
-                          <p className="font-semibold text-slate-900 mt-0.5">
-                            {displayCampaign}
-                          </p>
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Platform</span>
+                            <div className="mt-0.5">
+                              <span className="inline-flex items-center gap-1 font-bold text-xs text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                                {displayPlatform}
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Form Name</span>
+                            <p className="font-semibold text-slate-900 mt-0.5">
+                              {displayForm}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Campaign Name</span>
+                            <p className="font-semibold text-slate-900 mt-0.5">
+                              {displayCampaign}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Ad Set Name</span>
+                            <p className="font-semibold text-slate-900 mt-0.5">
+                              {displayAdSet}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Ad Name</span>
+                            <p className="font-semibold text-slate-900 mt-0.5">
+                              {displayAd}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Meta Lead ID</span>
+                            <p className="font-mono text-[11px] text-slate-800 mt-0.5 select-all">
+                              {displayLeadId}
+                            </p>
+                          </div>
+                          <div className="col-span-2 sm:col-span-3 border-t border-slate-200/80 pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                              <Clock className="h-3 w-3 text-purple-600" />
+                              Meta Submission Timestamp (Exact)
+                            </span>
+                            {submissionDt ? (
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="inline-flex items-center gap-1 font-bold text-amber-800 text-[11px] bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                                  <span>🇮🇳</span>
+                                  <span>{submissionDt.istFull}</span>
+                                </span>
+                                <span className="font-mono text-[10px] text-slate-500">
+                                  🇺🇸 {submissionDt.usFull}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="font-mono text-xs text-slate-700">
+                                {String(submissionRaw || "N/A")}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase">Ad Set Name</span>
-                          <p className="font-semibold text-slate-900 mt-0.5">
-                            {displayAdSet}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase">Ad Name</span>
-                          <p className="font-semibold text-slate-900 mt-0.5">
-                            {displayAd}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase">Form Name</span>
-                          <p className="font-semibold text-slate-900 mt-0.5">
-                            {displayForm}
-                          </p>
-                        </div>
-                        <div className="col-span-2">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase">Meta Lead ID</span>
-                          <p className="font-mono text-[11px] text-slate-800 mt-0.5">
-                            {displayLeadId}
-                          </p>
-                        </div>
+
+                        {/* Custom Form Answers Breakdown */}
+                        {extractedQuestions.length > 0 && (
+                          <div className="rounded-xl border border-purple-200/80 bg-purple-50/30 p-3 space-y-2">
+                            <div className="flex items-center gap-1.5 text-purple-900 font-extrabold text-[11px] uppercase tracking-wider">
+                              <Sparkles className="h-3.5 w-3.5 text-purple-600" />
+                              <span>Meta Form Responses & Custom Questions ({extractedQuestions.length})</span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {extractedQuestions.map((qa, qIdx) => (
+                                <div key={qIdx} className="rounded-lg bg-white p-2.5 border border-purple-100 shadow-2xs">
+                                  <span className="text-[10px] font-bold uppercase text-slate-400 block">
+                                    {qa.question}
+                                  </span>
+                                  <span className="text-xs font-bold text-slate-900 mt-0.5 block capitalize">
+                                    {qa.answer}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}

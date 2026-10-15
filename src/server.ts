@@ -325,7 +325,12 @@ export default {
           const token = url.searchParams.get("hub.verify_token") || url.searchParams.get("hub_verify_token");
           const challenge = url.searchParams.get("hub.challenge") || url.searchParams.get("hub_challenge");
 
-          const EXPECTED_VERIFY_TOKEN = process.env.META_VERIFY_TOKEN || "quickupp_meta_leads_secure_token";
+          let EXPECTED_VERIFY_TOKEN = (process.env.META_VERIFY_TOKEN || "quickupp_meta_leads_secure_token").trim();
+          try {
+            const { getCrmSettings } = await import("./lib/db");
+            const st = await getCrmSettings();
+            if (st["meta_verify_token"]) EXPECTED_VERIFY_TOKEN = st["meta_verify_token"].trim();
+          } catch {}
 
           if (mode === "subscribe" && token === EXPECTED_VERIFY_TOKEN) {
             console.log("[Meta Webhook] Successfully verified handshake with Meta server.");
@@ -376,15 +381,16 @@ export default {
               }
             }
 
-            const { saveLead, saveCRMNotification, addActivityLog } = await import("./lib/db");
+            const { saveLead, saveCRMNotification, addActivityLog, getCrmSettings } = await import("./lib/db");
             const { broadcastLeadEvent, sanitizeLeadPhone, sendLeadNotificationEmail } = await import("./lib/lead-actions");
+
+            const crmSettings = await getCrmSettings().catch(() => ({}));
+            const metaAccessToken = (process.env.META_PAGE_ACCESS_TOKEN || crmSettings?.["meta_page_access_token"] || "").trim();
 
             const savedLeads: any[] = [];
 
             // Case 1: Meta Standard Webhook Object
             if (body.object === "page" && Array.isArray(body.entry)) {
-              const metaAccessToken = process.env.META_PAGE_ACCESS_TOKEN || "";
-
               for (const entry of body.entry) {
                 const pageId = entry.id;
                 const changes = entry.changes || [];
@@ -393,6 +399,15 @@ export default {
                     const leadgenId = change.value.leadgen_id;
                     const formId = change.value.form_id || "";
                     const adId = change.value.ad_id || "";
+                    const rawCreatedTime = change.value.created_time;
+
+                    let submissionTimestamp: string | undefined = undefined;
+                    if (rawCreatedTime) {
+                      const num = Number(rawCreatedTime);
+                      if (!isNaN(num) && num > 0) {
+                        submissionTimestamp = new Date(num * 1000).toISOString();
+                      }
+                    }
 
                     let leadName = `Meta Lead (${leadgenId})`;
                     let leadEmail = `lead_${leadgenId}@meta.leads`;
@@ -406,15 +421,20 @@ export default {
                     let metaAdName: string | undefined = adId ? `Ad #${adId}` : undefined;
                     let metaFormName: string | undefined = formId ? `Form #${formId}` : undefined;
                     let fieldMap: Record<string, string> = {};
+                    let parsedQuestionsList: { question: string; answer: string }[] = [];
 
                     // If Meta Page Access Token is configured, fetch full field_data from Meta Graph API
                     if (metaAccessToken && leadgenId && leadgenId !== "444444444444") {
                       try {
                         const metaGraphRes = await fetch(
-                          `https://graph.facebook.com/v20.0/${leadgenId}?access_token=${metaAccessToken}`
+                          `https://graph.facebook.com/v20.0/${leadgenId}?fields=id,created_time,ad_id,form_id,field_data,campaign_name,adset_name,ad_name,form_name,campaign_id,adset_id,platform&access_token=${metaAccessToken}`
                         );
                         if (metaGraphRes.ok) {
                           const graphData = await metaGraphRes.json();
+                          if (graphData.created_time) {
+                            const d = new Date(graphData.created_time);
+                            if (!isNaN(d.getTime())) submissionTimestamp = d.toISOString();
+                          }
                           metaCampaignName = graphData.campaign_name || (graphData.campaign_id ? `Campaign #${graphData.campaign_id}` : metaCampaignName);
                           metaAdsetName = graphData.adset_name || (graphData.adset_id ? `AdSet #${graphData.adset_id}` : metaAdsetName);
                           metaAdName = graphData.ad_name || metaAdName;
@@ -424,7 +444,15 @@ export default {
                           fieldMap = {};
                           for (const f of fieldData) {
                             const val = Array.isArray(f.values) ? f.values[0] : f.values;
-                            if (f.name && val) fieldMap[f.name.toLowerCase()] = String(val);
+                            if (f.name && val != null) {
+                              const strVal = String(val).trim();
+                              fieldMap[f.name.toLowerCase()] = strVal;
+                              const standardKeys = ["full_name", "first_name", "last_name", "email", "phone_number", "phone", "company_name", "business_name", "website"];
+                              if (!standardKeys.includes(f.name.toLowerCase()) && strVal) {
+                                const cleanQ = f.name.replace(/^_+|_+$/g, "").replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
+                                parsedQuestionsList.push({ question: cleanQ, answer: strVal });
+                              }
+                            }
                           }
 
                           leadName =
@@ -455,23 +483,7 @@ export default {
                           leadBusiness = fieldMap["company_name"] || fieldMap["business_name"] || leadBusiness;
                           leadVideoType = fieldMap["video_type"] || fieldMap["service"] || leadVideoType;
 
-                          const extraNotes = Object.entries(fieldMap)
-                            .filter(
-                              ([k]) =>
-                                ![
-                                  "full_name",
-                                  "first_name",
-                                  "last_name",
-                                  "email",
-                                  "phone_number",
-                                  "phone",
-                                  "company_name",
-                                  "business_name",
-                                ].includes(k)
-                            )
-                            .map(([k, v]) => `${k}: ${v}`)
-                            .join(" | ");
-
+                          const extraNotes = parsedQuestionsList.map((q) => `${q.question}: ${q.answer}`).join(" | ");
                           if (extraNotes) {
                             leadRequirements += ` | ${extraNotes}`;
                           }
@@ -481,11 +493,19 @@ export default {
                       }
                     }
 
+                    // Format structured notes block for questions
+                    let formattedNotes: string | undefined = undefined;
+                    if (parsedQuestionsList.length > 0) {
+                      formattedNotes = `[Meta Lead Form Responses]:\n` + parsedQuestionsList.map((q) => `• ${q.question}: ${q.answer}`).join("\n");
+                    }
+
+                    const cleanPhone = sanitizeLeadPhone(leadPhone.replace(/^p:/i, "").trim(), false);
+
                     const normalizedLead = {
                       source: "Meta (Facebook Lead Ads)",
                       name: leadName,
                       email: leadEmail,
-                      phone: sanitizeLeadPhone(leadPhone, false),
+                      phone: cleanPhone,
                       business: leadBusiness,
                       industry: fieldMap["_what_type_of_business_"] || fieldMap["type_of_business"] || fieldMap["industry"] || undefined,
                       website: fieldMap["website"] || undefined,
@@ -495,6 +515,7 @@ export default {
                       video_quantity: 1,
                       location: fieldMap["location"] || fieldMap["city"] || "USA / Global",
                       requirement: leadRequirements,
+                      notes: formattedNotes,
                       campaign_name: metaCampaignName,
                       campaignName: metaCampaignName,
                       adset_name: metaAdsetName,
@@ -505,6 +526,8 @@ export default {
                       formName: metaFormName,
                       meta_lead_id: String(leadgenId),
                       metaLeadId: String(leadgenId),
+                      createdAt: submissionTimestamp,
+                      created_at: submissionTimestamp,
                     };
 
                     const saved = await saveLead(normalizedLead);
@@ -514,8 +537,10 @@ export default {
                     try {
                       await addActivityLog({
                         lead_id: saved.id,
-                        action: "Meta Lead Received",
-                        details: `New lead from Meta Lead Ads (Form: ${formId}, Ad: ${adId || "N/A"}) for ${saved.name}`,
+                        action: metaAccessToken ? "Meta Lead Received" : "Meta Lead Received (Token Required)",
+                        details: metaAccessToken
+                          ? `New lead from Meta Lead Ads (Form: ${formId}, Ad: ${adId || "N/A"}) for ${saved.name}`
+                          : `Meta Lead ID ${leadgenId} received. Set your Meta Page Access Token in CRM Settings to fetch full phone number & form answers automatically.`,
                         performed_by: "Meta Lead Ads Webhook",
                         user_role: "system",
                       });
@@ -839,6 +864,29 @@ export default {
                 source = rawSource.toLowerCase().includes("meta") ? rawSource : `Meta (${rawSource})`;
               }
 
+              // Extract submission timestamp if provided (from Meta Ads export, Zapier, Make, or Webhook forwarder)
+              let rawCreatedTime = payload.created_time || payload.created_at || payload.createdAt || payload.submission_time || payload.date || "";
+              if (!rawCreatedTime && rawBodyText) {
+                const m = /(?:created_time|created_at|createdAt)["']?\s*[:=]\s*["']?([^"',}\]\n\r&]+)/i.exec(rawBodyText);
+                if (m && m[1]) rawCreatedTime = decodeURIComponent(m[1].trim());
+              }
+              let submissionTimestamp: string | undefined = undefined;
+              if (rawCreatedTime) {
+                const strTime = String(rawCreatedTime).trim();
+                if (/^\d+$/.test(strTime) && strTime.length <= 11) {
+                  const d = new Date(Number(strTime) * 1000);
+                  if (!isNaN(d.getTime())) submissionTimestamp = d.toISOString();
+                } else {
+                  const d = new Date(strTime);
+                  if (!isNaN(d.getTime())) submissionTimestamp = d.toISOString();
+                }
+              }
+
+              let structuredNotes: string | undefined = undefined;
+              if (extraQuestions.length > 0) {
+                structuredNotes = `[Meta Lead Form Responses]:\n` + extraQuestions.map((q) => `• ${q}`).join("\n");
+              }
+
               const safeCampaignName = campaignName || "USA AI Video Lead Gen";
               const safeAdsetName = adsetName || "Top Cities Lead Gen";
               const safeAdName = adName || "AI UGC Video Ads";
@@ -859,6 +907,7 @@ export default {
                 videoQuantity: videoQuantity || 1,
                 video_quantity: videoQuantity || 1,
                 requirement: requirementNotes,
+                notes: structuredNotes,
                 campaignName: safeCampaignName,
                 campaign_name: safeCampaignName,
                 adsetName: safeAdsetName,
@@ -869,6 +918,8 @@ export default {
                 form_name: safeFormName,
                 metaLeadId: safeMetaLeadId,
                 meta_lead_id: safeMetaLeadId,
+                createdAt: submissionTimestamp,
+                created_at: submissionTimestamp,
               };
 
               const saved = await saveLead(normalizedLead);

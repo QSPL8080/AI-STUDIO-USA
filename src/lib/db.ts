@@ -334,32 +334,11 @@ export async function initDb() {
           ON CONFLICT (email) DO NOTHING;
 
 
-          CREATE TABLE IF NOT EXISTS activity_logs (
-            id VARCHAR(64) PRIMARY KEY,
-            lead_id VARCHAR(64),
-            action VARCHAR(128) NOT NULL,
-            details TEXT,
-            performed_by VARCHAR(255) NOT NULL,
-            user_role VARCHAR(64),
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-          );
-
-          CREATE TABLE IF NOT EXISTS login_logs (
-            id VARCHAR(64) PRIMARY KEY,
-            email VARCHAR(255) NOT NULL,
-            role VARCHAR(64),
-            ip_address VARCHAR(128),
-            location VARCHAR(255),
-            user_agent TEXT,
-            status VARCHAR(32) DEFAULT 'success',
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-          );
-
-          ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
-          ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
-          ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS accuracy DOUBLE PRECISION;
-          ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS distance_meters DOUBLE PRECISION;
-          ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS is_within_geofence BOOLEAN;
+          -- Removed: these are no longer stored in the database
+          DROP TABLE IF EXISTS activity_logs;
+          DROP TABLE IF EXISTS login_logs;
+          DROP TABLE IF EXISTS crm_notifications;
+          DROP TABLE IF EXISTS crm_settings;
 
           CREATE TABLE IF NOT EXISTS calendly_meetings (
             id VARCHAR(64) PRIMARY KEY,
@@ -383,23 +362,6 @@ export async function initDb() {
           ALTER TABLE calendly_meetings ADD COLUMN IF NOT EXISTS outcome_locked BOOLEAN DEFAULT FALSE;
           ALTER TABLE calendly_meetings ADD COLUMN IF NOT EXISTS outcome_set_by VARCHAR(255);
           ALTER TABLE calendly_meetings ADD COLUMN IF NOT EXISTS outcome_set_at TIMESTAMP WITH TIME ZONE;
-
-          CREATE TABLE IF NOT EXISTS crm_notifications (
-            id VARCHAR(64) PRIMARY KEY,
-            type VARCHAR(64) NOT NULL,
-            title VARCHAR(255) NOT NULL,
-            message TEXT NOT NULL,
-            entity_id VARCHAR(64),
-            actor VARCHAR(255),
-            is_read BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-          );
-
-          CREATE TABLE IF NOT EXISTS crm_settings (
-            key VARCHAR(64) PRIMARY KEY,
-            value TEXT,
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-          );
 
           CREATE TABLE IF NOT EXISTS orders (
             id VARCHAR(64) PRIMARY KEY,
@@ -490,7 +452,7 @@ async function ensureDefaultAccounts(client: any): Promise<void> {
   ];
   for (const sd of seeds) {
     try {
-      const done = await client.query(`SELECT 1 FROM crm_settings WHERE key = $1`, [sd.flag]);
+      const done = await client.query(`SELECT 1 FROM admin_users WHERE LOWER(email) = LOWER($1)`, [sd.email]);
       if (done.rows.length > 0) continue;
       await client.query(
         `INSERT INTO admin_users (id, name, email, password, role, status, created_at)
@@ -498,21 +460,10 @@ async function ensureDefaultAccounts(client: any): Promise<void> {
          ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role, status = 'active'`,
         [sd.id, sd.name, sd.email, sd.password, sd.role]
       );
-      await client.query(
-        `INSERT INTO crm_settings (key, value, updated_at) VALUES ($1, 'done', NOW()) ON CONFLICT (key) DO NOTHING`,
-        [sd.flag]
-      );
       if (accountSetupError?.startsWith(sd.email)) accountSetupError = null;
     } catch (seedErr: any) {
       console.error(`Default account ${sd.email} could not be created:`, seedErr);
       accountSetupError = `${sd.email}: ${seedErr?.message || seedErr}`;
-      try {
-        await client.query(
-          `INSERT INTO activity_logs (id, lead_id, action, details, performed_by, user_role, created_at)
-           VALUES ($1, NULL, 'Default Account Setup Failed', $2, 'System', 'system', NOW())`,
-          [`log_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, `${sd.email}: ${seedErr?.message || seedErr}`]
-        );
-      } catch {}
     }
   }
 }
@@ -546,11 +497,30 @@ export async function saveLead(data: {
   formName?: string | undefined;
   metaLeadId?: string | undefined;
   isDuplicate?: boolean | undefined;
+  createdAt?: string | undefined;
+  created_at?: string | undefined;
+  createdTime?: string | undefined;
 }): Promise<Lead> {
   const id = `lead_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const status: LeadStatus = data.status || "New";
   const projectStatus: ProjectStatus = data.projectStatus || "In Progress";
-  const now = new Date().toISOString();
+  
+  // Resolve custom submission timestamp (e.g. from Meta Lead Ads created_time)
+  let createdAt = new Date().toISOString();
+  const rawCreatedAt = data.createdAt || (data as any).created_at || (data as any).created_time || (data as any).createdTime;
+  if (rawCreatedAt) {
+    let parsed: Date;
+    const strRaw = String(rawCreatedAt).trim();
+    if (typeof rawCreatedAt === "number" || (/^\d+$/.test(strRaw) && strRaw.length <= 11)) {
+      // Unix timestamp in seconds
+      parsed = new Date(Number(rawCreatedAt) * 1000);
+    } else {
+      parsed = new Date(rawCreatedAt);
+    }
+    if (!isNaN(parsed.getTime())) {
+      createdAt = parsed.toISOString();
+    }
+  }
 
   // 13.1 Duplicate Lead Protection Check
   try {
@@ -684,7 +654,7 @@ export async function saveLead(data: {
     form_name: data.formName || (data as any).form_name || (data as any).form || undefined,
     meta_lead_id: data.metaLeadId || (data as any).meta_lead_id || (data as any).leadgen_id || (data as any).lead_id || undefined,
     is_duplicate: data.isDuplicate || false,
-    created_at: now,
+    created_at: createdAt,
   };
 
   // Strategy A: Supabase REST
@@ -749,7 +719,7 @@ export async function saveLead(data: {
   if (pool) {
     const res = await pool.query(
       `INSERT INTO leads (id, source, name, phone, email, video_type, video_quantity, business, website, location, industry, requirement, additional, status, project_status, notes, delivery_date, meeting_date, meeting_time, meeting_link, meeting_status, meeting_type, assigned_admin, campaign_name, adset_name, ad_name, form_name, meta_lead_id, is_duplicate, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, NOW())
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30)
        RETURNING *`,
       [
         id,
@@ -781,6 +751,7 @@ export async function saveLead(data: {
         data.formName || (data as any).form_name || (data as any).form || null,
         data.metaLeadId || (data as any).meta_lead_id || (data as any).leadgen_id || (data as any).lead_id || null,
         data.isDuplicate || false,
+        record.created_at,
       ]
     );
     return res.rows[0];
@@ -989,8 +960,81 @@ export async function emptyRecycleBin(): Promise<number> {
   return deletedCount;
 }
 
+
 // ==========================================
-// ACTIVITY LOGS
+// CRM MEMORY STORE (NOT saved to the database)
+// Activity logs, login logs and notifications live in server memory only
+// (they reset when the server restarts). CRM settings are kept in a small
+// JSON file on the server (.crm-data/crm-settings.json, or CRM_SETTINGS_FILE).
+// ==========================================
+type CrmMemStore = {
+  activity: ActivityLog[];
+  logins: LoginLog[];
+  notifications: CRMNotification[];
+  settings: Record<string, string> | null;
+};
+const crmMem: CrmMemStore = ((globalThis as any).__crmMemStore ||= {
+  activity: [],
+  logins: [],
+  notifications: [],
+  settings: null,
+});
+const MAX_ACTIVITY_LOGS = 5000;
+const MAX_LOGIN_LOGS = 5000;
+const MAX_NOTIFICATIONS = 500;
+
+function pushCapped<T>(arr: T[], item: T, max: number): void {
+  arr.unshift(item);
+  if (arr.length > max) arr.length = max;
+}
+
+export function countActivityLogs(): number {
+  return crmMem.activity.length;
+}
+
+export function countLoginLogs(): number {
+  return crmMem.logins.length;
+}
+
+async function crmSettingsFile(): Promise<{ fs: any; file: string; dir: string }> {
+  const fs = await import("node:fs/promises");
+  const path = await import("node:path");
+  const file = process.env["CRM_SETTINGS_FILE"] || path.join(process.cwd(), ".crm-data", "crm-settings.json");
+  return { fs, file, dir: path.dirname(file) };
+}
+
+async function loadCrmSettings(): Promise<Record<string, string>> {
+  if (crmMem.settings) return crmMem.settings;
+  const data: Record<string, string> = {};
+  try {
+    const { fs, file } = await crmSettingsFile();
+    const parsed = JSON.parse(await fs.readFile(file, "utf8"));
+    if (parsed && typeof parsed === "object") {
+      for (const [k, v] of Object.entries(parsed)) data[k] = v == null ? "" : String(v);
+    }
+  } catch {
+    // no settings file yet -> defaults
+  }
+  crmMem.settings = data;
+  return data;
+}
+
+async function persistCrmSettings(): Promise<boolean> {
+  try {
+    const { fs, file, dir } = await crmSettingsFile();
+    await fs.mkdir(dir, { recursive: true });
+    const tmp = `${file}.tmp`;
+    await fs.writeFile(tmp, JSON.stringify(crmMem.settings || {}, null, 2), "utf8");
+    await fs.rename(tmp, file);
+    return true;
+  } catch (err) {
+    console.warn("CRM settings file write failed (kept in memory):", err);
+    return false;
+  }
+}
+
+// ==========================================
+// ACTIVITY LOGS (memory only)
 // ==========================================
 export async function addActivityLog(data: {
   lead_id?: string | undefined;
@@ -999,147 +1043,42 @@ export async function addActivityLog(data: {
   performed_by: string;
   user_role: string;
 }): Promise<ActivityLog> {
-  const id = `act_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  const now = new Date().toISOString();
   const record: ActivityLog = {
-    id,
+    id: `act_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     lead_id: data.lead_id || undefined,
     action: data.action,
     details: data.details,
     performed_by: data.performed_by,
     user_role: data.user_role,
-    created_at: now,
+    created_at: new Date().toISOString(),
   };
-
-  if (getSupabaseConfig()) {
-    try {
-      await supabaseRest("activity_logs", {
-        method: "POST",
-        body: JSON.stringify(record),
-      });
-      return record;
-    } catch (e) {
-      console.warn("Supabase activity_log fallback:", e);
-    }
-  }
-
-  await initDb();
-  try {
-    const pool = await getPool();
-    if (pool) {
-      await pool.query(
-        "INSERT INTO activity_logs (id, lead_id, action, details, performed_by, user_role, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
-        [id, data.lead_id || null, data.action, data.details, data.performed_by, data.user_role]
-      );
-    }
-  } catch (err) {
-    console.error("PostgreSQL addActivityLog error:", err);
-  }
+  pushCapped(crmMem.activity, record, MAX_ACTIVITY_LOGS);
   return record;
 }
 
 export async function getActivityLogs(limit = 100): Promise<ActivityLog[]> {
-  if (getSupabaseConfig()) {
-    try {
-      const rows = await supabaseRest(`activity_logs?select=*&order=created_at.desc&limit=${limit}`);
-      if (Array.isArray(rows)) return rows as ActivityLog[];
-    } catch (e) {
-      console.warn("Supabase getActivityLogs fallback:", e);
-    }
-  }
-
-  await initDb();
-  try {
-    const pool = await getPool();
-    if (pool) {
-      const res = await pool.query("SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT $1", [limit]);
-      return res.rows;
-    }
-  } catch (err) {
-    console.error("PostgreSQL getActivityLogs error:", err);
-  }
-  return [];
+  return crmMem.activity.slice(0, limit);
 }
 
 export async function deleteActivityLog(id: string): Promise<boolean> {
-  if (getSupabaseConfig()) {
-    try {
-      await supabaseRest(`activity_logs?id=eq.${encodeURIComponent(id)}`, {
-        method: "DELETE",
-      });
-      return true;
-    } catch (e) {
-      console.warn("Supabase deleteActivityLog fallback:", e);
-    }
-  }
-
-  await initDb();
-  try {
-    const pool = await getPool();
-    if (pool) {
-      await pool.query("DELETE FROM activity_logs WHERE id = $1", [id]);
-      return true;
-    }
-  } catch (err) {
-    console.error("PostgreSQL deleteActivityLog error:", err);
-  }
+  crmMem.activity = crmMem.activity.filter((l) => l.id !== id);
   return true;
 }
 
 export async function deleteActivityLogsBulk(ids: string[]): Promise<boolean> {
   if (!ids || ids.length === 0) return true;
-  if (getSupabaseConfig()) {
-    try {
-      const inQuery = ids.map((id) => `"${id}"`).join(",");
-      await supabaseRest(`activity_logs?id=in.(${inQuery})`, {
-        method: "DELETE",
-      });
-      return true;
-    } catch (e) {
-      console.warn("Supabase deleteActivityLogsBulk fallback:", e);
-    }
-  }
-
-  await initDb();
-  try {
-    const pool = await getPool();
-    if (pool) {
-      await pool.query("DELETE FROM activity_logs WHERE id = ANY($1)", [ids]);
-      return true;
-    }
-  } catch (err) {
-    console.error("PostgreSQL deleteActivityLogsBulk error:", err);
-  }
+  const drop = new Set(ids);
+  crmMem.activity = crmMem.activity.filter((l) => !drop.has(l.id));
   return true;
 }
 
 export async function clearAllActivityLogs(): Promise<boolean> {
-  if (getSupabaseConfig()) {
-    try {
-      await supabaseRest("activity_logs?id=neq.__none__", {
-        method: "DELETE",
-      });
-      return true;
-    } catch (e) {
-      console.warn("Supabase clearAllActivityLogs fallback:", e);
-    }
-  }
-
-  await initDb();
-  try {
-    const pool = await getPool();
-    if (pool) {
-      await pool.query("DELETE FROM activity_logs");
-      return true;
-    }
-  } catch (err) {
-    console.error("PostgreSQL clearAllActivityLogs error:", err);
-  }
+  crmMem.activity = [];
   return true;
 }
 
 // ==========================================
-// LOGIN & SECURITY LOGS
+// LOGIN & SECURITY LOGS (memory only)
 // ==========================================
 export async function addLoginLog(data: {
   email: string;
@@ -1154,10 +1093,8 @@ export async function addLoginLog(data: {
   user_agent: string;
   status?: "success" | "failed" | "blocked_location" | "session_terminated" | string | undefined;
 }): Promise<LoginLog> {
-  const id = `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  const now = new Date().toISOString();
   const record: LoginLog = {
-    id,
+    id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     email: data.email,
     role: data.role,
     ip_address: data.ip_address,
@@ -1169,53 +1106,16 @@ export async function addLoginLog(data: {
     is_within_geofence: typeof data.is_within_geofence === "boolean" ? data.is_within_geofence : undefined,
     user_agent: data.user_agent,
     status: data.status || "success",
-    created_at: now,
+    created_at: new Date().toISOString(),
   };
-
-  if (getSupabaseConfig()) {
-    try {
-      await supabaseRest("login_logs", {
-        method: "POST",
-        body: JSON.stringify(record),
-      });
-      return record;
-    } catch (e) {
-      console.warn("Supabase login_logs fallback:", e);
-    }
-  }
-
-  await initDb();
-  try {
-    const pool = await getPool();
-    if (pool) {
-      await pool.query(
-        "INSERT INTO login_logs (id, email, role, ip_address, location, latitude, longitude, accuracy, distance_meters, is_within_geofence, user_agent, status, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())",
-        [
-          id,
-          data.email,
-          data.role,
-          data.ip_address,
-          data.location || null,
-          data.latitude ?? null,
-          data.longitude ?? null,
-          data.accuracy ?? null,
-          data.distance_meters ?? null,
-          data.is_within_geofence ?? null,
-          data.user_agent,
-          data.status || "success",
-        ]
-      );
-    }
-  } catch (err) {
-    console.error("PostgreSQL addLoginLog error:", err);
-  }
+  pushCapped(crmMem.logins, record, MAX_LOGIN_LOGS);
   return record;
 }
 
 // Exact row count of a table (optionally filtered), straight from the database.
 // Returns null when the database can't be read.
 export async function countTableRows(
-  table: "leads" | "orders" | "calendly_meetings" | "admin_users" | "activity_logs" | "login_logs",
+  table: "leads" | "orders" | "calendly_meetings" | "admin_users",
   filter?: { supabase: string; sql: string } | undefined
 ): Promise<number | null> {
   const config = getSupabaseConfig();
@@ -1254,52 +1154,13 @@ export async function countTableRows(
 
 export async function deleteLoginLogs(ids: string[]): Promise<boolean> {
   if (!ids || ids.length === 0) return true;
-  let ok = false;
-  if (getSupabaseConfig()) {
-    try {
-      const inQuery = ids.map((id) => `"${String(id).replace(/"/g, "")}"`).join(",");
-      await supabaseRest(`login_logs?id=in.(${inQuery})`, { method: "DELETE" });
-      ok = true;
-    } catch (e) {
-      console.warn("Supabase deleteLoginLogs fallback:", e);
-    }
-  }
-  if (!ok) {
-    await initDb();
-    try {
-      const pool = await getPool();
-      if (pool) {
-        await pool.query("DELETE FROM login_logs WHERE id = ANY($1)", [ids]);
-        ok = true;
-      }
-    } catch (err) {
-      console.error("PostgreSQL deleteLoginLogs error:", err);
-    }
-  }
-  return ok;
+  const drop = new Set(ids.map(String));
+  crmMem.logins = crmMem.logins.filter((l) => !drop.has(l.id));
+  return true;
 }
 
 export async function getLoginLogs(limit = 100): Promise<LoginLog[]> {
-  if (getSupabaseConfig()) {
-    try {
-      const rows = await supabaseRest(`login_logs?select=*&order=created_at.desc&limit=${limit}`);
-      if (Array.isArray(rows)) return rows as LoginLog[];
-    } catch (e) {
-      console.warn("Supabase getLoginLogs fallback:", e);
-    }
-  }
-
-  await initDb();
-  try {
-    const pool = await getPool();
-    if (pool) {
-      const res = await pool.query("SELECT * FROM login_logs ORDER BY created_at DESC LIMIT $1", [limit]);
-      return res.rows;
-    }
-  } catch (err) {
-    console.error("PostgreSQL getLoginLogs error:", err);
-  }
-  return [];
+  return crmMem.logins.slice(0, limit);
 }
 
 // ==========================================
@@ -1550,7 +1411,7 @@ export async function deleteAdminUser(idOrEmail: string): Promise<boolean> {
 // CALENDLY MEETINGS
 // ==========================================
 // ── Deleted Calendly meetings: remembered so the Calendly sync / webhook never brings them back ──
-// Key = client email + meeting date + time (normalised), stored in crm_settings.
+// Key = client email + meeting date + time (normalised), stored in CRM settings (file).
 const DELETED_SLOTS_KEY = "calendly_deleted_slots";
 
 export function calendlySlotKey(email?: string | undefined, date?: string | undefined, time?: string): string {
@@ -2307,7 +2168,7 @@ export async function clearAllCalendlyMeetings(): Promise<boolean> {
 }
 
 // ==========================================
-// CRM NOTIFICATIONS PERSISTENCE
+// CRM NOTIFICATIONS (memory only)
 // ==========================================
 
 export async function saveCRMNotification(data: {
@@ -2317,145 +2178,38 @@ export async function saveCRMNotification(data: {
   entity_id?: string | undefined;
   actor?: string | undefined;
 }): Promise<CRMNotification> {
-  const id = `notif_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  const now = new Date().toISOString();
   const record: CRMNotification = {
-    id,
+    id: `notif_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     type: data.type,
     title: data.title,
     message: data.message,
     entity_id: data.entity_id,
     actor: data.actor || "System",
     is_read: false,
-    created_at: now,
+    created_at: new Date().toISOString(),
   };
-
-  if (getSupabaseConfig()) {
-    try {
-      const rows = await supabaseRest("crm_notifications", {
-        method: "POST",
-        body: JSON.stringify(record),
-      });
-      if (Array.isArray(rows) && rows[0]) return rows[0] as CRMNotification;
-    } catch (e) {
-      console.warn("Supabase saveCRMNotification fallback:", e);
-    }
-  }
-
-  await initDb();
-  try {
-    const pool = await getPool();
-    if (pool) {
-      const res = await pool.query(
-        `INSERT INTO crm_notifications (id, type, title, message, entity_id, actor, is_read, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-         RETURNING *`,
-        [id, data.type, data.title, data.message, data.entity_id || null, data.actor || "System", false]
-      );
-      return res.rows[0];
-    }
-  } catch (err) {
-    console.error("PostgreSQL saveCRMNotification error:", err);
-  }
+  pushCapped(crmMem.notifications, record, MAX_NOTIFICATIONS);
   return record;
 }
 
 export async function getCRMNotifications(limit = 50): Promise<CRMNotification[]> {
-  if (getSupabaseConfig()) {
-    try {
-      const rows = await supabaseRest(`crm_notifications?select=*&order=created_at.desc&limit=${limit}`);
-      if (Array.isArray(rows)) return rows as CRMNotification[];
-    } catch (e) {
-      console.warn("Supabase getCRMNotifications fallback:", e);
-    }
-  }
-
-  await initDb();
-  try {
-    const pool = await getPool();
-    if (pool) {
-      const res = await pool.query("SELECT * FROM crm_notifications ORDER BY created_at DESC LIMIT $1", [limit]);
-      return res.rows;
-    }
-  } catch (err) {
-    console.error("PostgreSQL getCRMNotifications error:", err);
-  }
-  return [];
+  return crmMem.notifications.slice(0, limit);
 }
 
 export async function markNotificationRead(id: string): Promise<boolean> {
-  if (getSupabaseConfig()) {
-    try {
-      await supabaseRest(`crm_notifications?id=eq.${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ is_read: true }),
-      });
-      return true;
-    } catch (e) {
-      console.warn("Supabase markNotificationRead fallback:", e);
-    }
-  }
-
-  await initDb();
-  try {
-    const pool = await getPool();
-    if (pool) {
-      await pool.query("UPDATE crm_notifications SET is_read = TRUE WHERE id = $1", [id]);
-      return true;
-    }
-  } catch (err) {
-    console.error("PostgreSQL markNotificationRead error:", err);
-  }
-  return false;
+  const n = crmMem.notifications.find((x) => x.id === id);
+  if (n) n.is_read = true;
+  return true;
 }
 
 export async function markAllNotificationsRead(): Promise<boolean> {
-  if (getSupabaseConfig()) {
-    try {
-      await supabaseRest("crm_notifications?is_read=eq.false", {
-        method: "PATCH",
-        body: JSON.stringify({ is_read: true }),
-      });
-      return true;
-    } catch (e) {
-      console.warn("Supabase markAllNotificationsRead fallback:", e);
-    }
-  }
-
-  await initDb();
-  try {
-    const pool = await getPool();
-    if (pool) {
-      await pool.query("UPDATE crm_notifications SET is_read = TRUE WHERE is_read = FALSE");
-      return true;
-    }
-  } catch (err) {
-    console.error("PostgreSQL markAllNotificationsRead error:", err);
-  }
-  return false;
+  for (const n of crmMem.notifications) n.is_read = true;
+  return true;
 }
 
 export async function clearNotifications(): Promise<boolean> {
-  if (getSupabaseConfig()) {
-    try {
-      await supabaseRest("crm_notifications", { method: "DELETE" });
-      return true;
-    } catch (e) {
-      console.warn("Supabase clearNotifications fallback:", e);
-    }
-  }
-
-  await initDb();
-  try {
-    const pool = await getPool();
-    if (pool) {
-      await pool.query("DELETE FROM crm_notifications");
-      return true;
-    }
-  } catch (err) {
-    console.error("PostgreSQL clearNotifications error:", err);
-  }
-  return false;
+  crmMem.notifications = [];
+  return true;
 }
 
 // Backward-compatible alias for deleteLead
@@ -2753,66 +2507,18 @@ export async function deleteOrder(id: string): Promise<boolean> {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CRM Settings (key/value, shared by all admins and read by the server, e.g.
-// for the notification email recipient)
+// for the notification email recipient). Stored in a JSON file, NOT the database.
 // ─────────────────────────────────────────────────────────────────────────────
 export async function getCrmSettings(): Promise<Record<string, string>> {
-  const out: Record<string, string> = {};
-  if (getSupabaseConfig()) {
-    try {
-      const rows = await supabaseRest("crm_settings?select=key,value");
-      if (Array.isArray(rows)) {
-        for (const r of rows) if (r?.key) out[r.key] = r.value ?? "";
-        return out;
-      }
-    } catch (err) {
-      console.warn("Supabase REST getCrmSettings fallback:", err);
-    }
-  }
-
-  await initDb();
-  try {
-    const pool = await getPool();
-    if (pool) {
-      const res = await pool.query("SELECT key, value FROM crm_settings");
-      for (const r of res.rows) out[r.key] = r.value ?? "";
-    }
-  } catch (error) {
-    console.error("PostgreSQL getCrmSettings error:", error);
-  }
-  return out;
+  return { ...(await loadCrmSettings()) };
 }
 
 export async function saveCrmSettings(settings: Record<string, string>): Promise<boolean> {
-  const rows = Object.entries(settings).map(([key, value]) => ({
-    key,
-    value,
-    updated_at: new Date().toISOString(),
-  }));
-  if (rows.length === 0) return true;
-
-  if (getSupabaseConfig()) {
-    try {
-      await supabaseRest("crm_settings?on_conflict=key", {
-        method: "POST",
-        headers: { Prefer: "resolution=merge-duplicates,return=representation" },
-        body: JSON.stringify(rows),
-      });
-      return true;
-    } catch (err) {
-      console.warn("Supabase REST saveCrmSettings fallback:", err);
-    }
-  }
-
-  await initDb();
-  const pool = await getPool();
-  if (!pool) return false;
-  for (const r of rows) {
-    await pool.query(
-      `INSERT INTO crm_settings (key, value, updated_at) VALUES ($1, $2, NOW())
-       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
-      [r.key, r.value]
-    );
-  }
+  const entries = Object.entries(settings);
+  if (entries.length === 0) return true;
+  const current = await loadCrmSettings();
+  for (const [key, value] of entries) current[key] = value == null ? "" : String(value);
+  await persistCrmSettings();
   return true;
 }
 
@@ -2821,49 +2527,14 @@ export async function saveCrmSettings(settings: Record<string, string>): Promise
  * counted back to the most recent successful login.
  */
 export async function countRecentFailedLogins(email: string, ip: string | undefined, windowMinutes: number): Promise<number> {
-  const since = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
+  const since = Date.now() - windowMinutes * 60 * 1000;
   const cleanEmail = (email || "").toLowerCase().trim();
   const cleanIp = ip && /^[0-9a-fA-F:.]+$/.test(ip) ? ip : "";
-  let rows: { status: string; created_at: string }[] = [];
-
-  let loaded = false;
-  if (getSupabaseConfig()) {
-    try {
-      const orParts = [`email.eq."${cleanEmail}"`];
-      if (cleanIp) orParts.push(`ip_address.eq."${cleanIp}"`);
-      const endpoint =
-        `login_logs?select=status,created_at&created_at=gte.${encodeURIComponent(since)}` +
-        `&or=(${encodeURIComponent(orParts.join(","))})&order=created_at.desc&limit=100`;
-      const res = await supabaseRest(endpoint);
-      if (Array.isArray(res)) {
-        rows = res;
-        loaded = true;
-      }
-    } catch (err) {
-      console.warn("Supabase REST countRecentFailedLogins fallback:", err);
-    }
-  }
-
-  if (!loaded) {
-    await initDb();
-    try {
-      const pool = await getPool();
-      if (pool) {
-        const res = await pool.query(
-          `SELECT status, created_at FROM login_logs
-           WHERE created_at >= $1 AND (LOWER(email) = $2 OR ($3 <> '' AND ip_address = $3))
-           ORDER BY created_at DESC LIMIT 100`,
-          [since, cleanEmail, cleanIp]
-        );
-        rows = res.rows;
-      }
-    } catch (error) {
-      console.error("PostgreSQL countRecentFailedLogins error:", error);
-    }
-  }
-
   let count = 0;
-  for (const r of rows) {
+  for (const r of crmMem.logins) {
+    if (new Date(r.created_at).getTime() < since) break;
+    const match = (r.email || "").toLowerCase() === cleanEmail || (cleanIp !== "" && r.ip_address === cleanIp);
+    if (!match) continue;
     if (r.status === "success") break;
     if (r.status === "failed") count++;
   }
