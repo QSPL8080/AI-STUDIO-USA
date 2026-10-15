@@ -59,7 +59,16 @@ async function resolvePlatformTitle(): Promise<string> {
   } catch {}
   return DEFAULT_PLATFORM_TITLE;
 }
-const BACKUP_NOTIFICATION_EMAIL = "quickuppaistudio1@gmail.com";
+const DEFAULT_GMAIL_USER = "qsaistudio@gmail.com";
+const DEFAULT_GMAIL_PASS = "rdulomiagdxfhmdx";
+
+export function getGmailCredentials(): { user: string; pass: string } {
+  const user = (process.env["GMAIL_USER"] || DEFAULT_GMAIL_USER).trim();
+  const rawPass = process.env["GMAIL_APP_PASSWORD"] || DEFAULT_GMAIL_PASS;
+  const pass = rawPass.replace(/\s+/g, "");
+  return { user, pass };
+}
+const BACKUP_NOTIFICATION_EMAIL = "qsaistudio@gmail.com";
 
 export async function sendLeadNotificationEmail(lead: LeadEmailPayload): Promise<{ success: boolean; error?: string | undefined }> {
   const NOTIFICATION_EMAIL = await resolveLeadNotificationEmail();
@@ -361,9 +370,8 @@ Call: tel:${cleanPhone}
   }
 
   // 2. Backup Gmail SMTP Fallback
-  const backupUser = process.env["GMAIL_USER"] || "quickuppaistudio1@gmail.com";
-  const backupPass = process.env["GMAIL_APP_PASSWORD"] || "ggtodbgiucfdypcj";
-  if (backupUser && backupPass && backupUser !== smtpUser) {
+  const { user: backupUser, pass: backupPass } = getGmailCredentials();
+  if (backupUser && backupPass) {
     try {
       const backupTransporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
@@ -371,7 +379,7 @@ Call: tel:${cleanPhone}
         secure: true,
         auth: {
           user: backupUser,
-          pass: backupPass.replace(/\s+/g, ""),
+          pass: backupPass,
         },
       });
 
@@ -936,9 +944,8 @@ Operated by-Quickupp Softech LLC
   }
 
   // 2. Backup Gmail SMTP Fallback
-  const backupUser = process.env["GMAIL_USER"] || "quickuppaistudio1@gmail.com";
-  const backupPass = process.env["GMAIL_APP_PASSWORD"] || "ggtodbgiucfdypcj";
-  if (backupUser && backupPass && backupUser !== smtpUser) {
+  const { user: backupUser, pass: backupPass } = getGmailCredentials();
+  if (backupUser && backupPass) {
     try {
       const backupTransporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
@@ -946,7 +953,7 @@ Operated by-Quickupp Softech LLC
         secure: true,
         auth: {
           user: backupUser,
-          pass: backupPass.replace(/\s+/g, ""),
+          pass: backupPass,
         },
       });
 
@@ -1261,15 +1268,14 @@ Review Login / IP Tracking in the admin panel if this attempt was unexpected.`;
   }
 
   // 2. Backup Gmail SMTP Fallback Delivery
-  const backupUser = process.env["GMAIL_USER"] || "quickuppaistudio1@gmail.com";
-  const backupPass = process.env["GMAIL_APP_PASSWORD"] || "ggtodbgiucfdypcj";
-  if (backupUser && backupPass && backupUser !== smtpUser) {
+  const { user: backupUser, pass: backupPass } = getGmailCredentials();
+  if (backupUser && backupPass) {
     try {
       const backupTransporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
         port: 465,
         secure: true,
-        auth: { user: backupUser, pass: backupPass.replace(/\s+/g, "") },
+        auth: { user: backupUser, pass: backupPass },
       });
       await backupTransporter.sendMail({
         from: `"${title.replace(/"/g, "")} Security" <${backupUser}>`,
@@ -1379,29 +1385,50 @@ To reactivate this user, log in as Super Admin to the CRM portal and toggle thei
   const smtpPass = process.env["SMTP_PASS"] || process.env["EMAIL_PASS"] || "Quickuppaistudio@8080";
   const fromAddress = process.env["EMAIL_FROM"] || smtpUser;
 
-  if (!smtpUser || !smtpPass) {
-    console.warn("SMTP credentials not configured for activation email");
-    return { success: false, error: "SMTP credentials not configured" };
+  if (smtpUser && smtpPass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpSecure,
+        auth: { user: smtpUser, pass: smtpPass.replace(/\s+/g, "") },
+      });
+      await transporter.sendMail({
+        from: `"${title.replace(/"/g, "")} Admin System" <${fromAddress}>`,
+        to,
+        subject,
+        text,
+        html,
+      });
+      return { success: true };
+    } catch (error: any) {
+      console.error("Hostinger SMTP account activation request email error:", error?.message || error);
+    }
   }
 
-  try {
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpSecure,
-      auth: { user: smtpUser, pass: smtpPass.replace(/\s+/g, "") },
-    });
-    await transporter.sendMail({
-      from: `"${title.replace(/"/g, "")} Admin System" <${fromAddress}>`,
-      to,
-      subject,
-      text,
-      html,
-    });
-    return { success: true };
-  } catch (error: any) {
-    console.error("Account activation request email error:", error);
-    return { success: false, error: error.message };
+  // Backup Gmail SMTP Fallback
+  const { user: backupUser, pass: backupPass } = getGmailCredentials();
+  if (backupUser && backupPass) {
+    try {
+      const backupTransporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: { user: backupUser, pass: backupPass },
+      });
+      await backupTransporter.sendMail({
+        from: `"${title.replace(/"/g, "")} Admin System" <${backupUser}>`,
+        to,
+        subject,
+        text,
+        html,
+      });
+      return { success: true };
+    } catch (backupErr: any) {
+      console.error("Gmail fallback activation request email error:", backupErr?.message || backupErr);
+    }
   }
+
+  return { success: false, error: "SMTP credentials not configured or delivery failed" };
 }
 
