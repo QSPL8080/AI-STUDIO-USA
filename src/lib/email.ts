@@ -253,7 +253,7 @@ export async function sendLeadNotificationEmail(lead: LeadEmailPayload): Promise
         <img src="cid:quickupp-logo" alt="Quickupp AI Studio" style="height: 38px; width: auto; display: block; border: 0;" />
       </div>
       <div class="brand-pill">Quickupp AI Studio</div>
-      <h1 class="title">🎯 New Lead Received</h1>
+      <h1 class="title">New Lead Received</h1>
       <p class="subtitle">Source: <strong>${lead.source}</strong> &bull; Received: ${timestamp}</p>
     </div>
     <div class="content">
@@ -921,35 +921,14 @@ export interface FailedLoginAlertPayload {
 function formatRoleBadge(role?: string): string {
   if (!role) return "Unregistered Account";
   const r = role.toLowerCase().trim();
-  if (r === "super_admin") return "Super Admin 👑";
-  if (r === "admin") return "Admin 🛡️";
-  if (r === "manager" || r === "lead_manager") return "Lead Manager 💼";
-  if (r === "caller" || r === "telecaller") return "Telecaller 📞";
-  if (r === "editor" || r === "video_editor") return "Video Editor 🎬";
-  if (r === "locked_account") return "Locked Account 🔒";
-  if (r === "unknown") return "Unregistered / Unknown User ❓";
+  if (r === "super_admin") return "Super Admin";
+  if (r === "admin") return "Admin";
+  if (r === "manager" || r === "lead_manager") return "Lead Manager";
+  if (r === "caller" || r === "telecaller") return "Telecaller";
+  if (r === "editor" || r === "video_editor") return "Video Editor";
+  if (r === "locked_account") return "Locked Account";
+  if (r === "unknown") return "Unregistered / Unknown User";
   return role.charAt(0).toUpperCase() + role.slice(1);
-}
-
-function parseDeviceSummary(ua?: string): string {
-  if (!ua) return "Unknown Device & Browser";
-  let os = "Desktop / PC";
-  if (/iPad/i.test(ua)) os = "Apple iPad";
-  else if (/iPhone/i.test(ua)) os = "Apple iPhone";
-  else if (/Android.*Mobile|Mobile/i.test(ua)) os = "Android Mobile";
-  else if (/Android/i.test(ua)) os = "Android Tablet";
-  else if (/Macintosh|Mac OS/i.test(ua)) os = "macOS";
-  else if (/Windows/i.test(ua)) os = "Windows PC";
-  else if (/Linux/i.test(ua)) os = "Linux";
-
-  let browser = "Web Browser";
-  if (/Edg\//i.test(ua)) browser = "Microsoft Edge";
-  else if (/Chrome\//i.test(ua)) browser = "Google Chrome";
-  else if (/Safari\//i.test(ua) && !/Chrome/i.test(ua)) browser = "Apple Safari";
-  else if (/Firefox\//i.test(ua)) browser = "Mozilla Firefox";
-  else if (/Opera|OPR/i.test(ua)) browser = "Opera";
-
-  return `${browser} &bull; ${os}`;
 }
 
 function formatLockMinutesText(minutes?: number): string {
@@ -982,181 +961,93 @@ export async function sendFailedLoginAlertEmail(
     timeStyle: "medium",
   }) + " (ET - US Eastern)";
 
-  const attempts = info.attempts || 1;
   const threshold = info.threshold || 3;
   const isLocked = Boolean(info.isLocked || (info.lockoutMinutes && info.lockoutMinutes > 0));
   const roleDisplay = formatRoleBadge(info.role);
-  const deviceDisplay = parseDeviceSummary(info.userAgent);
   const failureReason = info.reason || "Incorrect Password";
 
   const isSuperAdmin = (info.role || "").toLowerCase() === "super_admin" || (info.email || "").toLowerCase().trim() === "sa@aistudio.us";
 
   const subject = isLocked
-    ? `🚨 [SECURITY ALERT] CRM Account Locked: ${info.email || "Unknown User"} (${threshold} Failed Attempts)`
-    : isSuperAdmin
-    ? `🚨 [SECURITY ALERT] Super Admin ${threshold} Failed Logins: ${info.email || "Unknown User"}`
-    : `🚨 [SECURITY ALERT] CRM Failed Login Threshold Reached (${threshold} Attempts): ${info.email || "Unknown User"}`;
+    ? `Security Alert: CRM account locked - ${info.email || "Unknown user"}`
+    : `Security Alert: ${threshold} failed sign-in attempts - ${info.email || "Unknown user"}`;
 
   const esc = (v: string) => v.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
 
-  let statusBadgeHtml = "";
-  if (isLocked) {
-    statusBadgeHtml = `<span style="display:inline-block;padding:4px 10px;background:#fee2e2;color:#991b1b;font-weight:700;border-radius:6px;border:1px solid #fecaca;">⛔ LOCKED FOR ${formatLockMinutesText(info.lockoutMinutes)} (${threshold} Failed Attempts)</span>`;
-  } else if (isSuperAdmin) {
-    statusBadgeHtml = `<span style="display:inline-block;padding:4px 10px;background:#fef3c7;color:#92400e;font-weight:700;border-radius:6px;border:1px solid #fde68a;">🛡️ ACTIVE (Super Admin reached ${threshold} attempts — immune to lockout)</span>`;
-  } else {
-    statusBadgeHtml = `<span style="display:inline-block;padding:4px 10px;background:#fef2f2;color:#b91c1c;font-weight:700;border-radius:6px;border:1px solid #fecaca;">⚠️ Reached Policy Threshold (${threshold} of ${threshold} attempts)</span>`;
-  }
+  const summary = isLocked
+    ? `Account has reached the policy threshold of ${threshold} consecutive failed login attempts and is temporarily locked for ${formatLockMinutesText(info.lockoutMinutes)}.`
+    : isSuperAdmin
+    ? `The Super Admin account has reached ${threshold} consecutive failed login attempts. The Super Admin account is never locked.`
+    : `This account has reached the policy threshold of ${threshold} consecutive failed login attempts.`;
+
+  const rows: [string, string][] = [
+    ["Email", info.email || "N/A"],
+    ...(info.userName ? [["Name", info.userName] as [string, string]] : []),
+    ["Role", roleDisplay],
+    ["Reason", failureReason],
+    ["IP address", info.ipAddress || "Unknown"],
+    ["Location", info.location || "Unknown"],
+    ["Time (IST)", whenIST],
+    ["Time (US Eastern)", whenET],
+  ];
+
+  const rowsHtml = rows
+    .map(
+      ([k, v]) => `
+          <tr>
+            <td style="padding: 8px 0; color: #64748b; width: 38%; vertical-align: top;">${esc(k)}</td>
+            <td style="padding: 8px 0; color: #0f172a; font-weight: 600;">${esc(v)}</td>
+          </tr>`
+    )
+    .join("");
 
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>CRM Failed Login Security Alert</title>
+  <title>CRM Security Alert</title>
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 24px 12px; color: #0f172a;">
-  <div style="max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #cbd5e1; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-    
-    <!-- Top Alert Banner -->
-    <div style="background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%); padding: 22px 24px; color: #ffffff;">
-      <div style="font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; background: rgba(255,255,255,0.2); display: inline-block; padding: 3px 10px; border-radius: 4px; margin-bottom: 8px;">
-        🚨 Security Alert &bull; CRM Policy Threshold: ${threshold} Attempts
-      </div>
-      <h1 style="margin: 0; font-size: 20px; font-weight: 800; line-height: 1.3;">
-        ${isLocked ? `Account Locked (${threshold} Failed Attempts)` : `Failed Login Threshold Reached (${threshold} Attempts)`}
+  <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden;">
+    <div style="background: #991b1b; padding: 18px 24px; color: #ffffff;">
+      <div style="font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; opacity: 0.85;">Security Alert</div>
+      <h1 style="margin: 4px 0 0; font-size: 19px; font-weight: 700;">
+        ${isLocked ? "CRM account locked" : "Failed sign-in attempts"}
       </h1>
-      <p style="margin: 6px 0 0; font-size: 13px; opacity: 0.9;">
-        ${esc(title)} Security Monitoring
-      </p>
     </div>
 
-    <!-- Main Content -->
     <div style="padding: 24px;">
-      
-      <!-- Callout Box -->
-      <div style="background: ${isLocked ? '#fef2f2' : '#fffbeb'}; border-left: 4px solid ${isLocked ? '#dc2626' : '#f59e0b'}; padding: 14px 16px; border-radius: 6px; margin-bottom: 20px;">
-        <p style="margin: 0; font-size: 14px; font-weight: 600; color: ${isLocked ? '#991b1b' : '#92400e'};">
-          ${isLocked 
-            ? `Account has reached the policy threshold of ${threshold} consecutive failed login attempts and is temporarily locked for ${formatLockMinutesText(info.lockoutMinutes)}.` 
-            : isSuperAdmin
-            ? `The Super Admin account (${esc(info.email || 'N/A')}) has reached ${threshold} consecutive failed login attempts. Super Admin accounts are immune to lockout, but please verify this activity immediately.`
-            : `CRM login attempts for ${esc(info.email || 'N/A')} reached the policy threshold of ${threshold} consecutive failed attempts.`}
-        </p>
+      <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 12px 14px; border-radius: 6px; margin-bottom: 18px;">
+        <p style="margin: 0; font-size: 14px; font-weight: 600; color: #991b1b;">${esc(summary)}</p>
       </div>
 
-      <!-- Details Table -->
-      <table style="width: 100%; border-collapse: collapse; font-size: 13px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-        <tbody>
-          <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 10px 14px; color: #475569; font-weight: 700; width: 35%;">Attempted Email</td>
-            <td style="padding: 10px 14px; color: #0f172a; font-weight: 800; font-family: monospace; font-size: 14px;">
-              ${esc(info.email || "N/A")}
-            </td>
-          </tr>
-          <tr style="border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">Account Role</td>
-            <td style="padding: 10px 14px; color: #0f172a; font-weight: 700;">
-              ${esc(roleDisplay)}
-            </td>
-          </tr>
-          ${info.userName ? `
-          <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">Account Holder Name</td>
-            <td style="padding: 10px 14px; color: #0f172a; font-weight: 600;">
-              ${esc(info.userName)}
-            </td>
-          </tr>` : ""}
-          <tr style="background-color: #fff1f2; border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 10px 14px; color: #9f1239; font-weight: 700;">Failure Reason</td>
-            <td style="padding: 10px 14px; color: #b91c1c; font-weight: 800;">
-              ${esc(failureReason)}
-            </td>
-          </tr>
-          <tr style="border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">Account Security Status</td>
-            <td style="padding: 10px 14px;">
-              ${statusBadgeHtml}
-            </td>
-          </tr>
-          <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">IP Address</td>
-            <td style="padding: 10px 14px; color: #0f172a; font-family: monospace; font-weight: 700;">
-              ${esc(info.ipAddress || "Unknown IP")}
-            </td>
-          </tr>
-          <tr style="border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">Reported Location</td>
-            <td style="padding: 10px 14px; color: #0f172a; font-weight: 600;">
-              ${esc(info.location || "Unknown Location")}
-              ${info.latitude && info.longitude ? `
-                <div style="margin-top: 4px; font-size: 11px; font-weight: normal;">
-                  GPS: ${info.latitude.toFixed(4)}, ${info.longitude.toFixed(4)} 
-                  <a href="https://www.google.com/maps?q=${info.latitude},${info.longitude}" target="_blank" style="color: #2563eb; text-decoration: underline; margin-left: 6px;">
-                    View on Google Maps &rarr;
-                  </a>
-                </div>
-              ` : ""}
-            </td>
-          </tr>
-          <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">Browser & Device</td>
-            <td style="padding: 10px 14px; color: #0f172a; font-weight: 600;">
-              ${deviceDisplay}
-            </td>
-          </tr>
-          <tr style="border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">Time (India - IST)</td>
-            <td style="padding: 10px 14px; color: #0f172a; font-weight: 600;">
-              ${whenIST}
-            </td>
-          </tr>
-          <tr style="background-color: #f8fafc;">
-            <td style="padding: 10px 14px; color: #475569; font-weight: 700;">Time (USA - ET)</td>
-            <td style="padding: 10px 14px; color: #0f172a; font-weight: 600;">
-              ${whenET}
-            </td>
-          </tr>
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <tbody>${rowsHtml}
         </tbody>
       </table>
 
-      <!-- Security Guidance -->
-      <div style="margin-top: 22px; padding: 14px 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
-        <div style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px;">Recommended Administrator Actions:</div>
-        <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #64748b; line-height: 1.6;">
-          <li>Review real-time access under <strong>CRM &rarr; Login / IP Tracking</strong>.</li>
-          <li>If this was an authorized team member who forgot their credentials, advise them to contact the Super Admin for a password reset.</li>
-          <li>If you do not recognize this IP (${esc(info.ipAddress || "Unknown")}), consider blocking the IP or reviewing firewall rules.</li>
-        </ul>
-      </div>
-
+      <p style="margin: 18px 0 0; font-size: 12px; color: #64748b; line-height: 1.6;">
+        If this was not you or your team, review the account in CRM &rarr; User Management.
+      </p>
     </div>
 
-    <!-- Footer -->
-    <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 24px; text-align: center; font-size: 11px; color: #94a3b8;">
-      &copy; ${now.getFullYear()} ${esc(title)} &bull; Automated Security Dispatch &bull; Recipients: ${esc(to)}
+    <div style="border-top: 1px solid #e2e8f0; padding: 12px 24px; text-align: center; font-size: 11px; color: #94a3b8;">
+      ${esc(title)} &bull; Automated security alert
     </div>
-
   </div>
 </body>
 </html>`;
 
-  const text = `🚨 [SECURITY ALERT] Failed CRM Login Attempt
-Platform: ${title}
-------------------------------------------------------
-Attempted Email: ${info.email || "N/A"}
-Account Role: ${roleDisplay}
-Account Holder: ${info.userName || "N/A"}
-Failure Reason: ${failureReason}
-Attempt Count: Attempt ${attempts} of ${threshold}
-Account Status: ${isLocked ? `LOCKED for ${formatLockMinutesText(info.lockoutMinutes)}` : (isSuperAdmin ? "ACTIVE (Super Admin never locked)" : `ACTIVE (${Math.max(threshold - attempts, 0)} attempts remaining)`)}
-IP Address: ${info.ipAddress || "Unknown"}
-Reported Location: ${info.location || "Unknown"}
-Browser & Device: ${info.userAgent || "Unknown"}
-Time (IST - India): ${whenIST}
-Time (ET - US Eastern): ${whenET}
-------------------------------------------------------
-Alert sent to: ${to}
-Review Login / IP Tracking in the admin panel if this attempt was unexpected.`;
+  const text = [
+    `Security Alert - ${isLocked ? "CRM account locked" : "Failed sign-in attempts"}`,
+    "",
+    summary,
+    "",
+    ...rows.map(([k, v]) => `${k}: ${v}`),
+    "",
+    "If this was not you or your team, review the account in CRM > User Management.",
+    `${title} - Automated security alert`,
+  ].join("\n");
 
   // Same as the India site: 1) Gmail qsaistudio@gmail.com, 2) this site's mailbox info@quickuppaistudio.us.
   // The alert always goes TO info@quickuppaistudio.us only.
