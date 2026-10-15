@@ -1187,29 +1187,20 @@ export async function syncCalendlyEventsFromApi(opts?: { force?: boolean | undef
       return { count: 0, error: "Calendly user URI not found" };
     }
 
-    // Newest first, and only meetings from the last 30 days onward: Calendly's default
-    // (20 oldest events) never returned recent cancellations.
-    const minStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    // Only new & upcoming meetings from now onward (no historical/past junk):
+    const minStart = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
     const listUrl = (status: string) =>
       `https://api.calendly.com/scheduled_events?user=${encodeURIComponent(userUri)}&status=${status}` +
       `&count=100&sort=start_time:desc&min_start_time=${encodeURIComponent(minStart)}`;
-    const [activeEventsRes, canceledEventsRes] = await Promise.all([
-      fetch(listUrl("active"), { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000) }),
-      fetch(listUrl("canceled"), { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000) }),
-    ]);
-
-    const activeCollection = activeEventsRes.ok ? ((await activeEventsRes.json()) as any)?.collection || [] : [];
-    const canceledCollection = canceledEventsRes.ok ? ((await canceledEventsRes.json()) as any)?.collection || [] : [];
-
-    // Combine active and canceled events
-    const allEvents = [...activeCollection, ...canceledCollection];
+    const activeEventsRes = await fetch(listUrl("active"), { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000) });
+    const allEvents = activeEventsRes.ok ? ((await activeEventsRes.json()) as any)?.collection || [] : [];
     let syncedCount = 0;
 
     for (const ev of allEvents) {
       try {
-        const evCreatedAt = new Date(ev.created_at || ev.start_time).getTime();
-        // Skip historical / pre-reset meetings
-        if (cutoffTime > 0 && evCreatedAt < cutoffTime) {
+        const evStartTime = new Date(ev.start_time).getTime();
+        // Skip historical / past meetings older than 12 hours
+        if (evStartTime < Date.now() - 12 * 60 * 60 * 1000) {
           continue;
         }
 

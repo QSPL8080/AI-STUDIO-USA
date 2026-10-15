@@ -363,6 +363,11 @@ export async function initDb() {
           ALTER TABLE calendly_meetings ADD COLUMN IF NOT EXISTS outcome_set_by VARCHAR(255);
           ALTER TABLE calendly_meetings ADD COLUMN IF NOT EXISTS outcome_set_at TIMESTAMP WITH TIME ZONE;
 
+          CREATE TABLE IF NOT EXISTS deleted_calendly_meetings (
+            event_key VARCHAR(255) PRIMARY KEY,
+            deleted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
           CREATE TABLE IF NOT EXISTS orders (
             id VARCHAR(64) PRIMARY KEY,
             paypal_order_id VARCHAR(128) NOT NULL UNIQUE,
@@ -1434,22 +1439,41 @@ export function calendlySlotKey(email?: string | undefined, date?: string | unde
 }
 
 async function getDeletedSlotKeys(): Promise<Set<string>> {
+  const keys = new Set<string>();
+  try {
+    const rows = await supabaseRest("deleted_calendly_meetings?select=event_key");
+    if (Array.isArray(rows)) {
+      rows.forEach((r: any) => r.event_key && keys.add(String(r.event_key).toLowerCase().trim()));
+    }
+  } catch {}
   try {
     const settings = await getCrmSettings();
     const arr = JSON.parse(settings[DELETED_SLOTS_KEY] || "[]");
-    return new Set(Array.isArray(arr) ? arr.map(String) : []);
-  } catch {
-    return new Set();
-  }
+    if (Array.isArray(arr)) {
+      arr.forEach((k) => k && keys.add(String(k).toLowerCase().trim()));
+    }
+  } catch {}
+  return keys;
 }
 
 async function updateDeletedSlotKeys(add: string[], remove: string[] = []): Promise<void> {
-  const keys = await getDeletedSlotKeys();
-  add.forEach((k) => k && keys.add(k));
-  remove.forEach((k) => keys.delete(k));
-  // Keep the list bounded (most recent 1000)
-  const list = Array.from(keys).slice(-1000);
-  await saveCrmSettings({ [DELETED_SLOTS_KEY]: JSON.stringify(list) });
+  for (const k of add) {
+    if (!k) continue;
+    try {
+      await supabaseRest("deleted_calendly_meetings", {
+        method: "POST",
+        body: JSON.stringify({ event_key: k.toLowerCase().trim() }),
+      });
+    } catch {}
+  }
+  for (const k of remove) {
+    if (!k) continue;
+    try {
+      await supabaseRest(`deleted_calendly_meetings?event_key=eq.${encodeURIComponent(k.toLowerCase().trim())}`, {
+        method: "DELETE",
+      });
+    } catch {}
+  }
 }
 
 /** Remember meetings deleted in the CRM (soft or permanent) so Calendly sync never re-creates them */
@@ -1457,7 +1481,17 @@ export async function rememberDeletedCalendlyMeetings(ids: string[]): Promise<vo
   if (!ids.length) return;
   try {
     const all = await getCalendlyMeetings(true);
-    const keys = all.filter((m) => ids.includes(m.id)).map((m) => calendlySlotKey(m.email, m.meeting_date, m.meeting_time));
+    const keys: string[] = [];
+    all.filter((m) => ids.includes(m.id)).forEach((m) => {
+      const email = (m.email || "").toLowerCase().trim();
+      const date = (m.meeting_date || "").toLowerCase().trim();
+      const time = (m.meeting_time || "").toLowerCase().trim();
+      if (email && date) {
+        keys.push(`${email}|${date}`);
+        keys.push(`${email}|${date}|${time}`);
+        keys.push(calendlySlotKey(m.email, m.meeting_date, m.meeting_time));
+      }
+    });
     if (keys.length) await updateDeletedSlotKeys(keys);
   } catch (e) {
     console.warn("rememberDeletedCalendlyMeetings warning:", e);
@@ -1538,6 +1572,15 @@ export async function saveCalendlyMeeting(data: {
   // Deleted in the CRM (Recycle Bin or permanently)? Never re-create or update it.
   // A reschedule of a deleted meeting stays deleted too.
   {
+    // 1. Check persistent database blacklist first
+    try {
+      const k1 = `${(data.email || "").toLowerCase().trim()}|${(data.meeting_date || "").toLowerCase().trim()}`;
+      const bl = await supabaseRest(`deleted_calendly_meetings?event_key=eq.${encodeURIComponent(k1)}&limit=1&select=event_key`);
+      if (Array.isArray(bl) && bl.length > 0) {
+        return { ...record, suppressed: true } as CalendlyMeeting & { suppressed: boolean };
+      }
+    } catch {}
+
     const deletedKeys = await getDeletedSlotKeys();
     const curKey = calendlySlotKey(data.email, data.meeting_date, data.meeting_time);
     const prevKey = hasPreviousSlot
@@ -1966,16 +2009,28 @@ export async function softDeleteCalendlyMeetings(ids: string[]): Promise<boolean
 
 export async function permanentDeleteCalendlyMeeting(id: string): Promise<boolean> {
   let ok = false;
+  // 1. Blacklist slot key permanently in deleted_calendly_meetings so it can NEVER re-sync
+  try {
+    const existing = await supabaseRest(`calendly_meetings?id=eq.${id}&select=email,meeting_date,meeting_time`);
+    if (Array.isArray(existing) && existing[0]) {
+      const m = existing[0];
+      const keys = [
+        `${(m.email || "").toLowerCase().trim()}|${(m.meeting_date || "").toLowerCase().trim()}`,
+        `${(m.email || "").toLowerCase().trim()}|${(m.meeting_date || "").toLowerCase().trim()}|${(m.meeting_time || "").toLowerCase().trim()}`
+      ];
+      for (const k of keys) {
+        await supabaseRest("deleted_calendly_meetings", {
+          method: "POST",
+          body: JSON.stringify({ event_key: k })
+        }).catch(() => {});
+      }
+    }
+  } catch {}
+
+  // 2. Hard delete completely from calendly_meetings table ("not even from db")
   if (getSupabaseConfig()) {
     try {
-      await supabaseRest(`calendly_meetings?id=eq.${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          deleted_at: "1970-01-01T00:00:00.000Z",
-          meeting_status: "deleted",
-          notes: "[PERMANENTLY_DELETED]",
-        }),
-      });
+      await supabaseRest(`calendly_meetings?id=eq.${id}`, { method: "DELETE" });
       ok = true;
     } catch (e) {
       console.warn("Supabase permanentDeleteCalendlyMeeting fallback:", e);
@@ -1986,10 +2041,7 @@ export async function permanentDeleteCalendlyMeeting(id: string): Promise<boolea
   try {
     const pool = await getPool();
     if (pool) {
-      const res = await pool.query(
-        "UPDATE calendly_meetings SET deleted_at = '1970-01-01T00:00:00.000Z', meeting_status = 'deleted', notes = '[PERMANENTLY_DELETED]' WHERE id = $1",
-        [id]
-      );
+      const res = await pool.query("DELETE FROM calendly_meetings WHERE id = $1", [id]);
       if ((res.rowCount ?? 0) > 0) ok = true;
     }
   } catch (err) {
@@ -2001,17 +2053,32 @@ export async function permanentDeleteCalendlyMeeting(id: string): Promise<boolea
 export async function permanentDeleteCalendlyMeetings(ids: string[]): Promise<boolean> {
   if (!ids || ids.length === 0) return true;
   let ok = false;
+
+  // 1. Blacklist slot keys permanently in deleted_calendly_meetings so they can NEVER re-sync
+  try {
+    const inList = ids.map((id) => `"${id}"`).join(",");
+    const existing = await supabaseRest(`calendly_meetings?id=in.(${inList})&select=email,meeting_date,meeting_time`);
+    if (Array.isArray(existing)) {
+      for (const m of existing) {
+        const keys = [
+          `${(m.email || "").toLowerCase().trim()}|${(m.meeting_date || "").toLowerCase().trim()}`,
+          `${(m.email || "").toLowerCase().trim()}|${(m.meeting_date || "").toLowerCase().trim()}|${(m.meeting_time || "").toLowerCase().trim()}`
+        ];
+        for (const k of keys) {
+          await supabaseRest("deleted_calendly_meetings", {
+            method: "POST",
+            body: JSON.stringify({ event_key: k })
+          }).catch(() => {});
+        }
+      }
+    }
+  } catch {}
+
+  // 2. Hard delete completely from calendly_meetings table ("not even from db")
   if (getSupabaseConfig()) {
     try {
       const inList = ids.map((id) => `"${id}"`).join(",");
-      await supabaseRest(`calendly_meetings?id=in.(${inList})`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          deleted_at: "1970-01-01T00:00:00.000Z",
-          meeting_status: "deleted",
-          notes: "[PERMANENTLY_DELETED]",
-        }),
-      });
+      await supabaseRest(`calendly_meetings?id=in.(${inList})`, { method: "DELETE" });
       ok = true;
     } catch (e) {
       console.warn("Supabase permanentDeleteCalendlyMeetings fallback:", e);
@@ -2022,10 +2089,7 @@ export async function permanentDeleteCalendlyMeetings(ids: string[]): Promise<bo
   try {
     const pool = await getPool();
     if (pool) {
-      const res = await pool.query(
-        "UPDATE calendly_meetings SET deleted_at = '1970-01-01T00:00:00.000Z', meeting_status = 'deleted', notes = '[PERMANENTLY_DELETED]' WHERE id = ANY($1::text[])",
-        [ids]
-      );
+      const res = await pool.query("DELETE FROM calendly_meetings WHERE id = ANY($1::text[])", [ids]);
       if ((res.rowCount ?? 0) > 0) ok = true;
     }
   } catch (err) {
