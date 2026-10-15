@@ -60,11 +60,10 @@ async function resolvePlatformTitle(): Promise<string> {
   return DEFAULT_PLATFORM_TITLE;
 }
 const DEFAULT_GMAIL_USER = "qsaistudio@gmail.com";
-const DEFAULT_GMAIL_PASS = "rdulomiagdxfhmdx";
 
 export function getGmailCredentials(): { user: string; pass: string } {
   const user = (process.env["GMAIL_USER"] || DEFAULT_GMAIL_USER).trim();
-  const rawPass = process.env["GMAIL_APP_PASSWORD"] || DEFAULT_GMAIL_PASS;
+  const rawPass = process.env["GMAIL_APP_PASSWORD"] || process.env["GMAIL_PASS"] || "";
   const pass = rawPass.replace(/\s+/g, "");
   return { user, pass };
 }
