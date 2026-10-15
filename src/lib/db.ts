@@ -1618,16 +1618,24 @@ export async function saveCalendlyMeeting(data: {
         };
       }
 
-      // Moved to the Recycle Bin in the CRM? Keep it there instead of re-creating it.
+      // Moved to the Recycle Bin or permanently erased in the CRM? Keep it deleted instead of re-creating it.
       {
         const delBase = `calendly_meetings?email=eq.${encodeURIComponent(data.email)}&deleted_at=not.is.null`;
         const slots: [string, string][] = [[data.meeting_date, data.meeting_time]];
         if (hasPreviousSlot) slots.push([data.previous_meeting_date as string, data.previous_meeting_time as string]);
         for (const [d, t] of slots) {
-          const del = await supabaseRest(
+          let del = await supabaseRest(
             `${delBase}&meeting_date=eq.${encodeURIComponent(d)}&meeting_time=eq.${encodeURIComponent(t)}&limit=1&select=*`
           );
-          if (Array.isArray(del) && del[0]) return del[0];
+          if (!Array.isArray(del) || del.length === 0) {
+            // Also match by email + meeting_date to prevent timezone string variations from re-creating
+            del = await supabaseRest(
+              `${delBase}&meeting_date=eq.${encodeURIComponent(d)}&limit=1&select=*`
+            );
+          }
+          if (Array.isArray(del) && del[0]) {
+            return { ...(del[0] as any), suppressed: true } as any;
+          }
         }
       }
 
@@ -1720,16 +1728,16 @@ export async function saveCalendlyMeeting(data: {
         return updated;
       }
 
-      // Moved to the Recycle Bin in the CRM? Keep it there instead of re-creating it.
+      // Moved to the Recycle Bin or permanently erased in the CRM? Keep it deleted instead of re-creating it.
       {
         const slots: [string, string][] = [[data.meeting_date, data.meeting_time]];
         if (hasPreviousSlot) slots.push([data.previous_meeting_date as string, data.previous_meeting_time as string]);
         for (const [d, t] of slots) {
           const del = await pool.query(
-            `SELECT * FROM calendly_meetings WHERE email = $1 AND meeting_date = $2 AND meeting_time = $3 AND deleted_at IS NOT NULL LIMIT 1`,
+            `SELECT * FROM calendly_meetings WHERE email = $1 AND (meeting_date = $2 OR (meeting_date = $2 AND meeting_time = $3)) AND deleted_at IS NOT NULL LIMIT 1`,
             [data.email, d, t]
           );
-          if (del.rows[0]) return del.rows[0];
+          if (del.rows[0]) return { ...(del.rows[0] as any), suppressed: true } as any;
         }
       }
 
@@ -1960,7 +1968,14 @@ export async function permanentDeleteCalendlyMeeting(id: string): Promise<boolea
   let ok = false;
   if (getSupabaseConfig()) {
     try {
-      await supabaseRest(`calendly_meetings?id=eq.${id}`, { method: "DELETE" });
+      await supabaseRest(`calendly_meetings?id=eq.${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          deleted_at: "1970-01-01T00:00:00.000Z",
+          meeting_status: "deleted",
+          notes: "[PERMANENTLY_DELETED]",
+        }),
+      });
       ok = true;
     } catch (e) {
       console.warn("Supabase permanentDeleteCalendlyMeeting fallback:", e);
@@ -1971,7 +1986,10 @@ export async function permanentDeleteCalendlyMeeting(id: string): Promise<boolea
   try {
     const pool = await getPool();
     if (pool) {
-      const res = await pool.query("DELETE FROM calendly_meetings WHERE id = $1", [id]);
+      const res = await pool.query(
+        "UPDATE calendly_meetings SET deleted_at = '1970-01-01T00:00:00.000Z', meeting_status = 'deleted', notes = '[PERMANENTLY_DELETED]' WHERE id = $1",
+        [id]
+      );
       if ((res.rowCount ?? 0) > 0) ok = true;
     }
   } catch (err) {
@@ -1986,7 +2004,14 @@ export async function permanentDeleteCalendlyMeetings(ids: string[]): Promise<bo
   if (getSupabaseConfig()) {
     try {
       const inList = ids.map((id) => `"${id}"`).join(",");
-      await supabaseRest(`calendly_meetings?id=in.(${inList})`, { method: "DELETE" });
+      await supabaseRest(`calendly_meetings?id=in.(${inList})`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          deleted_at: "1970-01-01T00:00:00.000Z",
+          meeting_status: "deleted",
+          notes: "[PERMANENTLY_DELETED]",
+        }),
+      });
       ok = true;
     } catch (e) {
       console.warn("Supabase permanentDeleteCalendlyMeetings fallback:", e);
@@ -1997,7 +2022,10 @@ export async function permanentDeleteCalendlyMeetings(ids: string[]): Promise<bo
   try {
     const pool = await getPool();
     if (pool) {
-      const res = await pool.query("DELETE FROM calendly_meetings WHERE id = ANY($1::text[])", [ids]);
+      const res = await pool.query(
+        "UPDATE calendly_meetings SET deleted_at = '1970-01-01T00:00:00.000Z', meeting_status = 'deleted', notes = '[PERMANENTLY_DELETED]' WHERE id = ANY($1::text[])",
+        [ids]
+      );
       if ((res.rowCount ?? 0) > 0) ok = true;
     }
   } catch (err) {

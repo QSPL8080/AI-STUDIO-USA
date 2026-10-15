@@ -1266,7 +1266,7 @@ export async function syncCalendlyEventsFromApi(opts?: { force?: boolean | undef
           : undefined;
         const phone = invitee.text_reminder_number || qnaPhone || undefined;
 
-        await saveCalendlyMeetingInDb({
+        const saved = await saveCalendlyMeetingInDb({
           client_name: invitee.name || "Calendly Client",
           email: invitee.email || "client@calendly.com",
           phone,
@@ -1289,7 +1289,9 @@ export async function syncCalendlyEventsFromApi(opts?: { force?: boolean | undef
             : `Booked in Calendly for ${dateStr} at ${timeStr}`,
         });
 
-        syncedCount++;
+        if (saved && !(saved as any).suppressed && !(saved as any).deleted_at) {
+          syncedCount++;
+        }
       } catch (evErr) {
         console.warn("Error syncing single Calendly event:", evErr);
       }
@@ -1460,7 +1462,15 @@ export const deleteCalendlyMeetingServerFn = createServerFn({ method: "POST" })
 export const fetchDeletedCalendlyMeetingsServerFn = createServerFn({ method: "GET" }).handler(async () => {
   try {
     const all = await getCalendlyMeetingsFromDb(true);
-    return { success: true, meetings: all.filter((m) => Boolean(m.deleted_at)) };
+    return {
+      success: true,
+      meetings: all.filter((m) =>
+        Boolean(m.deleted_at) &&
+        m.meeting_status !== "deleted" &&
+        !m.notes?.includes("PERMANENTLY_DELETED") &&
+        new Date(m.deleted_at!).getTime() > 1000000000000
+      ),
+    };
   } catch (error: any) {
     return { success: false, meetings: [] as CalendlyMeeting[], error: error.message };
   }
