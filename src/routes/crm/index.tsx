@@ -3953,7 +3953,7 @@ function AdminPage() {
     <div className="min-h-screen flex flex-col font-sans bg-white text-slate-900 antialiased lg:flex-row lg:h-screen lg:overflow-hidden">
       {/* Left Sidebar (desktop): full screen height - logo on top, navigation below */}
       <aside className="hidden lg:flex lg:h-full w-64 2xl:w-72 shrink-0 flex-col border-r border-slate-200 bg-white">
-        <div className="flex h-16 shrink-0 items-center border-b border-slate-200 px-5">
+        <div className="flex h-16 shrink-0 items-center border-b border-slate-200 px-5">{/* same height as the header (lg:h-16) so both bottom lines meet */}
           <a href="/" className="flex items-center transition-opacity hover:opacity-85" title="View Public Website">
             <img
               src="/images/LOGO 1.png"
@@ -4007,8 +4007,8 @@ function AdminPage() {
       {/* Right side: header + scrolling content */}
       <div className="flex flex-1 min-w-0 flex-col lg:min-h-0">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-xs">
-        <div className="flex w-full items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 lg:h-16 lg:py-0 gap-2 sm:gap-4">
+      <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-xs lg:h-16 lg:shadow-none">
+        <div className="flex w-full items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 lg:h-full lg:py-0 gap-2 sm:gap-4">
           {/* Brand & Role Badge (compacts on phones/tablets so the controls always fit) */}
           <div className="flex min-w-0 items-center gap-1.5 sm:gap-3 overflow-hidden">
             <a
