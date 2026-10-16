@@ -3887,18 +3887,18 @@ function AdminPage() {
   // =========================================================================
   // CRM navigation: one list, shown as a left sidebar on desktop and a tab bar on phones
   const leavePaymentArea = () => { setIsPaymentUnlocked(false); setShowPaymentPinModal(false); };
-  type CrmNavItem = { key: string; label: string; icon: typeof LayoutDashboard; count?: number | undefined; group: "main" | "admin"; onClick: () => void };
+  type CrmNavItem = { key: string; label: string; icon: typeof LayoutDashboard; count?: number | undefined; group: "workspace" | "admin" | "data"; onClick: () => void };
   const crmNavItems: CrmNavItem[] = [
-    can("dashboard") && { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "main", onClick: () => { setActiveTab("dashboard"); leavePaymentArea(); } },
-    { key: "leads", label: "Leads Management", icon: Layers, count: websiteLeads.length, group: "main", onClick: () => { setActiveTab("leads"); leavePaymentArea(); } },
-    can("meta_leads") && { key: "meta_leads", label: "Meta Leads", icon: Megaphone, count: metaLeads.length, group: "main", onClick: () => { setActiveTab("meta_leads"); leavePaymentArea(); } },
-    can("orders") && { key: "orders", label: "Orders & Payments", icon: DollarSign, count: orders.length, group: "main", onClick: () => handleSelectOrdersTab() },
-    (isSuperAdmin || session?.role === "admin") && { key: "calendly", label: "Calendly (USA)", icon: Calendar, count: meetings.length, group: "main", onClick: () => { setActiveTab("calendly"); leavePaymentArea(); } },
-    can("activity") && { key: "activity", label: "Activity History", icon: Clock, group: "main", onClick: () => { setActiveTab("activity"); leavePaymentArea(); } },
-    can("recycle_bin") && { key: "recycle_bin", label: "Recycle Bin", icon: Trash2, count: recycleBinItems.length > 0 ? recycleBinItems.length : undefined, group: "main", onClick: () => { setActiveTab("recycle_bin"); leavePaymentArea(); } },
+    can("dashboard") && { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "workspace", onClick: () => { setActiveTab("dashboard"); leavePaymentArea(); } },
+    { key: "leads", label: "Leads Management", icon: Layers, count: websiteLeads.length, group: "workspace", onClick: () => { setActiveTab("leads"); leavePaymentArea(); } },
+    can("meta_leads") && { key: "meta_leads", label: "Meta Leads", icon: Megaphone, count: metaLeads.length, group: "workspace", onClick: () => { setActiveTab("meta_leads"); leavePaymentArea(); } },
+    can("orders") && { key: "orders", label: "Orders & Payments", icon: DollarSign, count: orders.length, group: "workspace", onClick: () => handleSelectOrdersTab() },
+    (isSuperAdmin || session?.role === "admin") && { key: "calendly", label: "Calendly (USA)", icon: Calendar, count: meetings.length, group: "workspace", onClick: () => { setActiveTab("calendly"); leavePaymentArea(); } },
+    can("activity") && { key: "activity", label: "Activity History", icon: Clock, group: "admin", onClick: () => { setActiveTab("activity"); leavePaymentArea(); } },
     can("manage_users") && { key: "users", label: "User Management", icon: Users, group: "admin", onClick: () => { setActiveTab("users"); leavePaymentArea(); } },
     can("security_logs") && { key: "security", label: "Login / IP Tracking", icon: ShieldAlert, group: "admin", onClick: () => { setActiveTab("security"); leavePaymentArea(); } },
     can("crm_settings") && { key: "settings", label: "CRM Settings", icon: Settings, group: "admin", onClick: () => { setActiveTab("settings"); leavePaymentArea(); } },
+    can("recycle_bin") && { key: "recycle_bin", label: "Recycle Bin", icon: Trash2, count: recycleBinItems.length, group: "data", onClick: () => { setActiveTab("recycle_bin"); leavePaymentArea(); } },
   ].filter(Boolean) as CrmNavItem[];
 
   const renderSidebarItem = (item: CrmNavItem) => {
@@ -3909,14 +3909,27 @@ function AdminPage() {
         key={item.key}
         type="button"
         onClick={item.onClick}
-        className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-semibold transition-all cursor-pointer ${
-          active ? "bg-purple-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+        className={`group w-full h-11 flex items-center gap-3 px-3 rounded-lg text-sm font-medium text-left transition-all cursor-pointer ${
+          active
+            ? "bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-[0_8px_20px_-8px_rgba(147,51,234,0.6)]"
+            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
         }`}
       >
-        <Icon className="h-4 w-4 shrink-0" />
-        <span className="truncate">{item.label}</span>
+        <span
+          className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+            active ? "bg-white/15" : "bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-purple-600"
+          }`}
+        >
+          <Icon className="w-4 h-4" />
+        </span>
+        <span className="flex-1 truncate">{item.label}</span>
+        {item.key === "orders" && !isPaymentUnlocked && <Lock className="w-3 h-3 opacity-70 shrink-0" />}
         {item.count !== undefined && (
-          <span className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-extrabold ${active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
+          <span
+            className={`text-[11px] min-w-[24px] text-center px-1.5 py-0.5 rounded-md font-semibold shrink-0 ${
+              active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+            }`}
+          >
             {item.count}
           </span>
         )}
@@ -3924,10 +3937,22 @@ function AdminPage() {
     );
   };
 
+  const sidebarGroups: { title: string; group: CrmNavItem["group"] }[] = [
+    { title: "Workspace", group: "workspace" },
+    { title: "Administration", group: "admin" },
+    { title: "Data", group: "data" },
+  ];
+  const roleLabel = isSuperAdmin ? "Super Admin" : isLeadsManager ? "Leads Manager" : "Admin";
+  const roleBadgeClass = isSuperAdmin
+    ? "border-purple-200 bg-purple-50 text-purple-700"
+    : isLeadsManager
+    ? "border-amber-200 bg-amber-50 text-amber-700"
+    : "border-blue-200 bg-blue-50 text-blue-700";
+
   return (
     <div className="min-h-screen flex flex-col font-sans bg-white text-slate-900 antialiased lg:flex-row lg:h-screen lg:overflow-hidden">
       {/* Left Sidebar (desktop): full screen height - logo on top, navigation below */}
-      <aside className="hidden lg:flex lg:h-full w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
+      <aside className="hidden lg:flex lg:h-full w-64 2xl:w-72 shrink-0 flex-col border-r border-slate-200 bg-white">
         <div className="flex h-16 shrink-0 items-center border-b border-slate-200 px-5">
           <a href="/" className="flex items-center transition-opacity hover:opacity-85" title="View Public Website">
             <img
@@ -3939,19 +3964,44 @@ function AdminPage() {
             />
           </a>
         </div>
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <div className="space-y-1">
-            {crmNavItems.filter((i) => i.group === "main").map(renderSidebarItem)}
-          </div>
-          {crmNavItems.some((i) => i.group === "admin") && (
-            <>
-              <div className="mt-5 mb-2 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Administration</div>
-              <div className="space-y-1">
-                {crmNavItems.filter((i) => i.group === "admin").map(renderSidebarItem)}
+        {/* Menu (scrolls only on very short screens; the profile card stays pinned at the bottom) */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-4">
+          {sidebarGroups.map((g) => {
+            const items = crmNavItems.filter((i) => i.group === g.group);
+            if (!items.length) return null;
+            return (
+              <div key={g.group} className="mb-5 last:mb-0">
+                <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{g.title}</div>
+                <nav className="flex flex-col gap-1">{items.map(renderSidebarItem)}</nav>
               </div>
-            </>
-          )}
-        </nav>
+            );
+          })}
+        </div>
+
+        {/* Signed-in user, pinned to the bottom of the sidebar */}
+        <div className="shrink-0 border-t border-slate-200 p-3">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
+                {(session?.name || session?.email || "U").charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1 leading-tight">
+                <div className="text-[13px] font-semibold text-slate-900 truncate">{session?.name || session?.email}</div>
+                <div className="text-xs text-slate-500 truncate">{session?.email}</div>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <span className={`inline-flex text-[11px] font-semibold px-2 py-0.5 rounded-md border ${roleBadgeClass}`}>{roleLabel}</span>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-red-200 bg-white text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" /> Sign out
+              </button>
+            </div>
+          </div>
+        </div>
       </aside>
 
       {/* Right side: header + scrolling content */}
