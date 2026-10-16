@@ -3919,24 +3919,54 @@ function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-white text-slate-900 antialiased lg:h-screen lg:overflow-hidden">
+    <div className="min-h-screen flex flex-col font-sans bg-white text-slate-900 antialiased lg:flex-row lg:h-screen lg:overflow-hidden">
+      {/* Left Sidebar (desktop): full screen height - logo on top, navigation below */}
+      <aside className="hidden lg:flex lg:h-full w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
+        <div className="flex h-16 shrink-0 items-center border-b border-slate-200 px-5">
+          <a href="/" className="flex items-center transition-opacity hover:opacity-85" title="View Public Website">
+            <img
+              src="/images/LOGO 1.png"
+              alt="Quickupp AI Studio logo"
+              className="h-9 w-auto object-contain"
+              width={125}
+              height={38}
+            />
+          </a>
+        </div>
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <div className="space-y-1">
+            {crmNavItems.filter((i) => i.group === "main").map(renderSidebarItem)}
+          </div>
+          {crmNavItems.some((i) => i.group === "admin") && (
+            <>
+              <div className="mt-5 mb-2 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Administration</div>
+              <div className="space-y-1">
+                {crmNavItems.filter((i) => i.group === "admin").map(renderSidebarItem)}
+              </div>
+            </>
+          )}
+        </nav>
+      </aside>
+
+      {/* Right side: header + scrolling content */}
+      <div className="flex flex-1 min-w-0 flex-col lg:min-h-0">
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-xs">
-        <div className="mx-auto flex w-full max-w-[1750px] items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 gap-2 sm:gap-4">
+        <div className="flex w-full items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 lg:h-16 lg:py-0 gap-2 sm:gap-4">
           {/* Brand & Role Badge (compacts on phones/tablets so the controls always fit) */}
           <div className="flex min-w-0 items-center gap-1.5 sm:gap-3 overflow-hidden">
             <a
               href="/"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:inline-flex rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+              className="hidden sm:inline-flex lg:hidden rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
               title="View Public Website"
             >
               <ArrowLeft className="h-4 w-4" />
             </a>
 
             <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
-              <a href="/" className="flex shrink-0 items-center transition-opacity hover:opacity-85">
+              <a href="/" className="flex shrink-0 items-center transition-opacity hover:opacity-85 lg:hidden">
                 <img
                   src="/images/LOGO 1.png"
                   alt="Quickupp AI Studio logo"
@@ -3946,7 +3976,7 @@ function AdminPage() {
                 />
               </a>
 
-              <span className="hidden xl:inline text-sm font-bold text-slate-800 truncate max-w-[260px]" title={appliedPlatformTitle}>
+              <span className="hidden lg:inline text-sm font-bold text-slate-800 truncate max-w-[260px]" title={appliedPlatformTitle}>
                 {appliedPlatformTitle}
               </span>
 
@@ -4258,27 +4288,10 @@ function AdminPage() {
         </div>
       </header>
 
-      <div className="flex flex-1 lg:min-h-0">
-      {/* Left Sidebar Navigation (desktop): full height below the header, never scrolls with the page */}
-      <aside className="hidden lg:flex w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <div className="space-y-1">
-            {crmNavItems.filter((i) => i.group === "main").map(renderSidebarItem)}
-          </div>
-          {crmNavItems.some((i) => i.group === "admin") && (
-            <>
-              <div className="mt-5 mb-2 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Administration</div>
-              <div className="space-y-1">
-                {crmNavItems.filter((i) => i.group === "admin").map(renderSidebarItem)}
-              </div>
-            </>
-          )}
-        </nav>
-      </aside>
 
       {/* Main Content Area (scrolls on its own on desktop) */}
       <main className="flex-1 min-w-0 lg:overflow-y-auto">
-      <div className="w-full max-w-[1750px] mx-auto p-3 sm:p-5 lg:p-6 space-y-5 sm:space-y-6">
+      <div className="w-full p-3 sm:p-5 lg:p-6 space-y-5 sm:space-y-6">
         {/* ========================================================================= */}
         {/* TAB 0: EXECUTIVE DASHBOARD & CRM OVERVIEW */}
         {/* ========================================================================= */}
