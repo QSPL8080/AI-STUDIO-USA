@@ -1443,7 +1443,8 @@ export const deleteCalendlyMeetingServerFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const isSuper = data.userRole === "super_admin";
-      const isPermanent = data.permanent === true && isSuper;
+      // Super Admin deletes are permanent (removed from the database); Admin deletes go to the Recycle Bin
+      const isPermanent = isSuper;
 
       // Remember it first so the Calendly sync / webhook never brings it back
       await rememberDeletedCalendlyMeetings([data.id]);
@@ -1518,7 +1519,8 @@ export const deleteCalendlyMeetingsBulkServerFn = createServerFn({ method: "POST
   .handler(async ({ data }) => {
     try {
       const isSuper = data.userRole === "super_admin";
-      const isPermanent = data.permanent === true && isSuper;
+      // Super Admin deletes are permanent (removed from the database); Admin deletes go to the Recycle Bin
+      const isPermanent = isSuper;
 
       // Remember them first so the Calendly sync / webhook never brings them back
       await rememberDeletedCalendlyMeetings(data.ids || []);

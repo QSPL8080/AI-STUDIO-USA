@@ -1541,7 +1541,9 @@ function AdminPage() {
     const count = selectedMeetingIds.size;
     if (
       !confirm(
-        `Move ${count} selected Calendly meeting record(s) to Recycle Bin?`
+        session?.role === "super_admin"
+          ? `Permanently delete ${count} selected Calendly meeting(s) from the database? This cannot be undone.`
+          : `Move ${count} selected Calendly meeting record(s) to Recycle Bin?`
       )
     ) {
       return;
@@ -1558,7 +1560,7 @@ function AdminPage() {
         },
       });
       if (res.success) {
-        showToast(`${count} Calendly meeting(s) moved to Recycle Bin`);
+        showToast(session?.role === "super_admin" ? `${count} Calendly meeting(s) permanently deleted` : `${count} Calendly meeting(s) moved to Recycle Bin`);
       } else {
         showToast("Removed selected meetings from list");
       }
@@ -1571,7 +1573,9 @@ function AdminPage() {
   };
 
   const handleDeleteSingleMeeting = async (m: CalendlyMeeting) => {
-    if (!confirm(`Move meeting record for ${m.client_name} to Recycle Bin?`)) {
+    if (!confirm(session?.role === "super_admin"
+      ? `Permanently delete the meeting for ${m.client_name} from the database? This cannot be undone.`
+      : `Move meeting record for ${m.client_name} to Recycle Bin?`)) {
       return;
     }
     setMeetings((prev) => prev.filter((item) => item.id !== m.id));
@@ -1590,7 +1594,7 @@ function AdminPage() {
         },
       });
       if (res.success) {
-        showToast(`Meeting record for ${m.client_name} moved to Recycle Bin`);
+        showToast(session?.role === "super_admin" ? `Meeting for ${m.client_name} permanently deleted` : `Meeting record for ${m.client_name} moved to Recycle Bin`);
       } else {
         showToast("Meeting removed from list");
       }
@@ -3875,8 +3879,47 @@ function AdminPage() {
   // =========================================================================
   // AUTHENTICATED CRM DASHBOARD
   // =========================================================================
+  // CRM navigation: one list, shown as a left sidebar on desktop and a tab bar on phones
+  const leavePaymentArea = () => { setIsPaymentUnlocked(false); setShowPaymentPinModal(false); };
+  type CrmNavItem = { key: string; label: string; icon: typeof LayoutDashboard; count?: number | undefined; group: "main" | "admin"; onClick: () => void };
+  const crmNavItems: CrmNavItem[] = [
+    can("dashboard") && { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "main", onClick: () => { setActiveTab("dashboard"); leavePaymentArea(); } },
+    { key: "leads", label: "Leads Management", icon: Layers, count: websiteLeads.length, group: "main", onClick: () => { setActiveTab("leads"); leavePaymentArea(); } },
+    can("meta_leads") && { key: "meta_leads", label: "Meta Leads", icon: Megaphone, count: metaLeads.length, group: "main", onClick: () => { setActiveTab("meta_leads"); leavePaymentArea(); } },
+    can("orders") && { key: "orders", label: "Orders & Payments", icon: DollarSign, count: orders.length, group: "main", onClick: () => handleSelectOrdersTab() },
+    (isSuperAdmin || session?.role === "admin") && { key: "calendly", label: "Calendly (USA)", icon: Calendar, count: meetings.length, group: "main", onClick: () => { setActiveTab("calendly"); leavePaymentArea(); } },
+    can("activity") && { key: "activity", label: "Activity History", icon: Clock, group: "main", onClick: () => { setActiveTab("activity"); leavePaymentArea(); } },
+    can("recycle_bin") && { key: "recycle_bin", label: "Recycle Bin", icon: Trash2, count: recycleBinItems.length > 0 ? recycleBinItems.length : undefined, group: "main", onClick: () => { setActiveTab("recycle_bin"); leavePaymentArea(); } },
+    can("manage_users") && { key: "users", label: "User Management", icon: Users, group: "admin", onClick: () => { setActiveTab("users"); leavePaymentArea(); } },
+    can("security_logs") && { key: "security", label: "Login / IP Tracking", icon: ShieldAlert, group: "admin", onClick: () => { setActiveTab("security"); leavePaymentArea(); } },
+    can("crm_settings") && { key: "settings", label: "CRM Settings", icon: Settings, group: "admin", onClick: () => { setActiveTab("settings"); leavePaymentArea(); } },
+  ].filter(Boolean) as CrmNavItem[];
+
+  const renderSidebarItem = (item: CrmNavItem) => {
+    const active = activeTab === item.key;
+    const Icon = item.icon;
+    return (
+      <button
+        key={item.key}
+        type="button"
+        onClick={item.onClick}
+        className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-semibold transition-all cursor-pointer ${
+          active ? "bg-purple-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+        }`}
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="truncate">{item.label}</span>
+        {item.count !== undefined && (
+          <span className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-extrabold ${active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
+            {item.count}
+          </span>
+        )}
+      </button>
+    );
+  };
+
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-white text-slate-900 antialiased">
+    <div className="min-h-screen flex flex-col font-sans bg-white text-slate-900 antialiased lg:h-screen lg:overflow-hidden">
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-xs">
         <div className="mx-auto flex w-full max-w-[1750px] items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 gap-2 sm:gap-4">
@@ -4186,184 +4229,56 @@ function AdminPage() {
           </div>
         </div>
 
-        {/* Tab Navigation Bar */}
-        <div className="overflow-x-auto border-t border-slate-200 bg-white scrollbar-none">
-          <div className="mx-auto flex w-full max-w-[1750px] items-center gap-1 sm:gap-1.5 px-3 sm:px-6 py-1.5 min-w-max">
-            {can("dashboard") && (
-            <button
-              onClick={() => { setActiveTab("dashboard"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "dashboard"
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              <span>Dashboard</span>
-            </button>
-            )}
-
-            <button
-              onClick={() => { setActiveTab("leads"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "leads"
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <Layers className="h-4 w-4" />
-              <span>Leads Management</span>
-              <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
-                activeTab === "leads" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
-              }`}>
-                {websiteLeads.length}
-              </span>
-            </button>
-
-            {can("meta_leads") && (
-            <button
-              onClick={() => { setActiveTab("meta_leads"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "meta_leads"
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <Megaphone className="h-4 w-4" />
-              <span>Meta Leads</span>
-              <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
-                activeTab === "meta_leads" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
-              }`}>
-                {metaLeads.length}
-              </span>
-            </button>
-            )}
-
-            {can("orders") && (
-            <button
-              onClick={() => handleSelectOrdersTab()}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "orders"
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <DollarSign className="h-4 w-4" />
-              <span>Orders &amp; Payments</span>
-              <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
-                activeTab === "orders" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
-              }`}>
-                {orders.length}
-              </span>
-            </button>
-            )}
-
-            {(isSuperAdmin || session?.role === "admin") && (
-            <button
-              onClick={() => { setActiveTab("calendly"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "calendly"
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <Calendar className="h-4 w-4" />
-              <span>Calendly (USA)</span>
-              <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
-                activeTab === "calendly" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
-              }`}>
-                {meetings.length}
-              </span>
-            </button>
-            )}
-
-            {can("activity") && (
-            <button
-              onClick={() => { setActiveTab("activity"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "activity"
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <Clock className="h-4 w-4" />
-              <span>Activity History</span>
-            </button>
-            )}
-
-            {/* Admin-management tabs (Super Admin, or roles granted access in Permissions) */}
-            {(can("manage_users") || can("security_logs") || can("crm_settings")) && (
-              <>
-                {can("manage_users") && (
+        {/* Tab Navigation Bar (phones & tablets only - desktop uses the left sidebar) */}
+        <div className="lg:hidden overflow-x-auto border-t border-slate-200 bg-white scrollbar-none">
+          <div className="flex w-full items-center gap-1 sm:gap-1.5 px-3 sm:px-6 py-1.5 min-w-max">
+            {crmNavItems.map((item) => {
+              const active = activeTab === item.key;
+              const Icon = item.icon;
+              return (
                 <button
-                  onClick={() => { setActiveTab("users"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
+                  key={item.key}
+                  type="button"
+                  onClick={item.onClick}
                   className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === "users"
-                      ? "bg-purple-600 text-white shadow-sm"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    active ? "bg-purple-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
-                  <Users className="h-4 w-4" />
-                  <span>User Management</span>
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                  {item.count !== undefined && (
+                    <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${active ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"}`}>
+                      {item.count}
+                    </span>
+                  )}
                 </button>
-                )}
-
-                {can("security_logs") && (
-                <button
-                  onClick={() => { setActiveTab("security"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
-                  className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === "security"
-                      ? "bg-purple-600 text-white shadow-sm"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
-                >
-                  <ShieldAlert className="h-4 w-4" />
-                  <span>Login / IP Tracking</span>
-                </button>
-                )}
-
-                {can("crm_settings") && (
-                <button
-                  onClick={() => { setActiveTab("settings"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
-                  className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === "settings"
-                      ? "bg-purple-600 text-white shadow-sm"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
-                >
-                  <Settings className="h-4 w-4" />
-                  <span>CRM Settings</span>
-                </button>
-                )}
-              </>
-            )}
-
-            {can("recycle_bin") && (
-            <button
-              onClick={() => { setActiveTab("recycle_bin"); setIsPaymentUnlocked(false); setShowPaymentPinModal(false); }}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "recycle_bin"
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <Trash2 className="h-4 w-4" />
-              <span>Recycle Bin</span>
-              {recycleBinItems.length > 0 && (
-                <span className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
-                  activeTab === "recycle_bin" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
-                }`}>
-                  {recycleBinItems.length}
-                </span>
-              )}
-            </button>
-            )}
+              );
+            })}
           </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="w-full max-w-[1750px] mx-auto flex-1 p-3 sm:p-5 lg:p-6 space-y-5 sm:space-y-6">
+      <div className="flex flex-1 lg:min-h-0">
+      {/* Left Sidebar Navigation (desktop): full height below the header, never scrolls with the page */}
+      <aside className="hidden lg:flex w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <div className="space-y-1">
+            {crmNavItems.filter((i) => i.group === "main").map(renderSidebarItem)}
+          </div>
+          {crmNavItems.some((i) => i.group === "admin") && (
+            <>
+              <div className="mt-5 mb-2 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Administration</div>
+              <div className="space-y-1">
+                {crmNavItems.filter((i) => i.group === "admin").map(renderSidebarItem)}
+              </div>
+            </>
+          )}
+        </nav>
+      </aside>
+
+      {/* Main Content Area (scrolls on its own on desktop) */}
+      <main className="flex-1 min-w-0 lg:overflow-y-auto">
+      <div className="w-full max-w-[1750px] mx-auto p-3 sm:p-5 lg:p-6 space-y-5 sm:space-y-6">
         {/* ========================================================================= */}
         {/* TAB 0: EXECUTIVE DASHBOARD & CRM OVERVIEW */}
         {/* ========================================================================= */}
@@ -8863,7 +8778,9 @@ function AdminPage() {
             )}
           </div>
         )}
+      </div>
       </main>
+      </div>
 
       {/* ========================================================================= */}
       {/* MODAL: IMPORT META LEADS CSV (ADS MANAGER EXPORT) */}

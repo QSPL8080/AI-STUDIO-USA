@@ -363,10 +363,8 @@ export async function initDb() {
           ALTER TABLE calendly_meetings ADD COLUMN IF NOT EXISTS outcome_set_by VARCHAR(255);
           ALTER TABLE calendly_meetings ADD COLUMN IF NOT EXISTS outcome_set_at TIMESTAMP WITH TIME ZONE;
 
-          CREATE TABLE IF NOT EXISTS deleted_calendly_meetings (
-            event_key VARCHAR(255) PRIMARY KEY,
-            deleted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-          );
+          -- Removed: deleted Calendly meetings are remembered in the CRM settings file instead
+          DROP TABLE IF EXISTS deleted_calendly_meetings;
 
           CREATE TABLE IF NOT EXISTS orders (
             id VARCHAR(64) PRIMARY KEY,
@@ -1395,6 +1393,19 @@ export async function deleteAdminUser(idOrEmail: string): Promise<boolean> {
   }
 
   let ok = false;
+  // Delete from the live Supabase database too (not just the local connection)
+  if (getSupabaseConfig()) {
+    try {
+      const t = encodeURIComponent(cleanTarget);
+      const rows = await supabaseRest(
+        `admin_users?or=(id.ilike.${t},email.ilike.${t})&role=neq.super_admin&email=neq.sa@aistudio.us`,
+        { method: "DELETE" }
+      );
+      if (Array.isArray(rows) && rows.length > 0) ok = true;
+    } catch (e) {
+      console.warn("Supabase deleteAdminUser fallback:", e);
+    }
+  }
   await initDb();
   try {
     const pool = await getPool();
@@ -1441,39 +1452,20 @@ export function calendlySlotKey(email?: string | undefined, date?: string | unde
 async function getDeletedSlotKeys(): Promise<Set<string>> {
   const keys = new Set<string>();
   try {
-    const rows = await supabaseRest("deleted_calendly_meetings?select=event_key");
-    if (Array.isArray(rows)) {
-      rows.forEach((r: any) => r.event_key && keys.add(String(r.event_key).toLowerCase().trim()));
-    }
-  } catch {}
-  try {
     const settings = await getCrmSettings();
     const arr = JSON.parse(settings[DELETED_SLOTS_KEY] || "[]");
-    if (Array.isArray(arr)) {
-      arr.forEach((k) => k && keys.add(String(k).toLowerCase().trim()));
-    }
+    if (Array.isArray(arr)) arr.forEach((k) => k && keys.add(String(k).toLowerCase().trim()));
   } catch {}
   return keys;
 }
 
+/** Deleted-meeting keys live in the CRM settings file (no database table). */
 async function updateDeletedSlotKeys(add: string[], remove: string[] = []): Promise<void> {
-  for (const k of add) {
-    if (!k) continue;
-    try {
-      await supabaseRest("deleted_calendly_meetings", {
-        method: "POST",
-        body: JSON.stringify({ event_key: k.toLowerCase().trim() }),
-      });
-    } catch {}
-  }
-  for (const k of remove) {
-    if (!k) continue;
-    try {
-      await supabaseRest(`deleted_calendly_meetings?event_key=eq.${encodeURIComponent(k.toLowerCase().trim())}`, {
-        method: "DELETE",
-      });
-    } catch {}
-  }
+  const keys = await getDeletedSlotKeys();
+  for (const k of add) if (k) keys.add(k.toLowerCase().trim());
+  for (const k of remove) if (k) keys.delete(k.toLowerCase().trim());
+  const list = Array.from(keys).slice(-5000);
+  await saveCrmSettings({ [DELETED_SLOTS_KEY]: JSON.stringify(list) });
 }
 
 /** Remember meetings deleted in the CRM (soft or permanent) so Calendly sync never re-creates them */
@@ -1572,16 +1564,11 @@ export async function saveCalendlyMeeting(data: {
   // Deleted in the CRM (Recycle Bin or permanently)? Never re-create or update it.
   // A reschedule of a deleted meeting stays deleted too.
   {
-    // 1. Check persistent database blacklist first
-    try {
-      const k1 = `${(data.email || "").toLowerCase().trim()}|${(data.meeting_date || "").toLowerCase().trim()}`;
-      const bl = await supabaseRest(`deleted_calendly_meetings?event_key=eq.${encodeURIComponent(k1)}&limit=1&select=event_key`);
-      if (Array.isArray(bl) && bl.length > 0) {
-        return { ...record, suppressed: true } as CalendlyMeeting & { suppressed: boolean };
-      }
-    } catch {}
-
     const deletedKeys = await getDeletedSlotKeys();
+    const k1 = `${(data.email || "").toLowerCase().trim()}|${(data.meeting_date || "").toLowerCase().trim()}`;
+    if (deletedKeys.has(k1)) {
+      return { ...record, suppressed: true } as CalendlyMeeting & { suppressed: boolean };
+    }
     const curKey = calendlySlotKey(data.email, data.meeting_date, data.meeting_time);
     const prevKey = hasPreviousSlot
       ? calendlySlotKey(data.email, data.previous_meeting_date, data.previous_meeting_time)
@@ -2009,23 +1996,8 @@ export async function softDeleteCalendlyMeetings(ids: string[]): Promise<boolean
 
 export async function permanentDeleteCalendlyMeeting(id: string): Promise<boolean> {
   let ok = false;
-  // 1. Blacklist slot key permanently in deleted_calendly_meetings so it can NEVER re-sync
-  try {
-    const existing = await supabaseRest(`calendly_meetings?id=eq.${id}&select=email,meeting_date,meeting_time`);
-    if (Array.isArray(existing) && existing[0]) {
-      const m = existing[0];
-      const keys = [
-        `${(m.email || "").toLowerCase().trim()}|${(m.meeting_date || "").toLowerCase().trim()}`,
-        `${(m.email || "").toLowerCase().trim()}|${(m.meeting_date || "").toLowerCase().trim()}|${(m.meeting_time || "").toLowerCase().trim()}`
-      ];
-      for (const k of keys) {
-        await supabaseRest("deleted_calendly_meetings", {
-          method: "POST",
-          body: JSON.stringify({ event_key: k })
-        }).catch(() => {});
-      }
-    }
-  } catch {}
+  // 1. Remember it (settings file) so the Calendly sync can never bring it back
+  await rememberDeletedCalendlyMeetings([id]).catch(() => {});
 
   // 2. Hard delete completely from calendly_meetings table ("not even from db")
   if (getSupabaseConfig()) {
@@ -2054,25 +2026,8 @@ export async function permanentDeleteCalendlyMeetings(ids: string[]): Promise<bo
   if (!ids || ids.length === 0) return true;
   let ok = false;
 
-  // 1. Blacklist slot keys permanently in deleted_calendly_meetings so they can NEVER re-sync
-  try {
-    const inList = ids.map((id) => `"${id}"`).join(",");
-    const existing = await supabaseRest(`calendly_meetings?id=in.(${inList})&select=email,meeting_date,meeting_time`);
-    if (Array.isArray(existing)) {
-      for (const m of existing) {
-        const keys = [
-          `${(m.email || "").toLowerCase().trim()}|${(m.meeting_date || "").toLowerCase().trim()}`,
-          `${(m.email || "").toLowerCase().trim()}|${(m.meeting_date || "").toLowerCase().trim()}|${(m.meeting_time || "").toLowerCase().trim()}`
-        ];
-        for (const k of keys) {
-          await supabaseRest("deleted_calendly_meetings", {
-            method: "POST",
-            body: JSON.stringify({ event_key: k })
-          }).catch(() => {});
-        }
-      }
-    }
-  } catch {}
+  // 1. Remember them (settings file) so the Calendly sync can never bring them back
+  await rememberDeletedCalendlyMeetings(ids).catch(() => {});
 
   // 2. Hard delete completely from calendly_meetings table ("not even from db")
   if (getSupabaseConfig()) {
