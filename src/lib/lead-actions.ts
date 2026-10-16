@@ -646,12 +646,16 @@ export const softDeleteLeadServerFn = createServerFn({ method: "POST" })
   .validator((data: { id: string; performedBy?: string | undefined; userRole?: string | undefined }) => data)
   .handler(async ({ data }) => {
     try {
-      const ok = await softDeleteInDb(data.id);
+      // Super Admin deletes are permanent (removed from the database); Admin deletes go to the Recycle Bin
+      const isPermanent = data.userRole === "super_admin";
+      const ok = isPermanent ? await permanentDeleteInDb(data.id) : await softDeleteInDb(data.id);
       if (ok) {
         await addActivityLogInDb({
           lead_id: data.id,
-          action: "Lead Soft-Deleted",
-          details: `Lead moved to Recycle Bin by ${data.performedBy || "Admin"}`,
+          action: isPermanent ? "Lead Permanently Deleted" : "Lead Soft-Deleted",
+          details: isPermanent
+            ? `Lead permanently erased from database by ${data.performedBy || "Super Admin"}`
+            : `Lead moved to Recycle Bin by ${data.performedBy || "Admin"}`,
           performed_by: data.performedBy || "Admin",
           user_role: data.userRole || "admin",
         });

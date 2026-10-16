@@ -449,26 +449,9 @@ async function ensureDefaultAccounts(client: any): Promise<void> {
     console.warn("admin_users role constraint check warning:", e);
   }
 
-  const seeds = [
-    { flag: "seed_admin_aistudio_us_v1", id: "usr_admin_aistudio", name: "Admin", email: "admin@aistudio.us", password: "Admin@123", role: "admin" },
-    { flag: "seed_lm_aistudio_us_v2", id: "usr_lm_aistudio", name: "Leads Manager", email: "lm@aistudio.us", password: "Leads@123", role: "leads_manager" },
-  ];
-  for (const sd of seeds) {
-    try {
-      const done = await client.query(`SELECT 1 FROM admin_users WHERE LOWER(email) = LOWER($1)`, [sd.email]);
-      if (done.rows.length > 0) continue;
-      await client.query(
-        `INSERT INTO admin_users (id, name, email, password, role, status, created_at)
-         VALUES ($1, $2, $3, $4, $5, 'active', NOW())
-         ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role, status = 'active'`,
-        [sd.id, sd.name, sd.email, sd.password, sd.role]
-      );
-      if (accountSetupError?.startsWith(sd.email)) accountSetupError = null;
-    } catch (seedErr: any) {
-      console.error(`Default account ${sd.email} could not be created:`, seedErr);
-      accountSetupError = `${sd.email}: ${seedErr?.message || seedErr}`;
-    }
-  }
+  // Default admin@ / lm@ accounts are NOT re-created any more: if the Super Admin deletes
+  // a user it must stay deleted (it used to come back on every server restart).
+
 }
 
 export async function saveLead(data: {
@@ -1195,22 +1178,6 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
       );
       dbUsers = res.rows.map(normalizeAdminRow);
 
-      // Default accounts missing (e.g. setup failed at startup)? Try again, at most once a minute.
-      const hasLm = dbUsers.some((u) => (u.email || "").toLowerCase() === "lm@aistudio.us");
-      const hasAdmin = dbUsers.some((u) => (u.email || "").toLowerCase() === "admin@aistudio.us");
-      if ((!hasLm || !hasAdmin) && Date.now() - lastAccountSetupAttempt > 60_000) {
-        lastAccountSetupAttempt = Date.now();
-        const client = await pool.connect();
-        try {
-          await ensureDefaultAccounts(client);
-        } finally {
-          client.release();
-        }
-        const again = await pool.query(
-          "SELECT id, name, email, role, status, created_at, last_login_at FROM admin_users ORDER BY created_at DESC"
-        );
-        dbUsers = again.rows.map(normalizeAdminRow);
-      }
     }
   } catch (err) {
     console.error("PostgreSQL getAdminUsers error:", err);

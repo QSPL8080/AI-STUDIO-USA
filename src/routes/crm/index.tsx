@@ -2090,11 +2090,13 @@ function AdminPage() {
       showToast("You don't have permission to delete leads.");
       return;
     }
-    if (confirm("Are you sure you want to delete this lead?")) {
+    if (confirm(session?.role === "super_admin"
+      ? "Permanently delete this lead from the database? This cannot be undone."
+      : "Are you sure you want to delete this lead?")) {
       const target = leads.find((l) => l.id === id);
       const updated = leads.filter((l) => l.id !== id);
       setLeads(updated);
-      if (target) setRecycleBinLeads((prev) => [{ ...target, deleted_at: new Date().toISOString() }, ...prev]);
+      if (target && session?.role !== "super_admin") setRecycleBinLeads((prev) => [{ ...target, deleted_at: new Date().toISOString() }, ...prev]);
       localStorage.setItem("ai_studio_local_leads", JSON.stringify(updated));
       broadcastLeadEvent({ type: "DELETE_LEAD", id });
 
@@ -2106,7 +2108,7 @@ function AdminPage() {
             userRole: session?.role || "admin",
           },
         });
-        showToast("Lead moved to Recycle Bin");
+        showToast(session?.role === "super_admin" ? "Lead permanently deleted" : "Lead moved to Recycle Bin");
         fetchLogsList();
       } catch (err) {
         console.error(err);
@@ -2394,12 +2396,14 @@ function AdminPage() {
       return;
     }
     if (selectedLeadIds.size === 0) return;
-    if (confirm(`Move ${selectedLeadIds.size} selected leads to Recycle Bin?`)) {
+    if (confirm(session?.role === "super_admin"
+      ? `Permanently delete ${selectedLeadIds.size} selected leads from the database? This cannot be undone.`
+      : `Move ${selectedLeadIds.size} selected leads to Recycle Bin?`)) {
       for (const id of Array.from(selectedLeadIds)) {
         await softDeleteLeadLeadServerFnWrapper(id);
       }
       setSelectedLeadIds(new Set());
-      showToast(`Moved ${selectedLeadIds.size} leads to Recycle Bin`);
+      showToast(session?.role === "super_admin" ? `${selectedLeadIds.size} leads permanently deleted` : `Moved ${selectedLeadIds.size} leads to Recycle Bin`);
     }
   };
 
@@ -2440,19 +2444,21 @@ function AdminPage() {
       return;
     }
     if (selectedMetaLeadIds.size === 0) return;
-    if (confirm(`Move ${selectedMetaLeadIds.size} selected Meta leads to Recycle Bin?`)) {
+    if (confirm(session?.role === "super_admin"
+      ? `Permanently delete ${selectedMetaLeadIds.size} selected Meta leads from the database? This cannot be undone.`
+      : `Move ${selectedMetaLeadIds.size} selected Meta leads to Recycle Bin?`)) {
       for (const id of Array.from(selectedMetaLeadIds)) {
         await softDeleteLeadLeadServerFnWrapper(id);
       }
       setSelectedMetaLeadIds(new Set());
-      showToast(`Moved ${selectedMetaLeadIds.size} Meta leads to Recycle Bin`);
+      showToast(session?.role === "super_admin" ? `${selectedMetaLeadIds.size} Meta leads permanently deleted` : `Moved ${selectedMetaLeadIds.size} Meta leads to Recycle Bin`);
     }
   };
 
   const softDeleteLeadLeadServerFnWrapper = async (id: string) => {
     const target = leads.find((l) => l.id === id);
     setLeads((prev) => prev.filter((l) => l.id !== id));
-    if (target) setRecycleBinLeads((prev) => [{ ...target, deleted_at: new Date().toISOString() }, ...prev]);
+    if (target && session?.role !== "super_admin") setRecycleBinLeads((prev) => [{ ...target, deleted_at: new Date().toISOString() }, ...prev]);
     try {
       await softDeleteLeadServerFn({
         data: {
