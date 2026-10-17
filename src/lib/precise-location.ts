@@ -46,7 +46,10 @@ export function getPreciseLocation(opts?: {
       },
       (err) => {
         if (err.code === err.PERMISSION_DENIED) finish({ ok: false, reason: "denied" });
-        // other errors: keep waiting for a fix until the timer ends
+        // Location not available on this device (e.g. location services off): don't wait for nothing.
+        else if (err.code === err.POSITION_UNAVAILABLE)
+          finish(best ? { ok: true, position: best } : { ok: false, reason: "unavailable" });
+        // timeout: the timer above finishes with the best fix so far
       },
       { enableHighAccuracy: true, maximumAge: 0, timeout: maxWaitMs }
     );

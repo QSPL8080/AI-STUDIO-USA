@@ -46,8 +46,20 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+// Prepare the database connection + one-time table setup as soon as the server gets its
+// first request (e.g. the CRM login page loading), instead of during the first login.
+let dbWarmupStarted = false;
+function warmUpDatabase() {
+  if (dbWarmupStarted) return;
+  dbWarmupStarted = true;
+  import("./lib/db")
+    .then((m) => m.initDb())
+    .catch((e) => console.warn("Database warm-up warning:", e));
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    warmUpDatabase();
     try {
       const url = new URL(request.url);
       if (url.hostname === "www.quickuppaistudio.us") {

@@ -1786,8 +1786,8 @@ function AdminPage() {
     if (typeof window === "undefined" || !navigator.geolocation) {
       return null;
     }
-    // First fix + up to 2s to improve it (stops at once within ±60 m); 8s cap if no fix comes
-    const loc = await getPreciseLocation({ maxWaitMs: 8000, goodEnoughMeters: 60, settleMs: 2000 });
+    // First fix + up to 2s to improve it (stops at once within ±60 m); 6s cap if no fix comes
+    const loc = await getPreciseLocation({ maxWaitMs: 6000, goodEnoughMeters: 60, settleMs: 2000 });
     if (loc.ok) return loc.position;
     if (loc.reason === "denied") setLocationErrorType("denied");
     return null;
@@ -1877,10 +1877,12 @@ function AdminPage() {
 
     // 1. Browser location and IP at the same time (the Super Admin is never location-checked)
     const isSuperAdminEmail = cleanEmail === "sa@aistudio.us";
+    const t0 = performance.now();
     const [coords, ipInfo] = await Promise.all([
       isSuperAdminEmail ? Promise.resolve(null) : getBrowserGeolocation().catch(() => null),
       getClientIpInfo(),
     ]);
+    const tLocated = performance.now();
 
     try {
       const res = await authenticateAdminServerFn({
@@ -1896,6 +1898,9 @@ function AdminPage() {
         },
       });
 
+      console.info(
+        `[CRM login] location+IP ${((tLocated - t0) / 1000).toFixed(1)}s, server ${((performance.now() - tLocated) / 1000).toFixed(1)}s`
+      );
       if (res.success && res.session) {
         const userSession: AuthSession = {
           email: res.session.email,
@@ -2576,7 +2581,7 @@ function AdminPage() {
         `"${(l.requirement || "").replace(/"/g, '""')}"`,
         `"${l.location || ""}"`,
         l.status,
-        l.project_status || "In Progress",
+        l.project_status || "Not Started",
         `"${l.closed_by || ""}"`,
         `"${l.closed_at ? new Date(l.closed_at).toLocaleDateString() : ""}"`,
         `"${l.delivery_date || ""}"`,
@@ -2640,7 +2645,7 @@ function AdminPage() {
         `"${l.video_quantity || 1}"`,
         `"${l.location || ""}"`,
         l.status,
-        l.project_status || "In Progress",
+        l.project_status || "Not Started",
         `"${l.closed_by || ""}"`,
         `"${l.closed_at ? new Date(l.closed_at).toLocaleDateString() : ""}"`,
         `"${l.delivery_date || ""}"`,
@@ -3137,7 +3142,11 @@ function AdminPage() {
   };
 
   const getProjectStatusBadge = (status?: ProjectStatus) => {
-    switch (status) {
+    switch (status || "Not Started") {
+      case "Not Started":
+        return isDark
+          ? "bg-sky-500/20 text-sky-300 border-sky-500/40"
+          : "bg-sky-50 text-sky-700 border-sky-200";
       case "Hold":
         return isDark
           ? "bg-gray-500/20 text-gray-300 border-gray-500/40"
@@ -3411,7 +3420,7 @@ function AdminPage() {
         // 3. Project Status Filter
         let matchesProjStatus = true;
         if (filterProjectStatus !== "All" && filterProjectStatus.trim() !== "") {
-          const ps = (lead.project_status || "In Progress").toLowerCase().replace(/[\s_-]/g, "");
+          const ps = (lead.project_status || "Not Started").toLowerCase().replace(/[\s_-]/g, "");
           const fps = filterProjectStatus.toLowerCase().replace(/[\s_-]/g, "");
           matchesProjStatus = ps === fps || (ps.includes("progress") && fps.includes("progress"));
         }
@@ -3544,7 +3553,7 @@ function AdminPage() {
         // 3. Project Status Filter
         let matchesProjStatus = true;
         if (metaFilterProjectStatus !== "All" && metaFilterProjectStatus.trim() !== "") {
-          const ps = (lead.project_status || "In Progress").toLowerCase().replace(/[\s_-]/g, "");
+          const ps = (lead.project_status || "Not Started").toLowerCase().replace(/[\s_-]/g, "");
           const fps = metaFilterProjectStatus.toLowerCase().replace(/[\s_-]/g, "");
           matchesProjStatus = ps === fps || (ps.includes("progress") && fps.includes("progress"));
         }
@@ -3697,7 +3706,7 @@ function AdminPage() {
   const allInProgressCount = allCrmLeads.filter((l) => l.status === "In Progress").length;
   const allHoldCount = allCrmLeads.filter((l) => l.status === "Hold").length;
   const allClosedCount = allCrmLeads.filter((l) => l.status === "Closed").length;
-  const allProjectsInProgressCount = allCrmLeads.filter((l) => (l.project_status || "In Progress") === "In Progress" && l.status !== "Closed").length;
+  const allProjectsInProgressCount = allCrmLeads.filter((l) => (l.project_status || "Not Started") === "In Progress" && l.status !== "Closed").length;
   const allProjectsDeliveredCount = allCrmLeads.filter((l) => l.project_status === "Delivered").length;
 
   // Website Leads KPI Summary Counts (Tab 1)
@@ -3708,7 +3717,7 @@ function AdminPage() {
   const holdCount = websiteLeads.filter((l) => l.status === "Hold").length;
   const closedCount = websiteLeads.filter((l) => l.status === "Closed").length;
   const projectsDeliveredCount = websiteLeads.filter((l) => l.project_status === "Delivered").length;
-  const projectsInProgressCount = websiteLeads.filter((l) => (l.project_status || "In Progress") === "In Progress" && l.status !== "Closed").length;
+  const projectsInProgressCount = websiteLeads.filter((l) => (l.project_status || "Not Started") === "In Progress" && l.status !== "Closed").length;
 
   // Meta Leads KPI Summary Counts (Tab 2)
   const metaTotalCount = metaLeads.length;
@@ -3718,7 +3727,7 @@ function AdminPage() {
   const metaHoldCount = metaLeads.filter((l) => l.status === "Hold").length;
   const metaClosedCount = metaLeads.filter((l) => l.status === "Closed").length;
   const metaDeliveredCount = metaLeads.filter((l) => l.project_status === "Delivered").length;
-  const metaProjectsInProgressCount = metaLeads.filter((l) => (l.project_status || "In Progress") === "In Progress" && l.status !== "Closed").length;
+  const metaProjectsInProgressCount = metaLeads.filter((l) => (l.project_status || "Not Started") === "In Progress" && l.status !== "Closed").length;
 
   // Orders shown in the CRM: a paid balance is shown on its 50% advance order, not as its own row.
   const visibleOrders = useMemo(() => orders.filter((o) => paymentSummary(o).plan !== "balance"), [orders]);
@@ -5016,6 +5025,7 @@ function AdminPage() {
                     className="rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none cursor-pointer"
                   >
                     <option value="All">All Project Statuses</option>
+                    <option value="Not Started">Not Started</option>
                     <option value="Hold">Hold</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Delivered">Delivered</option>
@@ -5370,10 +5380,11 @@ function AdminPage() {
                             {/* Project Status Dropdown */}
                             <td className="whitespace-nowrap px-4 py-3.5">
                               <select
-                                value={lead.project_status || "In Progress"}
+                                value={lead.project_status || "Not Started"}
                                 onChange={(e) => handleUpdateProjectStatus(lead, e.target.value as ProjectStatus)}
                                 className={`rounded-lg border px-2.5 py-1 text-xs font-bold cursor-pointer focus:outline-none ${getProjectStatusBadge(lead.project_status)}`}
                               >
+                                <option value="Not Started">Not Started</option>
                                 <option value="Hold">Hold</option>
                                 <option value="In Progress">In Progress</option>
                                 <option value="Delivered">Delivered</option>
@@ -5552,10 +5563,11 @@ function AdminPage() {
                         <div>
                           <label className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Project Status</label>
                           <select
-                            value={lead.project_status || "In Progress"}
+                            value={lead.project_status || "Not Started"}
                             onChange={(e) => handleUpdateProjectStatus(lead, e.target.value as ProjectStatus)}
                             className={`w-full rounded-lg px-2 py-1 text-[11px] font-bold ${getProjectStatusBadge(lead.project_status)}`}
                           >
+                            <option value="Not Started">Not Started</option>
                             <option value="Hold">Hold</option>
                             <option value="In Progress">In Progress</option>
                             <option value="Delivered">Delivered</option>
@@ -5940,6 +5952,7 @@ function AdminPage() {
                     className="rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none cursor-pointer"
                   >
                     <option value="All">All Project Statuses</option>
+                    <option value="Not Started">Not Started</option>
                     <option value="Hold">Hold</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Delivered">Delivered</option>
@@ -6291,10 +6304,11 @@ function AdminPage() {
                             {/* Project Status Dropdown */}
                             <td className="whitespace-nowrap px-4 py-3.5">
                               <select
-                                value={lead.project_status || "In Progress"}
+                                value={lead.project_status || "Not Started"}
                                 onChange={(e) => handleUpdateProjectStatus(lead, e.target.value as ProjectStatus)}
                                 className={`rounded-lg border px-2.5 py-1 text-xs font-bold cursor-pointer focus:outline-none ${getProjectStatusBadge(lead.project_status)}`}
                               >
+                                <option value="Not Started">Not Started</option>
                                 <option value="Hold">Hold</option>
                                 <option value="In Progress">In Progress</option>
                                 <option value="Delivered">Delivered</option>
@@ -6425,10 +6439,11 @@ function AdminPage() {
                         <div>
                           <span className="text-slate-400 block text-[10px]">Project Status:</span>
                           <select
-                            value={lead.project_status || "In Progress"}
+                            value={lead.project_status || "Not Started"}
                             onChange={(e) => handleUpdateProjectStatus(lead, e.target.value as ProjectStatus)}
                             className={`w-full mt-1 rounded-lg border px-2 py-1 text-xs font-bold ${getProjectStatusBadge(lead.project_status)}`}
                           >
+                            <option value="Not Started">Not Started</option>
                             <option value="Hold">Hold</option>
                             <option value="In Progress">In Progress</option>
                             <option value="Delivered">Delivered</option>
@@ -9162,7 +9177,7 @@ function AdminPage() {
                       videoType,
                       videoQuantity: videoQuantity || 1,
                       status: status || "New",
-                      projectStatus: projectStatus || "In Progress",
+                      projectStatus: projectStatus || "Not Started",
                       deliveryDate: deliveryDate || undefined,
                       notes: notes || undefined,
                       createdBy: session?.name || "Admin",
@@ -9353,11 +9368,12 @@ function AdminPage() {
                   <label className="block font-semibold mb-1">Project Status</label>
                   <select
                     name="projectStatus"
-                    defaultValue="In Progress"
+                    defaultValue="Not Started"
                     className={`w-full rounded-xl border p-2.5 focus:outline-none ${
                       isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"
                     }`}
                   >
+                    <option value="Not Started">Not Started</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Hold">Hold</option>
                     <option value="Delivered">Delivered</option>
@@ -9709,7 +9725,7 @@ function AdminPage() {
                     </span>
                   </div>
                   <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${getProjectStatusBadge(viewLeadDetails.project_status)}`}>
-                    {viewLeadDetails.project_status || "In Progress"}
+                    {viewLeadDetails.project_status || "Not Started"}
                   </span>
                 </div>
 
@@ -9724,7 +9740,7 @@ function AdminPage() {
                   </div>
                   <div>
                     <span className="text-[10px] font-bold uppercase text-slate-400 block">Project Status</span>
-                    <p className="font-bold text-slate-900 mt-0.5">{viewLeadDetails.project_status || "In Progress"}</p>
+                    <p className="font-bold text-slate-900 mt-0.5">{viewLeadDetails.project_status || "Not Started"}</p>
                   </div>
                   <div>
                     <span className="text-[10px] font-bold uppercase text-slate-400 block">Delivery Date</span>

@@ -1,5 +1,5 @@
 export type LeadStatus = "New" | "Contacted" | "In Progress" | "Hold" | "Closed";
-export type ProjectStatus = "Hold" | "In Progress" | "Delivered";
+export type ProjectStatus = "Not Started" | "Hold" | "In Progress" | "Delivered";
 
 export interface Lead {
   id: string;
@@ -281,7 +281,7 @@ export async function initDb() {
             requirement TEXT,
             additional TEXT,
             status VARCHAR(32) DEFAULT 'New',
-            project_status VARCHAR(32) DEFAULT 'In Progress',
+            project_status VARCHAR(32) DEFAULT 'Not Started',
             notes TEXT,
             closed_by VARCHAR(255),
             closed_at TIMESTAMP WITH TIME ZONE,
@@ -299,7 +299,7 @@ export async function initDb() {
 
           ALTER TABLE leads ADD COLUMN IF NOT EXISTS website VARCHAR(255);
           ALTER TABLE leads ADD COLUMN IF NOT EXISTS video_quantity VARCHAR(64);
-          ALTER TABLE leads ADD COLUMN IF NOT EXISTS project_status VARCHAR(32) DEFAULT 'In Progress';
+          ALTER TABLE leads ADD COLUMN IF NOT EXISTS project_status VARCHAR(32) DEFAULT 'Not Started';
           ALTER TABLE leads ADD COLUMN IF NOT EXISTS notes TEXT;
           ALTER TABLE leads ADD COLUMN IF NOT EXISTS closed_by VARCHAR(255);
           ALTER TABLE leads ADD COLUMN IF NOT EXISTS closed_at TIMESTAMP WITH TIME ZONE;
@@ -491,7 +491,8 @@ export async function saveLead(data: {
 }): Promise<Lead> {
   const id = `lead_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const status: LeadStatus = data.status || "New";
-  const projectStatus: ProjectStatus = data.projectStatus || "In Progress";
+  // New leads start as "Not Started"; a CRM user moves them to "In Progress".
+  const projectStatus: ProjectStatus = data.projectStatus || "Not Started";
   
   // Resolve custom submission timestamp (e.g. from Meta Lead Ads created_time)
   let createdAt = new Date().toISOString();
@@ -663,7 +664,7 @@ export async function saveLead(data: {
           requirement: record.requirement || null,
           additional: record.additional || null,
           status: record.status,
-          project_status: record.project_status || "In Progress",
+          project_status: record.project_status || "Not Started",
           notes: record.notes || null,
           delivery_date: record.delivery_date || null,
           meeting_date: record.meeting_date || null,
