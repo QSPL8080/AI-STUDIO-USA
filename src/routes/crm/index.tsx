@@ -439,7 +439,7 @@ function AdminPage() {
 
   // Orders State
   const [orders, setOrders] = useState<Order[]>([]);
-  const [filterOrderStatus, setFilterOrderStatus] = useState<string>("COMPLETED");
+  const [filterOrderStatus, setFilterOrderStatus] = useState<string>("All");
   const [orderSearchTerm, setOrderSearchTerm] = useState("");
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<Order | null>(null);
   // Payment Tab PIN Security State
@@ -3722,20 +3722,19 @@ function AdminPage() {
   const isPartlyPaidOrder = (o: Order) => paymentSummary(o).partlyPaid;
   const paidVisibleOrders = visibleOrders.filter((o) => o.payment_status === "COMPLETED");
   const balancePendingTotal = paidVisibleOrders.reduce((t, o) => t + paymentSummary(o).balanceDue, 0);
+  const orderTab = (o: Order): "FULLY_PAID" | "BALANCE" | "REFUNDED" | "FAILED" => {
+    const st = String(o.payment_status || "").toUpperCase();
+    if (st === "COMPLETED") return paymentSummary(o).partlyPaid ? "BALANCE" : "FULLY_PAID";
+    if (st === "REFUNDED") return "REFUNDED";
+    return "FAILED"; // failed, cancelled or pending (checkout not paid)
+  };
 
   // Filtered Orders
   const filteredOrders = useMemo(() => {
     return visibleOrders
       .filter((order) => {
-        const status = (order.payment_status || "").toUpperCase();
-        if (filterOrderStatus === "FULLY_PAID") return status === "COMPLETED" && !paymentSummary(order).partlyPaid;
-        if (filterOrderStatus === "BALANCE") return paymentSummary(order).partlyPaid;
-        if (filterOrderStatus === "COMPLETED") return status === "COMPLETED";
-        if (filterOrderStatus === "PENDING") return status === "PENDING";
-        if (filterOrderStatus === "FAILED") return status === "FAILED" || status === "CANCELLED";
-        if (filterOrderStatus === "REFUNDED") return status === "REFUNDED";
         if (filterOrderStatus === "All") return true;
-        return status === filterOrderStatus.toUpperCase();
+        return orderTab(order) === filterOrderStatus;
       })
       .filter((order) => {
         const q = orderSearchTerm.toLowerCase().trim();
@@ -6533,7 +6532,18 @@ function AdminPage() {
                   <Package className="h-4 w-4 text-purple-500" />
                 </div>
                 <p className="mt-2 text-2xl font-extrabold">{visibleOrders.length}</p>
-                <p className="mt-0.5 text-[11px] text-slate-400">{visibleOrders.filter((o) => o.payment_status === "PENDING").length} unpaid checkouts</p>
+              </div>
+
+              <div className={`rounded-xl border p-4 shadow-sm ${
+                isDark ? "border-amber-500/30 bg-amber-950/20 text-amber-300" : "border-amber-200 bg-amber-50/70 text-amber-900"
+              }`}>
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <span>Balance Pending</span>
+                  <Clock className="h-4 w-4 text-amber-500" />
+                </div>
+                <p className="mt-2 text-2xl font-extrabold text-amber-600 dark:text-amber-400">
+                  ${balancePendingTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
               </div>
 
               <div className={`rounded-xl border p-4 shadow-sm ${
@@ -6572,17 +6582,6 @@ function AdminPage() {
                 </p>
               </div>
 
-              <div className={`rounded-xl border p-4 shadow-sm ${
-                isDark ? "border-amber-500/30 bg-amber-950/20 text-amber-300" : "border-amber-200 bg-amber-50/70 text-amber-900"
-              }`}>
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span>Balance Pending</span>
-                  <Clock className="h-4 w-4 text-amber-500" />
-                </div>
-                <p className="mt-2 text-2xl font-extrabold text-amber-600 dark:text-amber-400">
-                  ${balancePendingTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-              </div>
             </div>
 
             {/* Orders Search & Filter */}
@@ -6602,22 +6601,32 @@ function AdminPage() {
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <select
-                  value={filterOrderStatus}
-                  onChange={(e) => setFilterOrderStatus(e.target.value)}
-                  className={`rounded-lg border px-3 py-2 text-xs font-semibold focus:outline-none cursor-pointer ${
-                    isDark ? "border-slate-700 bg-slate-900 text-white" : "border-slate-200 bg-slate-50"
-                  }`}
-                >
-                  <option value="COMPLETED">Paid (all)</option>
-                  <option value="FULLY_PAID">Fully Paid</option>
-                  <option value="BALANCE">Balance Pending (50% paid)</option>
-                  <option value="All">All Statuses</option>
-                  <option value="PENDING">Pending</option>
-                  <option value="FAILED">Failed / Cancelled</option>
-                  <option value="REFUNDED">Refunded</option>
-                </select>
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { id: "All", label: "All" },
+                  { id: "FULLY_PAID", label: "Fully Paid" },
+                  { id: "BALANCE", label: "Balance Pending" },
+                  { id: "FAILED", label: "Failed" },
+                ].map((f) => {
+                  const n = f.id === "All" ? visibleOrders.length : visibleOrders.filter((o) => orderTab(o) === f.id).length;
+                  const active = filterOrderStatus === f.id;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setFilterOrderStatus(f.id)}
+                      className={`h-9 px-3.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                        active
+                          ? "bg-purple-600 text-white"
+                          : isDark
+                            ? "border border-slate-700 text-slate-300 hover:text-white"
+                            : "border border-slate-200 text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      {f.label} ({n})
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -6643,7 +6652,13 @@ function AdminPage() {
                   {filteredOrders.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-xs text-slate-500">
-                        No PayPal orders found matching criteria.
+                        {filterOrderStatus === "BALANCE"
+                          ? "No orders with a balance pending."
+                          : filterOrderStatus === "FULLY_PAID"
+                            ? "No fully paid orders."
+                            : filterOrderStatus === "FAILED"
+                              ? "No failed or unpaid orders."
+                              : "No orders found."}
                       </td>
                     </tr>
                   ) : (
@@ -6690,9 +6705,19 @@ function AdminPage() {
                                     ? "bg-orange-50 text-orange-700 border border-orange-300 dark:bg-orange-950/40 dark:text-orange-300"
                                     : paid
                                       ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300"
-                                      : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300"
+                                      : order.payment_status === "REFUNDED"
+                                        ? "bg-slate-100 text-slate-600 border border-slate-300"
+                                        : "bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-300"
                                 }`}>
-                                  {ps.partlyPaid ? "PARTIALLY PAID" : paid ? "PAID" : order.payment_status}
+                                  {ps.partlyPaid
+                                    ? "PARTIALLY PAID"
+                                    : paid
+                                      ? "FULLY PAID"
+                                      : order.payment_status === "PENDING"
+                                        ? "FAILED (NOT PAID)"
+                                        : order.payment_status === "CANCELLED"
+                                          ? "FAILED (CANCELLED)"
+                                          : order.payment_status}
                                 </span>
                               </td>
                             </>
@@ -11082,8 +11107,10 @@ function AdminPage() {
                   {paymentSummary(selectedOrderDetails).partlyPaid
                     ? "PARTIALLY PAID"
                     : selectedOrderDetails.payment_status === "COMPLETED"
-                      ? "PAID"
-                      : selectedOrderDetails.payment_status}
+                      ? "FULLY PAID"
+                      : selectedOrderDetails.payment_status === "PENDING" || selectedOrderDetails.payment_status === "CANCELLED"
+                        ? "FAILED (NOT PAID)"
+                        : selectedOrderDetails.payment_status}
                 </p>
               </div>
             </div>
