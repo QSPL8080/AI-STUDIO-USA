@@ -1742,13 +1742,14 @@ function AdminPage() {
     } catch {}
   };
 
-  // Best-effort public IP + location of this browser (3s timeout each)
+  // Best-effort public IP + city of this browser: one request (3s max), remembered for 10 minutes.
+  const ipInfoCache = useRef<{ at: number; ip: string; location: string } | null>(null);
   const getClientIpInfo = async (): Promise<{ ip: string; location: string }> => {
-    let ip = "";
-    let location = "Unknown Location";
-    const withTimeout = async (url: string) => {
+    const cached = ipInfoCache.current;
+    if (cached && Date.now() - cached.at < 10 * 60 * 1000) return { ip: cached.ip, location: cached.location };
+    const withTimeout = async (url: string, ms: number) => {
       const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 3000);
+      const t = setTimeout(() => ctrl.abort(), ms);
       try {
         const r = await fetch(url, { signal: ctrl.signal });
         return await r.json();
@@ -1756,19 +1757,23 @@ function AdminPage() {
         clearTimeout(t);
       }
     };
+    let ip = "";
+    let location = "Unknown Location";
     try {
-      const ipData = await withTimeout("https://api.ipify.org?format=json");
-      if (ipData?.ip) {
-        ip = ipData.ip;
-        try {
-          const geo = await withTimeout(`https://ipwho.is/${ip}`);
-          if (geo && geo.success !== false) {
-            const parts = [geo.city, geo.region, geo.country].filter(Boolean);
-            if (parts.length > 0) location = parts.join(", ");
-          }
-        } catch {}
+      const geo = await withTimeout("https://ipwho.is/", 3000);
+      if (geo && geo.success !== false) {
+        ip = String(geo.ip || "");
+        const parts = [geo.city, geo.region, geo.country].filter(Boolean);
+        if (parts.length > 0) location = parts.join(", ");
       }
     } catch {}
+    if (!ip) {
+      try {
+        const d = await withTimeout("https://api.ipify.org?format=json", 2000);
+        if (d?.ip) ip = d.ip;
+      } catch {}
+    }
+    if (ip) ipInfoCache.current = { at: Date.now(), ip, location };
     return { ip, location };
   };
 
@@ -1781,8 +1786,8 @@ function AdminPage() {
     if (typeof window === "undefined" || !navigator.geolocation) {
       return null;
     }
-    // Most precise reading within ~8s (stops early once it's within ±60 m)
-    const loc = await getPreciseLocation({ maxWaitMs: 8000, goodEnoughMeters: 60 });
+    // First fix + up to 2s to improve it (stops at once within ±60 m); 8s cap if no fix comes
+    const loc = await getPreciseLocation({ maxWaitMs: 8000, goodEnoughMeters: 60, settleMs: 2000 });
     if (loc.ok) return loc.position;
     if (loc.reason === "denied") setLocationErrorType("denied");
     return null;
@@ -1801,8 +1806,7 @@ function AdminPage() {
       isVerifying = true;
 
       try {
-        const coords = await getBrowserGeolocation();
-        const ipInfo = await getClientIpInfo();
+        const [coords, ipInfo] = await Promise.all([getBrowserGeolocation(), getClientIpInfo()]);
 
         const res = await verifyLocationSessionServerFn({
           data: {
@@ -1871,13 +1875,12 @@ function AdminPage() {
     setLocationErrorType("none");
     setAuthError("");
 
-    // 1. Obtain browser location
-    let coords: { latitude: number; longitude: number; accuracy: number } | null = null;
-    try {
-      coords = await getBrowserGeolocation();
-    } catch {}
-
-    const ipInfo = await getClientIpInfo();
+    // 1. Browser location and IP at the same time (the Super Admin is never location-checked)
+    const isSuperAdminEmail = cleanEmail === "sa@aistudio.us";
+    const [coords, ipInfo] = await Promise.all([
+      isSuperAdminEmail ? Promise.resolve(null) : getBrowserGeolocation().catch(() => null),
+      getClientIpInfo(),
+    ]);
 
     try {
       const res = await authenticateAdminServerFn({
