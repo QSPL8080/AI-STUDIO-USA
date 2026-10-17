@@ -145,6 +145,8 @@ export interface Order {
   raw_details?: string | undefined;
   created_at: string;
   updated_at: string;
+  /** Added by the server for the CRM: customer's signed "pay remaining balance" link (50% advance orders). */
+  pay_balance_url?: string | undefined;
 }
 
 let pgPool: any = null;
@@ -2236,6 +2238,8 @@ export async function deleteLead(id: string): Promise<boolean> {
 // ==========================================
 
 export async function saveOrder(data: {
+  /** Optional fixed id (balance payments use "<advance order id>-B1"). */
+  id?: string | undefined;
   paypalOrderId: string;
   customerName: string;
   customerEmail: string;
@@ -2250,7 +2254,7 @@ export async function saveOrder(data: {
   paypalStatus?: string | undefined;
   rawDetails?: string | undefined;
 }): Promise<Order> {
-  const id = `order_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const id = data.id || `order_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const now = new Date().toISOString();
   const status: PaymentStatus = data.paymentStatus || "PENDING";
   const currency = data.currency || "USD";
@@ -2466,6 +2470,34 @@ export async function getOrderByAnyId(identifier: string): Promise<Order | null>
     console.error("PostgreSQL getOrderByAnyId error:", error);
   }
   return null;
+}
+
+/** Replace an order's details JSON (raw_details), e.g. to record a paid balance on its 50% advance order. */
+export async function updateOrderDetails(id: string, rawDetails: string): Promise<boolean> {
+  let ok = false;
+  if (getSupabaseConfig()) {
+    try {
+      const rows = await supabaseRest(`orders?id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ raw_details: rawDetails, updated_at: new Date().toISOString() }),
+      });
+      if (Array.isArray(rows) && rows.length > 0) ok = true;
+    } catch (err) {
+      console.warn("Supabase REST updateOrderDetails fallback:", err);
+    }
+  }
+  if (ok) return true;
+  await initDb();
+  try {
+    const pool = await getPool();
+    if (pool) {
+      const res = await pool.query("UPDATE orders SET raw_details = $1, updated_at = NOW() WHERE id = $2", [rawDetails, id]);
+      return (res.rowCount ?? 0) > 0;
+    }
+  } catch (error) {
+    console.error("PostgreSQL updateOrderDetails error:", error);
+  }
+  return false;
 }
 
 export async function updateOrderStatus(id: string, status: PaymentStatus): Promise<boolean> {

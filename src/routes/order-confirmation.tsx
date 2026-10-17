@@ -13,6 +13,7 @@ import {
   formatOrderInvoiceNumber,
 } from "@/lib/paypal-actions";
 import { FloatingWhatsAppButton } from "@/components/site/sections";
+import { parseOrderDetails, formatUsd, type OrderPlan } from "@/lib/payment-plan";
 
 export const Route = createFileRoute("/order-confirmation")({
   head: () => ({
@@ -43,6 +44,15 @@ function OrderConfirmationPage() {
     billingAddress?: string | undefined;
     paymentDate: string;
     paymentTime: string;
+    plan: OrderPlan;
+    planLabel: string;
+    orderTotal: number;
+    paidBefore: number;
+    balanceAmount: number;
+    paidTotal: number;
+    balanceDue: number;
+    payBalanceUrl: string;
+    parentOrderNumber: string;
   } | null>(null);
 
   useEffect(() => {
@@ -68,77 +78,59 @@ function OrderConfirmationPage() {
         timeZone: "America/New_York",
       }) + " EST";
 
+    // Shows the order exactly as stored (full payment, 50% advance or balance payment).
+    async function showOrder(identifier: string): Promise<boolean> {
+      const lookupRes: any = await lookupOrderServerFn({ data: { identifier } });
+      if (!lookupRes?.success || !lookupRes.order || lookupRes.order.payment_status !== "COMPLETED") return false;
+      const o = lookupRes.order;
+      const ps = lookupRes.summary;
+      const d = parseOrderDetails(o);
+      const paidAt = d.paidAt ? new Date(d.paidAt) : null;
+      const delivery = d.delivery ? String(d.delivery) : "";
+      setOrderData({
+        orderNumber: lookupRes.receiptNumber || formatOrderInvoiceNumber(o.id, o.created_at),
+        serviceName: (o.item_name || "AI Video Service").replace(/ - Balance$/, ""),
+        packageName: delivery ? (delivery.includes("Video") ? delivery : `1 × 60-Second Video (${delivery})`) : "1 × 60-Second Video",
+        amountPaid: `${formatUsd(Number(o.amount))} ${o.currency || "USD"}`,
+        amountNumber: Number(o.amount),
+        paymentMethod: "PayPal",
+        transactionId: o.paypal_capture_id || o.paypal_order_id,
+        customerName: o.customer_name || "Valued Client",
+        customerEmail: o.customer_email || queryEmail || "",
+        customerCompany: o.customer_company || undefined,
+        billingAddress: undefined,
+        paymentDate: paidAt
+          ? paidAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" })
+          : dateStr,
+        paymentTime: paidAt
+          ? paidAt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/New_York" }) + " EST"
+          : timeStr,
+        plan: ps?.plan || "full",
+        planLabel: ps?.planLabel || "Full Payment",
+        orderTotal: Number(ps?.orderTotal ?? o.amount),
+        paidBefore: Number(ps?.paidBefore ?? 0),
+        balanceAmount: Number(ps?.balanceAmount ?? 0),
+        paidTotal: Number(ps?.paidTotal ?? o.amount),
+        balanceDue: Number(ps?.balanceDue ?? 0),
+        payBalanceUrl: lookupRes.payBalanceUrl || "",
+        parentOrderNumber: ps?.parentOrderNumber || "",
+      });
+      return true;
+    }
+
     async function initializeOrder() {
       try {
-        // If returning from PayPal redirect flow with pending token
+        // Returning from the PayPal redirect flow: capture first (safe to repeat), then show the order.
         if (token && payerId) {
-          const captureRes = await capturePayPalOrderServerFn({
-            data: { orderId: token },
-          });
-          if (captureRes.success && captureRes.order) {
-            const o = captureRes.order;
-            setOrderData({
-              orderNumber: formatOrderInvoiceNumber(o.id, o.created_at),
-              serviceName: o.item_name || "AI Video Service",
-              packageName: o.item_name?.includes("Package") ? o.item_name : "Video Package",
-              amountPaid: `$${Number(o.amount).toFixed(2)} ${o.currency || "USD"}`,
-              amountNumber: Number(o.amount),
-              paymentMethod: "PayPal",
-              transactionId: captureRes.captureId || o.paypal_order_id,
-              customerName: o.customer_name || "Valued Client",
-              customerEmail: o.customer_email || queryEmail || "",
-              customerCompany: o.customer_company || undefined,
-              billingAddress: undefined,
-              paymentDate: dateStr,
-              paymentTime: timeStr,
-            });
-            setLoading(false);
-            return;
+          try {
+            await capturePayPalOrderServerFn({ data: { orderId: token } });
+          } catch (capErr) {
+            console.warn("Capture on confirmation page:", capErr);
           }
         }
-
-        // If lookup token or orderId is provided
-        if (token) {
-          const lookupRes = await lookupOrderServerFn({
-            data: { identifier: token },
-          });
-          if (lookupRes.success && lookupRes.order) {
-            const o = lookupRes.order;
-            setOrderData({
-              orderNumber: formatOrderInvoiceNumber(o.id, o.created_at),
-              serviceName: o.item_name || "AI Video Service",
-              packageName: o.item_name?.includes("Package") ? o.item_name : "Video Package",
-              amountPaid: `$${Number(o.amount).toFixed(2)} ${o.currency || "USD"}`,
-              amountNumber: Number(o.amount),
-              paymentMethod: "PayPal",
-              transactionId: o.paypal_capture_id || o.paypal_order_id,
-              customerName: o.customer_name || "Valued Client",
-              customerEmail: o.customer_email || queryEmail || "",
-              customerCompany: o.customer_company || undefined,
-              billingAddress: undefined,
-              paymentDate: dateStr,
-              paymentTime: timeStr,
-            });
-            setLoading(false);
-            return;
-          } else {
-            // Token provided from direct checkout redirect
-            setOrderData({
-              orderNumber: formatOrderInvoiceNumber(token),
-              serviceName: "AI Video Service",
-              packageName: "Order Confirmed",
-              amountPaid: "$99.00 USD",
-              amountNumber: 99.0,
-              paymentMethod: "PayPal",
-              transactionId: token,
-              customerName: "Valued Client",
-              customerEmail: queryEmail || "",
-              customerCompany: undefined,
-              billingAddress: undefined,
-              paymentDate: dateStr,
-              paymentTime: timeStr,
-            });
-          }
+        const ids = [params.get("orderId"), token].filter(Boolean) as string[];
+        for (const id of ids) {
+          if (await showOrder(id)) return;
         }
       } catch (err) {
         console.warn("Could not lookup order automatically:", err);
@@ -217,7 +209,11 @@ function OrderConfirmationPage() {
 
                   <div className="space-y-1">
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                      Payment Successful! 🎉
+                      {orderData.plan === "advance" && orderData.balanceDue > 0
+                        ? "Advance Payment Successful!"
+                        : orderData.plan === "balance"
+                          ? "Balance Paid. Order Complete!"
+                          : "Payment Successful! 🎉"}
                     </h1>
                     <p className="text-sm sm:text-base font-semibold text-purple-700">
                       Thank you for your order.
@@ -235,9 +231,15 @@ function OrderConfirmationPage() {
                       <FileText className="h-4 w-4" />
                       <span>Payment Details</span>
                     </h2>
-                    <span className="inline-flex items-center rounded-full bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                      ✓ PAID
-                    </span>
+                    {orderData.plan === "advance" && orderData.balanceDue > 0 ? (
+                      <span className="inline-flex items-center rounded-full bg-amber-100 border border-amber-200 px-2.5 py-0.5 text-xs font-bold text-amber-700">
+                        ADVANCE PAID (50%)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                        ✓ {orderData.plan === "full" ? "PAID" : "FULLY PAID"}
+                      </span>
+                    )}
                   </div>
 
                   <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs sm:text-sm">
@@ -262,11 +264,41 @@ function OrderConfirmationPage() {
                       </dd>
                     </div>
 
+                    {orderData.plan !== "full" && (
+                      <div className="space-y-0.5">
+                        <dt className="text-xs text-slate-500 font-medium">Order Total</dt>
+                        <dd className="font-semibold text-slate-900">{formatUsd(orderData.orderTotal)} USD</dd>
+                      </div>
+                    )}
+                    {orderData.plan === "balance" && (
+                      <div className="space-y-0.5">
+                        <dt className="text-xs text-slate-500 font-medium">Paid Earlier (50% Advance)</dt>
+                        <dd className="font-semibold text-slate-900">{formatUsd(orderData.paidBefore)} USD</dd>
+                      </div>
+                    )}
                     <div className="space-y-0.5">
-                      <dt className="text-xs text-slate-500 font-medium">Amount Paid</dt>
+                      <dt className="text-xs text-slate-500 font-medium">
+                        {orderData.plan === "advance"
+                          ? "Amount Paid (50% Advance)"
+                          : orderData.plan === "balance"
+                            ? "Balance Paid"
+                            : "Amount Paid"}
+                      </dt>
                       <dd className="font-bold text-purple-700 text-sm sm:text-base">
                         {orderData.amountPaid}
                       </dd>
+                    </div>
+                    {orderData.plan !== "full" && (
+                      <div className="space-y-0.5">
+                        <dt className="text-xs text-slate-500 font-medium">Balance Due</dt>
+                        <dd className={`font-bold text-sm sm:text-base ${orderData.balanceDue > 0 ? "text-amber-700" : "text-emerald-700"}`}>
+                          {orderData.balanceDue > 0 ? `${formatUsd(orderData.balanceDue)} USD` : "Nil (Fully Paid)"}
+                        </dd>
+                      </div>
+                    )}
+                    <div className="space-y-0.5">
+                      <dt className="text-xs text-slate-500 font-medium">Payment Type</dt>
+                      <dd className="font-medium text-slate-800">{orderData.planLabel}</dd>
                     </div>
 
                     <div className="space-y-0.5">
@@ -284,6 +316,21 @@ function OrderConfirmationPage() {
                     </div>
                   </dl>
                 </div>
+
+                {/* Balance still to pay (50% advance orders) */}
+                {orderData.plan === "advance" && orderData.balanceDue > 0 && orderData.payBalanceUrl && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center space-y-2 shadow-xs">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Balance Pending</p>
+                    <p className="text-2xl font-black text-slate-900">{formatUsd(orderData.balanceDue)} USD</p>
+                    <p className="text-xs text-slate-600">Pay it now, or anytime later from the link in your email.</p>
+                    <a
+                      href={orderData.payBalanceUrl}
+                      className="mt-1 inline-flex items-center justify-center rounded-xl bg-slate-900 hover:bg-slate-800 px-6 py-3 text-sm font-bold text-white shadow-md transition-all"
+                    >
+                      Pay Remaining Balance
+                    </a>
+                  </div>
+                )}
 
                 {/* Your Receipt Has Been Emailed Section */}
                 <div className="rounded-2xl border border-purple-200 bg-purple-50/70 p-5 text-left space-y-2.5 shadow-xs">

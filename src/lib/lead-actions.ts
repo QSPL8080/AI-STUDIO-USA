@@ -73,6 +73,7 @@ import {
 // Re-exported for server.ts (Meta webhook) - `export ... from` alone does NOT make
 // these usable inside this file, which silently broke lead + failed-login emails.
 export { sendLeadNotificationEmail, sendFailedLoginAlertEmail, sendAccountActivationRequestEmail };
+import { paymentSummary } from "./payment-plan";
 import { evaluateLocationAccess, getOfficeGeoConfig, DEFAULT_OFFICE_CONFIG } from "./geo-config";
 import { createCrmSessionToken, verifySessionWithLocation, decodeAndVerifySessionToken } from "./crm-session";
 import { getLiveSessionLoginLogIds, isSessionPresent, PRESENCE_STALE_MS, type SessionPresence } from "./login-sessions";
@@ -914,15 +915,17 @@ export const fetchRecordCountsServerFn = createServerFn({ method: "POST" })
       const crmLeads = leads.filter(
         (l) => !isIndia(l.source, l.location) && !(l.source || "").toLowerCase().includes("calendly")
       );
-      const paid = orders.filter((o) => String(o.payment_status).toUpperCase() === "COMPLETED");
+      // A paid balance is counted on its 50% advance order (not as a separate order).
+      const realOrders = orders.filter((o) => paymentSummary(o).plan !== "balance");
+      const paid = realOrders.filter((o) => String(o.payment_status).toUpperCase() === "COMPLETED");
       return {
         success: true as const,
         counts: {
           activeLeads: crmLeads.filter((l) => !l.deleted_at).length,
           recycleBin: crmLeads.filter((l) => !!l.deleted_at).length,
-          totalOrders: orders.length,
+          totalOrders: realOrders.length,
           paidOrders: paid.length,
-          revenue: paid.reduce((sum, o) => sum + (Number(o.amount) || 0), 0),
+          revenue: paid.reduce((sum, o) => sum + paymentSummary(o).paidTotal, 0),
           calendlyCalls: meetings,
           adminAccounts: admins.filter((u) => !/@aistudio\.com$/i.test(u.email || "")).length,
           activeAdminAccounts: admins.filter((u) => !/@aistudio\.com$/i.test(u.email || "") && u.status !== "inactive").length,

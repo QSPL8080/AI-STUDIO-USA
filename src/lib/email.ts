@@ -408,6 +408,21 @@ export interface PaymentReceiptEmailPayload {
   paymentDate?: string | undefined;
   delivery?: string | undefined;
   billingAddress?: string | undefined;
+  /** Internal order id (used for the receipt download / confirmation links). */
+  internalOrderId?: string | undefined;
+  /** Official receipt number (QAS-...). Worked out from the order id when missing. */
+  orderNumber?: string | undefined;
+  /** "full" (default), "advance" (50% paid, balance due later) or "balance" (rest of an advance). */
+  plan?: "full" | "advance" | "balance" | undefined;
+  planLabel?: string | undefined;
+  orderTotal?: number | undefined;
+  paidBefore?: number | undefined;
+  balanceAmount?: number | undefined;
+  paidTotal?: number | undefined;
+  balanceDue?: number | undefined;
+  /** Signed "Pay remaining balance" link (50% advance with a balance still due). */
+  payBalanceUrl?: string | undefined;
+  parentOrderNumber?: string | undefined;
 }
 
 /**
@@ -423,12 +438,36 @@ export async function sendPaymentReceiptEmail(
   const transactionId = payload.captureId || payload.orderId;
   const firstName = payload.customerName?.trim().split(" ")[0] || "Valued Client";
 
-  // Standardized order invoice number: e.g. QAS-2026-000127
+  // Standardized order invoice number: e.g. QAS-2026-000127 (same number as the confirmation page / CRM)
   const currentYear = new Date().getFullYear();
   const rawId = (payload.orderId || transactionId).replace(/[^a-zA-Z0-9]/g, "").slice(-6).toUpperCase();
-  const orderNumber = payload.orderId.startsWith("QAS-")
-    ? payload.orderId
-    : `QAS-${currentYear}-${rawId.padStart(6, "0")}`;
+  const orderNumber =
+    payload.orderNumber ||
+    (payload.orderId.startsWith("QAS-") ? payload.orderId : `QAS-${currentYear}-${rawId.padStart(6, "0")}`);
+  const linkId = payload.internalOrderId || payload.orderId;
+  const money = (n: number | undefined) => `$${(Number(n) || 0).toFixed(2)} ${currency}`;
+  const plan = payload.plan || "full";
+  const balanceDue = Math.max(0, Number(payload.balanceDue) || 0);
+  const partly = plan === "advance" && balanceDue > 0;
+  const planLabel = payload.planLabel || "Full Payment";
+  const fullyPaidLater = plan === "balance" || (plan === "advance" && !partly);
+  // Amount rows for the order table / plain text, per payment type
+  const amountRows: [string, string, boolean][] =
+    plan === "advance"
+      ? [
+          ["Order Total", money(payload.orderTotal ?? payload.amount), false],
+          ["Amount Paid (50% Advance)", formattedAmount, true],
+          ...((payload.balanceAmount || 0) > 0 ? ([["Balance Paid", money(payload.balanceAmount), true]] as [string, string, boolean][]) : []),
+          ["Balance Due", partly ? money(balanceDue) : "Nil (Fully Paid)", true],
+        ]
+      : plan === "balance"
+        ? [
+            ["Order Total", money(payload.orderTotal ?? payload.amount), false],
+            ["Paid Earlier (50% Advance)", money(payload.paidBefore), false],
+            ["Amount Paid Now (Balance)", formattedAmount, true],
+            ["Balance Due", "Nil (Fully Paid)", true],
+          ]
+        : [["Amount Paid", formattedAmount, true]];
 
   const now = new Date();
   const paymentDateStr = now.toLocaleDateString("en-US", {
@@ -453,7 +492,11 @@ export async function sendPaymentReceiptEmail(
     ? `1 × 60-Second Video (${payload.delivery})`
     : "1 × 60-Second Video";
 
-  const subject = `Payment Confirmed — Quickupp AI Studio | Order #${orderNumber}`;
+  const subject = partly
+    ? `Advance Payment Confirmed — Quickupp AI Studio | Order #${orderNumber}`
+    : plan === "balance"
+      ? `Balance Payment Confirmed (Fully Paid) — Quickupp AI Studio | Order #${payload.parentOrderNumber || orderNumber}`
+      : `Payment Confirmed — Quickupp AI Studio | Order #${orderNumber}`;
 
   // Generate official PDF Payment Receipt / Invoice buffer
   let pdfAttachment: { filename: string; content: Buffer; contentType: string } | undefined;
@@ -478,6 +521,14 @@ export async function sendPaymentReceiptEmail(
       total: payload.amount,
       paymentMethod,
       transactionId,
+      plan,
+      planLabel,
+      orderTotal: payload.orderTotal,
+      paidBefore: payload.paidBefore,
+      balanceAmount: payload.balanceAmount,
+      paidTotal: payload.paidTotal,
+      balanceDue,
+      parentOrderNumber: payload.parentOrderNumber,
     });
     pdfAttachment = {
       filename: `Receipt_${orderNumber}.pdf`,
@@ -659,10 +710,14 @@ export async function sendPaymentReceiptEmail(
         We’re pleased to confirm that your payment has been successfully received.
       </p>
 
-      <div class="status-badge-card">
+      ${
+        partly
+          ? ""
+          : `<div class="status-badge-card">
         <div class="status-title">PAYMENT CONFIRMED</div>
-        <div class="status-paid">Status: PAID &#10003;</div>
-      </div>
+        <div class="status-paid">Status: ${fullyPaidLater ? "FULLY PAID" : "PAID"} &#10003;</div>
+      </div>`
+      }
 
       <div class="section-title">Order Details</div>
       <table class="table-details">
@@ -678,9 +733,17 @@ export async function sendPaymentReceiptEmail(
           <td class="label">Package</td>
           <td class="val">${packageText}</td>
         </tr>
+        ${amountRows
+          .map(
+            ([l, v, strong]) =>
+              `<tr><td class="label">${l}</td><td class="val${strong ? " amount-highlight" : ""}"${
+                l === "Balance Due" && partly ? ' style="color:#b45309 !important;"' : ""
+              }>${v}</td></tr>`
+          )
+          .join("")}
         <tr>
-          <td class="label">Amount Paid</td>
-          <td class="val amount-highlight">${formattedAmount}</td>
+          <td class="label">Payment Type</td>
+          <td class="val">${planLabel}</td>
         </tr>
         <tr>
           <td class="label">Payment Date</td>
@@ -715,15 +778,25 @@ export async function sendPaymentReceiptEmail(
         ${payload.billingAddress ? `<tr><td class="label">Billing Address</td><td class="val">${payload.billingAddress}</td></tr>` : ""}
       </table>
 
+      ${
+        partly && payload.payBalanceUrl
+          ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:20px;margin:22px 0;text-align:center;">
+        <div style="font-size:13px;font-weight:800;letter-spacing:1px;color:#b45309;">BALANCE PENDING</div>
+        <div style="margin-top:6px;font-size:22px;font-weight:800;color:#111827;">${money(balanceDue)}</div>
+        <p style="margin:6px 0 14px;font-size:13px;line-height:1.6;color:#6b7280;">Pay the remaining balance anytime with the secure link below.</p>
+        <a href="${payload.payBalanceUrl}" target="_blank" style="display:inline-block;background:#111827;color:#ffffff !important;padding:12px 26px;border-radius:999px;font-weight:800;text-decoration:none;font-size:13px;letter-spacing:0.5px;">PAY REMAINING BALANCE</a>
+      </div>`
+          : ""
+      }
       <div class="download-card">
         <p style="margin: 0 0 14px 0; font-size: 13.5px; color: #374151; font-weight: 500;">
           Your payment receipt/invoice is attached to this email as a PDF.
         </p>
-        <a href="https://quickuppaistudio.us/api/download-receipt?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}" target="_blank" class="download-btn">
+        <a href="https://quickuppaistudio.us/api/download-receipt?orderId=${encodeURIComponent(linkId)}&email=${encodeURIComponent(payload.customerEmail)}" target="_blank" class="download-btn">
           Download Payment Receipt (PDF)
         </a>
         <p style="margin: 12px 0 0 0; font-size: 11.5px; color: #64748b;">
-          Or <a href="https://quickuppaistudio.us/order-confirmation?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}" style="color: #7c3aed; text-decoration: underline; font-weight: 600;">view your confirmed order details online</a>
+          Or <a href="https://quickuppaistudio.us/order-confirmation?orderId=${encodeURIComponent(linkId)}&email=${encodeURIComponent(payload.customerEmail)}" style="color: #7c3aed; text-decoration: underline; font-weight: 600;">view your confirmed order details online</a>
         </p>
       </div>
 
@@ -754,15 +827,16 @@ Hi ${firstName},
 Thank you for choosing Quickupp AI Studio.
 We’re pleased to confirm that your payment has been successfully received.
 
-PAYMENT CONFIRMED
-Status: PAID ✓
-
+${partly ? "" : `PAYMENT CONFIRMED
+Status: ${fullyPaidLater ? "FULLY PAID" : "PAID"}
+`}
 Order Details
 ---------------------------------------------------------
 Order / Invoice No.: ${orderNumber}
 Service: ${payload.itemName}
 Package: ${packageText}
-Amount Paid: ${formattedAmount}
+${amountRows.map(([l, v]) => `${l}: ${v}`).join("\n")}
+Payment Type: ${planLabel}
 Payment Date: ${paymentDateStr}
 Payment Time: ${paymentTimeStr}
 Payment Method: ${paymentMethod}
@@ -773,9 +847,9 @@ Billing Information
 Name: ${payload.customerName}
 Email: ${payload.customerEmail}
 ${payload.customerCompany ? `Company: ${payload.customerCompany}\n` : ""}${payload.customerPhone ? `Phone: ${payload.customerPhone}\n` : ""}${payload.billingAddress ? `Billing Address: ${payload.billingAddress}\n` : ""}
-Your payment receipt/invoice is attached to this email as a PDF.
-Download Payment Receipt (PDF): https://quickuppaistudio.us/api/download-receipt?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}
-Online Order Confirmation: https://quickuppaistudio.us/order-confirmation?orderId=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(payload.customerEmail)}
+${partly && payload.payBalanceUrl ? `BALANCE PENDING: ${money(balanceDue)}\nPay the remaining balance: ${payload.payBalanceUrl}\n\n` : ""}Your payment receipt/invoice is attached to this email as a PDF.
+Download Payment Receipt (PDF): https://quickuppaistudio.us/api/download-receipt?orderId=${encodeURIComponent(linkId)}&email=${encodeURIComponent(payload.customerEmail)}
+Online Order Confirmation: https://quickuppaistudio.us/order-confirmation?orderId=${encodeURIComponent(linkId)}&email=${encodeURIComponent(payload.customerEmail)}
 
 Our team will process your order and contact you with the next steps.
 
@@ -847,8 +921,12 @@ Operated by-Quickupp Softech LLC
           to: NOTIFICATION_EMAIL,
           replyTo: payload.customerEmail,
           messageId: `<admin-order-${orderNumber}-${Date.now()}@quickuppaistudio.us>`,
-          subject: `💳 [${await resolvePlatformTitle()}] New Payment Confirmed — Order #${orderNumber} — $${payload.amount.toFixed(2)} USD`,
-          text: `Payment confirmed for ${payload.customerName} (${payload.customerEmail}): $${payload.amount.toFixed(2)} USD. Order #${orderNumber}. Transaction ID: ${transactionId}`,
+          subject: `[${await resolvePlatformTitle()}] ${
+            partly ? "50% Advance Received" : plan === "balance" ? "Balance Received (Fully Paid)" : "New Payment Confirmed"
+          } — Order #${orderNumber} — ${formattedAmount}`,
+          text: `${planLabel} confirmed for ${payload.customerName} (${payload.customerEmail}): ${formattedAmount}${
+            plan !== "full" ? ` (order total ${money(payload.orderTotal)}, balance due ${partly ? money(balanceDue) : "nil"})` : ""
+          }. Order #${orderNumber}. Transaction ID: ${transactionId}`,
           html: htmlContent,
           attachments: emailAttachments,
         });

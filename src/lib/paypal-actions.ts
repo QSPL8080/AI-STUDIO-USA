@@ -13,6 +13,7 @@ import {
   getOrderByAnyId as getOrderByAnyIdFromDb,
   updateOrderStatus as updateOrderStatusInDb,
   deleteOrder as deleteOrderFromDb,
+  updateOrderDetails as updateOrderDetailsInDb,
   saveCRMNotification as saveCRMNotificationInDb,
   addActivityLog as addActivityLogInDb,
   type Order,
@@ -22,6 +23,69 @@ import { sendPaymentReceiptEmail } from "./email";
 import { bumpDataVersion } from "./lead-actions";
 import { generateInvoicePdfBuffer } from "./pdf-receipt";
 import { decodeAndVerifySessionToken } from "./crm-session";
+import {
+  splitPayment,
+  paymentSummary,
+  parseOrderDetails,
+  orderReceiptNumber,
+  formatOrderInvoiceNumber,
+  formatUsd,
+  type PaymentPlanChoice,
+} from "./payment-plan";
+import { payBalanceUrl, validOrderSignature } from "./order-links";
+
+export { formatOrderInvoiceNumber };
+
+/** Everything the receipt email + PDF need for one paid order row (full, 50% advance or balance). */
+function receiptPayloadForOrder(order: Order): Parameters<typeof sendPaymentReceiptEmail>[0] {
+  const ps = paymentSummary(order);
+  const d = parseOrderDetails(order);
+  return {
+    customerName: order.customer_name || "Valued Client",
+    customerEmail: order.customer_email,
+    customerPhone: order.customer_phone || undefined,
+    customerCompany: order.customer_company || undefined,
+    orderId: order.paypal_order_id,
+    internalOrderId: order.id,
+    orderNumber: orderReceiptNumber(order),
+    captureId: order.paypal_capture_id || undefined,
+    itemName: order.item_name,
+    amount: Number(order.amount),
+    currency: order.currency || "USD",
+    paymentMethod: "PayPal / Credit Card",
+    delivery: d.delivery ? String(d.delivery) : undefined,
+    plan: ps.plan,
+    planLabel: ps.planLabel,
+    orderTotal: ps.orderTotal,
+    paidBefore: ps.paidBefore,
+    balanceAmount: ps.balanceAmount,
+    paidTotal: ps.paidTotal,
+    balanceDue: ps.balanceDue,
+    payBalanceUrl: ps.partlyPaid ? payBalanceUrl(order.id) : undefined,
+    parentOrderNumber: ps.parentOrderNumber || undefined,
+  };
+}
+
+/** Records a paid balance on its 50% advance order (which then shows as fully paid everywhere). */
+async function applyBalanceToAdvanceOrder(balanceOrder: Order): Promise<Order | null> {
+  const ps = paymentSummary(balanceOrder);
+  if (ps.plan !== "balance" || !ps.parentOrderId) return null;
+  const parent = await getOrderByAnyIdFromDb(ps.parentOrderId);
+  if (!parent) return null;
+  const pd = parseOrderDetails(parent);
+  if (pd.balancePaid && pd.balanceOrderId === balanceOrder.id) return parent; // already recorded
+  const updated = {
+    ...pd,
+    balancePaid: true,
+    balanceAmount: Number(balanceOrder.amount),
+    balanceOrderId: balanceOrder.id,
+    balanceReceiptNumber: orderReceiptNumber(balanceOrder),
+    balanceTxn: balanceOrder.paypal_capture_id || balanceOrder.paypal_order_id,
+    balancePaidAt: new Date().toISOString(),
+  };
+  await updateOrderDetailsInDb(parent.id, JSON.stringify(updated));
+  return { ...parent, raw_details: JSON.stringify(updated) };
+}
 
 /**
  * Sends the customer's payment receipt (with PDF) and records the outcome in the
@@ -31,8 +95,8 @@ import { decodeAndVerifySessionToken } from "./crm-session";
 async function sendReceiptAndLog(
   payload: Parameters<typeof sendPaymentReceiptEmail>[0],
   context: { orderRef: string; performedBy?: string }
-): Promise<{ success: boolean; error?: string }> {
-  let result: { success: boolean; error?: string };
+): Promise<{ success: boolean; error?: string | undefined }> {
+  let result: { success: boolean; error?: string | undefined };
   try {
     result = await sendPaymentReceiptEmail(payload);
   } catch (err: any) {
@@ -99,6 +163,8 @@ export const createPayPalOrderServerFn = createServerFn({ method: "POST" })
     customerEmail: string;
     customerPhone?: string;
     customerCompany?: string;
+    /** "full" (default) or "advance" (pay 50% now, the balance later). */
+    paymentPlan?: PaymentPlanChoice;
   }) => data)
   .handler(async ({ data }) => {
     try {
@@ -124,11 +190,16 @@ export const createPayPalOrderServerFn = createServerFn({ method: "POST" })
         };
       }
 
-      // Create Order with official PayPal REST API
+      const split = splitPayment(resolvedItem.amount, data.paymentPlan === "advance" ? "advance" : "full");
+      const advance = split.plan === "advance";
+
+      // Create Order with official PayPal REST API (50% of the price when paying an advance)
       const paypalOrder = await createPayPalOrderApi({
-        amount: resolvedItem.amount,
+        amount: split.payNow,
         currency: resolvedItem.currency,
-        itemName: resolvedItem.itemName,
+        itemName: advance
+          ? `${resolvedItem.itemName} | 50% Advance of ${formatUsd(resolvedItem.amount)}`
+          : resolvedItem.itemName,
         customerName: data.customerName.trim(),
         customerEmail: data.customerEmail.trim(),
       });
@@ -143,10 +214,16 @@ export const createPayPalOrderServerFn = createServerFn({ method: "POST" })
         itemType: resolvedItem.itemType,
         itemId: resolvedItem.itemId,
         itemName: resolvedItem.itemName,
-        amount: resolvedItem.amount,
+        amount: split.payNow, // charged in this transaction (50% when paying an advance)
         currency: resolvedItem.currency,
         paymentStatus: "PENDING",
         paypalStatus: paypalOrder.status,
+        rawDetails: JSON.stringify({
+          paymentPlan: split.plan,
+          orderTotal: resolvedItem.amount,
+          balanceAfterPayment: split.balance,
+          delivery: resolvedItem.delivery || undefined,
+        }),
       });
 
       return {
@@ -154,6 +231,9 @@ export const createPayPalOrderServerFn = createServerFn({ method: "POST" })
         orderId: paypalOrder.id,
         internalOrderId: savedOrder.id,
         resolvedItem,
+        paymentPlan: split.plan,
+        payNow: split.payNow,
+        balance: split.balance,
       };
     } catch (error: any) {
       console.error("Error creating PayPal order:", error);
@@ -188,12 +268,23 @@ export const capturePayPalOrderServerFn = createServerFn({ method: "POST" })
 
       const paymentStatus: PaymentStatus = isCompleted ? "COMPLETED" : "FAILED";
 
+      // Keep the order's payment plan details: add PayPal's response instead of replacing them.
+      let existingDetails: any = {};
+      try {
+        existingDetails = parseOrderDetails(await getOrderByAnyIdFromDb(data.orderId));
+      } catch {}
+      const { paypal: _oldPaypal, captureError: _oldErr, ...keepDetails } = existingDetails;
+
       let updatedOrder = await updateOrderPaymentInDb({
         paypalOrderId: data.orderId,
         paypalCaptureId: captureId,
         paymentStatus,
         paypalStatus: captureResult.status,
-        rawDetails: JSON.stringify(captureResult),
+        rawDetails: JSON.stringify({
+          ...keepDetails,
+          paidAt: isCompleted ? new Date().toISOString() : undefined,
+          paypal: captureResult,
+        }),
       });
       // If the update didn't return the row, load it so the receipt still goes out
       if (!updatedOrder) {
@@ -208,29 +299,30 @@ export const capturePayPalOrderServerFn = createServerFn({ method: "POST" })
         const payerName = [captureResult.payer?.name?.given_name, captureResult.payer?.name?.surname]
           .filter(Boolean)
           .join(" ");
-        const receiptEmail = updatedOrder?.customer_email || captureResult.payer?.email_address || "";
-        const receiptAmount = updatedOrder ? Number(updatedOrder.amount) : Number(cap?.amount?.value || 0);
-        const customerName = updatedOrder?.customer_name || payerName || "Valued Client";
-        const itemName = updatedOrder?.item_name || "AI Video Service";
+        const orderForReceipt: Order | null = updatedOrder
+          ? { ...updatedOrder, customer_email: updatedOrder.customer_email || captureResult.payer?.email_address || "" }
+          : null;
+        const ps = paymentSummary(orderForReceipt);
+        const customerName = orderForReceipt?.customer_name || payerName || "Valued Client";
+        const itemName = orderForReceipt?.item_name || "AI Video Service";
+        const paidNow = orderForReceipt ? Number(orderForReceipt.amount) : Number(cap?.amount?.value || 0);
 
-        if (receiptEmail) {
+        // A paid balance completes its 50% advance order.
+        let parentOrder: Order | null = null;
+        if (orderForReceipt && ps.plan === "balance") {
+          try {
+            parentOrder = await applyBalanceToAdvanceOrder(orderForReceipt);
+          } catch (e) {
+            console.error("Could not update the advance order after the balance payment", e);
+          }
+        }
+
+        if (orderForReceipt && orderForReceipt.customer_email) {
           // Not awaited so the customer sees the confirmation immediately;
           // the outcome is logged to Activity History either way.
-          sendReceiptAndLog(
-            {
-              customerName,
-              customerEmail: receiptEmail,
-              customerPhone: updatedOrder?.customer_phone || undefined,
-              customerCompany: updatedOrder?.customer_company || undefined,
-              orderId: data.orderId,
-              captureId,
-              itemName,
-              amount: receiptAmount,
-              currency: updatedOrder?.currency || cap?.amount?.currency_code || "USD",
-              paymentMethod: "PayPal / Credit Card",
-            },
-            { orderRef: updatedOrder?.id || data.orderId }
-          ).catch((err) => console.error("Automated payment receipt dispatch error:", err));
+          sendReceiptAndLog(receiptPayloadForOrder(orderForReceipt), {
+            orderRef: orderReceiptNumber(orderForReceipt),
+          }).catch((err) => console.error("Automated payment receipt dispatch error:", err));
         } else {
           try {
             await addActivityLogInDb({
@@ -243,12 +335,30 @@ export const capturePayPalOrderServerFn = createServerFn({ method: "POST" })
         }
 
         try {
+          const title =
+            ps.plan === "advance"
+              ? "Advance Payment Received (50%)"
+              : ps.plan === "balance"
+                ? "Balance Paid - Order Fully Paid"
+                : "New PayPal Payment Received";
+          const message =
+            ps.plan === "advance"
+              ? `${customerName} paid a 50% advance of ${formatUsd(paidNow)} for ${itemName} (order total ${formatUsd(ps.orderTotal)}, balance due ${formatUsd(ps.balanceDue)})`
+              : ps.plan === "balance"
+                ? `${customerName} paid the balance of ${formatUsd(paidNow)} for ${itemName.replace(/ - Balance$/, "")}. Order ${ps.parentOrderNumber || ps.parentOrderId} is now fully paid (${formatUsd(ps.orderTotal)}).`
+                : `${customerName} completed payment of ${formatUsd(paidNow)} for ${itemName}`;
           await saveCRMNotificationInDb({
             type: "order_payment",
-            title: "New PayPal Payment Received",
-            message: `${customerName} completed payment of $${receiptAmount.toFixed(2)} for ${itemName}`,
-            entity_id: updatedOrder?.id || data.orderId,
+            title,
+            message,
+            entity_id: parentOrder?.id || orderForReceipt?.id || data.orderId,
             actor: customerName,
+          });
+          await addActivityLogInDb({
+            action: title,
+            details: `${message}. Receipt ${orderForReceipt ? orderReceiptNumber(orderForReceipt) : data.orderId}, PayPal ${captureId || data.orderId}.`,
+            performed_by: "System / Payments",
+            user_role: "system",
           });
         } catch {}
       }
@@ -274,12 +384,16 @@ export const capturePayPalOrderServerFn = createServerFn({ method: "POST" })
           };
         }
       } catch {}
-      // Mark as failed in DB
+      // Mark as failed in DB (keeping the order's payment plan details)
       try {
+        let keep: any = {};
+        try {
+          keep = parseOrderDetails(await getOrderByAnyIdFromDb(data.orderId));
+        } catch {}
         await updateOrderPaymentInDb({
           paypalOrderId: data.orderId,
           paymentStatus: "FAILED",
-          rawDetails: error.message,
+          rawDetails: JSON.stringify({ ...keep, captureError: String(error?.message || error) }),
         });
       } catch {}
       return {
@@ -294,7 +408,9 @@ export const capturePayPalOrderServerFn = createServerFn({ method: "POST" })
  */
 export const fetchOrdersServerFn = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const orders = await getOrdersFromDb();
+    const orders = (await getOrdersFromDb()).map((o) =>
+      paymentSummary(o).partlyPaid ? { ...o, pay_balance_url: payBalanceUrl(o.id) } : o
+    );
     return { success: true, orders };
   } catch (error: any) {
     console.error("Error fetching orders from database:", error);
@@ -370,12 +486,6 @@ export const sendReceiptEmailServerFn = createServerFn({ method: "POST" })
     }
   });
 
-export function formatOrderInvoiceNumber(orderId: string, createdAt?: string): string {
-  if (orderId.startsWith("QAS-")) return orderId;
-  const year = createdAt ? new Date(createdAt).getFullYear() : new Date().getFullYear();
-  const rawId = orderId.replace(/[^a-zA-Z0-9]/g, "").slice(-6).toUpperCase();
-  return `QAS-${year}-${rawId.padStart(6, "0")}`;
-}
 
 /**
  * Lookup order by internal ID, PayPal order ID, or capture ID
@@ -391,7 +501,14 @@ export const lookupOrderServerFn = createServerFn({ method: "POST" })
       if (!order) {
         return { success: false, error: "Order not found." };
       }
-      return { success: true, order };
+      const ps = paymentSummary(order);
+      return {
+        success: true,
+        order,
+        receiptNumber: orderReceiptNumber(order),
+        summary: ps,
+        payBalanceUrl: ps.partlyPaid ? payBalanceUrl(order.id) : "",
+      };
     } catch (err: any) {
       return { success: false, error: err.message };
     }
@@ -513,22 +630,180 @@ export const resendOrderReceiptServerFn = createServerFn({ method: "POST" })
         return { success: false, error: "Receipts can only be sent for completed payments" };
       }
       if (!order.customer_email) return { success: false, error: "This order has no customer email" };
-      return await sendReceiptAndLog(
-        {
-          customerName: order.customer_name,
-          customerEmail: order.customer_email,
-          customerPhone: order.customer_phone || undefined,
-          customerCompany: order.customer_company || undefined,
-          orderId: order.paypal_order_id,
-          captureId: order.paypal_capture_id || undefined,
-          itemName: order.item_name,
-          amount: Number(order.amount),
-          currency: order.currency || "USD",
-          paymentMethod: "PayPal / Credit Card",
-        },
-        { orderRef: order.id, performedBy: data.performedBy || "Admin" }
-      );
+      return await sendReceiptAndLog(receiptPayloadForOrder(order), {
+        orderRef: orderReceiptNumber(order),
+        performedBy: data.performedBy || "Admin",
+      });
     } catch (error: any) {
       return { success: false, error: error.message };
     }
   });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 50% ADVANCE → PAY REMAINING BALANCE (signed link from the email / confirmation page / CRM)
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadAdvanceOrderForBalance(orderId: string, token: string) {
+  if (!validOrderSignature(orderId, token)) {
+    return { ok: false as const, error: "This payment link is not valid. Please use the link from your payment email." };
+  }
+  const parent = await getOrderByAnyIdFromDb(orderId);
+  if (!parent) return { ok: false as const, error: "We couldn't find this order." };
+  const ps = paymentSummary(parent);
+  if (ps.plan !== "advance" || parent.payment_status !== "COMPLETED") {
+    return { ok: false as const, error: "This order has no balance to pay." };
+  }
+  if (ps.balanceDue <= 0 || ps.balancePaid) {
+    return { ok: false as const, paid: true as const, error: "This order is already fully paid. Thank you!" };
+  }
+  return { ok: true as const, parent, ps };
+}
+
+/** Pay-balance page: what is still due on a paid 50% advance order. */
+export const getBalancePaymentInfoServerFn = createServerFn({ method: "POST" })
+  .validator((data: { order: string; t: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const r = await loadAdvanceOrderForBalance(String(data.order || ""), String(data.t || ""));
+      if (!r.ok) return { success: false as const, paid: "paid" in r ? true : false, error: r.error };
+      const { parent, ps } = r;
+      return {
+        success: true as const,
+        receiptNumber: orderReceiptNumber(parent),
+        itemName: parent.item_name,
+        customerName: parent.customer_name,
+        customerEmail: parent.customer_email,
+        orderTotal: ps.orderTotal,
+        paidTotal: ps.paidTotal,
+        balanceDue: ps.balanceDue,
+        currency: parent.currency || "USD",
+      };
+    } catch (error: any) {
+      return { success: false as const, paid: false, error: error?.message || "Could not load this order." };
+    }
+  });
+
+/** Creates the PayPal order for the remaining balance, linked to its 50% advance order. */
+export const createBalancePayPalOrderServerFn = createServerFn({ method: "POST" })
+  .validator((data: { order: string; t: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const r = await loadAdvanceOrderForBalance(String(data.order || ""), String(data.t || ""));
+      if (!r.ok) return { success: false as const, error: r.error };
+      const { parent, ps } = r;
+
+      // Earlier balance attempts for this order: unfinished ones are closed, and the count gives the next number.
+      const all = await getOrdersFromDb();
+      const earlier = all.filter((o) => String(o.id).startsWith(`${parent.id}-B`));
+      for (const old of earlier.filter((o) => o.payment_status === "PENDING")) {
+        try {
+          await updateOrderStatusInDb(old.id, "CANCELLED");
+        } catch {}
+      }
+      const n = earlier.length + 1;
+      const parentNumber = orderReceiptNumber(parent);
+
+      const paypalOrder = await createPayPalOrderApi({
+        amount: ps.balanceDue,
+        currency: parent.currency || "USD",
+        itemName: `${parent.item_name} | Balance of ${formatUsd(ps.orderTotal)} order ${parentNumber}`,
+        customerName: parent.customer_name,
+        customerEmail: parent.customer_email,
+      });
+
+      const pd = parseOrderDetails(parent);
+      const saved = await saveOrderToDb({
+        id: `${parent.id}-B${n}`,
+        paypalOrderId: paypalOrder.id,
+        customerName: parent.customer_name,
+        customerEmail: parent.customer_email,
+        customerPhone: parent.customer_phone || undefined,
+        customerCompany: parent.customer_company || undefined,
+        itemType: parent.item_type,
+        itemId: parent.item_id,
+        itemName: `${parent.item_name} - Balance`,
+        amount: ps.balanceDue,
+        currency: parent.currency || "USD",
+        paymentStatus: "PENDING",
+        paypalStatus: paypalOrder.status,
+        rawDetails: JSON.stringify({
+          paymentPlan: "balance",
+          parentOrderId: parent.id,
+          parentOrderNumber: parentNumber,
+          parentPaypalOrderId: parent.paypal_order_id,
+          receiptNumber: `${parentNumber}-B${n}`,
+          orderTotal: ps.orderTotal,
+          paidBefore: ps.paidTotal,
+          delivery: pd.delivery || undefined,
+        }),
+      });
+
+      try {
+        await addActivityLogInDb({
+          action: "Balance Payment Started",
+          details: `${parent.customer_name} is paying the balance ${formatUsd(ps.balanceDue)} for order ${parentNumber} (PayPal ${paypalOrder.id}).`,
+          performed_by: parent.customer_email || "Customer",
+          user_role: "customer",
+        });
+      } catch {}
+
+      return { success: true as const, orderId: paypalOrder.id, internalOrderId: saved.id, amount: ps.balanceDue };
+    } catch (error: any) {
+      console.error("Error creating balance PayPal order:", error);
+      return { success: false as const, error: error?.message || "Failed to start the balance payment." };
+    }
+  });
+
+/** Official PDF receipt for one paid order row, built from the order itself (server use). */
+export async function buildReceiptPdfForOrder(order: Order): Promise<{ filename: string; pdf: Buffer }> {
+  const ps = paymentSummary(order);
+  const d = parseOrderDetails(order);
+  const paidAt = new Date(d.paidAt || order.updated_at || order.created_at || Date.now());
+  const dateStr = paidAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+  const timeStr =
+    paidAt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/New_York" }) + " EST";
+  const receiptNumber = orderReceiptNumber(order);
+  const delivery = d.delivery ? String(d.delivery) : "";
+  const pdf = await generateInvoicePdfBuffer({
+    orderNumber: receiptNumber,
+    issueDate: dateStr,
+    paymentDate: dateStr,
+    paymentTime: timeStr,
+    paymentStatus: "PAID",
+    customerName: order.customer_name || "Valued Client",
+    customerEmail: order.customer_email,
+    customerCompany: order.customer_company || undefined,
+    billingAddress: "United States",
+    serviceName: order.item_name,
+    packageDescription: delivery.includes("Video") ? delivery : delivery ? `1 × 60-Second Video (${delivery})` : "1 × 60-Second Video",
+    qty: 1,
+    amount: Number(order.amount),
+    currency: order.currency || "USD",
+    subtotal: Number(order.amount),
+    tax: 0,
+    total: Number(order.amount),
+    paymentMethod: "PayPal / Credit Card",
+    transactionId: order.paypal_capture_id || order.paypal_order_id,
+    plan: ps.plan,
+    planLabel: ps.planLabel,
+    orderTotal: ps.orderTotal,
+    paidBefore: ps.paidBefore,
+    balanceAmount: ps.balanceAmount,
+    paidTotal: ps.paidTotal,
+    balanceDue: ps.balanceDue,
+    parentOrderNumber: ps.parentOrderNumber || undefined,
+  });
+  return { filename: `Receipt_${receiptNumber}.pdf`, pdf };
+}
+
+/** Finds an order by internal id, PayPal ids, or its receipt number (QAS-...). */
+export async function findOrderForReceipt(identifier: string): Promise<Order | null> {
+  const id = String(identifier || "").trim();
+  if (!id) return null;
+  const direct = await getOrderByAnyIdFromDb(id);
+  if (direct) return direct;
+  if (/^QAS-/i.test(id)) {
+    const all = await getOrdersFromDb();
+    return all.find((o) => orderReceiptNumber(o).toUpperCase() === id.toUpperCase()) || null;
+  }
+  return null;
+}

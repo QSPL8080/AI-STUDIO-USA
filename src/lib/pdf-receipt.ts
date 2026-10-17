@@ -25,6 +25,20 @@ export interface InvoiceData {
   total?: number | undefined;
   paymentMethod?: string | undefined;
   transactionId: string;
+  /** Payment plan: "full" (default), "advance" (50% now) or "balance" (rest of an advance order). */
+  plan?: "full" | "advance" | "balance" | undefined;
+  planLabel?: string | undefined;
+  /** Full price of the order (amount = what this payment charged). */
+  orderTotal?: number | undefined;
+  /** Already paid before this payment (balance payments). */
+  paidBefore?: number | undefined;
+  /** Balance paid later on a 50% advance order. */
+  balanceAmount?: number | undefined;
+  /** Paid so far in total, including this payment. */
+  paidTotal?: number | undefined;
+  /** Still to be paid after this payment. */
+  balanceDue?: number | undefined;
+  parentOrderNumber?: string | undefined;
 }
 
 /**
@@ -110,10 +124,14 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       doc.font("ReceiptRegular").fontSize(10.5).fillColor("#475569")
         .text(`Date: ${issueDateStr}`, rightColX, rightY, { width: rightColWidth, align: "right" });
       rightY += 20;
-      // PAID badge
-      const badgeW = 74;
-      doc.roundedRect(right - badgeW, rightY, badgeW, 22, 11).fill("#dcfce7");
-      doc.font("ReceiptBold").fontSize(10).fillColor("#15803d").text("PAID", right - badgeW, rightY + 6, { width: badgeW, align: "center" });
+      // PAID badge (ADVANCE PAID while a balance is still due)
+      const plan = data.plan || "full";
+      const balanceDue = Math.max(0, data.balanceDue ?? 0);
+      const partly = plan === "advance" && balanceDue > 0;
+      const badgeText = partly ? "ADVANCE PAID" : "PAID";
+      const badgeW = partly ? 112 : 74;
+      doc.roundedRect(right - badgeW, rightY, badgeW, 22, 11).fill(partly ? "#fef3c7" : "#dcfce7");
+      doc.font("ReceiptBold").fontSize(10).fillColor(partly ? "#b45309" : "#15803d").text(badgeText, right - badgeW, rightY + 6, { width: badgeW, align: "center" });
       rightY += 22;
 
       let y = Math.max(leftY, rightY) + 12;
@@ -171,7 +189,9 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       const rowTextY = y + (rowHeight - 13) / 2;
       doc.font("ReceiptBold").fontSize(11).fillColor("#0f172a").text(itemDesc, col1X, y + (rowHeight - descH) / 2, { width: col1Width });
       doc.font("ReceiptRegular").fontSize(11).fillColor("#0f172a").text(String(data.qty || 1), col2X, rowTextY, { width: col2Width, align: "center" });
-      doc.font("ReceiptBold").fontSize(11).fillColor("#0f172a").text(`$${data.amount.toFixed(2)}`, col3X, rowTextY, { width: col3Width, align: "right" });
+      const money = (n: number) => `$${(Number(n) || 0).toFixed(2)}`;
+      const orderTotal = data.orderTotal ?? data.subtotal ?? data.amount;
+      doc.font("ReceiptBold").fontSize(11).fillColor("#0f172a").text(money(plan === "full" ? data.amount : orderTotal), col3X, rowTextY, { width: col3Width, align: "right" });
       y += rowHeight;
 
       // Subtotal / Tax / Total as rows of the same table (labels under Qty, values under Amount)
@@ -179,7 +199,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       const taxVal = data.tax !== undefined ? data.tax : 0;
       const totalVal = data.total !== undefined ? data.total : data.amount;
       const currencyStr = data.currency || "USD";
-      const sumLabelX = col2X - 90;
+      const sumLabelX = col2X - 150;
       const sumLabelW = col3X - sumLabelX - 10;
       const hLine = (yy: number, x1 = margin) =>
         doc.strokeColor("#e2e8f0").lineWidth(1).moveTo(x1, yy).lineTo(right, yy).stroke();
@@ -191,16 +211,41 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         doc.font("ReceiptBold").fontSize(10.5).fillColor("#0f172a").text(val, col3X, y + 9, { width: col3Width, align: "right" });
         y += sumRowH;
       };
-      sumRow("Subtotal", `$${subtotalVal.toFixed(2)}`);
-      hLine(y, sumLabelX - 10);
-      sumRow("Tax (0%)", `$${taxVal.toFixed(2)}`);
+      const paidTotal = data.paidTotal ?? data.amount;
+      const sumRows: [string, string][] =
+        plan === "advance"
+          ? [
+              ["Order Total", money(orderTotal)],
+              ["Amount Paid (50% Advance)", money(data.amount)],
+              ...((data.balanceAmount || 0) > 0 ? ([["Balance Paid", money(data.balanceAmount || 0)]] as [string, string][]) : []),
+            ]
+          : plan === "balance"
+            ? [
+                ["Order Total", money(orderTotal)],
+                ["Paid Earlier (50% Advance)", money(data.paidBefore ?? 0)],
+                ["Amount Paid Now (Balance)", money(data.amount)],
+              ]
+            : [
+                ["Subtotal", money(subtotalVal)],
+                ["Tax (0%)", money(taxVal)],
+              ];
+      sumRows.forEach(([l, v], i) => {
+        if (i > 0) hLine(y, sumLabelX - 10);
+        sumRow(l, v);
+      });
 
+      // Last (highlighted) row: what is still due on an advance, otherwise the total paid.
+      const lastRow = partly
+        ? { label: "Balance Due", value: `${money(balanceDue)} ${currencyStr}`, bg: "#fffbeb", color: "#b45309" }
+        : plan === "full"
+          ? { label: "Total", value: `${money(totalVal)} ${currencyStr}`, bg: "#f5f3ff", color: "#6d28d9" }
+          : { label: "Total Paid (Fully Paid)", value: `${money(paidTotal)} ${currencyStr}`, bg: "#f0fdf4", color: "#15803d" };
       const totalRowH = 38;
-      doc.rect(margin, y, contentWidth, totalRowH).fill("#f5f3ff");
+      doc.rect(margin, y, contentWidth, totalRowH).fill(lastRow.bg);
       hLine(y);
-      doc.font("ReceiptBold").fontSize(13).fillColor("#6d28d9")
-        .text("Total", sumLabelX, y + 12, { width: sumLabelW, align: "right" })
-        .text(`$${totalVal.toFixed(2)} ${currencyStr}`, col3X - 30, y + 12, { width: col3Width + 30, align: "right" });
+      doc.font("ReceiptBold").fontSize(13).fillColor(lastRow.color)
+        .text(lastRow.label, sumLabelX - 60, y + 12, { width: sumLabelW + 60, align: "right" })
+        .text(lastRow.value, col3X - 30, y + 12, { width: col3Width + 30, align: "right" });
       y += totalRowH;
 
       // One border around the whole table
@@ -225,9 +270,9 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       doc.font("ReceiptBold").fillColor("#0f172a").text(data.paymentTime || "—", { lineBreak: false });
       cy += 20;
       label("Payment Status: ", infoLeftX, cy);
-      doc.font("ReceiptBold").fillColor("#16a34a").text("PAID", { lineBreak: false });
-      label("Currency: ", infoRightX, cy);
-      doc.font("ReceiptBold").fillColor("#0f172a").text(currencyStr, { lineBreak: false });
+      doc.font("ReceiptBold").fillColor(partly ? "#b45309" : "#16a34a").text(partly ? "PARTIALLY PAID" : "PAID", { lineBreak: false });
+      label("Payment Type: ", infoRightX, cy);
+      doc.font("ReceiptBold").fillColor("#0f172a").text(data.planLabel || "Full Payment", { lineBreak: false });
       y += payCardH;
 
       // ── 5. THANK YOU (anchored near the bottom of the page) ─────
@@ -241,7 +286,19 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
       ty += 28;
       doc.font("ReceiptRegular").fontSize(10.5).fillColor("#334155").text("Your payment has been successfully received.", margin, ty, { lineBreak: false });
       ty += 16;
-      doc.font("ReceiptRegular").fontSize(10.5).fillColor("#334155").text("Your order is now being processed by the Quickupp AI Studio team.", margin, ty, { lineBreak: false });
+      if (partly) {
+        doc.font("ReceiptBold").fontSize(10.5).fillColor("#b45309").text(
+          `Balance due: ${money(balanceDue)} ${currencyStr}. Pay it anytime with the secure link in your payment email.`,
+          margin, ty, { lineBreak: false }
+        );
+      } else if (plan === "balance" || (plan === "advance" && !partly)) {
+        doc.font("ReceiptBold").fontSize(10.5).fillColor("#15803d").text(
+          `Your order${data.parentOrderNumber ? ` ${data.parentOrderNumber}` : ""} is now fully paid. Thank you!`,
+          margin, ty, { lineBreak: false }
+        );
+      } else {
+        doc.font("ReceiptRegular").fontSize(10.5).fillColor("#334155").text("Your order is now being processed by the Quickupp AI Studio team.", margin, ty, { lineBreak: false });
+      }
       ty += 28;
       doc.font("ReceiptBold").fontSize(10).fillColor("#475569").text("For questions regarding your order or payment:", margin, ty, { lineBreak: false });
       ty += 20;

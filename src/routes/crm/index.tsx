@@ -136,6 +136,7 @@ import {
   verifyPaymentPinServerFn,
   resendOrderReceiptServerFn,
 } from "@/lib/paypal-actions";
+import { paymentSummary, orderReceiptNumber, formatUsd } from "@/lib/payment-plan";
 
 export const Route = createFileRoute("/crm/")({
   ssr: false,
@@ -3716,11 +3717,19 @@ function AdminPage() {
   const metaDeliveredCount = metaLeads.filter((l) => l.project_status === "Delivered").length;
   const metaProjectsInProgressCount = metaLeads.filter((l) => (l.project_status || "In Progress") === "In Progress" && l.status !== "Closed").length;
 
+  // Orders shown in the CRM: a paid balance is shown on its 50% advance order, not as its own row.
+  const visibleOrders = useMemo(() => orders.filter((o) => paymentSummary(o).plan !== "balance"), [orders]);
+  const isPartlyPaidOrder = (o: Order) => paymentSummary(o).partlyPaid;
+  const paidVisibleOrders = visibleOrders.filter((o) => o.payment_status === "COMPLETED");
+  const balancePendingTotal = paidVisibleOrders.reduce((t, o) => t + paymentSummary(o).balanceDue, 0);
+
   // Filtered Orders
   const filteredOrders = useMemo(() => {
-    return orders
+    return visibleOrders
       .filter((order) => {
         const status = (order.payment_status || "").toUpperCase();
+        if (filterOrderStatus === "FULLY_PAID") return status === "COMPLETED" && !paymentSummary(order).partlyPaid;
+        if (filterOrderStatus === "BALANCE") return paymentSummary(order).partlyPaid;
         if (filterOrderStatus === "COMPLETED") return status === "COMPLETED";
         if (filterOrderStatus === "PENDING") return status === "PENDING";
         if (filterOrderStatus === "FAILED") return status === "FAILED" || status === "CANCELLED";
@@ -3740,11 +3749,10 @@ function AdminPage() {
         );
       })
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [orders, filterOrderStatus, orderSearchTerm]);
+  }, [visibleOrders, filterOrderStatus, orderSearchTerm]);
 
-  const totalRevenue = orders
-    .filter((o) => o.payment_status === "COMPLETED")
-    .reduce((sum, o) => sum + (Number(o.amount) || 0), 0);
+  // Revenue = money actually received (a 50% advance counts its advance, plus the balance once paid)
+  const totalRevenue = paidVisibleOrders.reduce((sum, o) => sum + paymentSummary(o).paidTotal, 0);
 
   // =========================================================================
   // LOGIN SCREEN
@@ -3892,7 +3900,7 @@ function AdminPage() {
     can("dashboard") && { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "workspace", onClick: () => { setActiveTab("dashboard"); leavePaymentArea(); } },
     { key: "leads", label: "Leads Management", icon: Layers, count: websiteLeads.length, group: "workspace", onClick: () => { setActiveTab("leads"); leavePaymentArea(); } },
     can("meta_leads") && { key: "meta_leads", label: "Meta Leads", icon: Megaphone, count: metaLeads.length, group: "workspace", onClick: () => { setActiveTab("meta_leads"); leavePaymentArea(); } },
-    can("orders") && { key: "orders", label: "Orders & Payments", icon: DollarSign, count: orders.length, group: "workspace", onClick: () => handleSelectOrdersTab() },
+    can("orders") && { key: "orders", label: "Orders & Payments", icon: DollarSign, count: visibleOrders.length, group: "workspace", onClick: () => handleSelectOrdersTab() },
     (isSuperAdmin || session?.role === "admin") && { key: "calendly", label: "Calendly (USA)", icon: Calendar, count: meetings.length, group: "workspace", onClick: () => { setActiveTab("calendly"); leavePaymentArea(); } },
     can("activity") && { key: "activity", label: "Activity History", icon: Clock, group: "admin", onClick: () => { setActiveTab("activity"); leavePaymentArea(); } },
     can("manage_users") && { key: "users", label: "User Management", icon: Users, group: "admin", onClick: () => { setActiveTab("users"); leavePaymentArea(); } },
@@ -4563,7 +4571,7 @@ function AdminPage() {
                 <p className="mt-2 text-2xl sm:text-3xl font-black text-emerald-600 font-mono leading-none">
                   ${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </p>
-                <p className="mt-1.5 text-xs text-slate-400 font-medium leading-tight">{orders.filter((o) => o.payment_status === "COMPLETED").length} Paid Orders</p>
+                <p className="mt-1.5 text-xs text-slate-400 font-medium leading-tight">{paidVisibleOrders.length} Paid Orders</p>
               </div>
 
               {/* In Production */}
@@ -6516,7 +6524,7 @@ function AdminPage() {
         {activeTab === "orders" && (
           <div className="space-y-6 animate-in fade-in duration-200">
             {/* Orders KPI Cards */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5 sm:gap-4">
               <div className={`rounded-xl border p-4 shadow-sm ${
                 isDark ? "border-slate-800 bg-[#12101e]" : "border-slate-200 bg-white"
               }`}>
@@ -6524,14 +6532,15 @@ function AdminPage() {
                   <span>Total Orders</span>
                   <Package className="h-4 w-4 text-purple-500" />
                 </div>
-                <p className="mt-2 text-2xl font-extrabold">{orders.length}</p>
+                <p className="mt-2 text-2xl font-extrabold">{visibleOrders.length}</p>
+                <p className="mt-0.5 text-[11px] text-slate-400">{visibleOrders.filter((o) => o.payment_status === "PENDING").length} unpaid checkouts</p>
               </div>
 
               <div className={`rounded-xl border p-4 shadow-sm ${
                 isDark ? "border-emerald-500/30 bg-emerald-950/20 text-emerald-300" : "border-emerald-200 bg-emerald-50/70 text-emerald-900"
               }`}>
                 <div className="flex items-center justify-between text-xs font-semibold">
-                  <span>Total Revenue</span>
+                  <span>Revenue Received</span>
                   <DollarSign className="h-4 w-4 text-emerald-500" />
                 </div>
                 <p className="mt-2 text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
@@ -6543,11 +6552,23 @@ function AdminPage() {
                 isDark ? "border-blue-500/30 bg-blue-950/20 text-blue-300" : "border-blue-200 bg-blue-50/70 text-blue-900"
               }`}>
                 <div className="flex items-center justify-between text-xs font-semibold">
-                  <span>Completed (Paid)</span>
+                  <span>Fully Paid</span>
                   <CheckCircle2 className="h-4 w-4 text-blue-500" />
                 </div>
                 <p className="mt-2 text-2xl font-extrabold text-blue-600 dark:text-blue-400">
-                  {orders.filter((o) => o.payment_status === "COMPLETED").length}
+                  {paidVisibleOrders.filter((o) => !isPartlyPaidOrder(o)).length}
+                </p>
+              </div>
+
+              <div className={`rounded-xl border p-4 shadow-sm ${
+                isDark ? "border-orange-500/30 bg-orange-950/20 text-orange-300" : "border-orange-200 bg-orange-50/70 text-orange-900"
+              }`}>
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <span>Partially Paid (50%)</span>
+                  <Clock className="h-4 w-4 text-orange-500" />
+                </div>
+                <p className="mt-2 text-2xl font-extrabold text-orange-600 dark:text-orange-400">
+                  {paidVisibleOrders.filter(isPartlyPaidOrder).length}
                 </p>
               </div>
 
@@ -6555,11 +6576,11 @@ function AdminPage() {
                 isDark ? "border-amber-500/30 bg-amber-950/20 text-amber-300" : "border-amber-200 bg-amber-50/70 text-amber-900"
               }`}>
                 <div className="flex items-center justify-between text-xs font-semibold">
-                  <span>Pending</span>
+                  <span>Balance Pending</span>
                   <Clock className="h-4 w-4 text-amber-500" />
                 </div>
                 <p className="mt-2 text-2xl font-extrabold text-amber-600 dark:text-amber-400">
-                  {orders.filter((o) => o.payment_status === "PENDING").length}
+                  ${balancePendingTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
@@ -6589,7 +6610,9 @@ function AdminPage() {
                     isDark ? "border-slate-700 bg-slate-900 text-white" : "border-slate-200 bg-slate-50"
                   }`}
                 >
-                  <option value="COMPLETED">Completed (Paid)</option>
+                  <option value="COMPLETED">Paid (all)</option>
+                  <option value="FULLY_PAID">Fully Paid</option>
+                  <option value="BALANCE">Balance Pending (50% paid)</option>
                   <option value="All">All Statuses</option>
                   <option value="PENDING">Pending</option>
                   <option value="FAILED">Failed / Cancelled</option>
@@ -6637,18 +6660,44 @@ function AdminPage() {
                             {order.item_type}
                           </span>
                         </td>
-                        <td className="px-4 py-3.5 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          ${Number(order.amount).toFixed(2)} {order.currency}
-                        </td>
-                        <td className="px-4 py-3.5 text-center">
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                            order.payment_status === "COMPLETED"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300"
-                              : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300"
-                          }`}>
-                            {order.payment_status}
-                          </span>
-                        </td>
+                        {(() => {
+                          const ps = paymentSummary(order);
+                          const paid = order.payment_status === "COMPLETED";
+                          return (
+                            <>
+                              <td className="px-4 py-3.5 text-center">
+                                <div className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                  {formatUsd(paid ? ps.paidTotal : Number(order.amount))} {order.currency}
+                                </div>
+                                <span className={`inline-block mt-0.5 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${
+                                  ps.plan === "advance" ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"
+                                }`}>
+                                  {ps.planLabel}
+                                </span>
+                                {ps.plan !== "full" && (
+                                  <div className="text-[10px] text-slate-500 mt-0.5">of {formatUsd(ps.orderTotal)} total</div>
+                                )}
+                                {ps.partlyPaid && (
+                                  <div className="text-[10px] font-bold text-orange-600">Balance due {formatUsd(ps.balanceDue)}</div>
+                                )}
+                                {ps.plan === "advance" && paid && !ps.partlyPaid && (
+                                  <div className="text-[10px] font-bold text-emerald-700">Fully paid</div>
+                                )}
+                              </td>
+                              <td className="px-4 py-3.5 text-center">
+                                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                                  ps.partlyPaid
+                                    ? "bg-orange-50 text-orange-700 border border-orange-300 dark:bg-orange-950/40 dark:text-orange-300"
+                                    : paid
+                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                      : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300"
+                                }`}>
+                                  {ps.partlyPaid ? "PARTIALLY PAID" : paid ? "PAID" : order.payment_status}
+                                </span>
+                              </td>
+                            </>
+                          );
+                        })()}
                         <td className="px-4 py-3.5 font-mono text-[11px] text-slate-500 select-all">
                           {order.paypal_order_id}
                         </td>
@@ -11021,11 +11070,99 @@ function AdminPage() {
               <div className="rounded-xl border p-3 bg-slate-50 dark:bg-slate-900/50 space-y-1">
                 <span className="text-slate-400 font-bold uppercase text-[10px]">Payment</span>
                 <p className="font-mono font-bold text-base text-emerald-600">
-                  ${Number(selectedOrderDetails.amount).toFixed(2)} {selectedOrderDetails.currency}
+                  {formatUsd(
+                    selectedOrderDetails.payment_status === "COMPLETED"
+                      ? paymentSummary(selectedOrderDetails).paidTotal
+                      : Number(selectedOrderDetails.amount)
+                  )}{" "}
+                  {selectedOrderDetails.currency}
                 </p>
-                <p className="font-bold text-purple-600">Status: {selectedOrderDetails.payment_status}</p>
+                <p className="font-bold text-purple-600">
+                  Status:{" "}
+                  {paymentSummary(selectedOrderDetails).partlyPaid
+                    ? "PARTIALLY PAID"
+                    : selectedOrderDetails.payment_status === "COMPLETED"
+                      ? "PAID"
+                      : selectedOrderDetails.payment_status}
+                </p>
               </div>
             </div>
+
+            {(() => {
+              const ps = paymentSummary(selectedOrderDetails);
+              const paid = selectedOrderDetails.payment_status === "COMPLETED";
+              const rows: [string, string][] = [
+                ["Receipt No.", orderReceiptNumber(selectedOrderDetails)],
+                ["Payment type", ps.planLabel],
+                ["Order total", formatUsd(ps.orderTotal)],
+                ...(ps.plan === "advance" ? ([["Advance paid (50%)", formatUsd(Number(selectedOrderDetails.amount))]] as [string, string][]) : []),
+                ...(ps.balancePaid ? ([["Balance paid", formatUsd(ps.balanceAmount)]] as [string, string][]) : []),
+                ["Paid so far", formatUsd(ps.paidTotal)],
+                ["Balance due", paid ? (ps.balanceDue > 0 ? formatUsd(ps.balanceDue) : "Nil (Fully paid)") : "—"],
+                ...(ps.balancePaidAt ? ([["Balance paid on", new Date(ps.balancePaidAt).toLocaleString()]] as [string, string][]) : []),
+                ...(ps.balanceTxn ? ([["Balance transaction ID", ps.balanceTxn]] as [string, string][]) : []),
+              ];
+              const link = selectedOrderDetails.pay_balance_url || "";
+              const firstName = (selectedOrderDetails.customer_name || "").split(" ")[0] || "there";
+              const shareText = `Hello ${firstName}, thank you for your order ${orderReceiptNumber(selectedOrderDetails)} with Quickupp AI Studio. The remaining balance of ${formatUsd(ps.balanceDue)} can be paid securely here: ${link}`;
+              const phoneDigits = (selectedOrderDetails.customer_phone || "").replace(/[^\d]/g, "");
+              return (
+                <>
+                  <div className="rounded-xl border p-3 space-y-1.5 text-xs dark:border-slate-800">
+                    {rows.map(([l, v]) => (
+                      <div key={l} className="flex justify-between gap-3">
+                        <span className="text-slate-400">{l}:</span>
+                        <span
+                          className={`font-bold text-right select-all ${
+                            l === "Balance due" && ps.partlyPaid ? "text-orange-600" : ""
+                          }`}
+                        >
+                          {v}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  {ps.partlyPaid && link && (
+                    <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 space-y-2 text-xs dark:border-orange-500/30 dark:bg-orange-950/20">
+                      <div className="font-bold uppercase tracking-wider text-[10px] text-orange-700">Balance payment link</div>
+                      <div className="font-mono text-[11px] text-slate-700 dark:text-slate-300 break-all select-all">{link}</div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard
+                              ?.writeText(link)
+                              .then(() => showToast("Balance payment link copied"))
+                              .catch(() => showToast("Could not copy. Select the link and copy it."));
+                          }}
+                          className="rounded-lg border border-orange-300 bg-white px-3 py-1.5 text-xs font-bold text-orange-700 hover:bg-orange-100 cursor-pointer"
+                        >
+                          Copy link
+                        </button>
+                        {phoneDigits && (
+                          <a
+                            href={`https://wa.me/${phoneDigits.length === 10 ? `1${phoneDigits}` : phoneDigits}?text=${encodeURIComponent(shareText)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
+                          >
+                            Send on WhatsApp
+                          </a>
+                        )}
+                        <a
+                          href={`mailto:${selectedOrderDetails.customer_email}?subject=${encodeURIComponent(
+                            `Remaining balance for order ${orderReceiptNumber(selectedOrderDetails)} - Quickupp AI Studio`
+                          )}&body=${encodeURIComponent(shareText)}`}
+                          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                        >
+                          Send by email
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             <div className="rounded-xl border p-3 space-y-1 text-xs font-mono dark:border-slate-800">
               <div className="flex justify-between">
@@ -11067,6 +11204,14 @@ function AdminPage() {
                 >
                   {isResendingReceipt ? "Sending..." : "Resend Receipt Email"}
                 </button>
+              )}
+              {selectedOrderDetails.payment_status === "COMPLETED" && (
+                <a
+                  href={`/api/download-receipt?orderId=${encodeURIComponent(selectedOrderDetails.id)}&email=${encodeURIComponent(selectedOrderDetails.customer_email || "")}`}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                >
+                  Download PDF
+                </a>
               )}
               <button
                 type="button"

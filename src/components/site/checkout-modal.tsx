@@ -32,6 +32,7 @@ import {
   type PackageServiceFormat,
   type ResolvedPurchaseItem,
 } from "@/lib/pricing";
+import { splitPayment, formatUsd, type PaymentPlanChoice } from "@/lib/payment-plan";
 import {
   getPayPalConfigServerFn,
   createPayPalOrderServerFn,
@@ -67,6 +68,8 @@ export function CheckoutModal() {
   const [individualService, setIndividualService] = useState<IndividualServiceId>("ai-ugc");
   const [packageTier, setPackageTier] = useState<PackageTierId>("growth");
   const [packageFormat, setPackageFormat] = useState<PackageServiceFormat>("ai-ugc");
+  // Payment option: pay in full, or 50% now and the balance later (same as the India site)
+  const [plan, setPlan] = useState<PaymentPlanChoice>("full");
 
   // Customer Information
   const [fullName, setFullName] = useState("");
@@ -151,6 +154,7 @@ export function CheckoutModal() {
       }
 
       setStep("form");
+      setPlan("full");
       setErrorMessage(null);
       setIsOpen(true);
       document.body.style.overflow = "hidden";
@@ -192,6 +196,19 @@ export function CheckoutModal() {
     }
     return null;
   }, [itemType, individualService, packageTier, packageFormat]);
+
+  const advanceSplit = useMemo(
+    () => (resolvedItem ? splitPayment(resolvedItem.amount, "advance") : null),
+    [resolvedItem]
+  );
+  const canAdvance = advanceSplit?.plan === "advance";
+  const effectivePlan: PaymentPlanChoice = canAdvance ? plan : "full";
+  const payNow = resolvedItem
+    ? effectivePlan === "advance" && advanceSplit
+      ? advanceSplit.payNow
+      : resolvedItem.amount
+    : 0;
+  const balanceLater = effectivePlan === "advance" && advanceSplit ? advanceSplit.balance : 0;
 
   // Form Validation
   const validateForm = () => {
@@ -357,6 +374,63 @@ export function CheckoutModal() {
                 </div>
               </div>
 
+              {/* Payment option: pay in full, or 50% now and the balance later */}
+              {canAdvance && resolvedItem && advanceSplit && (
+                <div className="space-y-2.5">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">Payment Option</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup" aria-label="Payment option">
+                    {(
+                      [
+                        { id: "full" as PaymentPlanChoice, title: "Pay in Full", amount: resolvedItem.amount, note: "Pay the full amount now" },
+                        {
+                          id: "advance" as PaymentPlanChoice,
+                          title: "Pay 50% Advance",
+                          amount: advanceSplit.payNow,
+                          note: `Balance ${formatUsd(advanceSplit.balance)} payable later`,
+                        },
+                      ]
+                    ).map((opt) => {
+                      const active = effectivePlan === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          onClick={() => setPlan(opt.id)}
+                          className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition-all cursor-pointer ${
+                            active
+                              ? "border-purple-500 bg-purple-50/70 ring-2 ring-purple-200"
+                              : "border-slate-200 bg-white hover:border-purple-300"
+                          }`}
+                        >
+                          <span
+                            className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 ${
+                              active ? "border-purple-600" : "border-slate-300"
+                            }`}
+                          >
+                            {active && <span className="h-2 w-2 rounded-full bg-purple-600" />}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-baseline justify-between gap-2">
+                              <span className="text-sm font-bold text-slate-900">{opt.title}</span>
+                              <span className="whitespace-nowrap text-sm font-black text-purple-700">{formatUsd(opt.amount)}</span>
+                            </span>
+                            <span className="mt-0.5 block text-xs text-slate-500">{opt.note}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {effectivePlan === "advance" && (
+                    <p className="text-[11px] leading-relaxed text-slate-500">
+                      You pay {formatUsd(advanceSplit.payNow)} now. The balance of {formatUsd(advanceSplit.balance)} can be paid
+                      anytime using the secure link in your payment confirmation email.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Customer Input Fields */}
               <div className="space-y-4">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
@@ -473,7 +547,7 @@ export function CheckoutModal() {
                   type="submit"
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-brand py-3.5 text-base font-bold text-white shadow-lg shadow-purple-500/25 transition-all duration-200 hover:scale-[1.008] hover:brightness-110 active:scale-98 cursor-pointer"
                 >
-                  <span>Proceed to Payment</span>
+                  <span>{resolvedItem ? `Proceed to Pay ${formatUsd(payNow)}` : "Proceed to Payment"}</span>
                   <ArrowRight className="h-4 w-4" />
                 </button>
                 <p className="mt-2.5 text-center text-[11px] text-slate-500 flex items-center justify-center gap-1.5 font-medium">
@@ -558,15 +632,29 @@ export function CheckoutModal() {
                     </div>
 
                     {/* Total Price Section */}
-                    <div className="border-t border-slate-200/80 pt-3">
+                    <div className="border-t border-slate-200/80 pt-3 space-y-1.5">
+                      {effectivePlan === "advance" && (
+                        <>
+                          <div className="flex items-baseline justify-between text-xs">
+                            <span className="text-slate-500">Order total</span>
+                            <span className="font-semibold text-slate-800">{formatUsd(resolvedItem.amount)} USD</span>
+                          </div>
+                          <div className="flex items-baseline justify-between text-xs">
+                            <span className="text-slate-500">Balance due later</span>
+                            <span className="font-semibold text-amber-700">{formatUsd(balanceLater)} USD</span>
+                          </div>
+                        </>
+                      )}
                       <div className="flex items-baseline justify-between">
-                        <span className="text-xs font-bold text-slate-600">Total payable today</span>
-                        <span className="text-2xl font-black text-slate-900">
-                          {resolvedItem.amountFormatted}
+                        <span className="text-xs font-bold text-slate-600">
+                          {effectivePlan === "advance" ? "Payable today (50% advance)" : "Total payable today"}
                         </span>
+                        <span className="text-2xl font-black text-slate-900">{formatUsd(payNow)} USD</span>
                       </div>
                       <p className="text-[11px] text-slate-400 mt-0.5">
-                        One-time charge • No recurring subscription
+                        {effectivePlan === "advance"
+                          ? "Pay the balance anytime with the secure link in your confirmation email"
+                          : "One-time charge • No recurring subscription"}
                       </p>
                     </div>
                   </div>
@@ -646,6 +734,7 @@ export function CheckoutModal() {
                                       customerEmail: email,
                                       customerPhone: phone,
                                       customerCompany: company,
+                                      paymentPlan: effectivePlan,
                                     },
                                   });
 
@@ -700,7 +789,7 @@ export function CheckoutModal() {
                                     captureId: res.captureId,
                                     itemName: resolvedItem.itemName,
                                     packageName: resolvedItem.itemType === "individual" ? "60-Second Video" : resolvedItem.itemName,
-                                    amount: resolvedItem.amount,
+                                    amount: payNow,
                                     currency: resolvedItem.currency,
                                     customerName: fullName,
                                     customerEmail: email,

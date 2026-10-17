@@ -61,70 +61,31 @@ export default {
         if (!orderIdParam) {
           return new Response("Missing orderId parameter.", { status: 400 });
         }
-        const emailParam = url.searchParams.get("email") || "";
-        const nameParam = url.searchParams.get("name") || "";
-
-        let order = null;
+        const emailParam = (url.searchParams.get("email") || "").trim().toLowerCase();
+        const notAvailable = () =>
+          new Response(
+            "Receipt not available. Please contact info@quickuppaistudio.us with your order number.",
+            { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } }
+          );
         try {
-          const { getOrderByAnyId } = await import("./lib/db");
-          order = await getOrderByAnyId(orderIdParam);
-        } catch (dbErr) {
-          console.warn("DB lookup error in download-receipt:", dbErr);
+          const { findOrderForReceipt, buildReceiptPdfForOrder } = await import("./lib/paypal-actions");
+          const order = await findOrderForReceipt(orderIdParam);
+          if (!order || order.payment_status !== "COMPLETED") return notAvailable();
+          if (emailParam && (order.customer_email || "").trim().toLowerCase() !== emailParam) return notAvailable();
+          const { filename, pdf } = await buildReceiptPdfForOrder(order);
+          return new Response(new Uint8Array(pdf), {
+            status: 200,
+            headers: {
+              "Content-Type": "application/pdf",
+              "Content-Disposition": `attachment; filename="${filename}"`,
+              "Content-Length": String(pdf.length),
+              "Cache-Control": "no-store",
+            },
+          });
+        } catch (receiptErr) {
+          console.error("download-receipt failed:", receiptErr);
+          return notAvailable();
         }
-
-        const now = new Date();
-        const dateStr = now.toLocaleDateString("en-US", {
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-          timeZone: "America/New_York",
-        });
-        const timeStr =
-          now.toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-            timeZone: "America/New_York",
-          }) + " EST";
-
-        const { generateInvoicePdfBuffer } = await import("./lib/pdf-receipt");
-        const { formatOrderInvoiceNumber } = await import("./lib/paypal-actions");
-
-        const orderNum = order
-          ? formatOrderInvoiceNumber(order.id, order.created_at)
-          : formatOrderInvoiceNumber(orderIdParam);
-
-        const pdfBuffer = await generateInvoicePdfBuffer({
-          orderNumber: orderNum,
-          issueDate: dateStr,
-          paymentDate: dateStr,
-          paymentTime: timeStr,
-          paymentStatus: "PAID",
-          customerName: order?.customer_name || nameParam || "Valued Client",
-          customerEmail: order?.customer_email || emailParam || "info@quickuppaistudio.us",
-          customerCompany: order?.customer_company || undefined,
-          billingAddress: undefined,
-          serviceName: order?.item_name || "AI UGC Video",
-          packageDescription: order?.item_name?.includes("Package") ? order.item_name : "60 Seconds",
-          qty: 1,
-          amount: order ? Number(order.amount) : 1.0,
-          currency: order?.currency || "USD",
-          subtotal: order ? Number(order.amount) : 1.0,
-          tax: 0,
-          total: order ? Number(order.amount) : 1.0,
-          paymentMethod: "PayPal",
-          transactionId: order?.paypal_capture_id || order?.paypal_order_id || orderIdParam,
-        });
-
-        return new Response(new Uint8Array(pdfBuffer), {
-          status: 200,
-          headers: {
-            "Content-Type": "application/pdf",
-            "Content-Disposition": `attachment; filename="Receipt_${orderNum}.pdf"`,
-            "Content-Length": String(pdfBuffer.length),
-            "Cache-Control": "public, max-age=3600",
-          },
-        });
       }
 
       // Calendly Webhook & Direct Integration Endpoint
