@@ -71,6 +71,82 @@ export function getGmailCredentials(): { user: string; pass: string } {
   const pass = rawPass.replace(/\s+/g, "");
   return { user, pass };
 }
+// ─────────────────────────────────────────────────────────────────────────────
+// ONE WAY TO SEND EVERY EMAIL (same as the India site):
+//   1. Website mailbox info@quickuppaistudio.us on Hostinger SMTP  (SMTP_HOST / SMTP_USER / SMTP_PASS)
+//   2. Backup: Gmail qsaistudio@gmail.com with an app password      (GMAIL_USER / GMAIL_APP_PASSWORD)
+// Each account is tried on port 465 (SSL) and 587 (STARTTLS).
+// ─────────────────────────────────────────────────────────────────────────────
+type SiteMail = {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  fromName: string;
+  replyTo?: string | undefined;
+  attachments?: any[] | undefined;
+  messageId?: string | undefined;
+  headers?: Record<string, string> | undefined;
+};
+
+export async function sendSiteMail(mail: SiteMail): Promise<{ success: boolean; via?: string | undefined; error?: string | undefined }> {
+  const accounts: { host: string; user: string; pass: string; from: string; ports: number[] }[] = [];
+  const siteUser = (process.env["SMTP_USER"] || process.env["EMAIL_USER"] || "info@quickuppaistudio.us").trim();
+  const sitePass = (process.env["SMTP_PASS"] || process.env["EMAIL_PASS"] || "Quickuppaistudio@8080").trim();
+  const siteHost = (process.env["SMTP_HOST"] || (siteUser.includes("@gmail.com") ? "smtp.gmail.com" : "smtp.hostinger.com")).trim();
+  const firstPort = Number(process.env["SMTP_PORT"] || 465) || 465;
+  if (siteUser && sitePass) {
+    accounts.push({
+      host: siteHost,
+      user: siteUser,
+      pass: siteHost.includes("gmail") ? sitePass.replace(/\s+/g, "") : sitePass,
+      from: (process.env["EMAIL_FROM"] || siteUser).trim(),
+      ports: [firstPort, ...[465, 587].filter((p) => p !== firstPort)],
+    });
+  }
+  const { user: gUser, pass: gPass } = getGmailCredentials();
+  if (gUser && gPass && gUser.toLowerCase() !== siteUser.toLowerCase()) {
+    accounts.push({ host: "smtp.gmail.com", user: gUser, pass: gPass, from: gUser, ports: [465, 587] });
+  }
+
+  const errors: string[] = [];
+  for (const acc of accounts) {
+    for (const port of acc.ports) {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: acc.host,
+          port,
+          secure: port === 465,
+          requireTLS: port === 587,
+          auth: { user: acc.user, pass: acc.pass },
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 20000,
+        });
+        await transporter.sendMail({
+          from: `"${mail.fromName.replace(/"/g, "")}" <${acc.from}>`,
+          to: mail.to,
+          replyTo: mail.replyTo || undefined,
+          subject: mail.subject,
+          text: mail.text,
+          html: mail.html,
+          ...(mail.attachments?.length ? { attachments: mail.attachments } : {}),
+          ...(mail.messageId ? { messageId: mail.messageId } : {}),
+          ...(mail.headers ? { headers: mail.headers } : {}),
+          date: new Date(),
+        });
+        return { success: true, via: `${acc.host}:${port} (${acc.user})` };
+      } catch (e: any) {
+        const msg = `${acc.host}:${port} (${acc.user}): ${e?.code ? e.code + " " : ""}${e?.message || e}`;
+        errors.push(e?.code === "EAUTH" ? `${msg} - wrong email or password` : msg);
+        console.warn("Email send attempt failed:", msg);
+        if (e?.code === "EAUTH") break; // same password fails on the other port too
+      }
+    }
+  }
+  if (!accounts.length) errors.push("No email account configured (set SMTP_USER / SMTP_PASS in Hostinger)");
+  return { success: false, error: errors.join(" | ") };
+}
 const BACKUP_NOTIFICATION_EMAIL = "qsaistudio@gmail.com";
 
 export async function sendLeadNotificationEmail(lead: LeadEmailPayload): Promise<{ success: boolean; error?: string | undefined }> {
@@ -327,71 +403,21 @@ WhatsApp: https://wa.me/${waPhone}
 Call: tel:${cleanPhone}
   `;
 
-  // Lead alerts use ONLY Gmail: qsaistudio@gmail.com (app password) -> qsaistudio@gmail.com
-  const { user: gmailUser, pass: gmailPass } = getGmailCredentials();
-  if (gmailUser && gmailPass) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 465,
-        secure: true,
-        auth: {
-          user: gmailUser,
-          pass: gmailPass,
-        },
-      });
-
-      const leadAttachments = [
-        {
-          filename: "logo.png",
-          content: getCompanyLogoBuffer(),
-          cid: "quickupp-logo",
-          contentType: "image/png",
-        },
-      ];
-
-      await transporter.sendMail({
-        from: `"Quickupp AI Studio Leads" <${gmailUser}>`,
-        to: NOTIFICATION_EMAIL,
-        replyTo: lead.email || undefined,
-        subject,
-        text: textContent,
-        html: htmlContent,
-        attachments: leadAttachments,
-      });
-
-      return { success: true };
-    } catch (gmailErr: any) {
-      console.warn("Primary Gmail 465 failed, trying port 587...", gmailErr?.message);
-      try {
-        const fallbackTransporter = nodemailer.createTransport({
-          host: "smtp.gmail.com",
-          port: 587,
-          secure: false,
-          auth: {
-            user: gmailUser,
-            pass: gmailPass,
-          },
-        });
-
-        await fallbackTransporter.sendMail({
-          from: `"Quickupp AI Studio Leads" <${gmailUser}>`,
-          to: NOTIFICATION_EMAIL,
-          replyTo: lead.email || undefined,
-          subject,
-          text: textContent,
-          html: htmlContent,
-        });
-
-        return { success: true };
-      } catch (err587: any) {
-        console.error("Gmail lead email failed on 465 and 587:", err587?.message);
-      }
-    }
-  }
-
-  if (!gmailPass) console.error("Lead email not sent: GMAIL_APP_PASSWORD is not set.");
-  return { success: false, error: "Gmail lead email could not be sent" };
+  // New-lead alert TO qsaistudio@gmail.com, sent FROM the website mailbox info@quickuppaistudio.us
+  // (Gmail is only the backup sender).
+  const sent = await sendSiteMail({
+    to: NOTIFICATION_EMAIL,
+    subject,
+    text: textContent,
+    html: htmlContent,
+    fromName: "Quickupp AI Studio Leads",
+    replyTo: lead.email || undefined,
+    attachments: [
+      { filename: "logo.png", content: getCompanyLogoBuffer(), cid: "quickupp-logo", contentType: "image/png" },
+    ],
+  });
+  if (!sent.success) console.error("Lead notification email failed:", sent.error);
+  return { success: sent.success, error: sent.error };
 }
 
 export interface PaymentReceiptEmailPayload {
@@ -876,107 +902,25 @@ Operated by-Quickupp Softech LLC
     ...(pdfAttachment ? [pdfAttachment] : []),
   ];
 
-  // 1. Send via Hostinger SMTP directly to customer (clean transactional headers, no spam BCC)
-  const smtpHost = process.env["SMTP_HOST"] || "smtp.hostinger.com";
-  const smtpPort = Number(process.env["SMTP_PORT"] || 465);
-  const smtpSecure = process.env["SMTP_SECURE"] === "false" ? false : true;
-  const smtpUser = process.env["SMTP_USER"] || process.env["EMAIL_USER"] || "info@quickuppaistudio.us";
-  const smtpPass = process.env["SMTP_PASS"] || process.env["EMAIL_PASS"] || "Quickuppaistudio@8080";
-  const fromAddress = process.env["EMAIL_FROM"] || smtpUser || "info@quickuppaistudio.us";
-
-  if (smtpUser && smtpPass) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpSecure,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass.replace(/\s+/g, ""),
-        },
-      });
-
-      // Customer transactional receipt
-      await transporter.sendMail({
-        from: `"Quickupp AI Studio" <${fromAddress}>`,
-        to: payload.customerEmail,
-        replyTo: fromAddress,
-        messageId: `<receipt-${orderNumber}-${Date.now()}@quickuppaistudio.us>`,
-        date: new Date(),
-        headers: {
-          "X-Entity-Ref-ID": orderNumber,
-        },
-        subject,
-        text: textContent,
-        html: htmlContent,
-        attachments: emailAttachments,
-      });
-
-      console.log(`✅ Automated payment receipt sent successfully to ${payload.customerEmail}`);
-
-      // Internal order notification copy to official company inbox
-      try {
-        await transporter.sendMail({
-          from: `"Quickupp AI Studio Orders" <${fromAddress}>`,
-          to: NOTIFICATION_EMAIL,
-          replyTo: payload.customerEmail,
-          messageId: `<admin-order-${orderNumber}-${Date.now()}@quickuppaistudio.us>`,
-          subject: `[${await resolvePlatformTitle()}] ${
-            partly ? "50% Advance Received" : plan === "balance" ? "Balance Received (Fully Paid)" : "New Payment Confirmed"
-          } — Order #${orderNumber} — ${formattedAmount}`,
-          text: `${planLabel} confirmed for ${payload.customerName} (${payload.customerEmail}): ${formattedAmount}${
-            plan !== "full" ? ` (order total ${money(payload.orderTotal)}, balance due ${partly ? money(balanceDue) : "nil"})` : ""
-          }. Order #${orderNumber}. Transaction ID: ${transactionId}`,
-          html: htmlContent,
-          attachments: emailAttachments,
-        });
-      } catch (adminErr: any) {
-        console.warn("Admin notification email copy warning:", adminErr?.message);
-      }
-
-      return { success: true };
-    } catch (smtpErr: any) {
-      console.error("Hostinger SMTP payment receipt email failed:", smtpErr?.message);
-    }
+  // Customer receipt + PDF FROM info@quickuppaistudio.us (Gmail only as backup)
+  const customerMail = await sendSiteMail({
+    to: payload.customerEmail,
+    subject,
+    text: textContent,
+    html: htmlContent,
+    fromName: "Quickupp AI Studio",
+    replyTo: (process.env["EMAIL_FROM"] || process.env["SMTP_USER"] || "info@quickuppaistudio.us").trim(),
+    attachments: emailAttachments,
+    messageId: `<receipt-${orderNumber}-${Date.now()}@quickuppaistudio.us>`,
+    headers: { "X-Entity-Ref-ID": orderNumber },
+  });
+  if (!customerMail.success) {
+    console.error("Payment receipt email failed:", customerMail.error);
+    return { success: false, error: customerMail.error || "SMTP dispatch failed" };
   }
+  console.log(`Payment receipt sent to ${payload.customerEmail} via ${customerMail.via}`);
 
-  // 2. Backup Gmail SMTP Fallback
-  const { user: backupUser, pass: backupPass } = getGmailCredentials();
-  if (backupUser && backupPass) {
-    try {
-      const backupTransporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 465,
-        secure: true,
-        auth: {
-          user: backupUser,
-          pass: backupPass,
-        },
-      });
-
-      await backupTransporter.sendMail({
-        from: `"Quickupp AI Studio" <${backupUser}>`,
-        to: payload.customerEmail,
-        replyTo: fromAddress,
-        messageId: `<receipt-${orderNumber}-${Date.now()}@quickuppaistudio.us>`,
-        date: new Date(),
-        headers: {
-          "X-Entity-Ref-ID": orderNumber,
-        },
-        subject,
-        text: textContent,
-        html: htmlContent,
-        attachments: emailAttachments,
-      });
-
-      console.log(`✅ Backup SMTP payment receipt sent to ${payload.customerEmail}`);
-      return { success: true };
-    } catch (backupErr: any) {
-      console.error("Backup Gmail SMTP payment receipt failed:", backupErr?.message);
-    }
-  }
-
-  return { success: false, error: "SMTP dispatch failed" };
+  return { success: true };
 }
 
 export interface FailedLoginAlertPayload {
@@ -1127,78 +1071,10 @@ export async function sendFailedLoginAlertEmail(
     `${title} - Automated security alert`,
   ].join("\n");
 
-  // Same as the India site: 1) Gmail qsaistudio@gmail.com, 2) this site's mailbox info@quickuppaistudio.us.
-  // The alert always goes TO info@quickuppaistudio.us only.
-  const errors: string[] = [];
-  const { user: gmailUser, pass: gmailPass } = getGmailCredentials();
-  if (gmailUser && gmailPass) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 465,
-        secure: true,
-        auth: { user: gmailUser, pass: gmailPass },
-      });
-      await transporter.sendMail({
-        from: `"${title.replace(/"/g, "")} Security" <${gmailUser}>`,
-        to,
-        subject,
-        text,
-        html,
-      });
-      return { success: true, via: `smtp.gmail.com:465 (${gmailUser})` };
-    } catch (gmailErr: any) {
-      errors.push(`Gmail 465: ${gmailErr?.message}`);
-      console.warn("Gmail 465 alert failed, trying port 587...", gmailErr?.message);
-      try {
-        const fallbackTransporter = nodemailer.createTransport({
-          host: "smtp.gmail.com",
-          port: 587,
-          secure: false,
-          auth: { user: gmailUser, pass: gmailPass },
-        });
-        await fallbackTransporter.sendMail({
-          from: `"${title.replace(/"/g, "")} Security" <${gmailUser}>`,
-          to,
-          subject,
-          text,
-          html,
-        });
-        return { success: true, via: `smtp.gmail.com:587 (${gmailUser})` };
-      } catch (err587: any) {
-        errors.push(`Gmail 587: ${err587?.message}`);
-        console.error("Gmail failed-login alert failed on 465 and 587:", err587?.message);
-      }
-    }
-  } else {
-    errors.push("GMAIL_APP_PASSWORD is not set");
-  }
-
-  // Backup: this website's own mailbox info@quickuppaistudio.us (Hostinger SMTP)
-  const hHost = (process.env["SMTP_HOST"] || "smtp.hostinger.com").trim();
-  const hUser = (process.env["SMTP_USER"] || "info@quickuppaistudio.us").trim();
-  const hPass = (process.env["SMTP_PASS"] || "").trim();
-  if (hUser && hPass && !hUser.includes("@gmail.com")) {
-    for (const port of [465, 587]) {
-      try {
-        const t = nodemailer.createTransport({
-          host: hHost, port, secure: port === 465, requireTLS: port === 587,
-          auth: { user: hUser, pass: hPass },
-          connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 15000,
-        });
-        await t.sendMail({ from: `"${title.replace(/"/g, "")} Security" <${hUser}>`, to, subject, text, html });
-        return { success: true, via: `${hHost}:${port} (${hUser})` };
-      } catch (e: any) {
-        errors.push(`${hHost}:${port}: ${e?.code ? e.code + " " : ""}${e?.message}`);
-        if (e?.code === "EAUTH") break;
-      }
-    }
-  } else {
-    errors.push("SMTP_USER / SMTP_PASS (info@quickuppaistudio.us) not set");
-  }
-
-  console.error("Failed-login alert could not be sent:", errors.join(" | "));
-  return { success: false, error: errors.join(" | ") };
+  // Failed-login alert TO info@quickuppaistudio.us, sent from the website mailbox (Gmail as backup)
+  const sent = await sendSiteMail({ to, subject, text, html, fromName: `${title} Security` });
+  if (!sent.success) console.error("Failed-login alert could not be sent:", sent.error);
+  return sent;
 }
 
 /**
@@ -1286,57 +1162,8 @@ To reactivate this user, log in as Super Admin to the CRM portal and toggle thei
 </body>
 </html>`;
 
-  const smtpHost = process.env["SMTP_HOST"] || "smtp.hostinger.com";
-  const smtpPort = Number(process.env["SMTP_PORT"] || 465);
-  const smtpSecure = process.env["SMTP_SECURE"] === "false" ? false : true;
-  const smtpUser = process.env["SMTP_USER"] || process.env["EMAIL_USER"] || "info@quickuppaistudio.us";
-  const smtpPass = process.env["SMTP_PASS"] || process.env["EMAIL_PASS"] || "Quickuppaistudio@8080";
-  const fromAddress = process.env["EMAIL_FROM"] || smtpUser;
-
-  if (smtpUser && smtpPass) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpSecure,
-        auth: { user: smtpUser, pass: smtpPass.replace(/\s+/g, "") },
-      });
-      await transporter.sendMail({
-        from: `"${title.replace(/"/g, "")} Admin System" <${fromAddress}>`,
-        to,
-        subject,
-        text,
-        html,
-      });
-      return { success: true };
-    } catch (error: any) {
-      console.error("Hostinger SMTP account activation request email error:", error?.message || error);
-    }
-  }
-
-  // Backup Gmail SMTP Fallback
-  const { user: backupUser, pass: backupPass } = getGmailCredentials();
-  if (backupUser && backupPass) {
-    try {
-      const backupTransporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 465,
-        secure: true,
-        auth: { user: backupUser, pass: backupPass },
-      });
-      await backupTransporter.sendMail({
-        from: `"${title.replace(/"/g, "")} Admin System" <${backupUser}>`,
-        to,
-        subject,
-        text,
-        html,
-      });
-      return { success: true };
-    } catch (backupErr: any) {
-      console.error("Gmail fallback activation request email error:", backupErr?.message || backupErr);
-    }
-  }
-
-  return { success: false, error: "SMTP credentials not configured or delivery failed" };
+  const sent = await sendSiteMail({ to, subject, text, html, fromName: `${title} Admin System` });
+  if (!sent.success) console.error("Account activation request email failed:", sent.error);
+  return { success: sent.success, error: sent.error };
 }
 
